@@ -4,26 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Save } from "lucide-react";
-import { formFields, moduleNames } from "@/src/data/admin-data";
-import type { FormFieldDefinition, ModuleKey } from "@/src/types/admin";
-
-const sectionToModule: Record<string, ModuleKey> = {
-  orders: "orders",
-  accounts: "accounts",
-  products: "products",
-  categories: "categories",
-  promotions: "promotions",
-  vouchers: "vouchers",
-  branches: "branches",
-  warehouses: "branches",
-  employees: "employees",
-  customers: "customers",
-  suppliers: "suppliers",
-  receipts: "receipts",
-  transfers: "transfers",
-  payments: "billing",
-  invoices: "billing",
-};
+import { formFields, moduleNames, modules } from "@/src/data/admin-data";
+import type { FormFieldDefinition } from "@/src/types/admin";
+import {
+  getModuleForSection,
+  getSectionHref,
+} from "@/src/lib/admin-navigation";
 
 const fallbackFields: FormFieldDefinition[] = [
   { name: "code", label: "Mã bản ghi", placeholder: "Mã hệ thống", wide: true },
@@ -37,6 +23,20 @@ const fallbackFields: FormFieldDefinition[] = [
   },
 ];
 
+const orderSteps = ["Mới", "Xác nhận", "Chuẩn bị", "Xuất kho", "Hoàn thành"];
+
+function getOrderStep(id: string) {
+  const status = String(
+    modules.orders?.rows.find((order) => order.id === id)?.status ?? "Mới",
+  ).toLowerCase();
+
+  if (status.includes("hoàn thành")) return 4;
+  if (status.includes("xuất kho")) return 3;
+  if (status.includes("chuẩn bị")) return 2;
+  if (status.includes("xác nhận")) return 1;
+  return 0;
+}
+
 export default function EditView({
   section,
   id,
@@ -46,7 +46,8 @@ export default function EditView({
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
-  const moduleKey = sectionToModule[section];
+  const [orderStep, setOrderStep] = useState(() => getOrderStep(id));
+  const moduleKey = getModuleForSection(section);
   const label = moduleKey ? moduleNames[moduleKey] : "Bản ghi";
   const fields = (moduleKey && formFields[moduleKey]) || fallbackFields;
 
@@ -61,16 +62,22 @@ export default function EditView({
         <nav aria-label="Breadcrumb">
           <Link href="/">Quản trị</Link>
           <ChevronRight />
-          <span>{label}</span>
+          <Link href={getSectionHref(section)}>{label}</Link>
           <ChevronRight />
           <Link href={`/${section}/${encodeURIComponent(id)}`}>{id}</Link>
           <ChevronRight />
-          <b>Chỉnh sửa</b>
+          <Link
+            className="current"
+            href={`/${section}/${encodeURIComponent(id)}/edit`}
+            aria-current="page"
+          >
+            Chỉnh sửa
+          </Link>
         </nav>
       </header>
       <main className="edit-content">
         <button className="detail-back" onClick={() => router.back()}>
-          <ArrowLeft /> Quay lại trang chi tiết
+          <ArrowLeft /> Quay lại trang trước
         </button>
         <section className="edit-card">
           <header>
@@ -83,6 +90,46 @@ export default function EditView({
               Xem chi tiết
             </Link>
           </header>
+          {section === "orders" && (
+            <section className="edit-order-status">
+              <header>
+                <div>
+                  <span>TRẠNG THÁI ĐƠN HÀNG</span>
+                  <h2>Quy trình xử lý</h2>
+                </div>
+                <strong>{orderSteps[orderStep]}</strong>
+              </header>
+              <div className="edit-order-workflow">
+                {orderSteps.map((step, index) => (
+                  <div
+                    className={
+                      index === orderStep
+                        ? "current"
+                        : index < orderStep
+                          ? "completed"
+                          : ""
+                    }
+                    key={step}
+                  >
+                    <button
+                      type="button"
+                      aria-pressed={index === orderStep}
+                      onClick={() => {
+                        setOrderStep(index);
+                        setSaved(false);
+                      }}
+                    >
+                      <i>{index < orderStep ? <Check /> : index + 1}</i>
+                      <span>{step}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p>
+                Chọn giai đoạn hiện tại của đơn hàng, sau đó nhấn Lưu thay đổi.
+              </p>
+            </section>
+          )}
           <form
             onSubmit={(event) => {
               event.preventDefault();

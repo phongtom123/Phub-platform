@@ -29,7 +29,6 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     searchPlaceholder: "Tìm mã đơn hoặc khách hàng...",
     addLabel: "Tạo đơn hàng",
     filters: ["Trạng thái", "Chi nhánh", "Khoảng ngày"],
-    workflow: ["MỚI", "XÁC NHẬN", "CHUẨN BỊ", "XUẤT KHO", "HOÀN THÀNH"],
     columns: [
       { key: "id", label: "MÃ ĐƠN", kind: "link" },
       { key: "customer", subKey: "phone", label: "KHÁCH HÀNG", kind: "stack" },

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
+import Link from "next/link";
 import {
   Bell,
   ChevronDown,
@@ -15,39 +16,68 @@ import {
   Users,
   X,
 } from "lucide-react";
+import type { ModuleKey } from "@/src/types/admin";
+import { getModuleHref } from "@/src/lib/admin-navigation";
 
 type Props = {
+  activeModule: ModuleKey;
   title: string;
   onToggleSidebar: () => void;
-  onGoHome: () => void;
+  onNavigate: (moduleKey: ModuleKey) => void;
   onGoAccounts: () => void;
   onOpenSettings: () => void;
   onLogout: () => void;
 };
 
 export function AdminHeader({
+  activeModule,
   title,
   onToggleSidebar,
-  onGoHome,
+  onNavigate,
   onGoAccounts,
   onOpenSettings,
   onLogout,
 }: Props) {
   const [panel, setPanel] = useState<"notifications" | "account" | null>(null);
+  const followModuleLink = (
+    event: MouseEvent<HTMLAnchorElement>,
+    moduleKey: ModuleKey,
+  ) => {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate(moduleKey);
+  };
+
   return (
     <header className="topbar">
       <button className="hamb" onClick={onToggleSidebar}>
         <Menu />
       </button>
-      <nav className="crumb">
-        <button onClick={onGoHome}>Quản trị</button>
+      <nav className="crumb" aria-label="Breadcrumb">
+        <Link
+          href={getModuleHref("dashboard")}
+          onClick={(event) => followModuleLink(event, "dashboard")}
+        >
+          Quản trị
+        </Link>
         <ChevronRight />
-        <button
+        <Link
           className="current"
-          onClick={title === "Tổng quan" ? undefined : onGoHome}
+          aria-current="page"
+          href={getModuleHref(activeModule)}
+          onClick={(event) => followModuleLink(event, activeModule)}
         >
           {title}
-        </button>
+        </Link>
       </nav>
       <div className="top-actions">
         <label>

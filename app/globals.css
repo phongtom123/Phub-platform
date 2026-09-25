@@ -1841,6 +1841,101 @@ tbody tr:last-child td {
   font-weight: 700;
   white-space: nowrap;
 }
+.edit-order-status {
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border);
+  background: #fbfcfa;
+}
+.edit-order-status > header {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.edit-order-status > header span {
+  color: var(--darkgreen);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.edit-order-status > header h2 {
+  margin: 5px 0 0;
+  font-size: 19px;
+}
+.edit-order-status > header strong {
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #eaf7e7;
+  color: var(--darkgreen);
+  font-size: 13px;
+}
+.edit-order-workflow {
+  display: flex;
+  align-items: center;
+}
+.edit-order-workflow > div {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.edit-order-workflow > div:not(:last-child)::after {
+  content: "";
+  height: 2px;
+  margin: 0 10px;
+  background: #dde1da;
+  flex: 1;
+}
+.edit-order-workflow > div.completed:not(:last-child)::after {
+  background: #8bd680;
+}
+.edit-order-workflow button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #777;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.edit-order-workflow button i {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d6d9d3;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-style: normal;
+}
+.edit-order-workflow button i svg {
+  width: 14px;
+}
+.edit-order-workflow button:hover,
+.edit-order-workflow .current button,
+.edit-order-workflow .completed button {
+  color: var(--darkgreen);
+}
+.edit-order-workflow .current button i {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 0 0 4px #e4f5e1;
+}
+.edit-order-workflow .completed button i {
+  border-color: #8bd680;
+  background: #eaf7e7;
+}
+.edit-order-status > p {
+  margin: 16px 0 0;
+  color: #747d70;
+  font-size: 12px;
+}
 .edit-card > form {
   padding: 28px;
 }
@@ -1881,6 +1976,20 @@ tbody tr:last-child td {
   }
   .edit-card > form {
     padding: 20px;
+  }
+  .edit-order-status {
+    padding: 20px;
+  }
+  .edit-order-status > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .edit-order-workflow {
+    padding: 4px;
+    overflow-x: auto;
+  }
+  .edit-order-workflow > div {
+    min-width: 150px;
   }
   .edit-card > form > footer {
     margin: 24px -20px -20px;
@@ -2331,7 +2440,7 @@ td {
 .crumb {
   gap: 3px;
 }
-.crumb button {
+.crumb a {
   height: 36px;
   border: 0;
   background: transparent;
@@ -2339,15 +2448,18 @@ td {
   padding: 0 9px;
   color: #777;
   font-size: 13px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
   transition:
     background 0.18s,
     color 0.18s;
 }
-.crumb button:hover {
+.crumb a:hover {
   background: #f0f5ee;
   color: var(--darkgreen);
 }
-.crumb button.current {
+.crumb a.current {
   color: var(--ink);
   font-weight: 750;
 }
@@ -2436,7 +2548,7 @@ td {
     justify-content: flex-start;
     padding: 10px;
   }
-  .crumb button {
+  .crumb a {
     padding: 0 6px;
   }
   .topbar {
@@ -2946,6 +3058,10 @@ td {
 .detail-topbar > nav a:hover {
   color: var(--darkgreen);
 }
+.detail-topbar > nav a.current {
+  color: var(--ink);
+  font-weight: 750;
+}
 .detail-topbar > nav svg {
   width: 13px;
 }
@@ -3353,7 +3469,7 @@ body {
 .branch strong {
   font-size: 13px;
 }
-.crumb button {
+.crumb a {
   font-size: 14px;
 }
 .top-actions > label input {

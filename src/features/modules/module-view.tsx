@@ -32,7 +32,7 @@ export function ModuleView({ definition, onCreate, onBack }: Props) {
   return (
     <>
       <button className="module-back" onClick={onBack}>
-        <ArrowLeft /> Quay lại Tổng quan
+        <ArrowLeft /> Quay lại trang trước
       </button>
       {definition.stats && <SummaryStats items={definition.stats} />}
       {definition.workflow && <Workflow items={definition.workflow} />}

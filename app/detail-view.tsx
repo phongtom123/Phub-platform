@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSectionHref } from "@/src/lib/admin-navigation";
 import {
   ArrowLeft,
   Bell,
@@ -316,12 +317,18 @@ export default function DetailView({
           <strong>PHUB</strong>
           <em>admin</em>
         </Link>
-        <nav>
+        <nav aria-label="Breadcrumb">
           <Link href="/">Quản trị</Link>
           <ChevronRight />
-          <span>{detail.label}</span>
+          <Link href={getSectionHref(section)}>{detail.label}</Link>
           <ChevronRight />
-          <b>{id}</b>
+          <Link
+            className="current"
+            href={`/${section}/${encodeURIComponent(id)}`}
+            aria-current="page"
+          >
+            {id}
+          </Link>
         </nav>
         <div className="detail-user">
           <button aria-label="Thông báo">
@@ -337,7 +344,7 @@ export default function DetailView({
 
       <main className="detail-content">
         <button className="detail-back" onClick={() => router.back()}>
-          <ArrowLeft /> Quay lại danh sách
+          <ArrowLeft /> Quay lại trang trước
         </button>
 
         <section className="detail-hero">
