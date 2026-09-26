@@ -10,6 +10,7 @@ import {
   getModuleForSection,
   getSectionHref,
 } from "@/src/lib/admin-navigation";
+import { ImageEditor } from "@/src/features/forms/image-editor";
 
 const fallbackFields: FormFieldDefinition[] = [
   { name: "code", label: "Mã bản ghi", placeholder: "Mã hệ thống", wide: true },
@@ -50,6 +51,13 @@ export default function EditView({
   const moduleKey = getModuleForSection(section);
   const label = moduleKey ? moduleNames[moduleKey] : "Bản ghi";
   const fields = (moduleKey && formFields[moduleKey]) || fallbackFields;
+  const canEditImage = section === "products" || section === "promotions";
+  const currentRecord = moduleKey
+    ? modules[moduleKey]?.rows.find((row) => row.id === id)
+    : undefined;
+  const initialImageUrl = String(
+    currentRecord?.imageUrl ?? currentRecord?.image ?? "",
+  );
 
   return (
     <div className="detail-page edit-page">
@@ -136,6 +144,19 @@ export default function EditView({
               setSaved(true);
             }}
           >
+            {canEditImage && (
+              <ImageEditor
+                inputId={`${section}-${id}-image`}
+                title={section === "products" ? "Ảnh sản phẩm" : "Ảnh khuyến mãi"}
+                description={
+                  section === "products"
+                    ? "Ảnh đại diện được sử dụng trong danh sách và trang chi tiết sản phẩm."
+                    : "Ảnh đại diện được sử dụng cho banner và nội dung chương trình khuyến mãi."
+                }
+                initialUrl={initialImageUrl}
+                onChange={() => setSaved(false)}
+              />
+            )}
             <div className="form-grid edit-form-grid">
               {fields.map((field) => (
                 <label className={field.wide ? "wide" : ""} key={field.name}>

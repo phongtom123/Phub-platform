@@ -1939,6 +1939,181 @@ tbody tr:last-child td {
 .edit-card > form {
   padding: 28px;
 }
+.image-editor {
+  margin-bottom: 28px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #fbfcfa;
+}
+.image-editor > header {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.image-editor > header span {
+  color: var(--darkgreen);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.image-editor > header h2 {
+  margin: 5px 0 4px;
+  font-size: 19px;
+}
+.image-editor > header p {
+  margin: 0;
+  color: #747d70;
+  font-size: 12px;
+}
+.image-remove {
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid #efd1d1;
+  border-radius: 8px;
+  background: #fff;
+  color: #b42318;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.image-remove svg {
+  width: 16px;
+}
+.image-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.75fr) minmax(340px, 1.4fr);
+  gap: 22px;
+}
+.image-preview {
+  min-height: 190px;
+  overflow: hidden;
+  border: 1px dashed #cbd0c8;
+  border-radius: 10px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+}
+.image-preview.has-image {
+  border-style: solid;
+}
+.image-preview > img {
+  width: 100%;
+  height: 100%;
+  min-height: 190px;
+  max-height: 240px;
+  object-fit: cover;
+}
+.image-preview > div {
+  padding: 24px;
+  color: #8a9186;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+.image-preview > div svg {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 10px;
+  color: #9aaa96;
+}
+.image-preview > div b {
+  color: #4f554d;
+  font-size: 14px;
+}
+.image-preview > div span {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.image-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+.image-controls label {
+  color: var(--ink);
+  display: block;
+  font-size: 13px;
+  font-weight: 750;
+}
+.image-controls p {
+  margin: 5px 0 12px;
+  color: #747d70;
+  font-size: 11px;
+}
+.image-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+.image-upload-button {
+  width: fit-content;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--darkgreen) !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.image-upload-button svg {
+  width: 17px;
+}
+.image-file-name {
+  margin-left: 10px;
+  color: #596057;
+  font-size: 11px;
+}
+.image-url-control > div {
+  position: relative;
+  margin-top: 7px;
+  display: flex;
+}
+.image-url-control > div > svg {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 17px;
+  color: #8a9186;
+}
+.image-url-control input {
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px 0 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px 0 0 8px;
+  background: #fff;
+  flex: 1;
+  font-size: 13px;
+}
+.image-url-control button {
+  min-width: 94px;
+  padding: 0 12px;
+  border: 1px solid var(--ink);
+  border-radius: 0 8px 8px 0;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.image-controls .image-error {
+  margin: -8px 0 0;
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 650;
+}
 .edit-form-grid {
   gap: 20px 16px;
 }
@@ -1976,6 +2151,22 @@ tbody tr:last-child td {
   }
   .edit-card > form {
     padding: 20px;
+  }
+  .image-editor {
+    padding: 18px;
+  }
+  .image-editor-layout {
+    grid-template-columns: 1fr;
+  }
+  .image-editor-layout {
+    display: grid;
+  }
+  .image-editor > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .image-remove {
+    width: fit-content;
   }
   .edit-order-status {
     padding: 20px;
