@@ -33,6 +33,8 @@
 .productCard > .price { min-height: 58px; }
 .productImage { display: flex; align-self: center; flex: 0 0 150px; align-items: center; justify-content: center; }
 .productImage img { object-fit: contain; }
+.productCard button.productImage, .productCard button.productName { padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; font-family: inherit; }
+.productCard button:focus-visible { outline: 2px solid var(--store-primary); outline-offset: 3px; }
 .productName { font-size: 13px; line-height: 21px; min-height: 65px; width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .productActions { margin-top: auto; width: 100%; padding-bottom: 20px; }
 .field { display: flex; flex-direction: column; width: 100%; font-size: 14px; }

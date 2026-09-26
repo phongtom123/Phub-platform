@@ -1,0 +1,6 @@
+.nav { background: #f5f7ff; padding: 20px 24px; color: #000; font-family: var(--font-poppins), Arial, sans-serif; }
+.nav ul { padding: 0; margin: 0; list-style: none; }
+.nav a { display: block; padding-block: 6px; color: inherit; font-size: 14px; line-height: 1.5; text-decoration: none; }
+.nav a[aria-current] { font-weight: 600; }
+.nav a:hover { color: #0156ff; }
+.nav a:focus-visible { outline: 2px solid #0156ff; outline-offset: 3px; }

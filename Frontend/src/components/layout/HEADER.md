@@ -25,8 +25,16 @@ Logo dùng `public/images/1.png` đã có trong dự án, giống logo của fil
 
 ## Phạm vi hiện tại
 
+### Mega menu mẫu
+
+Rê chuột hoặc bấm **Laptops** để xem 4 sản phẩm mẫu và 7 thương hiệu. Chọn **Everyday Use Notebooks → MSI Workstation Series → MSI WS Series** để xem menu 3 cột. Nút **Tất cả laptop** trở về bố cục 4 sản phẩm. Trên mobile, mở hamburger rồi chọn Laptops.
+
+`MegaMenu.tsx` tái sử dụng `ProductCard` và `BrandTile`; dữ liệu tách trong `megaMenuData.ts`. Bốn cấu hình/giá dùng cùng ảnh MSI Pro 16 hiện có, chỉ là minh họa. Logo thương hiệu được sao chép nguyên bản từ asset PHP. Bấm sản phẩm chỉ cập nhật mô tả trong menu, không điều hướng hoặc thêm vào giỏ.
+
+Figma MCP đang hết quota; bố cục demo dựa trên ảnh người dùng gửi, chưa đối chiếu pixel-perfect với frame gốc. Không thay đổi những danh mục header còn lại.
+
 Chỉ UI theo yêu cầu. Chưa có tìm kiếm AJAX, SQL, session, đăng nhập, đồng bộ giỏ hàng hoặc thanh toán. Không gọi API PHP.
 
-Danh mục, tài khoản và form tìm kiếm hiện thông báo UI demo thay vì đi đến các trang Next.js còn trống. Badge giỏ hàng là 0 và nút thanh toán bị vô hiệu hóa khi giỏ trống. Logo, số điện thoại, email và liên hệ footer là liên kết thật; mạng xã hội chỉ là icon vì chưa có URL.
+Ngoài mega menu Laptops, các danh mục còn lại, tài khoản và form tìm kiếm hiện thông báo UI demo thay vì đi đến các trang Next.js còn trống. Badge giỏ hàng là 0 và nút thanh toán bị vô hiệu hóa khi giỏ trống. Logo, số điện thoại, email và liên hệ footer là liên kết thật; mạng xã hội chỉ là icon vì chưa có URL.
 
 Khi triển khai nghiệp vụ, truyền dữ liệu user/cart, gắn các URL đã hoàn thiện và nối form tìm kiếm với API. Không đưa logic SQL hoặc thông tin kết nối database vào component trình duyệt.
