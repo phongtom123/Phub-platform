@@ -11,6 +11,7 @@ import {
   getSectionHref,
 } from "@/src/lib/admin-navigation";
 import { ImageEditor } from "@/src/features/forms/image-editor";
+import { WorkflowEditor } from "@/src/features/forms/workflow-editor";
 
 const fallbackFields: FormFieldDefinition[] = [
   { name: "code", label: "Mã bản ghi", placeholder: "Mã hệ thống", wide: true },
@@ -24,17 +25,55 @@ const fallbackFields: FormFieldDefinition[] = [
   },
 ];
 
-const orderSteps = ["Mới", "Xác nhận", "Chuẩn bị", "Xuất kho", "Hoàn thành"];
+type WorkflowConfig = {
+  eyebrow: string;
+  steps: string[];
+  instruction: string;
+};
 
-function getOrderStep(id: string) {
+const workflowConfigs: Partial<Record<string, WorkflowConfig>> = {
+  orders: {
+    eyebrow: "TRẠNG THÁI ĐƠN HÀNG",
+    steps: ["Mới", "Xác nhận", "Chuẩn bị", "Xuất kho", "Hoàn thành"],
+    instruction:
+      "Chọn giai đoạn hiện tại của đơn hàng, sau đó nhấn Lưu thay đổi.",
+  },
+  receipts: {
+    eyebrow: "TRẠNG THÁI PHIẾU NHẬP",
+    steps: ["Nháp", "Xác nhận nhập", "Cộng tồn kho"],
+    instruction:
+      "Xác nhận phiếu nhập sẽ ghi nhận hàng hóa và cộng tồn vào kho nhận.",
+  },
+  transfers: {
+    eyebrow: "TRẠNG THÁI CHUYỂN KHO",
+    steps: ["Nháp", "Đang chuyển · Trừ kho xuất", "Đã nhận · Cộng kho đích"],
+    instruction:
+      "Chọn đúng giai đoạn vận chuyển; tồn kho nguồn và kho đích thay đổi theo trạng thái.",
+  },
+};
+
+function getWorkflowStep(section: string, id: string) {
+  const moduleKey = getModuleForSection(section);
   const status = String(
-    modules.orders?.rows.find((order) => order.id === id)?.status ?? "Mới",
+    moduleKey
+      ? modules[moduleKey]?.rows.find((record) => record.id === id)?.status ?? ""
+      : "",
   ).toLowerCase();
 
-  if (status.includes("hoàn thành")) return 4;
-  if (status.includes("xuất kho")) return 3;
-  if (status.includes("chuẩn bị")) return 2;
-  if (status.includes("xác nhận")) return 1;
+  if (section === "orders") {
+    if (status.includes("hoàn thành")) return 4;
+    if (status.includes("xuất kho")) return 3;
+    if (status.includes("chuẩn bị")) return 2;
+    if (status.includes("xác nhận")) return 1;
+  }
+
+  if (section === "receipts" && status.includes("đã nhập")) return 2;
+
+  if (section === "transfers") {
+    if (status.includes("đã nhận")) return 2;
+    if (status.includes("đang chuyển")) return 1;
+  }
+
   return 0;
 }
 
@@ -47,7 +86,9 @@ export default function EditView({
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(false);
-  const [orderStep, setOrderStep] = useState(() => getOrderStep(id));
+  const [workflowStep, setWorkflowStep] = useState(() =>
+    getWorkflowStep(section, id),
+  );
   const moduleKey = getModuleForSection(section);
   const label = moduleKey ? moduleNames[moduleKey] : "Bản ghi";
   const fields = (moduleKey && formFields[moduleKey]) || fallbackFields;
@@ -58,6 +99,7 @@ export default function EditView({
   const initialImageUrl = String(
     currentRecord?.imageUrl ?? currentRecord?.image ?? "",
   );
+  const workflow = workflowConfigs[section];
 
   return (
     <div className="detail-page edit-page">
@@ -98,45 +140,17 @@ export default function EditView({
               Xem chi tiết
             </Link>
           </header>
-          {section === "orders" && (
-            <section className="edit-order-status">
-              <header>
-                <div>
-                  <span>TRẠNG THÁI ĐƠN HÀNG</span>
-                  <h2>Quy trình xử lý</h2>
-                </div>
-                <strong>{orderSteps[orderStep]}</strong>
-              </header>
-              <div className="edit-order-workflow">
-                {orderSteps.map((step, index) => (
-                  <div
-                    className={
-                      index === orderStep
-                        ? "current"
-                        : index < orderStep
-                          ? "completed"
-                          : ""
-                    }
-                    key={step}
-                  >
-                    <button
-                      type="button"
-                      aria-pressed={index === orderStep}
-                      onClick={() => {
-                        setOrderStep(index);
-                        setSaved(false);
-                      }}
-                    >
-                      <i>{index < orderStep ? <Check /> : index + 1}</i>
-                      <span>{step}</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <p>
-                Chọn giai đoạn hiện tại của đơn hàng, sau đó nhấn Lưu thay đổi.
-              </p>
-            </section>
+          {workflow && (
+            <WorkflowEditor
+              eyebrow={workflow.eyebrow}
+              steps={workflow.steps}
+              currentStep={workflowStep}
+              instruction={workflow.instruction}
+              onStepChange={(step) => {
+                setWorkflowStep(step);
+                setSaved(false);
+              }}
+            />
           )}
           <form
             onSubmit={(event) => {

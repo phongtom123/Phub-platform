@@ -336,7 +336,6 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     searchPlaceholder: "Tìm mã phiếu hoặc nhà cung cấp...",
     addLabel: "Lập phiếu nhập",
     filters: ["Kho nhập", "Trạng thái"],
-    workflow: ["NHÁP", "XÁC NHẬN NHẬP", "CỘNG TỒN KHO"],
     columns: [
       { key: "id", label: "MÃ PHIẾU", kind: "link" },
       { key: "supplier", label: "NHÀ CUNG CẤP", kind: "strong" },
@@ -383,7 +382,6 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     searchPlaceholder: "Tìm mã phiếu chuyển...",
     addLabel: "Lập phiếu chuyển",
     filters: ["Kho xuất", "Kho nhận", "Trạng thái"],
-    workflow: ["NHÁP", "ĐANG CHUYỂN · TRỪ KHO XUẤT", "ĐÃ NHẬN · CỘNG KHO ĐÍCH"],
     columns: [
       { key: "id", label: "MÃ PHIẾU", kind: "link" },
       { key: "from", label: "KHO XUẤT", kind: "strong" },

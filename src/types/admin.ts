@@ -41,7 +41,6 @@ export type ModuleDefinition = {
   columns: ColumnDefinition[];
   rows: DataRow[];
   stats?: StatDefinition[];
-  workflow?: string[];
   note?: string;
 };
 

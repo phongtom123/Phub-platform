@@ -215,20 +215,6 @@ export function DataTable({
   );
 }
 
-export function Workflow({ items }: { items: string[] }) {
-  return (
-    <div className="workflow">
-      {items.map((item, index) => (
-        <div key={item}>
-          <span>{index + 1}</span>
-          <b>{item}</b>
-          {index < items.length - 1 && <span aria-hidden>→</span>}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function SummaryStats({
   items,
 }: {

@@ -1841,56 +1841,56 @@ tbody tr:last-child td {
   font-weight: 700;
   white-space: nowrap;
 }
-.edit-order-status {
+.edit-workflow-card {
   padding: 24px 28px;
   border-bottom: 1px solid var(--border);
   background: #fbfcfa;
 }
-.edit-order-status > header {
+.edit-workflow-card > header {
   margin-bottom: 20px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
 }
-.edit-order-status > header span {
+.edit-workflow-card > header span {
   color: var(--darkgreen);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1px;
 }
-.edit-order-status > header h2 {
+.edit-workflow-card > header h2 {
   margin: 5px 0 0;
   font-size: 19px;
 }
-.edit-order-status > header strong {
+.edit-workflow-card > header strong {
   padding: 7px 11px;
   border-radius: 999px;
   background: #eaf7e7;
   color: var(--darkgreen);
   font-size: 13px;
 }
-.edit-order-workflow {
+.edit-workflow-steps {
   display: flex;
   align-items: center;
 }
-.edit-order-workflow > div {
+.edit-workflow-steps > div {
   position: relative;
   display: flex;
   align-items: center;
   flex: 1;
 }
-.edit-order-workflow > div:not(:last-child)::after {
+.edit-workflow-steps > div:not(:last-child)::after {
   content: "";
   height: 2px;
   margin: 0 10px;
   background: #dde1da;
   flex: 1;
 }
-.edit-order-workflow > div.completed:not(:last-child)::after {
+.edit-workflow-steps > div.completed:not(:last-child)::after {
   background: #8bd680;
 }
-.edit-order-workflow button {
+.edit-workflow-steps button {
   padding: 0;
   border: 0;
   background: transparent;
@@ -1902,7 +1902,7 @@ tbody tr:last-child td {
   font-weight: 750;
   white-space: nowrap;
 }
-.edit-order-workflow button i {
+.edit-workflow-steps button i {
   width: 30px;
   height: 30px;
   border: 1px solid #d6d9d3;
@@ -1913,25 +1913,25 @@ tbody tr:last-child td {
   font-size: 11px;
   font-style: normal;
 }
-.edit-order-workflow button i svg {
+.edit-workflow-steps button i svg {
   width: 14px;
 }
-.edit-order-workflow button:hover,
-.edit-order-workflow .current button,
-.edit-order-workflow .completed button {
+.edit-workflow-steps button:hover,
+.edit-workflow-steps .current button,
+.edit-workflow-steps .completed button {
   color: var(--darkgreen);
 }
-.edit-order-workflow .current button i {
+.edit-workflow-steps .current button i {
   border-color: var(--green);
   background: var(--green);
   color: #fff;
   box-shadow: 0 0 0 4px #e4f5e1;
 }
-.edit-order-workflow .completed button i {
+.edit-workflow-steps .completed button i {
   border-color: #8bd680;
   background: #eaf7e7;
 }
-.edit-order-status > p {
+.edit-workflow-card > p {
   margin: 16px 0 0;
   color: #747d70;
   font-size: 12px;
@@ -2168,18 +2168,18 @@ tbody tr:last-child td {
   .image-remove {
     width: fit-content;
   }
-  .edit-order-status {
+  .edit-workflow-card {
     padding: 20px;
   }
-  .edit-order-status > header {
+  .edit-workflow-card > header {
     align-items: flex-start;
     flex-direction: column;
   }
-  .edit-order-workflow {
+  .edit-workflow-steps {
     padding: 4px;
     overflow-x: auto;
   }
-  .edit-order-workflow > div {
+  .edit-workflow-steps > div {
     min-width: 150px;
   }
   .edit-card > form > footer {
@@ -2461,46 +2461,6 @@ td {
   background: #eaf7e7;
   color: var(--darkgreen);
 }
-.workflow {
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 10px;
-  padding: 13px 18px;
-  margin: -5px 0 18px;
-  display: flex;
-  align-items: center;
-}
-.workflow > div {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  gap: 8px;
-  color: #71736e;
-}
-.workflow > div:last-child {
-  flex: 0 0 auto;
-}
-.workflow span {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #eaf7e7;
-  color: var(--darkgreen);
-  display: grid;
-  place-items: center;
-  font-size: 10px;
-  font-weight: 800;
-}
-.workflow b {
-  font-size: 10px;
-  white-space: nowrap;
-}
-.workflow svg {
-  width: 16px;
-  margin-left: auto;
-  margin-right: 12px;
-  color: #a9aaa6;
-}
 .role-tag,
 .transaction-type {
   display: inline-flex;
@@ -2565,12 +2525,6 @@ td {
   outline-offset: 2px;
 }
 @media (max-width: 800px) {
-  .workflow {
-    overflow-x: auto;
-  }
-  .workflow > div {
-    min-width: 180px;
-  }
   .entity-tabs {
     overflow-x: auto;
   }
@@ -2579,12 +2533,6 @@ td {
   }
 }
 @media (max-width: 560px) {
-  .workflow {
-    padding: 12px;
-  }
-  .workflow > div {
-    min-width: 170px;
-  }
   .entity-tabs button {
     font-size: 11px;
   }
@@ -3688,12 +3636,6 @@ body {
 .entity-tabs button,
 .tabs button {
   font-size: 13px;
-}
-.workflow b {
-  font-size: 12px;
-}
-.workflow span {
-  font-size: 12px;
 }
 .inventory-stats article,
 .mini-stats p {

@@ -8,7 +8,6 @@ import {
   PrimaryButton,
   SummaryStats,
   Toolbar,
-  Workflow,
 } from "@/src/components/admin/ui";
 
 type Props = {
@@ -35,7 +34,6 @@ export function ModuleView({ definition, onCreate, onBack }: Props) {
         <ArrowLeft /> Quay lại trang trước
       </button>
       {definition.stats && <SummaryStats items={definition.stats} />}
-      {definition.workflow && <Workflow items={definition.workflow} />}
       <div className="module-toolbar-row">
         <Toolbar
           query={query}
