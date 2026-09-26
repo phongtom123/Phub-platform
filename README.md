@@ -1,164 +1,38 @@
-# PHUB Admin UI
+# PHUB Warehouse UI
 
-Giao diện quản trị cho nền tảng bán PC và linh kiện máy tính, được xây dựng bằng Next.js, React và TypeScript.
+Prototype giao diện nghiệp vụ thủ kho, được tổ chức theo cấu trúc của nhánh `adminUI`.
 
-Phiên bản hiện tại là **giao diện tĩnh**: dữ liệu đang được lấy từ các mảng dữ liệu mẫu trong source code, chưa kết nối API, cơ sở dữ liệu hoặc hệ thống đăng nhập thật.
+## Chạy trên máy
 
-## Chức năng giao diện
-
-- Đăng nhập quản trị viên.
-- Dashboard tổng quan hoạt động kinh doanh.
-- Quản lý đơn hàng, hóa đơn và thanh toán.
-- Quản lý khách hàng và tài khoản.
-- Quản lý sản phẩm, danh mục và tồn kho.
-- Quản lý phiếu nhập, chuyển kho và nhà cung cấp.
-- Quản lý chi nhánh, kho và nhân viên.
-- Quản lý chương trình khuyến mãi và voucher.
-- Trang xem chi tiết và chỉnh sửa riêng cho từng bản ghi.
-- Sidebar dạng thu gọn/mở rộng và các nhóm menu dạng dropdown.
-- Giao diện responsive cho máy tính và thiết bị di động.
-
-## Công nghệ sử dụng
-
-- [Next.js 15](https://nextjs.org/)
-- [React 19](https://react.dev/)
-- TypeScript
-- Lucide React Icons
-- CSS thuần
-
-## Yêu cầu môi trường
-
-Cài đặt các công cụ sau trước khi chạy dự án:
-
-- Node.js 20 trở lên.
-- npm 10 trở lên.
-- Git.
-
-Kiểm tra phiên bản đang sử dụng:
-
-```bash
-node --version
-npm --version
-git --version
-```
-
-## Cài đặt và chạy dự án
-
-### 1. Tải source code
-
-```bash
-git clone https://github.com/phongtom123/Phub-platform.git
-cd Phub-platform
-git checkout adminUI
-```
-
-Nếu đã có source code trên máy, chỉ cần mở terminal tại thư mục chứa `package.json`.
-
-### 2. Cài đặt thư viện
+Yêu cầu Node.js 20 trở lên và npm 10 trở lên.
 
 ```bash
 npm install
-```
-
-### 3. Chạy môi trường phát triển
-
-```bash
 npm run dev
 ```
 
-Mở trình duyệt tại:
+Mở `http://localhost:3000` để xem giao diện. Dự án Next.js không chạy bằng Live Server.
+
+## Cấu trúc
 
 ```text
-http://localhost:3000
+app/
+  [section]/[id]/edit/page.tsx  # Chỉnh sửa bản ghi
+  [section]/[id]/page.tsx       # Chi tiết bản ghi hoặc tạo phiếu
+  [section]/page.tsx            # Danh sách module
+  globals.css                   # Giao diện và responsive
+  layout.tsx                    # Root layout và metadata
+  page.tsx                      # Màn hình chính
+src/
+  components/warehouse/         # App, sidebar, header và UI dùng chung
+  data/warehouse-data.ts        # Module và dữ liệu mẫu
+  features/dashboard/           # Tổng quan kho
+  features/details/             # Chi tiết/chỉnh sửa bản ghi
+  features/forms/               # Tạo phiếu nhập, chuyển kho, kiểm kê
+  features/modules/             # Danh sách tồn kho và nghiệp vụ
+  types/warehouse.ts            # Kiểu dữ liệu dùng chung
 ```
 
-Khi chỉnh sửa source code, trình duyệt sẽ tự động cập nhật giao diện.
+Ngoài các nghiệp vụ kho, sidebar có trang **Tài khoản** (hồ sơ và phân công của thủ kho) và **Cài đặt** (kho mặc định, cảnh báo tồn và thông báo).
 
-## Build và chạy bản production cục bộ
-
-```bash
-npm run build
-npm run start
-```
-
-Sau đó truy cập `http://localhost:3000`.
-
-> Lưu ý: không cần deploy server để chạy và xem giao diện trên máy cá nhân.
-
-## Cấu trúc source code
-
-```text
-Phub-platform/
-├── app/
-│   ├── [section]/[id]/
-│   │   ├── edit/page.tsx       # Route chỉnh sửa một bản ghi
-│   │   └── page.tsx            # Route xem chi tiết một bản ghi
-│   ├── detail-view.tsx         # Giao diện trang chi tiết dùng chung
-│   ├── globals.css             # Toàn bộ style và responsive
-│   ├── layout.tsx              # Root layout và metadata của website
-│   └── page.tsx                # Trang gốc, khởi tạo AdminApp
-├── src/
-│   ├── components/admin/
-│   │   ├── admin-app.tsx       # Điều phối trạng thái và màn hình quản trị
-│   │   ├── header.tsx          # Header, thông báo và menu tài khoản
-│   │   ├── sidebar.tsx         # Logo, sidebar và menu điều hướng
-│   │   └── ui.tsx              # Các component UI dùng lại nhiều nơi
-│   ├── data/
-│   │   └── admin-data.ts       # Dữ liệu mẫu và cấu hình các module
-│   ├── features/
-│   │   ├── auth/               # Màn hình đăng nhập
-│   │   ├── dashboard/          # Dashboard tổng quan
-│   │   ├── details/            # Giao diện chỉnh sửa bản ghi
-│   │   ├── forms/              # Form thêm mới dữ liệu
-│   │   └── modules/            # Trang danh sách dùng chung cho các module
-│   └── types/
-│       └── admin.ts            # Kiểu dữ liệu TypeScript dùng chung
-├── .gitignore                  # Các file không đưa lên Git
-├── next-env.d.ts               # Khai báo kiểu dữ liệu của Next.js
-├── package.json                # Thư viện và lệnh npm
-├── package-lock.json           # Khóa phiên bản thư viện
-└── tsconfig.json               # Cấu hình TypeScript
-```
-
-## Cách hoạt động của giao diện
-
-`app/page.tsx` tải component `AdminApp`. Component này quản lý module đang được chọn và kết hợp `Header`, `Sidebar`, dashboard cùng các trang danh sách.
-
-Nội dung bảng, bộ lọc và dữ liệu mẫu của từng module được cấu hình tập trung trong `src/data/admin-data.ts`. `ModuleView` đọc cấu hình này để tạo giao diện danh sách thống nhất, tránh lặp lại source code cho từng chức năng.
-
-Các liên kết xem chi tiết sử dụng route động:
-
-```text
-/{section}/{id}
-```
-
-Các liên kết chỉnh sửa sử dụng route:
-
-```text
-/{section}/{id}/edit
-```
-
-Ví dụ:
-
-```text
-/orders/PH240901
-/orders/PH240901/edit
-```
-
-## Các lệnh thường dùng
-
-| Lệnh | Chức năng |
-| --- | --- |
-| `npm run dev` | Chạy website ở chế độ phát triển |
-| `npm run build` | Kiểm tra và tạo bản build production |
-| `npm run start` | Chạy bản production sau khi build |
-| `npm exec tsc -- --noEmit` | Kiểm tra lỗi TypeScript mà không tạo file |
-
-## Hướng phát triển tiếp theo
-
-- Kết nối API và cơ sở dữ liệu thật.
-- Thay dữ liệu mẫu bằng dữ liệu lấy từ server.
-- Bổ sung xác thực và phân quyền quản trị viên.
-- Thêm xử lý tạo, cập nhật, khóa và ẩn dữ liệu.
-- Thêm validation cho form và thông báo kết quả thao tác.
-- Viết kiểm thử cho component và các luồng quản trị chính.
+Các màn hình hiện dùng dữ liệu mẫu trong source, chưa kết nối API hoặc cơ sở dữ liệu.
