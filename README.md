@@ -1,6 +1,6 @@
 # PHUB Warehouse UI
 
-Prototype giao diện nghiệp vụ thủ kho, được tổ chức theo cấu trúc của nhánh `adminUI`.
+Prototype giao diện nghiệp vụ thủ kho
 
 ## Chạy trên máy
 
