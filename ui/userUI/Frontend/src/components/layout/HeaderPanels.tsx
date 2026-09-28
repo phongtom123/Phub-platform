@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/common/Button";
 import { guestAccountItems } from "./headerData";
 import styles from "./Header.module.css";
@@ -27,10 +28,10 @@ export function ShopInfo() {
   );
 }
 
-export function AccountMenu({ onSelect }: { onSelect: (label: string) => void }) {
+export function AccountMenu({ onNavigate }: { onNavigate: () => void }) {
   return (
     <nav aria-label="Tài khoản" className={styles.accountMenu}>
-      {guestAccountItems.map(label => <button key={label} type="button" onClick={() => onSelect(label)}>{label}</button>)}
+      {guestAccountItems.map(item => <Link key={item.href} href={item.href} onClick={onNavigate}>{item.label}</Link>)}
     </nav>
   );
 }

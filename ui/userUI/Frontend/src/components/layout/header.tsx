@@ -95,7 +95,7 @@ export default function Header() {
           <div className={styles.shopAnchor} onPointerEnter={event => hoverOpen("shop", event)} onPointerLeave={hoverClose}>
             <button type="button" className={styles.hoursButton} aria-expanded={panel === "shop"} aria-controls={id + "-shop"} onClick={event => toggle("shop", event.currentTarget)}>
               <span>T2-T5:</span> <strong>9:00 AM - 5:30 PM</strong>
-              <Image src="/icons/header/chevron.svg" alt="" width={16} height={14.7692} />
+              <Image src="/icons/header/chevron.svg" alt="" width={16} height={15} style={{ width: 16, height: 15 }} />
             </button>
             <div id={id + "-shop"} className={styles.shopPanel} {...dropdownProps("shop")}><ShopInfo /></div>
           </div>
@@ -110,7 +110,7 @@ export default function Header() {
       </div>
 
       <div className={styles.mainBar} onPointerLeave={event => { if (hoverRef.current === "mega") hoverClose(event); }}>
-        <Link href="/" className={styles.logo} aria-label="Tech Store — Trang chủ" onClick={() => close()}>
+        <Link href="/main/landing" className={styles.logo} aria-label="PHUB Store — Trang chủ" onClick={() => close()}>
           <Image src="/images/1.png" alt="" width={34} height={41} priority />
         </Link>
         <IconButton className={styles.mobileToggle} label={panel === "mobile" ? "Đóng danh mục" : "Mở danh mục"} aria-expanded={panel === "mobile"} aria-controls={id + "-mobile"} onClick={event => toggle("mobile", event.currentTarget)}>
@@ -118,11 +118,11 @@ export default function Header() {
         </IconButton>
 
         <nav aria-label="Danh mục sản phẩm" className={[styles.navigation, searchOpen && styles.navigationHidden].filter(Boolean).join(" ")}>
-          {headerCategories.map(item => <button key={item.id} type="button"
+          {headerCategories.map(item => <Link key={item.id} href={item.href}
             aria-expanded={item.id === "laptops" ? panel === "mega" : undefined}
             aria-controls={item.id === "laptops" ? id + "-mega" : undefined}
             onPointerEnter={event => { if (item.id === "laptops") hoverOpen("mega", event); }}
-            onClick={event => { if (item.id === "laptops") toggle("mega", event.currentTarget); else { triggerRef.current = event.currentTarget; showPreview(item.label); } }}>{item.label}</button>)}
+            onClick={() => close()}>{item.label}</Link>)}
         </nav>
 
         {searchOpen && <div id={id + "-search"} className={styles.searchSlot}>
@@ -149,15 +149,12 @@ export default function Header() {
             <IconButton className={styles.actionButton} label="Mở tài khoản" aria-expanded={panel === "account"} aria-controls={id + "-account"} onClick={event => toggle("account", event.currentTarget)}>
               <GuestAvatar />
             </IconButton>
-            <div className={styles.accountPanel} id={id + "-account"} {...dropdownProps("account")}><AccountMenu onSelect={showPreview} /></div>
+            <div className={styles.accountPanel} id={id + "-account"} {...dropdownProps("account")}><AccountMenu onNavigate={() => close()} /></div>
           </div>
         </div>
 
         <nav id={id + "-mobile"} className={styles.mobileMenu} aria-label="Danh mục trên điện thoại" data-open={panel === "mobile"} aria-hidden={panel !== "mobile"} inert={panel !== "mobile"}>
-          {headerCategories.map(item => <button key={item.id} type="button" onClick={() => {
-            if (item.id === "laptops") { hoverRef.current = null; setPanel("mega"); }
-            else showPreview(item.label);
-          }}>{item.label}</button>)}
+          {headerCategories.map(item => <Link key={item.id} href={item.href} onClick={() => close()}>{item.label}</Link>)}
         </nav>
         <div id={id + "-mega"} className={styles.megaPanel} {...dropdownProps("mega")}>
           <MegaMenu onClose={() => close(true)} />

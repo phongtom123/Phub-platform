@@ -34,7 +34,7 @@ Phub-platform/
 
 Nhánh `main` tại thời điểm tổng hợp chỉ chứa README và không có ứng dụng riêng, vì vậy không tạo thêm `ui/main`.
 
-Khi kiểm tra `userUI`, các route đăng nhập, đăng ký, landing, sản phẩm và hồ sơ là file `page.tsx` rỗng trong nhánh nguồn. Nhánh tổng hợp giữ các URL này bằng màn hình placeholder tối thiểu. Thư mục type sinh tự động cũ đã được loại bỏ; Next.js sẽ tạo lại route types trong `.next/types`.
+Nhánh `userUI` gốc có nhiều route rỗng. Trên nhánh tổng hợp, giao diện khách hàng đã được bổ sung trang đăng nhập, storefront, danh mục có bộ lọc theo nhóm và trang chi tiết sản phẩm tĩnh. Thư mục type sinh tự động cũ đã được loại bỏ; Next.js sẽ tạo lại route types trong `.next/types`.
 
 ## Yêu cầu môi trường
 
@@ -66,6 +66,10 @@ npm run dev
 ```
 
 Trang đăng nhập khách hàng: `http://localhost:3001/auth/login`.
+
+- Trang chủ mua sắm: `http://localhost:3001/main/landing`.
+- Danh mục sản phẩm: `http://localhost:3001/main/product`.
+- Chi tiết sản phẩm: `http://localhost:3001/main/product/{id}`.
 
 Hai ứng dụng sử dụng hai server và hai phiên đăng nhập độc lập. Có thể mở hai terminal rồi chạy đồng thời mà không xung đột cổng.
 
