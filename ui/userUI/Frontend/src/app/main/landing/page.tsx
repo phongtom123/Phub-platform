@@ -24,7 +24,7 @@ export default function LandingPage() {
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <span className={styles.eyebrow}>PHUB PERFORMANCE WEEK</span>
-          <h1>Cấu hình mạnh.<br />Giá đúng nhu cầu.</h1>
+          <h1>Cấu hình mạnh.<br />Giá đúng ngu cầu.</h1>
           <p>PC nguyên bộ và linh kiện chính hãng được tuyển chọn cho học tập, làm việc, sáng tạo và gaming.</p>
           <div className={styles.heroActions}>
             <Link href="/main/product" className={styles.primaryButton}>Mua sắm ngay <span>→</span></Link>

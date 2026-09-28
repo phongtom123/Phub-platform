@@ -1,0 +1,175 @@
+.button,
+.textButton,
+.iconButton,
+.paginationButton {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  transition: opacity 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.button {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 37px;
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.primary {
+  background: #0156ff;
+  color: #fff;
+}
+
+.outline {
+  background: #fff;
+  border: 2px solid #a2a6b0;
+  color: #a2a6b0;
+}
+
+.text,
+.textButton {
+  background: transparent;
+  color: #0156ff;
+}
+
+.textButton {
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.button:hover:not(:disabled),
+.textButton:hover:not(:disabled),
+.iconButton:hover:not(:disabled),
+.paginationButton:hover:not(:disabled) {
+  opacity: 0.78;
+}
+
+.button:disabled,
+.textButton:disabled,
+.iconButton:disabled,
+.paginationButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.iconButton {
+  align-items: center;
+  background: transparent;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.checkbox {
+  align-items: center;
+  color: #000;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  min-height: 24px;
+  position: relative;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+}
+
+.checkbox input {
+  height: 1px;
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.checkboxMark {
+  border: 1px solid #a2a6b0;
+  border-radius: 2px;
+  height: 16px;
+  margin-left: auto;
+  order: 3;
+  width: 16px;
+}
+
+.checkbox input:checked + .checkboxMark {
+  background: #0156ff;
+  border-color: #0156ff;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.checkboxCount {
+  color: #a2a6b0;
+  margin-left: auto;
+}
+
+.pagination {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.paginationItem {
+  align-items: center;
+  display: inline-flex;
+  gap: 12px;
+}
+
+.paginationButton {
+  align-items: center;
+  background: #fff;
+  border: 2px solid #a2a6b0;
+  border-radius: 50px;
+  color: #a2a6b0;
+  display: inline-flex;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 13px;
+  height: 38px;
+  justify-content: center;
+  min-width: 38px;
+  padding: 8px 16px;
+}
+
+.paginationButton:first-child,
+.paginationButton:last-child {
+  font-size: 18px;
+  padding: 8px 16px;
+}
+
+.currentPage {
+  background: #f5f7ff;
+  border-color: transparent;
+  color: #000;
+}
+
+.paginationEllipsis {
+  color: #a2a6b0;
+  font-size: 14px;
+}
+
+.brandTile {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  display: flex;
+  height: 76px;
+  justify-content: center;
+  padding: 12px;
+  width: 118px;
+}
+
+.brandImage {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.buttonLarge { min-height: 50px; padding-inline: 32px; }
+.outlinePrimary { color: #0156ff; background: #fff; border: 2px solid #0156ff; }
+.dark { color: #fff; background: #000; }
+.button:focus-visible, .textButton:focus-visible, .iconButton:focus-visible,
+.paginationButton:focus-visible { outline: 2px solid #0156ff; outline-offset: 3px; }
+.checkbox input:focus-visible + .checkboxMark { outline: 2px solid #0156ff; outline-offset: 3px; }
+.checkbox:has(input:disabled) { opacity: .45; cursor: not-allowed; }
+.pagination { flex-wrap: wrap; }

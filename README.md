@@ -2,12 +2,15 @@
 
 Repository tổng hợp giao diện từ các nhánh `adminUI`, `userUI` và `warehouseUI`.
 
+**Frontend khách hàng đang sử dụng: `Frontend/` ở ngoài `ui`.** Bản này giữ giao diện/dữ liệu hiện tại và bổ sung các trang còn thiếu từ commit `699ff4cdc5448ce05ec9ddb1512ba04dda68da9c`. Bản `ui/userUI/Frontend` được giữ nguyên để đối chiếu, không phải thư mục chạy bản đã gộp. Xem [ghi chú gộp](Frontend/MERGE-NOTES.md).
+
 Mỗi giao diện được giữ trong một thư mục riêng để tránh xung đột giữa các phiên bản Next.js, dependency và cấu trúc source code. Không chạy `npm install` tại thư mục root; hãy mở terminal tại đúng ứng dụng cần chạy.
 
 ## Cấu trúc tổng hợp
 
 ```text
 Phub-platform/
+├── Frontend/                    # Giao diện khách hàng đã gộp, bản chính
 ├── ui/
 │   ├── adminUI/                  # Giao diện quản trị viên
 │   │   ├── app/
@@ -60,18 +63,19 @@ Trang đăng nhập quản trị viên: `http://localhost:3000`.
 ## Chạy giao diện khách hàng
 
 ```bash
-cd ui/userUI/Frontend
+cd Frontend
 npm install
 npm run dev
 ```
 
-Trang đăng nhập khách hàng: `http://localhost:3001/auth/login`.
+Trang đăng nhập khách hàng (UI mẫu, chưa xác thực): `http://localhost:3000/auth/login`.
 
-- Trang chủ mua sắm: `http://localhost:3001/main/landing`.
-- Danh mục sản phẩm: `http://localhost:3001/main/product`.
-- Chi tiết sản phẩm: `http://localhost:3001/main/product/{id}`.
+- Trang chủ mua sắm: `http://localhost:3000/` (alias: `/main/landing`).
+- Danh mục sản phẩm: `http://localhost:3000/main/product`.
+- Catalog List View: `http://localhost:3000/main/product?view=list`.
+- Chi tiết sản phẩm: `http://localhost:3000/main/product/ps-001`.
 
-Hai ứng dụng sử dụng hai server và hai phiên đăng nhập độc lập. Có thể mở hai terminal rồi chạy đồng thời mà không xung đột cổng.
+Nếu chạy cùng admin ở cổng 3000, dùng `npm run dev -- -p 3001` trong `Frontend` để tránh trùng cổng. Không chạy thêm bản cũ `ui/userUI/Frontend` trên cùng cổng. Đăng nhập khách hàng hiện chỉ là thao tác chuyển trang demo, không tạo phiên xác thực.
 
 ## Chạy giao diện thủ kho
 
