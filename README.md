@@ -50,17 +50,19 @@ npm install
 npm run dev
 ```
 
-Truy cập `http://localhost:3000`.
+Trang đăng nhập quản trị viên: `http://localhost:3000`.
 
 ## Chạy giao diện khách hàng
 
 ```bash
 cd ui/userUI/Frontend
 npm install
-npm run dev -- -p 3001
+npm run dev
 ```
 
-Truy cập `http://localhost:3001`.
+Trang đăng nhập khách hàng: `http://localhost:3001/auth/login`.
+
+Hai ứng dụng sử dụng hai server và hai phiên đăng nhập độc lập. Có thể mở hai terminal rồi chạy đồng thời mà không xung đột cổng.
 
 ## Chạy giao diện thủ kho
 
