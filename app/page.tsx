@@ -1,5 +1,5 @@
-import AdminApp from "@/src/components/admin/admin-app";
+import WarehouseApp from "@/src/components/warehouse/warehouse-app";
 
 export default function HomePage() {
-  return <AdminApp />;
+  return <WarehouseApp />;
 }

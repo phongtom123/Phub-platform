@@ -1,10 +1,7 @@
-import EditView from "@/src/features/details/edit-view";
+import DetailView from "@/src/features/details/detail-view";
+import WarehouseFrame from "@/src/components/warehouse/warehouse-frame";
 
-export default async function EditRoute({
-  params,
-}: {
-  params: Promise<{ section: string; id: string }>;
-}) {
+export default async function EditRecordPage({ params }: { params: Promise<{ section: string; id: string }> }) {
   const { section, id } = await params;
-  return <EditView section={section} id={decodeURIComponent(id)} />;
+  return <WarehouseFrame><DetailView section={section} id={id} edit/></WarehouseFrame>;
 }

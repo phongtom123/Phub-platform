@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+
 export const metadata: Metadata = {
-  title: "PHUB Admin",
-  description: "Quản trị cửa hàng PC và linh kiện",
+  title: "PHUB · Kho vận",
+  description: "Giao diện nghiệp vụ dành cho nhân viên kho PHUB.",
 };
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="vi" suppressHydrationWarning>
-      <body>{children}</body>
-    </html>
-  );
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="vi"><body>{children}</body></html>;
 }
