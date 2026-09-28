@@ -1,0 +1,34 @@
+.form {
+  width: 100%;
+  max-width: 540px;
+  min-width: 0;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+}
+
+.controls button {
+  white-space: nowrap;
+}
+
+.status {
+  color: #ddd;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.status:empty {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}

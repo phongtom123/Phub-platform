@@ -1,164 +1,95 @@
-# PHUB Admin UI
+# PHUB Platform – Integrated UI
 
-Giao diện quản trị cho nền tảng bán PC và linh kiện máy tính, được xây dựng bằng Next.js, React và TypeScript.
+Repository tổng hợp giao diện từ các nhánh `adminUI`, `userUI` và `warehouseUI`.
 
-Phiên bản hiện tại là **giao diện tĩnh**: dữ liệu đang được lấy từ các mảng dữ liệu mẫu trong source code, chưa kết nối API, cơ sở dữ liệu hoặc hệ thống đăng nhập thật.
+Mỗi giao diện được giữ trong một thư mục riêng để tránh xung đột giữa các phiên bản Next.js, dependency và cấu trúc source code. Không chạy `npm install` tại thư mục root; hãy mở terminal tại đúng ứng dụng cần chạy.
 
-## Chức năng giao diện
-
-- Đăng nhập quản trị viên.
-- Dashboard tổng quan hoạt động kinh doanh.
-- Quản lý đơn hàng, hóa đơn và thanh toán.
-- Quản lý khách hàng và tài khoản.
-- Quản lý sản phẩm, danh mục và tồn kho.
-- Quản lý phiếu nhập, chuyển kho và nhà cung cấp.
-- Quản lý chi nhánh, kho và nhân viên.
-- Quản lý chương trình khuyến mãi và voucher.
-- Trang xem chi tiết và chỉnh sửa riêng cho từng bản ghi.
-- Sidebar dạng thu gọn/mở rộng và các nhóm menu dạng dropdown.
-- Giao diện responsive cho máy tính và thiết bị di động.
-
-## Công nghệ sử dụng
-
-- [Next.js 15](https://nextjs.org/)
-- [React 19](https://react.dev/)
-- TypeScript
-- Lucide React Icons
-- CSS thuần
-
-## Yêu cầu môi trường
-
-Cài đặt các công cụ sau trước khi chạy dự án:
-
-- Node.js 20 trở lên.
-- npm 10 trở lên.
-- Git.
-
-Kiểm tra phiên bản đang sử dụng:
-
-```bash
-node --version
-npm --version
-git --version
-```
-
-## Cài đặt và chạy dự án
-
-### 1. Tải source code
-
-```bash
-git clone https://github.com/phongtom123/Phub-platform.git
-cd Phub-platform
-git checkout adminUI
-```
-
-Nếu đã có source code trên máy, chỉ cần mở terminal tại thư mục chứa `package.json`.
-
-### 2. Cài đặt thư viện
-
-```bash
-npm install
-```
-
-### 3. Chạy môi trường phát triển
-
-```bash
-npm run dev
-```
-
-Mở trình duyệt tại:
-
-```text
-http://localhost:3000
-```
-
-Khi chỉnh sửa source code, trình duyệt sẽ tự động cập nhật giao diện.
-
-## Build và chạy bản production cục bộ
-
-```bash
-npm run build
-npm run start
-```
-
-Sau đó truy cập `http://localhost:3000`.
-
-> Lưu ý: không cần deploy server để chạy và xem giao diện trên máy cá nhân.
-
-## Cấu trúc source code
+## Cấu trúc tổng hợp
 
 ```text
 Phub-platform/
-├── app/
-│   ├── [section]/[id]/
-│   │   ├── edit/page.tsx       # Route chỉnh sửa một bản ghi
-│   │   └── page.tsx            # Route xem chi tiết một bản ghi
-│   ├── detail-view.tsx         # Giao diện trang chi tiết dùng chung
-│   ├── globals.css             # Toàn bộ style và responsive
-│   ├── layout.tsx              # Root layout và metadata của website
-│   └── page.tsx                # Trang gốc, khởi tạo AdminApp
-├── src/
-│   ├── components/admin/
-│   │   ├── admin-app.tsx       # Điều phối trạng thái và màn hình quản trị
-│   │   ├── header.tsx          # Header, thông báo và menu tài khoản
-│   │   ├── sidebar.tsx         # Logo, sidebar và menu điều hướng
-│   │   └── ui.tsx              # Các component UI dùng lại nhiều nơi
-│   ├── data/
-│   │   └── admin-data.ts       # Dữ liệu mẫu và cấu hình các module
-│   ├── features/
-│   │   ├── auth/               # Màn hình đăng nhập
-│   │   ├── dashboard/          # Dashboard tổng quan
-│   │   ├── details/            # Giao diện chỉnh sửa bản ghi
-│   │   ├── forms/              # Form thêm mới dữ liệu
-│   │   └── modules/            # Trang danh sách dùng chung cho các module
-│   └── types/
-│       └── admin.ts            # Kiểu dữ liệu TypeScript dùng chung
-├── .gitignore                  # Các file không đưa lên Git
-├── next-env.d.ts               # Khai báo kiểu dữ liệu của Next.js
-├── package.json                # Thư viện và lệnh npm
-├── package-lock.json           # Khóa phiên bản thư viện
-└── tsconfig.json               # Cấu hình TypeScript
+├── ui/
+│   ├── adminUI/                  # Giao diện quản trị viên
+│   │   ├── app/
+│   │   ├── src/
+│   │   └── package.json
+│   ├── userUI/                   # Nội dung nhánh userUI
+│   │   ├── Frontend/             # Giao diện khách hàng
+│   │   └── Backend/              # Backend mẫu đi kèm nhánh userUI
+│   └── warehouseUI/              # Giao diện thủ kho
+│       ├── app/
+│       ├── src/
+│       └── package.json
+├── .gitignore
+└── README.md
 ```
 
-## Cách hoạt động của giao diện
+## Nguồn mã đã tổng hợp
 
-`app/page.tsx` tải component `AdminApp`. Component này quản lý module đang được chọn và kết hợp `Header`, `Sidebar`, dashboard cùng các trang danh sách.
+| Thư mục | Nhánh nguồn | Commit nguồn |
+| --- | --- | --- |
+| `ui/adminUI` | `origin/adminUI` | `975a497` |
+| `ui/userUI` | `origin/userUI` | `add4fa4` |
+| `ui/warehouseUI` | `origin/warehouseUI` | `76273a4` |
 
-Nội dung bảng, bộ lọc và dữ liệu mẫu của từng module được cấu hình tập trung trong `src/data/admin-data.ts`. `ModuleView` đọc cấu hình này để tạo giao diện danh sách thống nhất, tránh lặp lại source code cho từng chức năng.
+Nhánh `main` tại thời điểm tổng hợp chỉ chứa README và không có ứng dụng riêng, vì vậy không tạo thêm `ui/main`.
 
-Các liên kết xem chi tiết sử dụng route động:
+Khi kiểm tra `userUI`, các route đăng nhập, đăng ký, landing, sản phẩm và hồ sơ là file `page.tsx` rỗng trong nhánh nguồn. Nhánh tổng hợp giữ các URL này bằng màn hình placeholder tối thiểu. Thư mục type sinh tự động cũ đã được loại bỏ; Next.js sẽ tạo lại route types trong `.next/types`.
 
-```text
-/{section}/{id}
+## Yêu cầu môi trường
+
+- Node.js 20 trở lên.
+- npm 10 trở lên.
+- Python 3.11 trở lên nếu chạy Backend mẫu của `userUI`.
+
+## Chạy giao diện quản trị viên
+
+```bash
+cd ui/adminUI
+npm install
+npm run dev
 ```
 
-Các liên kết chỉnh sửa sử dụng route:
+Truy cập `http://localhost:3000`.
 
-```text
-/{section}/{id}/edit
+## Chạy giao diện khách hàng
+
+```bash
+cd ui/userUI/Frontend
+npm install
+npm run dev -- -p 3001
 ```
 
-Ví dụ:
+Truy cập `http://localhost:3001`.
 
-```text
-/orders/PH240901
-/orders/PH240901/edit
+## Chạy giao diện thủ kho
+
+```bash
+cd ui/warehouseUI
+npm install
+npm run dev -- -p 3002
 ```
 
-## Các lệnh thường dùng
+Truy cập `http://localhost:3002`.
 
-| Lệnh | Chức năng |
-| --- | --- |
-| `npm run dev` | Chạy website ở chế độ phát triển |
-| `npm run build` | Kiểm tra và tạo bản build production |
-| `npm run start` | Chạy bản production sau khi build |
-| `npm exec tsc -- --noEmit` | Kiểm tra lỗi TypeScript mà không tạo file |
+## Chạy Backend mẫu của userUI
 
-## Hướng phát triển tiếp theo
+```bash
+cd ui/userUI/Backend
+python -m venv .venv
+```
 
-- Kết nối API và cơ sở dữ liệu thật.
-- Thay dữ liệu mẫu bằng dữ liệu lấy từ server.
-- Bổ sung xác thực và phân quyền quản trị viên.
-- Thêm xử lý tạo, cập nhật, khóa và ẩn dữ liệu.
-- Thêm validation cho form và thông báo kết quả thao tác.
-- Viết kiểm thử cho component và các luồng quản trị chính.
+Kích hoạt môi trường ảo trên PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload
+```
+
+## Nguyên tắc phát triển
+
+- Mỗi nhóm làm việc trong đúng thư mục UI của mình.
+- Không đưa `node_modules`, `.next`, file `.env` hoặc môi trường Python `.venv` lên Git.
+- Khi cần dùng chung API hoặc kiểu dữ liệu, nên tạo package dùng chung riêng thay vì import chéo trực tiếp giữa ba ứng dụng.
+- Các nhánh gốc vẫn được giữ nguyên; nhánh tổng hợp chỉ tổ chức lại source code theo thư mục.
