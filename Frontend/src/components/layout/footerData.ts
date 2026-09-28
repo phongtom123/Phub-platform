@@ -8,10 +8,10 @@ export const footerSections: { title: string; links: FooterLink[] }[] = [
   {
     title: "Thông Tin",
     links: [
-      { label: "Về Chúng Tôi" },
+      { label: "Về Chúng Tôi", href: "/about-us" },
       { label: "Chính Sách Bảo Mật" },
       { label: "Tìm Kiếm Sản Phẩm" },
-      { label: "Điều Khoản Dịch Vụ" },
+      { label: "Điều Khoản Dịch Vụ", href: "/faq" },
       { label: "Giao Hàng & Đổi Trả" },
       { label: "Liên Hệ", href: "#footer-contact" },
     ],

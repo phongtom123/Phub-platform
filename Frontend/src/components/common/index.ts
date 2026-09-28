@@ -1,5 +1,7 @@
 export { Accordion, type AccordionProps } from "./Accordion";
 export { BrandTile, type BrandTileProps } from "./BrandTile";
+export { PageHeading } from "./PageHeading";
+export { SectionNav, type SectionNavProps } from "./SectionNav";
 export { Breadcrumb, type BreadcrumbProps } from "./Breadcrumb";
 export { Button, TextButton, type ButtonProps, type TextButtonProps } from "./Button";
 export { Checkbox, type CheckboxProps } from "./Checkbox";
