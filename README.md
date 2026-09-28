@@ -52,6 +52,11 @@ npm run dev
 
 Trang đăng nhập quản trị viên: `http://localhost:3000`.
 
+Đây cũng là cổng đăng nhập chung cho nhân sự nội bộ. Giao diện sẽ điều hướng theo vai trò của tài khoản mẫu:
+
+- `admin.thinh / password123` → giao diện quản trị viên tại cổng `3000`.
+- `phong.kho / password123` → giao diện nhân viên kho tại cổng `3002`.
+
 ## Chạy giao diện khách hàng
 
 ```bash
@@ -69,7 +74,7 @@ Hai ứng dụng sử dụng hai server và hai phiên đăng nhập độc lậ
 ```bash
 cd ui/warehouseUI
 npm install
-npm run dev -- -p 3002
+npm run dev
 ```
 
 Truy cập `http://localhost:3002`.

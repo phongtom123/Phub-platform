@@ -10,6 +10,7 @@ import {
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
 import { LoginView } from "@/src/features/auth/login-view";
+import type { StaffRole } from "@/src/features/auth/login-view";
 import { DashboardView } from "@/src/features/dashboard/dashboard-view";
 import { ModuleView } from "@/src/features/modules/module-view";
 import { EntityDrawer } from "@/src/features/forms/entity-drawer";
@@ -20,6 +21,8 @@ type DrawerState = {
 } | null;
 
 const adminSessionKey = "phub-admin-authenticated";
+const warehouseUrl =
+  process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002";
 
 export default function AdminApp() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
@@ -40,7 +43,22 @@ export default function AdminApp() {
     return () => window.removeEventListener("popstate", syncModuleWithUrl);
   }, []);
 
-  const login = () => {
+  const login = ({
+    role,
+    username,
+  }: {
+    role: StaffRole;
+    username: string;
+  }) => {
+    if (role === "THU_KHO") {
+      window.sessionStorage.removeItem(adminSessionKey);
+      const destination = new URL(warehouseUrl);
+      destination.searchParams.set("access", "warehouse-demo");
+      destination.searchParams.set("staff", username);
+      window.location.assign(destination.toString());
+      return;
+    }
+
     window.sessionStorage.setItem(adminSessionKey, "true");
     setLoggedIn(true);
   };
