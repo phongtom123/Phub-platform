@@ -45,7 +45,7 @@
 .mobileToggle, .mobileMenu { display: none; }
 
 /* Persistent, inert panels allow both enter and exit transitions without JS timers. */
-.shopPanel, .accountPanel, .cartPanel, .mobileMenu, .megaPanel {
+.shopPanel, .accountPanel, .cartPanel, .mobileMenu {
   position: absolute;
   z-index: 50;
   color: #111827;
@@ -55,14 +55,13 @@
   transform: translateY(-6px);
   transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
 }
-.shopPanel[data-open=true], .accountPanel[data-open=true], .cartPanel[data-open=true], .mobileMenu[data-open=true], .megaPanel[data-open=true] {
+.shopPanel[data-open=true], .accountPanel[data-open=true], .cartPanel[data-open=true], .mobileMenu[data-open=true] {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
 }
 .shopPanel, .accountPanel, .cartPanel { top: calc(100% + 14px); background: #fff; border: 1px solid var(--header-border); border-radius: 4px; box-shadow: 0 12px 30px #0000002e; }
-.megaPanel { top: 100%; left: 50%; width: min(1398px, 100%); margin-left: calc(min(1398px, 100%) / -2); max-height: calc(100dvh - 150px); overflow-y: auto; overscroll-behavior: contain; background: #fff; border: 1px solid var(--header-border); box-shadow: 0 8px 16px #00000024; }
 /* Bridge the pointer gap between each trigger and its hover panel. */
 .shopPanel::after, .accountPanel::after, .cartPanel::after { content: ""; position: absolute; inset: -16px 0 auto; height: 16px; }
 .shopPanel::before, .accountPanel::before, .cartPanel::before { content: ""; position: absolute; top: -7px; width: 12px; height: 12px; transform: rotate(45deg); background: inherit; border-top: 1px solid var(--header-border); border-left: 1px solid var(--header-border); }

@@ -8,7 +8,7 @@ import styles from "./landing.module.css";
 
 export const metadata: Metadata = {
   title: "PHUB Store | PC và linh kiện chính hãng",
-  description: "Mua PC, laptop và linh kiện máy tính chính hãng tại PHUB Store.",
+  description: "Mua PC nguyên bộ và linh kiện máy tính chính hãng tại PHUB Store.",
 };
 
 const benefits = [
@@ -25,7 +25,7 @@ export default function LandingPage() {
         <div className={styles.heroCopy}>
           <span className={styles.eyebrow}>PHUB PERFORMANCE WEEK</span>
           <h1>Cấu hình mạnh.<br />Giá đúng nhu cầu.</h1>
-          <p>PC, laptop và linh kiện chính hãng được tuyển chọn cho học tập, làm việc, sáng tạo và gaming.</p>
+          <p>PC nguyên bộ và linh kiện chính hãng được tuyển chọn cho học tập, làm việc, sáng tạo và gaming.</p>
           <div className={styles.heroActions}>
             <Link href="/main/product" className={styles.primaryButton}>Mua sắm ngay <span>→</span></Link>
             <Link href="/main/product?category=pc" className={styles.secondaryButton}>Xem PC lắp sẵn</Link>
@@ -39,8 +39,8 @@ export default function LandingPage() {
         <div className={styles.heroVisual}>
           <div className={styles.heroHalo} />
           <span className={styles.saleFlag}>Ưu đãi đến 15%</span>
-          <Image src="/images/tech-store/msi-pro-16.png" alt="Laptop MSI Pro 16" fill sizes="(max-width: 900px) 88vw, 44vw" loading="eager" style={{ objectFit: "contain", padding: "65px 32px 82px" }} />
-          <div className={styles.heroProductInfo}><span>MSI PRO 16</span><strong>Từ 14.990.000đ</strong></div>
+          <Image src="/images/about/quality.webp" alt="PC gaming PHUB với hệ thống tản nhiệt RGB" fill sizes="(max-width: 900px) 88vw, 44vw" loading="eager" style={{ objectFit: "contain", padding: "60px 45px 80px" }} />
+          <div className={styles.heroProductInfo}><span>PHUB CREATOR RTX</span><strong>Từ 24.380.000đ</strong></div>
         </div>
       </section>
 

@@ -2,7 +2,7 @@
 export const aboutSections = [
   {
     id: "our-story", title: "A Family That Keeps On Growing", dark: true,
-    image: "showroom.webp", alt: "Computer showroom with laptops and accessories", width: 471, height: 489,
+    image: "showroom.webp", alt: "Computer showroom with PC components and accessories", width: 471, height: 489,
     paragraphs: [
       "We always aim to please the home market, supplying great computers and hardware at great prices to non-corporate customers, through our large Melbourne CBD showroom and our online store.",
       "Shop management approach fosters a strong customer service focus in our staff. We prefer to cultivate long-term client relationships rather than achieve quick sales, demonstrated in the measure of our long-term success.",

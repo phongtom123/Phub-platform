@@ -38,13 +38,13 @@ export const footerSections: { title: string; links: FooterLink[] }[] = [
     ],
   },
   {
-    title: "Laptop & Tablet",
+    title: "PC Hiệu Năng Cao",
     links: [
-      { label: "Laptop Văn Phòng" },
+      { label: "PC Gaming" },
       { label: "Máy Trạm (Workstation)" },
-      { label: "Laptop Gaming Cao Cấp" },
-      { label: "Laptop Doanh Nhân" },
-      { label: "Máy Tính Bảng (Tablets)" },
+      { label: "PC Đồ Họa" },
+      { label: "PC Văn Phòng" },
+      { label: "Bộ PC Theo Ngân Sách" },
     ],
   },
 ];

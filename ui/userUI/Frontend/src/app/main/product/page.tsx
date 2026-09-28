@@ -6,7 +6,7 @@ import styles from "./product.module.css";
 
 export const metadata: Metadata = {
   title: "Sản phẩm | PHUB Store",
-  description: "Danh mục PC, laptop và linh kiện máy tính tại PHUB Store.",
+  description: "Danh mục PC nguyên bộ và linh kiện máy tính tại PHUB Store.",
 };
 
 export default async function ProductPage({

@@ -23,7 +23,6 @@ export type StoreProduct = {
 };
 
 export const storeCategories: StoreCategory[] = [
-  { id: "laptop", name: "Laptop", description: "Học tập, văn phòng và gaming", visual: "LAPTOP", accent: "#2563eb" },
   { id: "pc", name: "PC nguyên bộ", description: "Cấu hình tối ưu, lắp ráp sẵn", visual: "PC", accent: "#111827" },
   { id: "component", name: "Linh kiện PC", description: "CPU, VGA, RAM, mainboard", visual: "VGA", accent: "#7c3aed" },
   { id: "monitor", name: "Màn hình", description: "Gaming, đồ họa và văn phòng", visual: "240HZ", accent: "#0891b2" },
@@ -48,15 +47,15 @@ export const storeProducts: StoreProduct[] = [
     accent: "#2563eb",
   },
   {
-    id: "msi-modern-15",
-    name: "Laptop MSI Modern 15 B13M i5 / 16GB / SSD 512GB",
+    id: "msi-mag-b760m-mortar",
+    name: "Mainboard MSI MAG B760M MORTAR WIFI II DDR5",
     brand: "MSI",
-    category: "Laptop",
-    categoryId: "laptop",
-    visual: "MSI",
-    visualDetail: "MODERN 15",
-    price: 14990000,
-    originalPrice: 16990000,
+    category: "Mainboard",
+    categoryId: "component",
+    visual: "B760",
+    visualDetail: "MORTAR WIFI",
+    price: 5290000,
+    originalPrice: 5790000,
     rating: 4.9,
     reviews: 52,
     badge: "-12%",
