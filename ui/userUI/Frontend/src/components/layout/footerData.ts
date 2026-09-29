@@ -8,12 +8,12 @@ export const footerSections: { title: string; links: FooterLink[] }[] = [
   {
     title: "Thông Tin",
     links: [
-      { label: "Về Chúng Tôi" },
+      { label: "Về Chúng Tôi", href: "/about-us" },
       { label: "Chính Sách Bảo Mật" },
       { label: "Tìm Kiếm Sản Phẩm" },
-      { label: "Điều Khoản Dịch Vụ" },
+      { label: "Điều Khoản Dịch Vụ", href: "/faq" },
       { label: "Giao Hàng & Đổi Trả" },
-      { label: "Liên Hệ", href: "#footer-contact" },
+      { label: "Liên Hệ", href: "/contact-us" },
     ],
   },
   {
@@ -38,13 +38,13 @@ export const footerSections: { title: string; links: FooterLink[] }[] = [
     ],
   },
   {
-    title: "PC Hiệu Năng Cao",
+    title: "Laptop & Tablet",
     links: [
-      { label: "PC Gaming" },
+      { label: "Laptop Văn Phòng" },
       { label: "Máy Trạm (Workstation)" },
-      { label: "PC Đồ Họa" },
-      { label: "PC Văn Phòng" },
-      { label: "Bộ PC Theo Ngân Sách" },
+      { label: "Laptop Gaming Cao Cấp" },
+      { label: "Laptop Doanh Nhân" },
+      { label: "Máy Tính Bảng (Tablets)" },
     ],
   },
 ];

@@ -1,5 +1,7 @@
 export { Accordion, type AccordionProps } from "./Accordion";
 export { BrandTile, type BrandTileProps } from "./BrandTile";
+export { PageHeading } from "./PageHeading";
+export { SectionNav, type SectionNavProps } from "./SectionNav";
 export { Breadcrumb, type BreadcrumbProps } from "./Breadcrumb";
 export { Button, TextButton, type ButtonProps, type TextButtonProps } from "./Button";
 export { Checkbox, type CheckboxProps } from "./Checkbox";
@@ -9,6 +11,7 @@ export { IconButton, Chevron, type IconButtonProps } from "./icon";
 export { Pagination, type PaginationProps } from "./Pagination";
 export { Price, type PriceProps } from "./Price";
 export { ProductCard, type ProductCardProps } from "./ProductCard";
+export { ProductListCard, type ProductListCardProps } from "./ProductListCard";
 export { QuantityInput, type QuantityInputProps } from "./QuantityInput";
 export { Radio, type RadioProps } from "./Radio";
 export { Rating, type RatingProps } from "./Rating";

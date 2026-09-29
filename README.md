@@ -2,7 +2,7 @@
 
 Repository tổng hợp giao diện từ các nhánh `adminUI`, `userUI` và `warehouseUI`.
 
-**Frontend khách hàng đang sử dụng: `Frontend/` ở ngoài `ui`.** Bản này giữ giao diện/dữ liệu hiện tại và bổ sung các trang còn thiếu từ commit `699ff4cdc5448ce05ec9ddb1512ba04dda68da9c`. Bản `ui/userUI/Frontend` được giữ nguyên để đối chiếu, không phải thư mục chạy bản đã gộp. Xem [ghi chú gộp](Frontend/MERGE-NOTES.md).
+**Frontend khách hàng đang sử dụng: `ui/userUI/Frontend/`.** Bản chính trước đây ở ngoài `ui` đã được chuyển vào đây, giữ nguyên giao diện, dữ liệu và các trang đã bổ sung. Xem [ghi chú gộp](ui/userUI/Frontend/MERGE-NOTES.md).
 
 Mỗi giao diện được giữ trong một thư mục riêng để tránh xung đột giữa các phiên bản Next.js, dependency và cấu trúc source code. Không chạy `npm install` tại thư mục root; hãy mở terminal tại đúng ứng dụng cần chạy.
 
@@ -10,14 +10,13 @@ Mỗi giao diện được giữ trong một thư mục riêng để tránh xung
 
 ```text
 Phub-platform/
-├── Frontend/                    # Giao diện khách hàng đã gộp, bản chính
 ├── ui/
 │   ├── adminUI/                  # Giao diện quản trị viên
 │   │   ├── app/
 │   │   ├── src/
 │   │   └── package.json
 │   ├── userUI/                   # Nội dung nhánh userUI
-│   │   ├── Frontend/             # Giao diện khách hàng
+│   │   ├── Frontend/             # Giao diện khách hàng đã gộp, bản chính
 │   │   └── Backend/              # Backend mẫu đi kèm nhánh userUI
 │   └── warehouseUI/              # Giao diện thủ kho
 │       ├── app/
@@ -63,7 +62,7 @@ Trang đăng nhập quản trị viên: `http://localhost:3000`.
 ## Chạy giao diện khách hàng
 
 ```bash
-cd Frontend
+cd ui/userUI/Frontend
 npm install
 npm run dev
 ```
@@ -75,7 +74,7 @@ Trang đăng nhập khách hàng (UI mẫu, chưa xác thực): `http://localhos
 - Catalog List View: `http://localhost:3000/main/product?view=list`.
 - Chi tiết sản phẩm: `http://localhost:3000/main/product/ps-001`.
 
-Nếu chạy cùng admin ở cổng 3000, dùng `npm run dev -- -p 3001` trong `Frontend` để tránh trùng cổng. Không chạy thêm bản cũ `ui/userUI/Frontend` trên cùng cổng. Đăng nhập khách hàng hiện chỉ là thao tác chuyển trang demo, không tạo phiên xác thực.
+Nếu chạy cùng admin ở cổng 3000, dùng `npm run dev -- -p 3001` trong `ui/userUI/Frontend` để tránh trùng cổng. Đăng nhập khách hàng hiện chỉ là thao tác chuyển trang demo, không tạo phiên xác thực.
 
 ## Chạy giao diện thủ kho
 

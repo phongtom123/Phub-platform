@@ -79,9 +79,9 @@ export function ProductExample() {
     <>
       <QuantityInput value={quantity} onValueChange={setQuantity} max={5} />
       <ProductCard
-        name="PC PHUB Creator RTX"
+        name="MSI Pro 16 Flex"
         href="/main/product"
-        imageSrc="/images/about/quality.webp"
+        imageSrc="/images/tech-store/msi-pro-16.png"
         amount={499}
         originalAmount={599}
         rating={4}

@@ -7,9 +7,10 @@ import { IconButton } from "@/components/common/icon";
 import { SearchInput } from "@/components/common/SearchInput";
 import { AccountMenu, CartPreview, GuestAvatar, ShopInfo } from "./HeaderPanels";
 import { headerCategories } from "./headerData";
+import { MegaMenu } from "./MegaMenu";
 import styles from "./Header.module.css";
 
-type Dropdown = "shop" | "account" | "cart";
+type Dropdown = "shop" | "account" | "cart" | "mega";
 type Panel = Dropdown | "mobile" | "notice" | null;
 
 export default function Header() {
@@ -94,7 +95,7 @@ export default function Header() {
           <div className={styles.shopAnchor} onPointerEnter={event => hoverOpen("shop", event)} onPointerLeave={hoverClose}>
             <button type="button" className={styles.hoursButton} aria-expanded={panel === "shop"} aria-controls={id + "-shop"} onClick={event => toggle("shop", event.currentTarget)}>
               <span>T2-T5:</span> <strong>9:00 AM - 5:30 PM</strong>
-              <Image src="/icons/header/chevron.svg" alt="" width={16} height={15} style={{ width: 16, height: 15 }} />
+              <Image src="/icons/header/chevron.svg" alt="" width={16} height={14.7692} />
             </button>
             <div id={id + "-shop"} className={styles.shopPanel} {...dropdownProps("shop")}><ShopInfo /></div>
           </div>
@@ -108,8 +109,8 @@ export default function Header() {
         </div>
       </div>
 
-      <div className={styles.mainBar}>
-        <Link href="/main/landing" className={styles.logo} aria-label="PHUB Store — Trang chủ" onClick={() => close()}>
+      <div className={styles.mainBar} onPointerLeave={event => { if (hoverRef.current === "mega") hoverClose(event); }}>
+        <Link href="/" className={styles.logo} aria-label="Tech Store — Trang chủ" onClick={() => close()}>
           <Image src="/images/1.png" alt="" width={34} height={41} priority />
         </Link>
         <IconButton className={styles.mobileToggle} label={panel === "mobile" ? "Đóng danh mục" : "Mở danh mục"} aria-expanded={panel === "mobile"} aria-controls={id + "-mobile"} onClick={event => toggle("mobile", event.currentTarget)}>
@@ -117,7 +118,11 @@ export default function Header() {
         </IconButton>
 
         <nav aria-label="Danh mục sản phẩm" className={[styles.navigation, searchOpen && styles.navigationHidden].filter(Boolean).join(" ")}>
-          {headerCategories.map(item => <Link key={item.id} href={item.href} onClick={() => close()}>{item.label}</Link>)}
+          {headerCategories.map(item => <button key={item.id} type="button"
+            aria-expanded={item.id === "laptops" ? panel === "mega" : undefined}
+            aria-controls={item.id === "laptops" ? id + "-mega" : undefined}
+            onPointerEnter={event => { if (item.id === "laptops") hoverOpen("mega", event); }}
+            onClick={event => { if (item.id === "laptops") toggle("mega", event.currentTarget); else { triggerRef.current = event.currentTarget; showPreview(item.label); } }}>{item.label}</button>)}
         </nav>
 
         {searchOpen && <div id={id + "-search"} className={styles.searchSlot}>
@@ -138,7 +143,7 @@ export default function Header() {
               <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />
               <span className={styles.cartBadge} aria-hidden="true">0</span>
             </IconButton>
-            <div className={styles.cartPanel} id={id + "-cart"} {...dropdownProps("cart")}><CartPreview onSelect={showPreview} /></div>
+            <div className={styles.cartPanel} id={id + "-cart"} {...dropdownProps("cart")}><CartPreview /></div>
           </div>
           <div className={styles.actionAnchor} onPointerEnter={event => hoverOpen("account", event)} onPointerLeave={hoverClose}>
             <IconButton className={styles.actionButton} label="Mở tài khoản" aria-expanded={panel === "account"} aria-controls={id + "-account"} onClick={event => toggle("account", event.currentTarget)}>
@@ -149,8 +154,14 @@ export default function Header() {
         </div>
 
         <nav id={id + "-mobile"} className={styles.mobileMenu} aria-label="Danh mục trên điện thoại" data-open={panel === "mobile"} aria-hidden={panel !== "mobile"} inert={panel !== "mobile"}>
-          {headerCategories.map(item => <Link key={item.id} href={item.href} onClick={() => close()}>{item.label}</Link>)}
+          {headerCategories.map(item => <button key={item.id} type="button" onClick={() => {
+            if (item.id === "laptops") { hoverRef.current = null; setPanel("mega"); }
+            else showPreview(item.label);
+          }}>{item.label}</button>)}
         </nav>
+        <div id={id + "-mega"} className={styles.megaPanel} {...dropdownProps("mega")}>
+          <MegaMenu onClose={() => close(true)} />
+        </div>
         {panel === "notice" && <div className={styles.notice}>
           <p role="status">{notice}</p><IconButton label="Đóng thông báo" onClick={() => close(true)}><span aria-hidden="true">×</span></IconButton>
         </div>}

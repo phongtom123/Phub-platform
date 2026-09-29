@@ -40,8 +40,8 @@ export function ComponentPreview() {
 
       <section id="products"><h2>Product card, price, rating & stock</h2>
         <div className={styles.row}>
-          <ProductCard name="PC PHUB Creator RTX — cấu hình đồ họa và gaming" href="#specs" imageSrc="/images/about/quality.webp" amount={24380000} originalAmount={25990000} currency="VND" locale="vi-VN" rating={4} reviewCount={4} />
-          <ProductCard name="PC PHUB Starter — reusable card with actions" href="#specs" imageSrc="/images/about/quality.webp" amount={10490000} originalAmount={11990000} currency="VND" locale="vi-VN" rating={4.5} reviewCount={12} stock="in-stock" actions={<Button variant="outlinePrimary" onClick={() => setMessage(`Đã thêm ${quantity} sản phẩm vào giỏ hàng mẫu.`)}>Add to Cart</Button>} />
+          <ProductCard name="EX DISPLAY : MSI Pro 16 Flex-036AU 15.6 MULTITOUCH All-In-On..." href="#specs" imageSrc="/images/tech-store/msi-pro-16.png" amount={499} originalAmount={499} rating={4} reviewCount={4} />
+          <ProductCard name="MSI Pro 16 Flex — reusable card with actions" href="#specs" imageSrc="/images/tech-store/msi-pro-16.png" amount={499} originalAmount={599} rating={4.5} reviewCount={12} stock="in-stock" actions={<Button variant="outlinePrimary" onClick={() => setMessage(`Đã thêm ${quantity} sản phẩm vào giỏ hàng mẫu.`)}>Add to Cart</Button>} />
           <div className={styles.stack}>
             <StockStatus status="in-stock" /><StockStatus status="check-availability" />
             <Rating value={3.5} reviewCount={8} />

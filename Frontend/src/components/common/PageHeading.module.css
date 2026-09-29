@@ -1,3 +1,0 @@
-.heading { width: min(1398px, calc(100% - 48px)); margin-inline: auto; padding-block: 24px 28px; color: #000; font-family: var(--font-poppins), Arial, sans-serif; }
-.heading h1 { margin: 20px 0 0; font-size: 32px; font-weight: 600; line-height: 1.5; }
-@media (max-width: 600px) { .heading { width: calc(100% - 32px); padding-block: 20px; } .heading h1 { font-size: 26px; margin-top: 14px; } }

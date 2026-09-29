@@ -1,4 +1,12 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PHUB Customer Frontend
+
+Đây là bản Frontend chính tại `ui/userUI/Frontend`, được chuyển từ thư mục `Frontend` ngoài `ui`, giữ nguyên Home, Catalog Grid/List, About Us, FAQ, Dashboard và dữ liệu mẫu hiện tại.
+
+Đã bổ sung đăng nhập mẫu, trang đăng ký tạm và route chi tiết sản phẩm từ commit `699ff4c`. `/main/landing` hiển thị cùng Home với `/`. Chi tiết đầy đủ về cách gộp và giới hạn nằm trong [MERGE-NOTES.md](MERGE-NOTES.md).
+
+Chạy từ thư mục này bằng `npm run dev` → `http://localhost:3000`. Nếu admin đang dùng cổng 3000, chạy `npm run dev -- -p 3001` (và dừng bản UI khách hàng cũ trên cổng đó nếu cần).
+
+Các route chính: `/`, `/main/product`, `/main/product?view=list`, `/main/product/ps-001`, `/auth/login`, `/auth/register`, `/main/profile`, `/about-us`, `/faq`.
 
 ## Getting Started
 

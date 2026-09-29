@@ -12,6 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "types/**", // Stale generated Next.js files; current types live under .next.
   ]),
 ]);
 

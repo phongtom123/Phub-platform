@@ -1,5 +1,9 @@
 # Frontend merge — 699ff4c
 
+## Vị trí hiện tại (2026-09-29)
+
+Bản chính đã được chuyển từ `Frontend/` vào `ui/userUI/Frontend/`, gồm source, assets, cấu hình, `.env` và dependencies. Bản cũ tại đích được giữ nguyên trong `C:\Users\acebi\Documents\GitHub\Phub-userUI-Frontend-backup-20260929`. Các ghi chú gộp bên dưới mô tả thời điểm trước khi di chuyển.
+
 ## Quyết định gộp
 
 Theo lựa chọn của người dùng: **giữ nguyên giao diện và dữ liệu của `Frontend/` ngoài `ui`; chỉ bổ sung trang/chức năng còn thiếu từ commit `699ff4cdc5448ce05ec9ddb1512ba04dda68da9c`.** Không thực hiện `git merge`, checkout/reset hoặc commit tự động.
@@ -40,7 +44,7 @@ Không sao chép `.env` vào bản sao này. Bản sao ở thư mục tạm ch�
 ## Chạy
 
 ```powershell
-cd Frontend
+cd ui/userUI/Frontend
 npm run dev
 ```
 

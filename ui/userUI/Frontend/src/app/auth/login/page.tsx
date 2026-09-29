@@ -37,7 +37,7 @@ export default function LoginPage() {
           </span>
           <h2 className="mt-2 text-2xl font-semibold text-zinc-950">Đăng nhập</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-500">
-            Nhập thông tin tài khoản để truy cập PHUB Store.
+            Giao diện đăng nhập mẫu. Tiếp tục chỉ mở trang Home, chưa xác thực tài khoản hoặc tạo phiên đăng nhập.
           </p>
         </div>
 

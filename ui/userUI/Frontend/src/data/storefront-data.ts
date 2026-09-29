@@ -157,10 +157,10 @@ export const brandLogos = [
   { name: "Thermaltake", src: "/images/brands/thermaltake.png" },
 ];
 
-export function formatCurrency(value: number) {
-  return new Intl.NumberFormat("vi-VN", {
+export function formatCurrency(value: number, currency = "VND") {
+  return new Intl.NumberFormat(currency === "VND" ? "vi-VN" : "en-US", {
     style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
+    currency,
+    maximumFractionDigits: currency === "VND" ? 0 : 2,
   }).format(value);
 }

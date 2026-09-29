@@ -29,9 +29,9 @@
 .logo { display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 44px; min-height: 42px; }
 .logo img { height: 42px; width: auto; }
 .navigation { display: flex; flex: 1; align-items: center; justify-content: center; gap: 28px; }
-.navigation > a { min-height: 44px; display: inline-flex; align-items: center; border: 0; padding: 0; background: transparent; color: #333; font-size: 14px; font-weight: 600; white-space: nowrap; transition: color 150ms ease; }
-.navigation > a:hover { color: var(--header-blue); }
-.navigation > a[aria-expanded=true] { padding-inline: 16px; border-radius: 24px; background: var(--header-blue); color: #fff; }
+.navigation > button { min-height: 44px; border: 0; padding: 0; background: transparent; color: #333; font-size: 14px; font-weight: 600; white-space: nowrap; transition: color 150ms ease; }
+.navigation > button:hover { color: var(--header-blue); }
+.navigation > button[aria-expanded=true] { padding-inline: 16px; border-radius: 24px; background: var(--header-blue); color: #fff; }
 .navigationHidden { display: none; }
 .actions { display: flex; align-items: center; gap: 20px; margin-left: auto; }
 .actions > button, .actions .actionButton { position: relative; width: 40px; height: 44px; flex-shrink: 0; border-radius: 50%; transition: background-color 150ms ease; }
@@ -45,7 +45,7 @@
 .mobileToggle, .mobileMenu { display: none; }
 
 /* Persistent, inert panels allow both enter and exit transitions without JS timers. */
-.shopPanel, .accountPanel, .cartPanel, .mobileMenu {
+.shopPanel, .accountPanel, .cartPanel, .mobileMenu, .megaPanel {
   position: absolute;
   z-index: 50;
   color: #111827;
@@ -55,13 +55,14 @@
   transform: translateY(-6px);
   transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
 }
-.shopPanel[data-open=true], .accountPanel[data-open=true], .cartPanel[data-open=true], .mobileMenu[data-open=true] {
+.shopPanel[data-open=true], .accountPanel[data-open=true], .cartPanel[data-open=true], .mobileMenu[data-open=true], .megaPanel[data-open=true] {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
 }
 .shopPanel, .accountPanel, .cartPanel { top: calc(100% + 14px); background: #fff; border: 1px solid var(--header-border); border-radius: 4px; box-shadow: 0 12px 30px #0000002e; }
+.megaPanel { top: 100%; left: 50%; width: min(1398px, 100%); margin-left: calc(min(1398px, 100%) / -2); max-height: calc(100dvh - 150px); overflow-y: auto; overscroll-behavior: contain; background: #fff; border: 1px solid var(--header-border); box-shadow: 0 8px 16px #00000024; }
 /* Bridge the pointer gap between each trigger and its hover panel. */
 .shopPanel::after, .accountPanel::after, .cartPanel::after { content: ""; position: absolute; inset: -16px 0 auto; height: 16px; }
 .shopPanel::before, .accountPanel::before, .cartPanel::before { content: ""; position: absolute; top: -7px; width: 12px; height: 12px; transform: rotate(45deg); background: inherit; border-top: 1px solid var(--header-border); border-left: 1px solid var(--header-border); }
@@ -77,8 +78,8 @@
 .accountPanel { right: 0; width: 240px; max-width: calc(100vw - 24px); }
 .accountPanel::before { right: 12px; }
 .accountMenu { padding-block: 6px; }
-.accountMenu a { display: block; width: 100%; padding: 12px 16px; text-align: left; color: #111; font-size: 14px; font-weight: 600; transition: background-color 150ms ease; }
-.accountMenu a:hover { background: #f3f4f6; }
+.accountMenu button, .accountMenu a { display: block; width: 100%; border: 0; padding: 12px 16px; text-align: left; background: transparent; color: #111; font-size: 14px; font-weight: 600; transition: background-color 150ms ease; }
+.accountMenu button:hover, .accountMenu a:hover { background: #f3f4f6; }
 .cartPanel { right: -10px; width: 320px; max-width: calc(100vw - 24px); border-radius: 8px; }
 .cartPanel::before { right: 22px; }
 .cartHead { padding: 16px 16px 10px; text-align: center; }
@@ -119,8 +120,8 @@
   .mobileToggle[aria-expanded=true] .hamburger span:last-child { transform: translateY(-7px) rotate(-45deg); }
   .searchSlot { order: 3; flex-basis: 100%; max-width: none; }
   .mobileMenu { display: flex; flex-direction: column; top: 100%; left: 0; width: min(360px, 100%); max-height: min(70vh, 600px); overflow-y: auto; padding: 8px; background: #fff; border: 1px solid var(--header-border); border-radius: 4px; box-shadow: 0 12px 30px #0000002e; }
-  .mobileMenu a { width: 100%; min-height: 44px; padding: 12px; text-align: left; font-size: 14px; font-weight: 600; background: transparent; border: 0; color: #333; }
-  .mobileMenu a:hover { color: var(--header-blue); background: #f3f6ff; }
+  .mobileMenu button { width: 100%; min-height: 44px; padding: 12px; text-align: left; font-size: 14px; font-weight: 600; background: transparent; border: 0; color: #333; }
+  .mobileMenu button:hover { color: var(--header-blue); background: #f3f6ff; }
 }
 @media (max-width: 600px) {
   .topInner, .mainBar { width: calc(100% - 24px); }

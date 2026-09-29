@@ -31,7 +31,7 @@ export function ShopInfo() {
 export function AccountMenu({ onNavigate }: { onNavigate: () => void }) {
   return (
     <nav aria-label="Tài khoản" className={styles.accountMenu}>
-      {guestAccountItems.map(item => <Link key={item.href} href={item.href} onClick={onNavigate}>{item.label}</Link>)}
+      {guestAccountItems.map((label, index) => <Link key={label} href={index === 0 ? "/auth/login" : "/auth/register"} onClick={onNavigate}>{label}</Link>)}
     </nav>
   );
 }
@@ -47,14 +47,14 @@ export function GuestAvatar() {
   );
 }
 
-export function CartPreview({ onSelect }: { onSelect: (label: string) => void }) {
+export function CartPreview() {
   return (
     <div className={styles.cartPreview}>
       <div className={styles.cartHead}>
         <h2>Giỏ hàng của tôi</h2>
         <p>0 sản phẩm</p>
       </div>
-      <Button variant="outlinePrimary" className={styles.cartEdit} onClick={() => onSelect("Giỏ hàng")}>Xem và Chỉnh Sửa Giỏ Hàng</Button>
+      <Link href="/cart" className={styles.cartEdit}>Xem và Chỉnh Sửa Giỏ Hàng</Link>
       <div className={styles.cartItems}><p>Giỏ hàng đang trống.</p></div>
       <div className={styles.cartFoot}>
         <p className={styles.subtotal}><span>Tạm tính:</span><strong>0 ₫</strong></p>
