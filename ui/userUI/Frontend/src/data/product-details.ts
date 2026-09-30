@@ -1,5 +1,4 @@
 import { catalogProducts } from "@/components/catalog/catalogData";
-import { homePage2Products } from "@/components/mobile/home-page-2/homePage2Data";
 import { categories, newProducts, type HomeProduct } from "@/components/home/homeData";
 import { storeProducts, type StoreProduct } from "./storefront-data";
 
@@ -26,10 +25,9 @@ function fromCurrent(product: HomeProduct, category = "Tech Store"): DetailProdu
 // The outside Frontend remains authoritative. The old collection is only a
 // fallback for existing deep links, and never replaces Home/Catalog fixtures.
 const currentProducts: DetailProduct[] = [
-  ...catalogProducts.map(product => {
-    const mobile = homePage2Products[product.position];
-    return { ...fromCurrent({ ...product, name: mobile.name, mobileImageSrc: mobile.mobileImageSrc }, "MSI Prestige Series"), brand: "MSI", categoryId: "catalog", sku: product.sku, specifications: product.specifications };
-  }),
+  ...catalogProducts.map(product => ({
+    ...fromCurrent(product, "MSI Prestige Series"), brand: "MSI", categoryId: "catalog", sku: product.sku, specifications: product.specifications,
+  })),
   ...newProducts.map(product => product.id === "trident-pc" ? { ...fromCurrent(product), sku: "D55I5AI" } : fromCurrent(product)),
   ...categories.flatMap(category => category.groups.flatMap(group => group.products.map(product => fromCurrent(product, category.title)))),
 ];

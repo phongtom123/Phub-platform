@@ -8,7 +8,7 @@ import styles from "./Home.module.css";
 
 interface SelectionProps { onSelect: (product: HomeProduct) => void }
 function Card({ product, onSelect, compact = false }: SelectionProps & { product: HomeProduct; compact?: boolean }) {
-  return <ProductCard {...product} uiLocale="vi" compactOnMobile={compact} href="#" className={styles.card} onSelect={() => onSelect(product)} />;
+  return <ProductCard {...product} mobileImageSrc={undefined} uiLocale="vi" compactOnMobile={compact} href="#" className={styles.card} onSelect={() => onSelect(product)} />;
 }
 export function NewProducts({ products, onSelect, onViewAll }: SelectionProps & { products: HomeProduct[]; onViewAll: () => void }) {
   const track = useRef<HTMLDivElement>(null);
@@ -53,7 +53,7 @@ export function ProductShelf({ category, onSelect, onViewAll }: SelectionProps &
     </div>}
     <div id={`${category.id}-panel`} className={styles.categoryRow} role={hasTabs ? "tabpanel" : undefined} aria-labelledby={hasTabs ? `${category.id}-tab-${active}` : undefined} tabIndex={hasTabs ? 0 : undefined}>
       <div className={styles.categoryBanner}>
-        <picture><source media="(max-width: 760px)" srcSet={category.mobileImage} /><Image src={`/images/home/${category.image}`} alt="" fill unoptimized /></picture>
+        <picture><Image src={`/images/home/${category.image}`} alt="" fill unoptimized /></picture>
         <h2>{category.title}</h2>
         <button onClick={() => onViewAll(category.title, category.groups.flatMap(item => item.products))}>Xem tất cả sản phẩm</button>
       </div>

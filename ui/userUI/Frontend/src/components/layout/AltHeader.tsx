@@ -5,23 +5,18 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { IconButton } from "@/components/common/icon";
 import { SearchInput } from "@/components/common/SearchInput";
-import { AccountMenu, GuestAvatar } from "./HeaderPanels";
+import { AccountMenu, CartPreview, GuestAvatar } from "./HeaderPanels";
 import { headerCategories } from "./headerData";
 import { MegaMenu } from "./MegaMenu";
 import { HeaderTopBar } from "./HeaderTopBar";
-import { MobileHeader } from "@/components/mobile/header/MobileHeader";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
-import { Account1 } from "@/components/mobile/account/Account1";
-import { usePathname } from "next/navigation";
 import styles from "./Header.module.css";
 
-type Dropdown = "shop" | "account" | "mega";
+type Dropdown = "shop" | "account" | "cart" | "mega";
 type Panel = Dropdown | "mobile" | "notice" | null;
 
 export default function AltHeader() {
   const id = useId();
-  const pathname = usePathname();
-  const compactMobile = pathname === "/main/product" || pathname.startsWith("/main/product/");
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const hoverRef = useRef<Dropdown | null>(null);
@@ -101,31 +96,24 @@ export default function AltHeader() {
     return { "data-open": panel === name, "aria-hidden": panel !== name, inert: panel !== name };
   }
 
+  function selectCategory(item: typeof headerCategories[number], trigger: HTMLElement) {
+    if (item.id === "laptops") toggle("mega", trigger);
+    else {
+      triggerRef.current = trigger;
+      showPreview(item.label);
+    }
+  }
+
   return (
-    <header ref={rootRef} className={[styles.header, compactMobile && styles.catalogMobile].filter(Boolean).join(" ")}>
+    <header ref={rootRef} className={styles.header}>
       <HeaderTopBar
         id={id}
-        compactMobile={compactMobile}
         open={panel === "shop"}
         onToggle={trigger => toggle("shop", trigger)}
         onEnter={event => hoverOpen("shop", event)}
         onLeave={hoverClose}
         onClose={() => close()}
       />
-      <MobileHeader
-        id={id}
-        compact={compactMobile}
-        panel={panel}
-        cartCount={2}
-        onToggle={toggle}
-        onNavigate={() => close()}
-        onSearch={query => showPreview(`Tìm kiếm “${query}”`)}
-      />
-      <div className={styles.mobilePanels}>
-        <div id={id + "-mobile-account"} className={styles.accountPanel} {...dropdownProps("account")}>
-          <Account1 onNavigate={() => close()} />
-        </div>
-      </div>
 
       <div
         className={styles.mainBar}
@@ -141,6 +129,7 @@ export default function AltHeader() {
           label={panel === "mobile" ? "Đóng danh mục" : "Mở danh mục"}
           aria-expanded={panel === "mobile"}
           aria-controls={id + "-mobile"}
+          aria-haspopup="dialog"
           onClick={event => toggle("mobile", event.currentTarget)}
         >
           <span className={styles.hamburger} aria-hidden="true">
@@ -163,13 +152,7 @@ export default function AltHeader() {
               onPointerEnter={event => {
                 if (item.id === "laptops") hoverOpen("mega", event);
               }}
-              onClick={event => {
-                if (item.id === "laptops") toggle("mega", event.currentTarget);
-                else {
-                  triggerRef.current = event.currentTarget;
-                  showPreview(item.label);
-                }
-              }}
+              onClick={event => selectCategory(item, event.currentTarget)}
             >
               {item.label}
             </button>
@@ -209,17 +192,21 @@ export default function AltHeader() {
             )}
           </IconButton>
 
-          <Link
-            href="/cart"
-            className={styles.actionButton}
-            aria-label="Giỏ hàng, 2 sản phẩm"
-            onClick={() => close()}
+          <div
+            className={styles.actionAnchor}
+            onPointerEnter={event => hoverOpen("cart", event)}
+            onPointerLeave={hoverClose}
           >
-            <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />
-            <span className={styles.cartBadge} aria-hidden="true">
-              2
-            </span>
-          </Link>
+            <IconButton className={styles.actionButton} label="Giỏ hàng, 0 sản phẩm"
+              aria-expanded={panel === "cart"} aria-controls={id + "-cart"}
+              onClick={event => toggle("cart", event.currentTarget)}>
+              <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />
+              <span className={styles.cartBadge} aria-hidden="true">0</span>
+            </IconButton>
+            <div id={id + "-cart"} className={styles.cartPanel} {...dropdownProps("cart")}>
+              <CartPreview onNavigate={() => close()} />
+            </div>
+          </div>
 
           <div
             className={styles.actionAnchor}

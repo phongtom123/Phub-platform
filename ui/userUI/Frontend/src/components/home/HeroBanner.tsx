@@ -10,7 +10,7 @@ export function HeroBanner() {
   const slide = slides[active];
   return <section className={styles.hero} aria-label="Ưu đãi nổi bật" aria-roledescription="trình chiếu">
     <a href={slide.href} aria-label={slide.alt}>
-      <picture><source media="(max-width: 760px)" srcSet={slide.mobileImage} /><Image src={slide.image} alt={slide.alt} fill unoptimized priority={active === 0} className={styles.heroImage} /></picture>
+      <Image src={slide.image} alt={slide.alt} fill priority={active === 0} className={styles.heroImage} />
     </a>
     <button className={`${styles.arrow} ${styles.previous}`} onClick={() => setActive((active + slides.length - 1) % slides.length)} aria-label="Ưu đãi trước"><Image src="/images/figma-mobile/home-imgComponent4.svg" width={35} height={60} alt="" /></button>
     <button className={`${styles.arrow} ${styles.next}`} onClick={() => setActive((active + 1) % slides.length)} aria-label="Ưu đãi tiếp theo"><Image src="/images/figma-mobile/home-imgComponent95.svg" width={35} height={60} alt="" /></button>

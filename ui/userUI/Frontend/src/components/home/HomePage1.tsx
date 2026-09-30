@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { FinancingStrip } from "./FinancingStrip";
 import { BrandSection } from "./BrandSection";
 import { CustomerTestimonials } from "@/components/mobile/home-page-1/CustomerTestimonials";
@@ -14,13 +13,8 @@ import { categories, newProducts, type HomeProduct } from "./homeData";
 import styles from "./Home.module.css";
 
 export function HomePage1() {
-  const router = useRouter();
   const [dialog, setDialog] = useState<HomeDialogContent | null>(null);
   const selectProduct = (product: HomeProduct) => {
-    if (window.matchMedia("(max-width: 760px)").matches) {
-      router.push(`/main/product/${product.id}`);
-      return;
-    }
     setDialog({ type: "product", product });
   };
   const showCatalog = (title: string, products: HomeProduct[]) => setDialog({ type: "catalog", title, products });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import Link from "next/link";
 import { BrandTile } from "@/components/common/BrandTile";
 import { ProductCard } from "@/components/common/ProductCard";
 import { laptopMenuCategories, megaMenuBrands, megaMenuProducts, type MenuCategory } from "./megaMenuData";
@@ -32,6 +33,7 @@ export function MegaMenu({ onClose }: { onClose: () => void }) {
       <div className={styles.toolbar}>
         <span>Dữ liệu mẫu · Laptops</span>
         <div>
+          <Link href="/main/product" onClick={onClose}>Xem sản phẩm</Link>
           {path.length > 0 && <button type="button" onClick={() => { setPath([]); setSelectedProduct(""); }}>← Tất cả laptop</button>}
           <button type="button" onClick={onClose} aria-label="Đóng mega menu">×</button>
         </div>

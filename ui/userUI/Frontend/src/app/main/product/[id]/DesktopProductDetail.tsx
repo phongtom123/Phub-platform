@@ -12,15 +12,15 @@ export function DesktopProductDetail({ product, activeTab }: { product: DetailPr
   return <article className={styles.page}>
     <div className={styles.purchaseBar}><div className={styles.purchaseInner}>
       <nav className={styles.tabs} aria-label="Product information tabs">{desktopProductDetailTabs.map(tab => <Link key={tab.id} className={activeTab === tab.id ? styles.activeTab : undefined} href={`/main/product/${id}?tab=${tab.id}`}>{tab.label}</Link>)}</nav>
-      <ProductDetailActions price={3299} />
+      <ProductDetailActions price={product.price} currency={product.currency} />
     </div></div>
 
     <section className={styles.productHero}>
       <div className={styles.productCopy}><div className={styles.copyInner}>
         <p className={styles.breadcrumb}>Home <span>›</span> Laptops <span>›</span> MSI WS Series</p>
-        <h1>MSI MPG Trident 3</h1>
+        <h1>{product.name}</h1>
         <a className={styles.reviewLink} href="#features">Be the first to review this product</a>
-        {activeTab === "about" && <><p className={styles.summary}>MSI MPG Trident 3 10SC-005AU Intel i7 10700F, 2060 SUPER, 16GB RAM, 512GB SSD, 2TB HDD, Windows 10 Home, Gaming Keyboard and Mouse 3 Years Warranty Gaming Desktop</p><div className={styles.swatches} aria-label="Available colours"><i /><i /><i /></div></>}
+        {activeTab === "about" && <><p className={styles.summary}>{product.name}</p><div className={styles.swatches} aria-label="Available colours"><i /><i /><i /></div></>}
         {activeTab === "details" && <ul className={styles.detailList}>{desktopProductDetailFacts.map(item => <li key={item}>{item}</li>)}</ul>}
         {activeTab === "specs" && <dl className={styles.specTable}>{product.specifications.slice(0, 3).map(spec => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}</dl>}
         <div className={styles.metaRow}><p><strong>Have a Question?</strong> <a href="/contact-us">Contact Us</a></p><small>SKU {product.sku || "D55I5AI"}</small></div>
@@ -28,7 +28,7 @@ export function DesktopProductDetail({ product, activeTab }: { product: DetailPr
       </div></div>
       <div className={styles.productVisual}>
         <div className={styles.sideActions} aria-hidden="true"><span>♡</span><span>◫</span><span>✉</span></div>
-        <Image className={styles.mainProductImage} src={imageSrc} alt="MSI MPG Trident 3 gaming desktop" width={520} height={520} priority />
+        <Image className={styles.mainProductImage} src={imageSrc} alt={product.name} width={520} height={520} priority />
         <div className={styles.zip}><Image src="/images/home/zip.svg" alt="Zip" width={74} height={32} /><span>own it now, up to 6 months<br />interest free <u>learn more</u></span></div>
         <div className={styles.dots} aria-hidden="true"><i /><i /><i /></div>
       </div>

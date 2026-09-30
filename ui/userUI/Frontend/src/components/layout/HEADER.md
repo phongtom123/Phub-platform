@@ -1,5 +1,12 @@
 # Tech Store header — UI only
 
+> Cập nhật responsive: header hiện dùng một cây `AltHeader` cho desktop/mobile.
+> Mobile giữ nền trắng, logo/icon, giỏ hàng xem nhanh và menu tài khoản của
+> desktop; hamburger mở lại `MobileCategoryDrawer` hai cấp theo bản cũ,
+> còn desktop tiếp tục dùng `MegaMenu`.
+> `MobileHeader` và `Account1` bên dưới là bản Figma
+> tham khảo, không còn được render. Xem `../../../RESPONSIVE.md`.
+
 Header hiện dùng bố cục và nội dung của `C:/xampp/htdocs/web2/user/compin.php`, kèm tham chiếu `asset/css/user/compin.css` và `asset/js/user/compin.js`. Không sửa dự án PHP.
 
 ## Cấu trúc

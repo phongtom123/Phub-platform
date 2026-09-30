@@ -1,5 +1,20 @@
 # Mobile UI
 
+## Responsive hiện tại
+
+Desktop là mẫu chung cho các route khách hàng. `AltHeader`, `HomePage1`,
+`CatalogPage` và `DesktopProductDetail` được render một lần cho mọi kích thước;
+CSS thay đổi bố cục; nút ba gạch dùng lại `MobileCategoryDrawer` với `Menu1`
+và `Menu2` để dễ thao tác trên điện thoại. Menu tài khoản, giỏ hàng xem nhanh, sản phẩm, ảnh,
+giá, bộ lọc và trạng thái xem nhanh không đổi khi resize.
+
+Các bản Figma riêng `MobileHeader`, `Account1`,
+`HomePage2`, `ProductPage1`, `CartPage1` và `ContactPage1` được giữ để tham khảo,
+không được gắn vào các route hiện tại. `home-page-1/CustomerTestimonials`
+và `shared/ServiceBenefits` vẫn được dùng trên trang chủ.
+
+Phần bên dưới ghi lại cấu trúc bản Figma cũ.
+
 Các component **chỉ dùng cho mobile** nằm trong thư mục này:
 
 ```text
@@ -16,4 +31,6 @@ mobile/
 
 `HomePage1` ở `components/home/` và `AltHeader`/`Footer` ở `components/layout/` vì các component đó phục vụ cả desktop lẫn mobile. Các phần dùng chung vẫn ở `components/common/` và `components/catalog/`; mobile import lại, không sao chép logic hoặc dữ liệu.
 
-Các route App Router vẫn nằm trong `src/app/`: `/` ghép `HomePage1`, `/main/product` ghép catalog desktop và `mobile/home-page-2/HomePage2`, còn `/main/product/[id]` ghép chi tiết desktop với `mobile/product-page-1/ProductPage1` theo breakpoint 760px.
+Các route App Router nằm trong `src/app/`: `/` dùng `HomePage1`,
+`/main/product` dùng `CatalogPage`, `/main/product/[id]` dùng
+`DesktopProductDetail` với CSS responsive. Không ghép hai cây desktop/mobile.
