@@ -10,14 +10,14 @@ Mỗi giao diện được giữ trong một thư mục riêng để tránh xung
 
 ```text
 Phub-platform/
+├── Backend/                     # FastAPI và kết nối Supabase dùng chung
 ├── ui/
 │   ├── adminUI/                  # Giao diện quản trị viên
 │   │   ├── app/
 │   │   ├── src/
 │   │   └── package.json
 │   ├── userUI/                   # Nội dung nhánh userUI
-│   │   ├── Frontend/             # Giao diện khách hàng đã gộp, bản chính
-│   │   └── Backend/              # Backend mẫu đi kèm nhánh userUI
+│   │   └── Frontend/             # Giao diện khách hàng đã gộp, bản chính
 │   └── warehouseUI/              # Giao diện thủ kho
 │       ├── app/
 │       ├── src/
@@ -86,10 +86,10 @@ npm run dev
 
 Truy cập `http://localhost:3002`.
 
-## Chạy Backend mẫu của userUI
+## Chạy Backend
 
 ```bash
-cd ui/userUI/Backend
+cd Backend
 python -m venv .venv
 ```
 
@@ -98,7 +98,7 @@ Kích hoạt môi trường ảo trên PowerShell:
 ```powershell
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
+fastapi dev
 ```
 
 ## Nguyên tắc phát triển
