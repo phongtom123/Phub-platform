@@ -7,8 +7,8 @@ import type { HomeCategory, HomeProduct } from "./homeData";
 import styles from "./Home.module.css";
 
 interface SelectionProps { onSelect: (product: HomeProduct) => void }
-function Card({ product, onSelect }: SelectionProps & { product: HomeProduct }) {
-  return <ProductCard {...product} href="#" className={styles.card} onSelect={() => onSelect(product)} />;
+function Card({ product, onSelect, compact = false }: SelectionProps & { product: HomeProduct; compact?: boolean }) {
+  return <ProductCard {...product} uiLocale="vi" compactOnMobile={compact} href="#" className={styles.card} onSelect={() => onSelect(product)} />;
 }
 export function NewProducts({ products, onSelect, onViewAll }: SelectionProps & { products: HomeProduct[]; onViewAll: () => void }) {
   const track = useRef<HTMLDivElement>(null);
@@ -21,13 +21,13 @@ export function NewProducts({ products, onSelect, onViewAll }: SelectionProps & 
     element.scrollTo({ left, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
   return <section className={styles.newProducts} aria-labelledby="new-products-heading" id="new-products">
-    <div className={styles.sectionHeading}><h2 id="new-products-heading">New Products</h2><button className={styles.textLink} onClick={onViewAll}>See All New Products</button></div>
+    <div className={styles.sectionHeading}><h2 id="new-products-heading">Sản phẩm mới</h2><button className={styles.textLink} onClick={onViewAll}>Xem tất cả</button></div>
     <div className={styles.carousel}>
-      <div ref={track} className={styles.productTrack} tabIndex={0} aria-label="New products — scroll for more">
-        {products.map(product => <Card key={product.id} product={product} onSelect={onSelect} />)}
+      <div ref={track} className={styles.productTrack} tabIndex={0} aria-label="Sản phẩm mới — cuộn để xem thêm">
+        {products.map(product => <Card key={product.id} product={product} onSelect={onSelect} compact />)}
       </div>
-      <button className={`${styles.arrow} ${styles.previous}`} onClick={() => move(-1)} aria-label="Previous new products">‹</button>
-      <button className={`${styles.arrow} ${styles.next}`} onClick={() => move(1)} aria-label="Next new products">›</button>
+      <button className={`${styles.arrow} ${styles.previous}`} onClick={() => move(-1)} aria-label="Sản phẩm trước">‹</button>
+      <button className={`${styles.arrow} ${styles.next}`} onClick={() => move(1)} aria-label="Sản phẩm tiếp theo">›</button>
     </div>
   </section>;
 }
@@ -53,9 +53,9 @@ export function ProductShelf({ category, onSelect, onViewAll }: SelectionProps &
     </div>}
     <div id={`${category.id}-panel`} className={styles.categoryRow} role={hasTabs ? "tabpanel" : undefined} aria-labelledby={hasTabs ? `${category.id}-tab-${active}` : undefined} tabIndex={hasTabs ? 0 : undefined}>
       <div className={styles.categoryBanner}>
-        <Image src={`/images/home/${category.image}`} alt="" fill sizes="(max-width: 640px) 100vw, 232px" />
+        <picture><source media="(max-width: 760px)" srcSet={category.mobileImage} /><Image src={`/images/home/${category.image}`} alt="" fill unoptimized /></picture>
         <h2>{category.title}</h2>
-        <button onClick={() => onViewAll(category.title, category.groups.flatMap(item => item.products))}>See All Products</button>
+        <button onClick={() => onViewAll(category.title, category.groups.flatMap(item => item.products))}>Xem tất cả sản phẩm</button>
       </div>
       <div className={styles.categoryProducts} tabIndex={0} aria-label={`${group.label} products`}>
         {group.products.map(product => <Card key={product.id} product={product} onSelect={onSelect} />)}

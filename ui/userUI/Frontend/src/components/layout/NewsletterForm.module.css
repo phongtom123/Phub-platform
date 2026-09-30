@@ -28,7 +28,12 @@
 
 @media (max-width: 480px) {
   .controls {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) 130px;
+    gap: 13px;
   }
+}
+@media (max-width: 760px) {
+  .controls { gap: 13px; }
+  .controls input { height: 38px; min-height: 38px; border: 2px solid #fff; font-size: 11px; padding: 8px 12px; }
+  .controls button { height: 38px; min-height: 38px; font-size: 13px; padding: 0 20px; }
 }

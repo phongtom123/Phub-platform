@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { NewsletterForm } from "./NewsletterForm";
-import { footerSections, paymentMethods } from "./footerData";
+import { FooterLinkGroup } from "./FooterLinkGroup";
+import { footerSections, paymentMethods, mobilePaymentMethods, mobilePcParts } from "./footerData";
 import styles from "./Footer.module.css";
 
 export default function Footer() {
@@ -17,21 +18,20 @@ export default function Footer() {
         </section>
 
         <div className={styles.footerLinks}>
-          {footerSections.map(section => (
-            <section key={section.title} className={styles.col}>
-              <h3>{section.title}</h3>
-              <ul>
+          {footerSections.map((section, index) => (
+            <FooterLinkGroup key={section.title} title={section.title} initiallyOpen={index === 1}>
+              <ul className={index === 1 ? styles.desktopParts : undefined}>
                 {section.links.map(link => (
                   <li key={link.label}>
                     {link.href ? <Link href={link.href}>{link.label}</Link> : <span>{link.label}</span>}
                   </li>
                 ))}
               </ul>
-            </section>
+              {index === 1 && <ul className={styles.mobileParts}>{mobilePcParts.map(link => <li key={link.label}>{link.label}</li>)}</ul>}
+            </FooterLinkGroup>
           ))}
 
-          <section id="footer-contact" className={styles.col} aria-labelledby="footer-contact-heading">
-            <h3 id="footer-contact-heading">Liên Hệ</h3>
+          <FooterLinkGroup id="footer-contact" title="Liên hệ">
             <address className={styles.address}>
               <p>Địa chỉ: 1234 Nguyễn Thị Minh Khai, Phường 5, Quận 1, TP. HCM</p>
               <p>Hotline: <a href="tel:0901234567">090 123 4567</a></p>
@@ -39,7 +39,7 @@ export default function Footer() {
               <p>Thứ 6: 9:00 AM – 6:00 PM | Thứ 7: 11:00 AM – 5:00 PM</p>
               <p>E-mail: <a href="mailto:cskh@techstore.vn">cskh@techstore.vn</a></p>
             </address>
-          </section>
+          </FooterLinkGroup>
         </div>
 
         <div className={styles.footerBottom}>
@@ -48,10 +48,13 @@ export default function Footer() {
             <Image src="/icons/footer/facebook.svg" alt="Facebook" width={22} height={22} />
             <Image src="/icons/footer/instagram.svg" alt="Instagram" width={22} height={22} />
           </div>
-          <ul className={styles.payment} aria-label="Phương thức thanh toán">
+          <ul className={`${styles.payment} ${styles.desktopPayment}`} aria-label="Phương thức thanh toán">
             {paymentMethods.map(method => (
               <li key={method.name}><Image src={method.src} alt={method.name} width={25} height={25} /></li>
             ))}
+          </ul>
+          <ul className={`${styles.payment} ${styles.mobilePayment}`} aria-label="Phương thức thanh toán">
+            {mobilePaymentMethods.map(method => <li key={method.name}><Image src={method.src} alt={method.name} width={method.width} height={21.957} /></li>)}
           </ul>
           <p className={styles.copyright}>Bản quyền © 2026 TechStore Việt Nam. Đã bảo lưu mọi quyền.</p>
         </div>

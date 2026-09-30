@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { HomePage } from "@/components/home/HomePage";
+import { HomePage1 } from "@/components/home/HomePage1";
 
 export const metadata: Metadata = {
-  title: "Tech Store | Computers, Laptops & Gaming",
-  description: "Explore our range of custom PCs, MSI laptops, desktops and gaming monitors.",
+  title: "Tech Store | Máy tính, laptop và thiết bị gaming",
+  description: "Khám phá PC lắp ráp, laptop MSI, máy tính để bàn và màn hình gaming.",
 };
 
 export default function Home() {
-  return <HomePage />;
+  return <HomePage1 />;
 }

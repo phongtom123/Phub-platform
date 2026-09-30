@@ -20,7 +20,7 @@
 .productTrack { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .productTrack::-webkit-scrollbar { display: none; }
 .productTrack > .card { flex: 0 0 calc(100% / 6); scroll-snap-align: start; }
-.card { position: relative; width: 100%; min-width: 0; border: 0; min-height: 346px; padding: 0 24px; gap: 8px; }
+.home .card { position: relative; width: 100%; min-width: 0; border: 0; min-height: 346px; padding: 0 24px; gap: 8px; }
 .card:hover { box-shadow: inset 0 0 0 1px #e5e8f0; }
 .zipStrip { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 70px; margin: 14px 0; padding: 16px; background: #f5f7ff; color: #272560; }
 .zipStrip > img { width: 77px; height: 27px; object-fit: contain; }
@@ -30,7 +30,7 @@
 .shelf { margin-bottom: 28px; scroll-margin-top: 24px; }
 .categoryRow { display: grid; grid-template-columns: 1fr 5fr; min-width: 0; }
 .categoryBanner { position: relative; min-height: 350px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 28px; color: #fff; text-align: center; isolation: isolate; background: #131313; }
-.categoryBanner > img { object-fit: cover; z-index: -2; }
+.categoryBanner > picture img { object-fit: cover; z-index: -2; }
 .categoryBanner::after { content: ""; position: absolute; inset: 0; z-index: -1; background: #0002; }
 .categoryBanner h2 { font-size: 22px; font-weight: 700; line-height: 1.25; max-width: 135px; margin: 0; }
 .categoryBanner button { position: absolute; bottom: 28px; left: 0; width: 100%; padding: 10px; border: 0; background: none; color: #fff; text-decoration: underline; font-size: 13px; }
@@ -107,4 +107,57 @@
 }
 @media (max-width: 360px) {
   .productTrack > .card, .categoryProducts > .card { flex-basis: 175px; }
+}
+.zipLogo { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.testimonials, .benefits { display: none; }
+.floatingActions { position: fixed; right: 15px; bottom: 24px; z-index: 20; display: flex; flex-direction: column; gap: 6px; }
+.floatingActions a, .floatingActions button { display: block; width: 40px; height: 40px; padding: 0; background: transparent; }
+.chatAction { position: relative; }
+.chatLogo { position: absolute; left: 6.6667px; top: 6.6667px; }
+.hero .arrow { width: 35px; height: 60px; padding: 0; background: transparent; }
+@media (max-width: 760px) {
+  .home { padding-bottom: 0; }
+  .container { width: calc(100% - 30px); }
+  .hero { margin: 12px 0 0; aspect-ratio: 345 / 82; }
+  .heroImage { object-fit: cover; }
+  .hero .arrow { width: 35px; height: 60px; background: transparent; }
+  .hero .next { transform: translateY(-50%) rotate(180deg); }
+  .newProducts { margin-top: 19px; }
+  .sectionHeading { margin-bottom: 13px; min-height: 27px; gap: 8px; }
+  .sectionHeading h2 { font-size: 18px; line-height: 27px; }
+  .textLink { font-size: 10px; line-height: 1.15; }
+  .productTrack > .card { flex-basis: 50%; min-height: 256px; padding: 0 12px; gap: 0; }
+  .carousel > .arrow { display: none; }
+  .zipStrip { min-height: 103px; margin: 13px 0 14px; padding: 15px 8px; flex-direction: column; gap: 11px; background: #f5f7ff; }
+  .zipStrip p { padding: 0; border: 0; font-size: 12px; line-height: 1.2; text-align: center; }
+  .zipStrip button { font-size: 14px; line-height: 1.205; }
+  .shelf { display: flex; flex-direction: column; margin-bottom: 14px; }
+  .categoryRow { display: contents; }
+  .categoryBanner { order: 0; min-height: 82px; height: 82px; margin: 0 0 13px; padding: 0; }
+  .categoryBanner::after { display: none; }
+  .categoryBanner h2 { max-width: none; padding: 0; margin-top: -12px; font-size: 22px; line-height: 1.3; }
+  .categoryBanner button { bottom: 12px; font-size: 12px; padding: 0; line-height: 1.15; }
+  .tabs { order: 1; flex-wrap: wrap; overflow: visible; gap: 9px 16px; margin: 0 0 14px; padding: 0; }
+  .tabs button { font-size: 14px; line-height: 1.4; padding: 0 0 5px; }
+  .categoryProducts { order: 2; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .categoryProducts > .card { flex: 0 0 234px; min-height: 346px; padding: 0 25px; gap: 0; }
+  .categoryProducts .card > div:has([role="img"]) { min-height: 30px; }
+  .categoryProducts .card > div:has(strong) { min-height: 75px; justify-content: center; }
+  .categoryProducts .card picture { width: 150px; height: 150px; overflow: hidden; }
+  .categoryProducts .card picture img { width: 150px; height: 150px; object-fit: cover; }
+  .brands { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; padding: 0; margin-bottom: 15px; }
+  .brands .brandTile { height: 115px; padding: 25px 0; }
+  .brandTile img { width: 127px; height: 66px; max-width: 100%; object-fit: contain; filter: grayscale(1); }
+  .testimonials { display: block; position: relative; background: #f5f9ff; min-height: 304px; padding: 25px 12px 27px 19px; }
+  .quoteMark { position: absolute; top: 11px; left: 19px; font-size: 52px; line-height: 1.5; }
+  .testimonials blockquote { margin: 0 17px 0 41px; }
+  .testimonials blockquote p { margin: 0; min-height: 175px; font-size: 13px; line-height: 1.5; }
+  .testimonials cite { display: block; text-align: right; font-size: 10px; font-style: normal; margin: 8px -17px 20px 0; }
+  .reviewActions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .reviewActions a { border: 2px solid #0156ff; border-radius: 50px; padding: 8px 26px; color: #0156ff; font-size: 14px; font-weight: 600; line-height: 1.2; text-decoration: none; }
+  .benefits { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 25px 30px; }
+  .benefits article { display: flex; flex-direction: column; align-items: center; width: 265px; max-width: 100%; text-align: center; }
+  .benefits article > img { margin-bottom: 1px; }
+  .benefits h2 { margin: 7px 0 5px; font-size: 14px; font-weight: 700; line-height: 1.325; }
+  .benefits p { margin: 0; min-height: 34px; font-size: 12px; line-height: 1.4; color: #000b; }
 }

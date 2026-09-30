@@ -1,3 +1,4 @@
+.mobilePanels { display: none; }
 .header {
   --header-blue: #2563eb;
   --header-border: #d9d9d9;
@@ -15,6 +16,7 @@
 .topBar { color: #fff; background: #000; }
 .topInner { width: calc(100% - 120px); margin-inline: auto; display: flex; justify-content: space-between; align-items: center; gap: 18px; min-height: 40px; font-size: 12px; }
 .topBar a { color: #fff; }
+.catalogTopLogo { display: none; }
 .topBar a:focus-visible, .hoursButton:focus-visible { outline-color: #80b0ff; }
 .shopAnchor, .actionAnchor { position: relative; flex-shrink: 0; }
 .hoursButton { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0; border: 0; background: transparent; color: #fff; font-size: inherit; white-space: nowrap; }
@@ -42,10 +44,10 @@
 .closeGlyph { font-size: 30px; font-weight: 300; }
 .searchSlot { flex: 1; min-width: 0; max-width: 800px; margin-inline: auto; animation: searchEnter 180ms ease-out both; }
 .searchSlot .searchForm { height: 46px; border: 1px solid #2563eb2e; background: #f3f6ff; }
-.mobileToggle, .mobileMenu { display: none; }
+.mobileToggle { display: none; }
 
 /* Persistent, inert panels allow both enter and exit transitions without JS timers. */
-.shopPanel, .accountPanel, .cartPanel, .mobileMenu, .megaPanel {
+.shopPanel, .accountPanel, .cartPanel, .megaPanel {
   position: absolute;
   z-index: 50;
   color: #111827;
@@ -55,7 +57,7 @@
   transform: translateY(-6px);
   transition: opacity 160ms ease, transform 160ms ease, visibility 160ms;
 }
-.shopPanel[data-open=true], .accountPanel[data-open=true], .cartPanel[data-open=true], .mobileMenu[data-open=true], .megaPanel[data-open=true] {
+.shopPanel[data-open=true], .accountPanel[data-open=true], .cartPanel[data-open=true], .megaPanel[data-open=true] {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -119,9 +121,6 @@
   .mobileToggle[aria-expanded=true] .hamburger span:nth-child(2) { opacity: 0; }
   .mobileToggle[aria-expanded=true] .hamburger span:last-child { transform: translateY(-7px) rotate(-45deg); }
   .searchSlot { order: 3; flex-basis: 100%; max-width: none; }
-  .mobileMenu { display: flex; flex-direction: column; top: 100%; left: 0; width: min(360px, 100%); max-height: min(70vh, 600px); overflow-y: auto; padding: 8px; background: #fff; border: 1px solid var(--header-border); border-radius: 4px; box-shadow: 0 12px 30px #0000002e; }
-  .mobileMenu button { width: 100%; min-height: 44px; padding: 12px; text-align: left; font-size: 14px; font-weight: 600; background: transparent; border: 0; color: #333; }
-  .mobileMenu button:hover { color: var(--header-blue); background: #f3f6ff; }
 }
 @media (max-width: 600px) {
   .topInner, .mainBar { width: calc(100% - 24px); }
@@ -134,4 +133,26 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .header *, .header *::before, .header *::after { animation: none !important; transition: none !important; }
+}
+@media (max-width: 760px) {
+  .header { --header-blue: #0156ff; border-bottom: 0; }
+  .topBar { background: #020202; }
+  .topInner { width: calc(100% - 30px); height: 40px; gap: 8px; }
+  .hoursButton { min-height: 23px; height: 23px; border: 1px solid #acacac; border-radius: 15px; padding: 0 8px; gap: 3px; font-size: 10px; font-weight: 600; }
+  .hoursButton span { color: #a2a6b0; }
+  .mobileContact { font-size: 10px; font-weight: 600; }
+  .mainBar { width: 100%; min-height: 0; padding: 0; gap: 0; }
+  .mainBar > .logo, .mainBar > .mobileToggle, .mainBar > .navigation, .mainBar > .actions, .mainBar > .searchSlot { display: none; }
+  .mobilePanels { display: block; position: relative; }
+  .mobilePanels .cartPanel, .mobilePanels .accountPanel { top: 0; right: 12px; }
+  .mobilePanels .accountPanel { width: 232px; border: 0; border-radius: 0; box-shadow: 0 7px 15px #0002; }
+  .mobilePanels .accountPanel::before, .mobilePanels .accountPanel::after { display: none; }
+  .megaPanel { max-height: calc(100dvh - 150px); }
+  .notice { right: 12px; max-width: calc(100% - 24px); }
+  .catalogMobile .topBar { overflow: hidden; }
+  .catalogMobile .topInner { position: relative; width: 100%; padding: 0 18px 0 95px; }
+  .catalogMobile .catalogTopLogo { position: absolute; top: 1px; left: 12px; display: grid; place-items: center; width: 64px; height: 64px; padding-bottom: 22px; border-radius: 50%; background: #0156ff; }
+  .catalogMobile .catalogTopLogo img { display: block; }
+  .catalogMobile .hoursButton { border: 0; padding: 0; }
+  .catalogMobile .mobileContact { white-space: nowrap; }
 }

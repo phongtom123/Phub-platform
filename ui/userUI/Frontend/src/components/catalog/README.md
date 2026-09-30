@@ -2,6 +2,8 @@
 
 Open `/main/product` (grid) or `/main/product?view=list` (list). Uses the existing root Header/Footer. Product previews now link to `/main/product/[id]`, merged from commit 699ff4c; see `Frontend/MERGE-NOTES.md`. No authentication, real cart, payment service or API is connected.
 
+At widths up to 760px, the route composes `components/mobile/home-page-2/HomePage2.tsx` (Figma `174:9220`). The existing desktop `CatalogPage.tsx` remains in place above that breakpoint. The mobile header is the compact state of reusable `AltHeader.tsx`. `Menu1.tsx` and `Menu2.tsx` live under `components/mobile/menu`; selecting a child navigates to `/main/product?menuCategory=…&menuItem=…` and shows its Vietnamese title and breadcrumb.
+
 ## Components
 
 - `CatalogPage`: applied/draft filters, active chips, grid/list layout, pagination and expandable description.
@@ -9,8 +11,11 @@ Open `/main/product` (grid) or `/main/product?view=list` (list). Uses the existi
 - `CatalogToolbar`: result range, sort order, page size and view controls.
 - `CatalogPreview`: native accessible dialog; Escape/backdrop dismissal, focus restoration and body scroll lock.
 - `catalogData`: typed deterministic fixtures and pure filter/sort helpers.
+- `components/mobile/home-page-2/HomePage2`: mobile composition and filter/sort/page state; `HomePage2Description` and `HomePage2Extras` keep the page modular. `homePage2Data.ts` contains its translated mock text, sort options and Figma image mapping.
 
 Reuses `common/ProductCard`, `Pagination`, `Breadcrumb`, `Button`, `SelectField`, `FilterOption`, `Accordion`, `ColorSwatch`, `BrandTile`, `IconButton`, `Price` and `StockStatus`. Page-specific composition and styling stay in this folder.
+
+The mobile frame uses twelve cards per page, with functional filters, sorting, pagination and product preview. Its product art and chair banner are local Figma exports under `public/images/figma-mobile/catalog-*`; product titles and descriptive copy are Vietnamese. The fixture count and page count follow the available mock products, so they differ from the inconsistent range/page numbers visible in the design. Category branches beyond the Figma Desktop PCs branch remain demo taxonomy until catalog data is connected.
 
 ## Demo behavior and design differences
 

@@ -2,12 +2,13 @@
 
 Route: `/` (`src/app/page.tsx`). Uses the existing root Header/Footer, without changing their current Vietnamese content or navigation.
 
-- `HomePage`: composes the page and owns preview state.
+- `HomePage1`: composes the first homepage and owns preview state (`src/components/home/HomePage1.tsx`, Figma `174:4764`).
 - `HeroBanner`: two manually controlled promotions; no autoplay/timer.
 - `ProductShelf`: scrollable new products and category rows; keyboard-accessible series tabs.
 - `HomeDialog`: native modal dialog for product previews, all-products lists and the Zip disclaimer. Escape closes the dialog, with browser focus trapping/restoration.
 - `homeData`: typed fixtures, independent of APIs. Series names/images are illustrative, not verified product configurations. Prices, reviews and stock are not live.
 - Reuses `common/ProductCard`, `BrandTile`, `Price`, `StockStatus` and `Button`; page-specific components stay here instead of expanding `common` prematurely.
+- `HomePage1`, `HeroBanner`, `ProductShelf`, `FinancingStrip` and `BrandSection` render at both desktop and mobile sizes. Mobile-only testimonials are in `components/mobile/home-page-1/`; service benefits shared by both mobile pages are in `components/mobile/shared/`.
 
 Desktop spacing follows the supplied Home screenshot, including the large whitespace above the footer. Small screens use horizontally scrollable product rows and shorter bottom spacing. No cart, checkout, financing or Messenger connection is implemented. The floating contact button links to the existing footer contact details. Product clicks open a preview rather than navigating to the unfinished product route.
 

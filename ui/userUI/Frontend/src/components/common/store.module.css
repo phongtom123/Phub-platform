@@ -33,6 +33,20 @@
 .productCard > .price { min-height: 58px; }
 .productImage { display: flex; align-self: center; flex: 0 0 150px; align-items: center; justify-content: center; }
 .productImage img { object-fit: contain; }
+.productImage picture { display: flex; align-items: center; justify-content: center; }
+@media (max-width: 760px) {
+  .compactCard .productImage { flex-basis: 100px; }
+  .compactCard .productImage img { width: 100px; height: 100px; }
+  .compactCard .productName { font-size: 11px; line-height: 16.5px; min-height: 59px; padding-top: 9px; }
+  .compactCard > .price { min-height: 57px; justify-content: center; }
+  .compactCard .price del { font-size: 12px; }
+  .compactCard .price strong { font-size: 14px; }
+  .compactRating { gap: 5px; }
+  .compactRating .stars { gap: 1.37px; }
+  .compactRating .star { width: 8.91286px; height: 8.91286px; flex-basis: 8.91286px; }
+  .compactRating .star img { width: 8.91286px; height: 8.91286px; }
+  .compactRating .reviewCount { font-size: 10px; }
+}
 .productCard button.productImage, .productCard button.productName { padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; font-family: inherit; }
 .productCard button:focus-visible { outline: 2px solid var(--store-primary); outline-offset: 3px; }
 .productName { font-size: 13px; line-height: 21px; min-height: 65px; width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
