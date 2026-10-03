@@ -10,7 +10,7 @@ import { tridentDesignContent } from "./productPage1Data";
 import styles from "./ProductPage1.module.css";
 
 export function ProductPage1({ product, activeTab }: { product: DetailProduct; activeTab: "about" | "details" | "specs" }) {
-  const hasTridentArtwork = product.id === tridentDesignContent.productId;
+  const hasTridentArtwork = product.source !== "api" && product.id === tridentDesignContent.productId;
   return <article className={styles.page}>
     <ProductGallery product={product} />
     <ProductInfo product={product} activeTab={activeTab} />

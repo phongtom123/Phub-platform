@@ -1,5 +1,17 @@
 # Home UI
 
+## Tích hợp API hiện tại
+
+`LiveHomeProducts` thay dữ liệu mẫu ở các khối sản phẩm bằng API catalog công
+khai. Các khối lấy sản phẩm đang bán và nhóm theo loại thật; nút "Xem tất cả"
+mở catalog tương ứng. Xem nhanh mở chi tiết bằng `ma_sp` thật, giá dùng tiền tệ
+API. Không giả định sản phẩm mới nhất, rating, tồn kho hoặc giảm giá.
+Banner và nội dung tĩnh giữ thiết kế hiện có. Xem
+[CATALOG-INTEGRATION.md](../../../CATALOG-INTEGRATION.md) để chạy/kiểm tra.
+
+**Phần bên dưới lưu ghi chú thiết kế/fixtures ban đầu, không mô tả nguồn dữ liệu
+của các khối sản phẩm hiện tại.**
+
 Route: `/` (`src/app/page.tsx`). Uses the existing root Header/Footer, without changing their current Vietnamese content or navigation.
 
 - `HomePage1`: composes the first homepage and owns preview state (`src/components/home/HomePage1.tsx`, Figma `174:4764`).

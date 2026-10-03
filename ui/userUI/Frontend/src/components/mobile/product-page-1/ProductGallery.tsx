@@ -2,8 +2,10 @@ import Image from "next/image";
 import type { DetailProduct } from "@/data/product-details";
 import { tridentDesignContent } from "./productPage1Data";
 import styles from "./ProductPage1.module.css";
+import { ProductGallery as PublicGallery } from "@/components/catalog/ProductGallery";
 
 export function ProductGallery({ product }: { product: DetailProduct }) {
+  if (product.source === "api") return <div className={styles.galleryBlock}><div className={styles.gallery}><PublicGallery product={product} className={styles.galleryImage} width={210} /></div></div>;
   const imageSrc = product.id === tridentDesignContent.productId ? tridentDesignContent.image : product.mobileImageSrc ?? product.imageSrc;
 
   return <div className={styles.galleryBlock}>

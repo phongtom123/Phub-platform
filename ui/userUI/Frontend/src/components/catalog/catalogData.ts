@@ -1,8 +1,9 @@
 import type { ProductCardProps } from "@/components/common/ProductCard";
 
-export type CatalogProduct = Pick<ProductCardProps, "name" | "imageSrc" | "amount" | "originalAmount" | "stock" | "rating" | "reviewCount"> & {
+export type CatalogProduct = Pick<ProductCardProps, "name" | "imageSrc" | "amount" | "originalAmount" | "stock" | "rating" | "reviewCount" | "currency" | "locale"> & {
   id: string; category: string; brand: string; color: string; position: number;
   sku: string; description: string; specifications: { label: string; value: string }[];
+  categoryName?: string;
 };
 export interface CatalogFilters { categories: string[]; price: string; color: string; brand: string; inStock: boolean }
 export type CatalogSort = "position" | "price-asc" | "price-desc" | "name";

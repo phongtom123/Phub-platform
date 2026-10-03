@@ -11,11 +11,13 @@ import { MegaMenu } from "./MegaMenu";
 import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
 import styles from "./Header.module.css";
+import { useRouter } from "next/navigation";
 
 type Dropdown = "shop" | "account" | "cart" | "mega";
 type Panel = Dropdown | "mobile" | "notice" | null;
 
 export default function AltHeader() {
+  const router = useRouter();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -165,7 +167,8 @@ export default function AltHeader() {
               autoFocus
               className={styles.searchForm}
               placeholder="Tìm theo Tên hoặc Mã SP..."
-              onSearch={query => showPreview("Tìm kiếm “" + query + "”")}
+              maxLength={100}
+              onSearch={query => { close(); router.push(`/main/product?${new URLSearchParams({ q: query.trim() })}`); }}
             />
           </div>
         )}

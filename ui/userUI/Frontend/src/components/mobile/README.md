@@ -2,14 +2,15 @@
 
 ## Responsive hiện tại
 
-Desktop là mẫu chung cho các route khách hàng. `AltHeader`, `HomePage1`,
-`CatalogPage` và `DesktopProductDetail` được render một lần cho mọi kích thước;
-CSS thay đổi bố cục; nút ba gạch dùng lại `MobileCategoryDrawer` với `Menu1`
-và `Menu2` để dễ thao tác trên điện thoại. Menu tài khoản, giỏ hàng xem nhanh, sản phẩm, ảnh,
-giá, bộ lọc và trạng thái xem nhanh không đổi khi resize.
+Catalog và chi tiết hiện chọn layout desktop/mobile ở mốc 760px qua
+`CatalogExperience` và `ResponsiveProductDetail`. `HomePage2` và `ProductPage1`
+đã được gắn vào route thật và dùng API chung với desktop. Bộ lọc mobile lấy loại
+và thương hiệu từ metadata; điều kiện lưu trong URL, mobile dùng 12 sản phẩm/trang.
+`AltHeader` và `HomePage1` vẫn dùng CSS responsive; menu ba gạch giữ
+`MobileCategoryDrawer`. Xem [CATALOG-INTEGRATION.md](../../../CATALOG-INTEGRATION.md).
 
 Các bản Figma riêng `MobileHeader`, `Account1`,
-`HomePage2`, `ProductPage1`, `CartPage1` và `ContactPage1` được giữ để tham khảo,
+`CartPage1` và `ContactPage1` được giữ để tham khảo,
 không được gắn vào các route hiện tại. `home-page-1/CustomerTestimonials`
 và `shared/ServiceBenefits` vẫn được dùng trên trang chủ.
 

@@ -10,7 +10,7 @@ interface SelectionProps { onSelect: (product: HomeProduct) => void }
 function Card({ product, onSelect, compact = false }: SelectionProps & { product: HomeProduct; compact?: boolean }) {
   return <ProductCard {...product} mobileImageSrc={undefined} uiLocale="vi" compactOnMobile={compact} href="#" className={styles.card} onSelect={() => onSelect(product)} />;
 }
-export function NewProducts({ products, onSelect, onViewAll }: SelectionProps & { products: HomeProduct[]; onViewAll: () => void }) {
+export function NewProducts({ products, onSelect, onViewAll, title = "Sản phẩm mới" }: SelectionProps & { products: HomeProduct[]; onViewAll: () => void; title?: string }) {
   const track = useRef<HTMLDivElement>(null);
   function move(direction: number) {
     const element = track.current;
@@ -21,7 +21,7 @@ export function NewProducts({ products, onSelect, onViewAll }: SelectionProps & 
     element.scrollTo({ left, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
   return <section className={styles.newProducts} aria-labelledby="new-products-heading" id="new-products">
-    <div className={styles.sectionHeading}><h2 id="new-products-heading">Sản phẩm mới</h2><button className={styles.textLink} onClick={onViewAll}>Xem tất cả</button></div>
+    <div className={styles.sectionHeading}><h2 id="new-products-heading">{title}</h2><button className={styles.textLink} onClick={onViewAll}>Xem tất cả</button></div>
     <div className={styles.carousel}>
       <div ref={track} className={styles.productTrack} tabIndex={0} aria-label="Sản phẩm mới — cuộn để xem thêm">
         {products.map(product => <Card key={product.id} product={product} onSelect={onSelect} compact />)}

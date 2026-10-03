@@ -2,12 +2,19 @@ import { catalogProducts } from "@/components/catalog/catalogData";
 import { categories, newProducts, type HomeProduct } from "@/components/home/homeData";
 import { storeProducts, type StoreProduct } from "./storefront-data";
 
-export interface DetailProduct extends StoreProduct {
+export interface DetailProduct extends Omit<StoreProduct, "rating" | "reviews"> {
   imageSrc?: string;
   mobileImageSrc?: string;
-  currency: "USD" | "VND";
+  currency: string;
   sku: string;
-  stock: "in-stock" | "check-availability";
+  stock?: "in-stock" | "check-availability";
+  rating?: number;
+  reviews?: number;
+  description?: string;
+  warrantyMonths?: number;
+  unit?: string;
+  source?: "api" | "demo";
+  images?: { url: string; alt: string }[];
   specifications: { label: string; value: string }[];
 }
 

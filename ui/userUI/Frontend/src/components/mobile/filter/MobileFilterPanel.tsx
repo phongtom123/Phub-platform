@@ -8,6 +8,7 @@ import { Filter1 } from "./Filter1";
 import { Filter2 } from "./Filter2";
 import { filter2ExpandedSections, type FilterSectionId } from "./filterData";
 import styles from "./MobileFilter.module.css";
+import type { CatalogController } from "@/lib/catalog/useCatalog";
 
 interface Props {
   open: boolean;
@@ -15,9 +16,10 @@ interface Props {
   onChange: (filters: CatalogFilters) => void;
   onApply: () => void;
   onClose: () => void;
+  metadata: CatalogController["metadata"];
 }
 
-export function MobileFilterPanel({ open, draft, onChange, onApply, onClose }: Props) {
+export function MobileFilterPanel({ open, draft, onChange, onApply, onClose, metadata }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [expanded, setExpanded] = useState<ReadonlySet<FilterSectionId>>(new Set());
 
@@ -64,9 +66,11 @@ export function MobileFilterPanel({ open, draft, onChange, onApply, onClose }: P
           <Image src="/images/figma-mobile/menu-close.svg" width={14} height={14} alt="" />
         </IconButton>
       </div>
+      {metadata.loading && <p role="status">Đang tải bộ lọc…</p>}
+      {metadata.error && <div role="alert"><p>{metadata.error}</p><button onClick={metadata.retry}>Thử lại bộ lọc</button></div>}
       {expanded.size
-        ? <Filter2 expanded={expanded} draft={draft} onChange={onChange} onToggle={toggleSection} onBack={() => setExpanded(new Set())} />
-        : <Filter1 draft={draft} onChange={onChange} onExpand={id => setExpanded(new Set([...filter2ExpandedSections, id]))} onApply={apply} />}
+        ? <Filter2 expanded={expanded} draft={draft} onChange={onChange} onToggle={toggleSection} onBack={apply} metadata={metadata} />
+        : <Filter1 draft={draft} onChange={onChange} onExpand={id => setExpanded(new Set([...filter2ExpandedSections, id]))} onApply={apply} metadata={metadata} />}
     </div>
   </dialog>;
 }

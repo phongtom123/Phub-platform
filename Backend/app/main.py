@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .supabase import supabase
+from .catalog.router import router as catalog_router
 
 
 app = FastAPI(
@@ -15,6 +16,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(catalog_router)
 
 @app.get("/api/products")
 async def get_products():

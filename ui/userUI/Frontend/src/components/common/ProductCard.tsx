@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Price, type PriceProps } from "./Price";
 import { Rating } from "./Rating";
 import { StockStatus, type StockStatusProps } from "./StockStatus";
 import styles from "./store.module.css";
+import { CatalogImage } from "./CatalogImage";
 
 export interface ProductCardProps extends PriceProps {
   name: string;
@@ -25,7 +25,7 @@ export interface ProductCardProps extends PriceProps {
 
 /** Shared by home/catalog. Product data and cart actions belong to the caller. */
 export function ProductCard({ name, href, imageSrc, imageAlt, rating, reviewCount, stock, actions, className, onSelect, mobileImageSrc, compactOnMobile = false, uiLocale = "en", ...price }: ProductCardProps) {
-  const image = <picture>{mobileImageSrc && <source media="(max-width: 760px)" srcSet={mobileImageSrc} />}<Image unoptimized={!!mobileImageSrc} src={imageSrc} alt={imageAlt ?? name} width={150} height={150} /></picture>;
+  const image = <picture>{mobileImageSrc && <source media="(max-width: 760px)" srcSet={mobileImageSrc} />}<CatalogImage src={imageSrc} alt={imageAlt ?? name} width={150} height={150} /></picture>;
   return (
     <article className={[styles.productCard, compactOnMobile && styles.compactCard, className].filter(Boolean).join(" ")}>
       {stock && <StockStatus status={stock} label={uiLocale === "vi" ? (stock === "in-stock" ? "Còn hàng" : "Liên hệ") : undefined} />}

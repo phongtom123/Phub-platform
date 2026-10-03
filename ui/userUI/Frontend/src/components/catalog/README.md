@@ -1,5 +1,16 @@
 # Catalog UI
 
+## Tích hợp API hiện tại
+
+Catalog và chi tiết đã kết nối API công khai, dùng chung dữ liệu desktop/mobile.
+Xem [CATALOG-INTEGRATION.md](../../../CATALOG-INTEGRATION.md) để chạy ứng dụng,
+cấu hình backend, xem phạm vi chức năng và kiểm tra. `CatalogExperience` quản lý
+dữ liệu/URL; desktop dùng `CatalogPage`, mobile dùng `HomePage2` ở mốc 760px.
+Giá/loại/thương hiệu/ảnh/thông số đọc từ API; các bộ lọc chưa hỗ trợ bị vô hiệu hóa.
+
+**Các ghi chú bên dưới lưu lịch sử thiết kế và fixtures trước khi tích hợp API;
+số lượng, giá và trạng thái mẫu không còn được dùng trên route catalog thật.**
+
 Open `/main/product` (grid) or `/main/product?view=list` (list). Uses the existing root Header/Footer. Product previews now link to `/main/product/[id]`, merged from commit 699ff4c; see `Frontend/MERGE-NOTES.md`. No authentication, real cart, payment service or API is connected.
 
 At widths up to 760px, the route composes `components/mobile/home-page-2/HomePage2.tsx` (Figma `174:9220`). The existing desktop `CatalogPage.tsx` remains in place above that breakpoint. The mobile header is the compact state of reusable `AltHeader.tsx`. `Menu1.tsx` and `Menu2.tsx` live under `components/mobile/menu`; selecting a child navigates to `/main/product?menuCategory=…&menuItem=…` and shows its Vietnamese title and breadcrumb.
