@@ -1,4 +1,5 @@
-import DetailView from "../../detail-view";
+import { notFound, redirect } from "next/navigation";
+import { recordHref } from "../../../../shared/record-navigation";
 
 export default async function DetailRoute({
   params,
@@ -6,5 +7,7 @@ export default async function DetailRoute({
   params: Promise<{ section: string; id: string }>;
 }) {
   const { section, id } = await params;
-  return <DetailView section={section} id={decodeURIComponent(id)} />;
+  const href = recordHref(section, id);
+  if (!href) notFound();
+  redirect(href);
 }

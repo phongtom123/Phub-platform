@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
+import "../../../../shared/data-manager.css";
 import Footer from "@/components/layout/Footer";
 import AltHeader from "@/components/layout/AltHeader";
 

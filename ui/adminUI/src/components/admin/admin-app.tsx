@@ -14,17 +14,18 @@ import type { StaffRole } from "@/src/features/auth/login-view";
 import { DashboardView } from "@/src/features/dashboard/dashboard-view";
 import { ModuleView } from "@/src/features/modules/module-view";
 import { EntityDrawer } from "@/src/features/forms/entity-drawer";
+import BackendDataView from "@/src/components/backend-data-view";
+import { resourceModule } from "@/src/lib/backend-resources";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
   mode: "create" | "edit" | "settings";
 } | null;
 
-const adminSessionKey = "phub-admin-authenticated";
 const warehouseUrl =
   process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002";
 
-export default function AdminApp() {
+export default function AdminApp({ dataResource }: { dataResource?: string } = {}) {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [activeModule, setActiveModule] = useState<ModuleKey>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -32,34 +33,36 @@ export default function AdminApp() {
   const [drawer, setDrawer] = useState<DrawerState>(null);
 
   useEffect(() => {
-    setLoggedIn(window.sessionStorage.getItem(adminSessionKey) === "true");
+    const controller = new AbortController();
+    fetch("/api/backend/auth/me", { cache: "no-store", signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) { setLoggedIn(false); return; }
+        const user = await response.json();
+        if (user.role === "THU_KHO") { window.location.replace(warehouseUrl); return; }
+        if (user.role === "KHACH_HANG") { window.location.replace(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001"); return; }
+        setLoggedIn(user.role === "ADMIN");
+      }).catch(() => { if (!controller.signal.aborted) setLoggedIn(false); });
 
     const syncModuleWithUrl = () =>
-      setActiveModule(getModuleFromSearch(window.location.search));
+      setActiveModule(dataResource ? resourceModule(dataResource) : getModuleFromSearch(window.location.search));
 
     syncModuleWithUrl();
     window.addEventListener("popstate", syncModuleWithUrl);
 
-    return () => window.removeEventListener("popstate", syncModuleWithUrl);
-  }, []);
+    return () => { controller.abort(); window.removeEventListener("popstate", syncModuleWithUrl); };
+  }, [dataResource]);
 
   const login = ({
     role,
-    username,
   }: {
     role: StaffRole;
     username: string;
   }) => {
     if (role === "THU_KHO") {
-      window.sessionStorage.removeItem(adminSessionKey);
-      const destination = new URL(warehouseUrl);
-      destination.searchParams.set("access", "warehouse-demo");
-      destination.searchParams.set("staff", username);
-      window.location.assign(destination.toString());
+      window.location.assign(warehouseUrl);
       return;
     }
 
-    window.sessionStorage.setItem(adminSessionKey, "true");
     setLoggedIn(true);
   };
 
@@ -68,6 +71,7 @@ export default function AdminApp() {
   if (!loggedIn) return <LoginView onLogin={login} />;
 
   const navigate = (moduleKey: ModuleKey) => {
+    if (dataResource) { window.location.assign(getModuleHref(moduleKey)); return; }
     if (moduleKey === activeModule) return;
 
     window.history.pushState({ moduleKey }, "", getModuleHref(moduleKey));
@@ -81,8 +85,9 @@ export default function AdminApp() {
     setDrawer({ moduleKey: activeModule, mode: "create" });
   const openSettings = () =>
     setDrawer({ moduleKey: "settings", mode: "settings" });
-  const logout = () => {
-    window.sessionStorage.removeItem(adminSessionKey);
+  const logout = async () => {
+    const response = await fetch("/api/backend/auth/logout", { method: "POST" });
+    if (!response.ok) { window.alert("Không đăng xuất được. Kiểm tra backend và thử lại."); return; }
     window.history.replaceState({}, "", "/");
     setActiveModule("dashboard");
     setLoggedIn(false);
@@ -111,7 +116,7 @@ export default function AdminApp() {
           onLogout={logout}
         />
         <main className="content">
-          {activeModule === "dashboard" ? (
+          {dataResource ? <BackendDataView resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : definition ? (
             <ModuleView

@@ -1,4 +1,5 @@
-import EditView from "@/src/features/details/edit-view";
+import { notFound, redirect } from "next/navigation";
+import { recordHref } from "../../../../../shared/record-navigation";
 
 export default async function EditRoute({
   params,
@@ -6,5 +7,7 @@ export default async function EditRoute({
   params: Promise<{ section: string; id: string }>;
 }) {
   const { section, id } = await params;
-  return <EditView section={section} id={decodeURIComponent(id)} />;
+  const href = recordHref(section, id, true);
+  if (!href) notFound();
+  redirect(href);
 }

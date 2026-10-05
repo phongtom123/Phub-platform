@@ -11,30 +11,6 @@ type LoginResult = {
   username: string;
 };
 
-type DemoAccount = {
-  username: string;
-  password: string;
-  role: StaffRole;
-};
-
-const adminAccount: DemoAccount = {
-  username: "admin.thinh",
-  password: "password123",
-  role: "ADMIN",
-};
-const warehouseAccount: DemoAccount = {
-  username: "phong.kho",
-  password: "password123",
-  role: "THU_KHO",
-};
-
-const demoAccounts: Record<string, DemoAccount> = {
-  "admin.thinh": adminAccount,
-  "thinh@phub.vn": adminAccount,
-  "phong.kho": warehouseAccount,
-  "phong@phub.vn": warehouseAccount,
-};
-
 export function LoginView({
   onLogin,
 }: {
@@ -44,7 +20,7 @@ export function LoginView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     const form = new FormData(event.currentTarget as HTMLFormElement);
@@ -52,27 +28,28 @@ export function LoginView({
       .trim()
       .toLowerCase();
     const password = String(form.get("password") ?? "");
-    const account = demoAccounts[username];
-
-    if (!account || account.password !== password) {
-      setError("Tài khoản hoặc mật khẩu không đúng.");
-      return;
-    }
-
     setError("");
     setLoading(true);
-    window.setTimeout(
-      () => onLogin({ role: account.role, username: account.username }),
-      500,
-    );
+    try {
+      const response = await fetch("/api/backend/auth/login", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "Thông tin đăng nhập không hợp lệ.");
+      if (result.role === "KHACH_HANG") {
+        window.location.assign(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
+        return;
+      }
+      onLogin({ role: result.role, username: result.username });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không kết nối được backend.");
+    } finally { setLoading(false); }
   };
   return (
     <main className="login">
       <header>
         <Logo />
-        <span>
-          <i /> Hệ thống đang hoạt động
-        </span>
+        <span>Cổng đăng nhập nội bộ</span>
       </header>
       <div className="login-grid">
         <section className="login-copy">
@@ -86,21 +63,8 @@ export function LoginView({
           </h1>
           <p>
             Một không gian duy nhất để theo dõi sản phẩm, đơn hàng và tồn kho
-            trên mọi chi nhánh.
+            theo kho và vai trò được phân công.
           </p>
-          <aside>
-            <b>
-              03<small>Chi nhánh</small>
-            </b>
-            <i />
-            <b>
-              248<small>Sản phẩm</small>
-            </b>
-            <i />
-            <b>
-              99.9%<small>Đồng bộ</small>
-            </b>
-          </aside>
         </section>
         <form className="login-card" onSubmit={submit}>
           <div className="welcome">
@@ -114,7 +78,6 @@ export function LoginView({
             Email hoặc tên tài khoản
             <input
               name="username"
-              defaultValue="admin.thinh"
               autoComplete="username"
               required
               onChange={() => setError("")}
@@ -126,7 +89,6 @@ export function LoginView({
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                defaultValue="password123"
                 autoComplete="current-password"
                 required
                 onChange={() => setError("")}
@@ -158,11 +120,7 @@ export function LoginView({
           <p className="secure">
             <LockKeyhole /> Phiên đăng nhập được mã hóa và bảo mật
           </p>
-          <div className="demo-accounts">
-            <strong>Tài khoản dùng thử</strong>
-            <span>Quản trị viên: admin.thinh / password123</span>
-            <span>Nhân viên kho: phong.kho / password123</span>
-          </div>
+          <p className="demo-accounts">Đăng nhập bằng tài khoản đã được tạo trong Supabase. Không còn tài khoản demo cố định.</p>
         </form>
       </div>
       <footer>

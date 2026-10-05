@@ -105,6 +105,5 @@ Phub-platform/
 │   ├── requirements.txt
 │   └── .env
 │
-├── docker-compose.yml
 ├── README.md
 └── .gitignore

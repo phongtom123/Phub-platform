@@ -67,13 +67,13 @@ class Specification(BaseModel):
 
 class CatalogProduct(BaseModel):
     model_config = ConfigDict(json_schema_extra={"examples": [{
-        "id": "SP001", "sku": "MSI-001", "name": "Laptop MSI Modern",
-        "category": {"id": "LAPTOP", "name": "Laptop"}, "brand": "MSI",
-        "price": "15990000.00", "currency": "VND", "description": "Laptop học tập",
-        "unit": "Cai", "warranty_months": 24,
-        "images": [{"url": "https://example.com/msi.jpg", "alt": "Laptop MSI Modern"}],
-        "specifications": [{"label": "RAM", "value": "16 GB"}],
-        "specifications_text": "RAM: 16 GB",
+        "id": "SP001", "sku": "INTEL-I5-14400F", "name": "Intel Core i5-14400F",
+        "category": {"id": "CPU", "name": "Vi xử lý"}, "brand": "Intel",
+        "price": "2500000.00", "currency": "VND", "description": "Vi xử lý cho PC",
+        "unit": "Cai", "warranty_months": 36,
+        "images": [{"url": "https://example.com/cpu.jpg", "alt": "Intel Core i5-14400F"}],
+        "specifications": [{"label": "Socket", "value": "LGA1700"}],
+        "specifications_text": "Socket: LGA1700",
     }]})
 
     id: str

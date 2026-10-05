@@ -288,22 +288,32 @@ def test_existing_products_endpoint_keeps_original_contract(monkeypatch, fails):
             calls.append(("limit", value))
             return self
 
+        def eq(self, field, value):
+            calls.append(("eq", field, value))
+            return self
+
+        def order(self, value):
+            calls.append(("order", value))
+            return self
+
         def execute(self):
             if fails:
                 raise RuntimeError("legacy failure")
             return SimpleNamespace(data=[{"ma_sp": "legacy-product"}])
 
-    stub = ModuleType("app.supabase")
-    stub.supabase = LegacyClient()
-    monkeypatch.setitem(sys.modules, "app.supabase", stub)
+    from app.supabase import get_supabase
     spec = importlib.util.spec_from_file_location("app._catalog_regression_main", Path(__file__).parents[1] / "app/main.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    module.app.dependency_overrides[get_supabase] = lambda: LegacyClient()
     with TestClient(module.app) as client:
         response = client.get("/api/products")
         if fails:
-            assert response.status_code == 500 and response.json() == {"detail": "legacy failure"}
+            assert response.status_code == 503
+            assert "legacy failure" not in response.text
         else:
             assert response.status_code == 200 and response.json() == [{"ma_sp": "legacy-product"}]
         assert "/api/catalog/products" in client.get("/openapi.json").json()["paths"]
-    assert calls == [("table", "SAN_PHAM"), ("select", "*"), ("limit", 20)]
+    assert calls[0] == ("table", "SAN_PHAM")
+    assert calls[1][0] == "select" and calls[1][1] != "*"
+    assert calls[2:] == [("eq", "trang_thai", 1), ("eq", "category.trang_thai", 1), ("order", "ma_sp"), ("limit", 20)]

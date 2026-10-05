@@ -39,7 +39,7 @@ const navigation = [
     label: "SẢN PHẨM",
     items: [
       ["products", "Sản phẩm", Package],
-      ["categories", "Danh mục", FolderTree],
+      ["categories", "Loại sản phẩm", FolderTree],
     ],
   },
   {
@@ -54,7 +54,7 @@ const navigation = [
   {
     label: "TỔ CHỨC",
     items: [
-      ["branches", "Chi nhánh & kho", Building2],
+      ["branches", "Kho", Building2],
       ["employees", "Nhân viên", UserCog],
       ["accounts", "Tài khoản", Users],
     ],
