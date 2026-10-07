@@ -4,6 +4,10 @@ Repository tổng hợp giao diện từ các nhánh `adminUI`, `userUI` và `wa
 
 **Frontend khách hàng đang sử dụng: `ui/userUI/Frontend/`.** Bản chính trước đây ở ngoài `ui` đã được chuyển vào đây, giữ nguyên giao diện, dữ liệu và các trang đã bổ sung. Xem [ghi chú gộp](ui/userUI/Frontend/MERGE-NOTES.md).
 
+**Thử đầy đủ UI đặt đơn/hóa đơn/thanh toán, chưa ghi Supabase:**
+xem [PAYMENT-UI-REVIEW.md](PAYMENT-UI-REVIEW.md). Luồng thực thi dùng fixture riêng;
+đơn/hóa đơn/thanh toán có sẵn trên Supabase vẫn đọc được.
+
 Mỗi giao diện được giữ trong một thư mục riêng để tránh xung đột giữa các phiên bản Next.js, dependency và cấu trúc source code. Không chạy `npm install` tại thư mục root; hãy mở terminal tại đúng ứng dụng cần chạy.
 
 ## Cấu trúc tổng hợp
@@ -107,3 +111,15 @@ fastapi dev
 - Không đưa `node_modules`, `.next`, file `.env` hoặc môi trường Python `.venv` lên Git.
 - Khi cần dùng chung API hoặc kiểu dữ liệu, nên tạo package dùng chung riêng thay vì import chéo trực tiếp giữa ba ứng dụng.
 - Các nhánh gốc vẫn được giữ nguyên; nhánh tổng hợp chỉ tổ chức lại source code theo thư mục.
+# PHUB Platform
+
+Phần khách hàng đang phát triển trên nhánh `ui-review`.
+
+- [Chạy giao diện và test từng chức năng](CUSTOMER-TESTING.md)
+- [Test trên Supabase thật với khách đầu tiên được cho phép](CUSTOMER-SUPABASE-TESTING.md)
+- [Cài đặt và cấu hình Render để tự triển khai sau](CUSTOMER-DEPLOYMENT.md)
+- [Backend/API và bốn mục tiêu khách hàng](Backend/README.md)
+- [Tích hợp UI desktop/mobile và E2E](ui/userUI/Frontend/SHOPPING-INTEGRATION.md)
+
+Đăng nhập thật do thành viên khác phụ trách. Các migration mua hàng được chuẩn bị
+riêng và chưa tự áp dụng lên Supabase chung.

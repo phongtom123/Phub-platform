@@ -3,7 +3,8 @@
 API dùng chung cho UI khách hàng desktop/mobile. Phần này chỉ bổ sung code trong
 `app/catalog`, đăng ký router ở `app/main.py`, kiểm thử và tài liệu. Không đổi
 `/api/products`, Supabase client dùng chung, CORS, UI admin/kho hoặc cấu trúc DB.
-File `.sql` ở root là **DBML mô tả schema**, không phải migration SQL để chạy.
+Catalog không cần migration SQL; dùng các bảng Supabase sẵn có của nhóm.
+Tổng quan cả catalog và đặt đơn ở [Backend/README.md](../../README.md).
 
 ## Chạy và Swagger
 
@@ -25,6 +26,7 @@ Từ thư mục `Backend`, dùng môi trường ảo và `.env` sẵn có của 
 | `/api/catalog/products/{product_id}` | Một sản phẩm; `product_id` là `ma_sp`, không phải SKU |
 | `/api/catalog/categories` | `{items: [{id, name}]}` từ các `LOAI_SP` hoạt động |
 | `/api/catalog/brands` | `{items: [{name}]}` từ sản phẩm và loại sản phẩm hoạt động |
+| `/api/catalog/colors` | `{items: [{value, label}]}` từ thông số màu đã khai báo; có nhóm thiếu màu |
 
 Tham số danh sách:
 
@@ -33,6 +35,9 @@ Tham số danh sách:
 | `q` | Tối đa 100 ký tự sau khi trim; tìm chuỗi chứa trong tên **hoặc** SKU, không phân biệt hoa/thường |
 | `category_id` | Mã loại, tối đa 100 ký tự/mã và 20 mã duy nhất; lặp tham số để chọn nhiều loại |
 | `brand` | Chuỗi thương hiệu từ endpoint brands, tối đa 100 ký tự; so khớp chính xác |
+| `min_price`, `max_price` | Giá trước thuế, bao gồm hai đầu khoảng; không âm, tối đa 18 chữ số và 2 số thập phân; giá từ không vượt giá đến |
+| `color` | Giá trị từ endpoint colors, tối đa 100 ký tự; `__unspecified__` chọn sản phẩm thiếu màu |
+| `stock_status` | `in-stock` hoặc `out-of-stock`; bỏ tham số để lấy cả hai |
 | `page` | Số nguyên 1–2147483647; mặc định 1 |
 | `page_size` | Số nguyên 1–100; mặc định 20 |
 | `sort` | `default`, `price-asc`, `price-desc`; mặc định `default` |
@@ -41,7 +46,7 @@ Tham số danh sách:
 GET /api/catalog/products?q=MSI&category_id=LAPTOP&category_id=PC&brand=MSI&page=1&page_size=12&sort=price-asc
 ```
 
-Các loại kết hợp bằng OR; tìm kiếm, nhóm loại và thương hiệu kết hợp bằng AND.
+Các loại kết hợp bằng OR; tìm kiếm, nhóm loại, thương hiệu, giá, màu và tồn kho kết hợp bằng AND.
 `q` và `brand` rỗng sau trim được bỏ qua; mã loại rỗng bị từ chối. Tham số không
 được khai báo trả 422. Ký tự điều khiển bị từ chối. Ký tự tìm kiếm đặc biệt
 `%`, `_`, `*`, dấu ngoặc, dấu phẩy, dấu nháy và backslash được tìm nguyên văn,
@@ -58,8 +63,14 @@ chỉ lấy thương hiệu của trang sản phẩm đầu tiên. Endpoint này
   Đọc cả danh sách, chi tiết và thương hiệu đều áp dụng điều kiện này.
 - Đây là quy ước mặc định theo schema có `default: 1`; file DBML chưa mô tả enum.
   Nếu nhóm dùng giá trị khác, đặt **CATALOG_ACTIVE_STATUS** trong môi trường backend.
-- Đang bán độc lập với tồn kho. Catalog không truy vấn `TON_KHO`, không công khai
-  số lượng từng kho, giá nhập hoặc dữ liệu nhân sự. Chưa trả trường availability.
+- Đang bán độc lập với tồn kho. Khi có `stock_status`, catalog đọc `TON_KHO`,
+  `KHO` và chi tiết các đơn `MOI`, `XAC_NHAN`, `DANG_CHUAN_BI` để trừ hàng giữ.
+  Còn hàng khi có ít nhất một kho hoạt động có tồn thực trừ hàng giữ lớn hơn 0.
+  Chỉ trả trạng thái, không công khai số lượng kho, đơn giữ hàng hoặc khách hàng.
+  Không ghi dữ liệu; việc xuất kho vẫn thuộc module kho.
+- `color` lấy từ nhãn `Màu`, `Màu sắc`, `Color` hoặc `Colour` trong
+  `thong_so_ky_thuat`, không cần thêm cột. Thiếu thông tin thì trả `null`.
+  `stock_status` của sản phẩm là `null` nếu yêu cầu chưa kiểm tra tồn kho.
 - Giá lấy từ `gia_ban_hien_tai`, cast text ở database trước khi nhận JSON và trả
   chuỗi có hai chữ số thập phân, ví dụ `"15990000.00"`. Sắp xếp dùng cột số gốc.
 - Mặc định tiền tệ **VND**; có thể đặt **CATALOG_CURRENCY** bằng mã ba chữ cái viết hoa.
@@ -94,8 +105,9 @@ Ví dụ phản hồi sản phẩm:
 }
 ```
 
-API chưa trả rating, giảm giá, màu sắc hoặc sản phẩm liên quan vì schema catalog
-không có dữ liệu tương ứng. UI vẫn dùng fixtures; việc kết nối UI là bước riêng.
+API chưa trả rating, giảm giá hoặc sản phẩm liên quan vì schema catalog
+không có dữ liệu tương ứng. UI khách hàng đã kết nối API; xem
+[CATALOG-INTEGRATION.md](../../../ui/userUI/Frontend/CATALOG-INTEGRATION.md).
 Các giá trị/mã trong ví dụ chỉ minh họa, cần lấy lựa chọn thật từ API metadata.
 
 ## Lỗi
@@ -137,6 +149,10 @@ Kiểm thử dùng PostgREST client thật với HTTP transport giả lập, kh�
 hay truy cập mạng. Có kiểm tra điều kiện công khai, tìm kiếm nguyên văn, bộ lọc
 kết hợp, tổng/phân trang, sắp xếp, giá lớn, định dạng thông số, metadata nhiều
 trang, các lỗi, Swagger và tương thích `/api/products` cũ.
+`test_catalog_filters.py` bổ sung 19 kiểm thử về khoảng giá/validation, màu,
+tồn sau giữ hàng, kho không hoạt động và lọc trước phân trang. Tổng suite backend
+đã chạy đạt 332 tests ngày 06/10/2026. Hướng dẫn thao tác UI:
+[CUSTOMER-UI-REVIEW.md](../../../CUSTOMER-UI-REVIEW.md).
 
 Kiểm tra tích hợp **tùy chọn**, dùng `.env` hiện tại và chỉ đọc Supabase:
 

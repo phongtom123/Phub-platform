@@ -37,7 +37,7 @@ export function ProductListCard({ name, imageSrc, imageAlt, sku, description, sp
         <p className={styles.sku}>SKU {sku}</p>
         <h2><button type="button" onClick={onSelect}>{name}{description && <span> — {description}</span>}</button></h2>
         <Price amount={amount} originalAmount={originalAmount} currency={currency} locale={locale} className={styles.price} />
-        <Button variant="outlinePrimary" className={styles.cart} onClick={onCart} aria-pressed={inCart} aria-label={`${inCart ? "Remove from" : "Add to"} demo cart: ${name}`}>
+        <Button variant="outlinePrimary" className={styles.cart} onClick={onCart} aria-label={`Thêm vào giỏ: ${name}`}>
           <Image src="/icons/header/cart.svg" alt="" width={20} height={20} />{inCart ? "Added To Cart" : "Add To Cart"}
         </Button>
       </div>

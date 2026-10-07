@@ -16,11 +16,13 @@ import { CatalogPreview } from "./CatalogPreview";
 import { CatalogStatus } from "./CatalogStatus";
 import { emptyFilters, type CatalogProduct } from "./catalogData";
 import styles from "./Catalog.module.css";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
+import { AddToCartButton } from "@/components/shopping/AddToCartButton";
 
 export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   const { request, products, pagination, loading, error, metadata } = catalog;
   const [draft, setDraft] = useCatalogDraft(catalog);
-  const [cart, setCart] = useState<CatalogProduct[]>([]);
+  const shop = useShopping();
   const [compared, setCompared] = useState<CatalogProduct[]>([]);
   const [wished, setWished] = useState<CatalogProduct[]>([]);
   const [notice, setNotice] = useState("");
@@ -30,15 +32,18 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   const filters = request.filters;
   const total = pagination?.total ?? 0;
   const offset = (request.page - 1) * request.pageSize;
-  function toggleSelection(kind: "cart" | "compare" | "wish", product: CatalogProduct) {
-    const values = kind === "cart" ? cart : kind === "compare" ? compared : wished;
-    const setValues = kind === "cart" ? setCart : kind === "compare" ? setCompared : setWished;
+  function toggleSelection(kind: "compare" | "wish", product: CatalogProduct) {
+    const values = kind === "compare" ? compared : wished;
+    const setValues = kind === "compare" ? setCompared : setWished;
     setValues(values.some(item => item.id === product.id) ? values.filter(item => item.id !== product.id) : [...values, product]);
-    setNotice("Đã cập nhật danh sách tạm trên giao diện. Chức năng tài khoản và đặt hàng chưa được kết nối.");
+    setNotice("Đã cập nhật danh sách so sánh hoặc yêu thích tạm trên giao diện.");
   }
   const chips = [
     ...filters.categories.map(id => ({ key: id, label: metadata.data.categories.find(option => option.id === id)?.label ?? id, next: { ...filters, categories: filters.categories.filter(value => value !== id) } })),
     ...(filters.brand ? [{ key: "brand", label: filters.brand, next: { ...filters, brand: "" } }] : []),
+    ...(filters.minPrice || filters.maxPrice ? [{ key: "price", label: `${filters.minPrice || "0"} – ${filters.maxPrice || "không giới hạn"} ₫`, next: { ...filters, minPrice: "", maxPrice: "" } }] : []),
+    ...(filters.color ? [{ key: "color", label: metadata.data.colors.find(option => option.value === filters.color)?.label || filters.color, next: { ...filters, color: "" } }] : []),
+    ...(filters.stockStatus ? [{ key: "stock", label: filters.stockStatus === "in-stock" ? "Còn hàng" : "Hết hàng", next: { ...filters, stockStatus: "" as const } }] : []),
   ];
   return <div className={styles.catalog}>
     <div className={styles.container}>
@@ -65,8 +70,8 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
           <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
           {!loading && !error && (products.length ? <div className={ `${styles.productGrid} ${request.view === "list" ? styles.productList : ""}` } aria-label="Catalog products">
             {products.map(product => request.view === "list"
-              ? <ProductListCard key={product.id} {...product} inCart={cart.some(item => item.id === product.id)} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onSelect={() => setPreview(product)} onCart={() => toggleSelection("cart", product)} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
-              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} onSelect={() => setPreview(product)} uiLocale="vi" />)}
+              ? <ProductListCard key={product.id} {...product} inCart={shop.lines.some(item => item.sku === product.sku)} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onSelect={() => setPreview(product)} onCart={() => void shop.add(product)} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
+              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} onSelect={() => setPreview(product)} uiLocale="vi" actions={<AddToCartButton product={product}/>} />)}
           </div> : <div className={styles.noResults}><h2>Không tìm thấy sản phẩm</h2><p>Hãy thay đổi điều kiện tìm kiếm hoặc bộ lọc.</p><Button onClick={() => catalog.apply(emptyFilters)}>Xóa bộ lọc và về trang đầu</Button>{request.q && <Link href="/main/product">Xem tất cả sản phẩm</Link>}</div>)}
           {!loading && !error && <div className={styles.pagination}><Pagination currentPage={request.page} totalPages={pagination?.total_pages ?? 0} onPageChange={page => { catalog.turnPage(page); resultsRef.current?.scrollIntoView({ block: "start", behavior: "instant" }); }} /></div>}
           <section className={styles.description} aria-label="Hướng dẫn chọn sản phẩm">

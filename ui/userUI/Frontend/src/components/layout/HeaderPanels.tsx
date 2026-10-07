@@ -1,6 +1,7 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/common/Button";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
 import { guestAccountItems } from "./headerData";
 import styles from "./Header.module.css";
 
@@ -29,9 +30,10 @@ export function ShopInfo() {
 }
 
 export function AccountMenu({ onNavigate }: { onNavigate: () => void }) {
+  const shop=useShopping();
   return (
     <nav aria-label="Tài khoản" className={styles.accountMenu}>
-      {guestAccountItems.map((label, index) => <Link key={label} href={index === 0 ? "/auth/login" : "/auth/register"} onClick={onNavigate}>{label}</Link>)}
+      {shop.customer?<><p>{shop.customer.name}</p><Link href="/main/profile" onClick={onNavigate}>Tài khoản và đơn hàng</Link></>:guestAccountItems.map((label, index) => <Link key={label} href={index === 0 ? "/auth/login" : "/auth/register"} onClick={onNavigate}>{label}</Link>)}
     </nav>
   );
 }
@@ -48,17 +50,17 @@ export function GuestAvatar() {
 }
 
 export function CartPreview({ onNavigate }: { onNavigate?: () => void }) {
+  const shop=useShopping();
   return (
     <div className={styles.cartPreview}>
       <div className={styles.cartHead}>
         <h2>Giỏ hàng của tôi</h2>
-        <p>0 sản phẩm</p>
+        <p>{shop.count} sản phẩm</p>
       </div>
       <Link href="/cart" className={styles.cartEdit} onClick={onNavigate}>Xem và Chỉnh Sửa Giỏ Hàng</Link>
-      <div className={styles.cartItems}><p>Giỏ hàng đang trống.</p></div>
+      <div className={styles.cartItems}>{shop.lines.length?<ul>{shop.lines.map(line=><li key={line.sku}>{line.name} × {line.quantity}</li>)}</ul>:<p>{shop.authStatus==="guest"?"Đăng nhập để sử dụng giỏ hàng.":shop.authStatus==="authenticated"?"Giỏ hàng đang trống.":"Đang chờ xác minh tài khoản."}</p>}</div>
       <div className={styles.cartFoot}>
-        <p className={styles.subtotal}><span>Tạm tính:</span><strong>0 ₫</strong></p>
-        <Button className={styles.checkout} disabled>Tiến Hành Thanh Toán</Button>
+        {shop.lines.length>0&&shop.authStatus==="authenticated"&&<Link href="/checkout" className={styles.checkout} onClick={onNavigate}>Tiến hành đặt đơn</Link>}
       </div>
     </div>
   );

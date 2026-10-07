@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { emptyFilters, type CatalogFilters, type CatalogSort } from "@/components/catalog/catalogData";
+import { type CatalogFilters, type CatalogSort } from "@/components/catalog/catalogData";
 import { catalogProduct, type CatalogMetadata, type CatalogPagination, type CatalogRequest } from "./types";
-import { getMetadata, getProducts, queryFor } from "./client";
+import { filtersFromParams, getMetadata, getProducts, queryFor } from "./client";
 
 function subscribeMobile(callback: () => void) {
   const query = window.matchMedia("(max-width: 760px)");
@@ -17,7 +17,7 @@ export function useMobile() {
 
 export function useCatalogMetadata() {
   const [state, setState] = useState<{ data: CatalogMetadata; loading: boolean; error: string | null }>({
-    data: { categories: [], brands: [] }, loading: true, error: null,
+    data: { categories: [], brands: [], colors: [] }, loading: true, error: null,
   });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -25,7 +25,7 @@ export function useCatalogMetadata() {
     getMetadata(controller.signal).then(data => {
       if (!controller.signal.aborted) setState({ data, loading: false, error: null });
     }).catch(error => {
-      if (!controller.signal.aborted) setState({ data: { categories: [], brands: [] }, loading: false, error: error instanceof Error ? error.message : "Không thể tải bộ lọc." });
+      if (!controller.signal.aborted) setState({ data: { categories: [], brands: [], colors: [] }, loading: false, error: error instanceof Error ? error.message : "Không thể tải bộ lọc." });
     });
     return () => controller.abort();
   }, [attempt]);
@@ -56,7 +56,7 @@ export function useCatalog() {
   }, [mobile, router]);
   const view = params.get("view") === "list" && !mobile ? "list" : "grid";
   const sort: CatalogSort = params.get("sort") === "price-asc" ? "price-asc" : params.get("sort") === "price-desc" ? "price-desc" : "position";
-  const filters: CatalogFilters = { ...emptyFilters, categories: params.getAll("category_id"), brand: params.get("brand") || "" };
+  const filters = filtersFromParams(params);
   const request: CatalogRequest = {
     q: params.get("q") || "", filters, sort, view,
     page: integer(params.get("page"), 1, 2_147_483_647),
@@ -73,7 +73,7 @@ export function useCatalog() {
     // The query string is the stable dependency; ignore superseded responses.
     const query = new URLSearchParams(key);
     const snapshot: CatalogRequest = {
-      q: query.get("q") || "", filters: { ...emptyFilters, categories: query.getAll("category_id"), brand: query.get("brand") || "" },
+      q: query.get("q") || "", filters: filtersFromParams(query),
       sort: query.get("sort") === "default" ? "position" : query.get("sort") as CatalogSort,
       page: Number(query.get("page")), pageSize: Number(query.get("page_size")), view: "grid",
     };

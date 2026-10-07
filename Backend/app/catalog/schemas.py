@@ -2,7 +2,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
 
 def clean_text(value: str) -> str:
@@ -21,17 +21,26 @@ class CatalogSort(str, Enum):
     PRICE_DESC = "price-desc"
 
 
+class StockStatus(str, Enum):
+    IN_STOCK = "in-stock"
+    OUT_OF_STOCK = "out-of-stock"
+
+
 class CatalogQuery(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     q: str | None = Field(default=None, max_length=100, description="Tìm chuỗi trong tên hoặc SKU, không phân biệt hoa/thường; ký tự đặc biệt được tìm nguyên văn.")
     category_id: list[Identifier] = Field(default_factory=list, max_length=20, description="Mã LOAI_SP; lặp tham số để chọn nhiều loại. Các loại được kết hợp bằng OR.")
     brand: str | None = Field(default=None, max_length=100, description="Giá trị thuong_hieu từ /api/catalog/brands; so khớp chính xác.")
+    min_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá thấp nhất, bao gồm mức này; giá trước thuế.")
+    max_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá cao nhất, bao gồm mức này; phải >= min_price.")
+    color: str | None = Field(default=None, max_length=100, description="Màu từ thông số sản phẩm, không phân biệt hoa/thường. __unspecified__ chọn sản phẩm chưa ghi màu.")
+    stock_status: StockStatus | None = Field(default=None, description="Còn/hết hàng khả dụng trong kho hoạt động, sau lượng giữ của đơn MOI/XAC_NHAN/DANG_CHUAN_BI; kiểm tra lại khi checkout.")
     page: int = Field(default=1, ge=1, le=2_147_483_647)
     page_size: int = Field(default=20, ge=1, le=100)
     sort: CatalogSort = Field(default=CatalogSort.DEFAULT, description="Mặc định theo mã sản phẩm; giá bằng nhau được sắp tiếp theo mã sản phẩm.")
 
-    @field_validator("q", "brand", mode="before")
+    @field_validator("q", "brand", "color", mode="before")
     @classmethod
     def normalize_optional_text(cls, value):
         if isinstance(value, str):
@@ -44,6 +53,12 @@ class CatalogQuery(BaseModel):
         if isinstance(values, list):
             return list(dict.fromkeys(clean_text(value) for value in values))
         return values
+
+    @model_validator(mode="after")
+    def valid_price_range(self):
+        if self.min_price is not None and self.max_price is not None and self.min_price > self.max_price:
+            raise ValueError("Giá thấp nhất không được lớn hơn giá cao nhất.")
+        return self
 
 
 class Category(BaseModel):
@@ -89,6 +104,8 @@ class CatalogProduct(BaseModel):
     images: list[ProductImage]
     specifications: list[Specification]
     specifications_text: str | None = Field(description="Nội dung gốc của thong_so_ky_thuat, giữ nguyên khi dữ liệu là văn bản tự do.")
+    color: str | None = None
+    stock_status: StockStatus | None = Field(default=None, description="Trả trạng thái khả dụng khi dùng bộ lọc tồn kho; null khi chưa kiểm tra tồn.")
 
     @field_serializer("price", when_used="json")
     def serialize_price(self, value: Decimal) -> str:
@@ -117,6 +134,15 @@ class CategoryList(BaseModel):
 
 class BrandList(BaseModel):
     items: list[Brand]
+
+
+class ColorOption(BaseModel):
+    value: str
+    label: str
+
+
+class ColorList(BaseModel):
+    items: list[ColorOption]
 
 
 class ErrorDetail(BaseModel):

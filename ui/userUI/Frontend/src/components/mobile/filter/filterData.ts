@@ -6,7 +6,7 @@ export const filterSections: { id: FilterSectionId; label: string }[] = [
   { id: "category", label: "Danh mục" },
   { id: "price", label: "Giá" },
   { id: "color", label: "Màu sắc" },
-  { id: "filterName", label: "Tên bộ lọc" },
+  { id: "filterName", label: "Tình trạng tồn kho" },
   { id: "brands", label: "Thương hiệu" },
 ];
 

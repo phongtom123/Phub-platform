@@ -1,0 +1,55 @@
+# Customer UI/backend only. Never starts scripts/shopping_e2e_app.py.
+# Supply actual URLs and secrets in Render; do not commit .env.
+services:
+  - type: web
+    name: phub-customer-api
+    runtime: python
+    branch: ui-review
+    rootDir: Backend
+    region: singapore
+    plan: free
+    autoDeployTrigger: off
+    buildCommand: pip install -r requirements.txt -c constraints-render.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.6
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: ORDER_STOCK_POLICY
+        value: reserve_on_order
+      - key: ORDER_PRICE_TAX_MODE
+        value: exclusive
+      - key: ORDER_TAX_RATE
+        value: "10"
+      - key: ORDER_TAX_APPLICATION
+        value: invoice
+      - key: CHECKOUT_PROMOTION_TIMEZONE
+        value: Asia/Ho_Chi_Minh
+  - type: web
+    name: phub-customer-ui
+    runtime: node
+    branch: ui-review
+    rootDir: ui/userUI/Frontend
+    region: singapore
+    plan: free
+    autoDeployTrigger: off
+    buildCommand: npm ci --include=dev && npm run build -- --webpack
+    startCommand: npm run start -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: PHUB_API_BASE_URL
+        sync: false
+      - key: PHUB_UI_ORIGIN
+        sync: false

@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { Button } from "@/components/common/Button";
 import { Price } from "@/components/common/Price";
 import { CatalogImage } from "@/components/common/CatalogImage";
-import { productHref } from "@/lib/catalog/types";
+import { ProductPreviewActions } from "@/components/shopping/ProductPreviewActions";
 import type { HomeProduct } from "./homeData";
 import styles from "./Home.module.css";
 
@@ -34,8 +32,7 @@ export function HomeDialog({ content, onClose, onSelect }: { content: HomeDialog
         <div>
           <Price amount={content.product.amount} originalAmount={content.product.originalAmount} currency={content.product.currency} locale="vi-VN" uiLocale="vi" />
           <p>Khám phá bộ sưu tập sản phẩm của Tech Store.</p>
-          <p><Link href={productHref(content.product.id)} onClick={onClose} className="text-blue-600 underline">Xem chi tiết sản phẩm</Link></p>
-          <Button onClick={onClose}>Tiếp tục xem sản phẩm</Button>
+          <ProductPreviewActions product={content.product} onClose={onClose}/>
         </div>
       </div>}
       {content.type === "catalog" && <div className={styles.catalogGrid}>

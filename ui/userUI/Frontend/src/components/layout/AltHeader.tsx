@@ -12,12 +12,14 @@ import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
 import styles from "./Header.module.css";
 import { useRouter } from "next/navigation";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
 
 type Dropdown = "shop" | "account" | "cart" | "mega";
 type Panel = Dropdown | "mobile" | "notice" | null;
 
 export default function AltHeader() {
   const router = useRouter();
+  const shop = useShopping();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -200,11 +202,11 @@ export default function AltHeader() {
             onPointerEnter={event => hoverOpen("cart", event)}
             onPointerLeave={hoverClose}
           >
-            <IconButton className={styles.actionButton} label="Giỏ hàng, 0 sản phẩm"
+            <IconButton className={styles.actionButton} label={`Giỏ hàng, ${shop.count} sản phẩm`}
               aria-expanded={panel === "cart"} aria-controls={id + "-cart"}
               onClick={event => toggle("cart", event.currentTarget)}>
               <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />
-              <span className={styles.cartBadge} aria-hidden="true">0</span>
+              <span className={styles.cartBadge} aria-hidden="true">{shop.count}</span>
             </IconButton>
             <div id={id + "-cart"} className={styles.cartPanel} {...dropdownProps("cart")}>
               <CartPreview onNavigate={() => close()} />

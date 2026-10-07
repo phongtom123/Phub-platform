@@ -1,13 +1,15 @@
 import json
 import re
+import unicodedata
 from decimal import Decimal
 
 from postgrest.exceptions import APIError
 from supabase import Client
+from .availability import available_skus, rows as all_rows
 
 from .schemas import (
     Brand, CatalogProduct, CatalogQuery, CatalogSort, Category,
-    Pagination, ProductImage, ProductPage, Specification,
+    Pagination, ProductImage, ProductPage, Specification, ColorOption, StockStatus,
 )
 
 
@@ -51,6 +53,21 @@ def specifications_from_text(raw: str | None) -> list[Specification]:
     return [Specification(label="Thông số", value=raw)]
 
 
+def product_color(raw):
+    specs = specifications_from_text(raw)
+    # Mixed free text may contain a standalone color line, without all lines
+    # being specifications. Do not invent color from product names or images.
+    if isinstance(raw, str) and not raw.lstrip().startswith(("{", "[")):
+        specs += [Specification(label=label.strip(), value=value.strip())
+                  for label, separator, value in (line.partition(":") for line in raw.splitlines())
+                  if separator and label.strip() and value.strip()]
+    for spec in specs:
+        label = "".join(c for c in unicodedata.normalize("NFD", spec.label.casefold()) if not unicodedata.combining(c))
+        if label.strip() in {"mau", "mau sac", "color", "colour"}:
+            return spec.value.strip() or None
+    return None
+
+
 class CatalogRepository:
     def __init__(self, client: Client, currency: str = "VND", active_status: int = 1):
         self.client = client
@@ -58,7 +75,7 @@ class CatalogRepository:
         self.active_status = active_status
 
     def active_products(self, columns: str, **options):
-        # Both product and category must be active. Never read inventory or cost.
+        # Both product and category must be active. Never expose internal cost.
         return (
             self.client.table("SAN_PHAM").select(columns, **options)
             .eq("trang_thai", self.active_status)
@@ -75,6 +92,10 @@ class CatalogRepository:
             query = query.filter("ma_loai_sp", "in", f"({values})")
         if filters.brand:
             query = query.eq("thuong_hieu", filters.brand)
+        if filters.min_price is not None:
+            query = query.gte("gia_ban_hien_tai", str(filters.min_price))
+        if filters.max_price is not None:
+            query = query.lte("gia_ban_hien_tai", str(filters.max_price))
         return query
 
     def product_from_row(self, row: dict) -> CatalogProduct:
@@ -89,13 +110,34 @@ class CatalogRepository:
             warranty_months=row["bao_hanh_thang"],
             images=[ProductImage(url=image.strip(), alt=row["ten_sp"])] if image and image.strip() else [],
             specifications=specifications_from_text(raw_specs), specifications_text=raw_specs,
+            color=product_color(raw_specs),
         )
 
     def list_products(self, filters: CatalogQuery) -> ProductPage:
-        query = self.apply_filters(self.active_products(PRODUCT_COLUMNS, count="exact"), filters)
-        if filters.sort != CatalogSort.DEFAULT:
-            query = query.order("gia_ban_hien_tai", desc=filters.sort == CatalogSort.PRICE_DESC)
-        query = query.order("ma_sp")
+        def product_query():
+            query = self.apply_filters(self.active_products(PRODUCT_COLUMNS, count="exact"), filters)
+            if filters.sort != CatalogSort.DEFAULT:
+                query = query.order("gia_ban_hien_tai", desc=filters.sort == CatalogSort.PRICE_DESC)
+            return query.order("ma_sp")
+        query = product_query()
+        if filters.color or filters.stock_status:
+            # Existing schema has no color/available-stock columns. Read every
+            # matching row in stable batches BEFORE filtering and pagination.
+            products = [self.product_from_row(row) for row in all_rows(product_query)]
+            if filters.color:
+                products = [product for product in products if
+                            (product.color is None if filters.color == "__unspecified__" else
+                             product.color is not None and product.color.casefold() == filters.color.casefold())]
+            if filters.stock_status:
+                available = available_skus(self.client, [product.sku for product in products], self.active_status)
+                for product in products:
+                    product.stock_status = StockStatus.IN_STOCK if product.sku in available else StockStatus.OUT_OF_STOCK
+                products = [product for product in products if product.stock_status == filters.stock_status]
+            total = len(products)
+            start = (filters.page - 1) * filters.page_size
+            return ProductPage(items=products[start:start + filters.page_size], pagination=Pagination(
+                page=filters.page, page_size=filters.page_size, total=total,
+                total_pages=(total + filters.page_size - 1) // filters.page_size))
         start = (filters.page - 1) * filters.page_size
         try:
             response = query.range(start, start + filters.page_size - 1).execute()
@@ -150,3 +192,17 @@ class CatalogRepository:
             if len(rows) < BATCH_SIZE:
                 return [Brand(name=name) for name in sorted(names, key=lambda name: (name.casefold(), name))]
             start += BATCH_SIZE
+
+    def list_colors(self) -> list[ColorOption]:
+        names = {}
+        unknown = False
+        for row in all_rows(lambda: self.active_products("ma_sp,thong_so_ky_thuat,category:LOAI_SP!inner(trang_thai)").order("ma_sp")):
+            color = product_color(row.get("thong_so_ky_thuat"))
+            if color:
+                names.setdefault(color.casefold(), color)
+            else:
+                unknown = True
+        options = [ColorOption(value=value, label=value) for _, value in sorted(names.items())]
+        if unknown:
+            options.append(ColorOption(value="__unspecified__", label="Chưa có thông tin màu sắc"))
+        return options

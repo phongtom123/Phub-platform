@@ -1,4 +1,5 @@
 import type { ApiProduct, ApiProductPage, CatalogMetadata, CatalogRequest } from "./types";
+import { emptyFilters, type CatalogFilters } from "@/components/catalog/catalogData";
 
 export class CatalogApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -40,10 +41,21 @@ export function queryFor(request: CatalogRequest): URLSearchParams {
   if (request.q.trim()) params.set("q", request.q.trim());
   request.filters.categories.forEach(id => params.append("category_id", id));
   if (request.filters.brand) params.set("brand", request.filters.brand);
+  if (request.filters.minPrice.trim()) params.set("min_price", request.filters.minPrice.trim());
+  if (request.filters.maxPrice.trim()) params.set("max_price", request.filters.maxPrice.trim());
+  if (request.filters.color) params.set("color", request.filters.color);
+  if (request.filters.stockStatus) params.set("stock_status", request.filters.stockStatus);
   params.set("sort", request.sort === "position" ? "default" : request.sort);
   params.set("page", String(request.page));
   params.set("page_size", String(request.pageSize));
   return params;
+}
+
+export function filtersFromParams(params: Pick<URLSearchParams, "get" | "getAll">): CatalogFilters {
+  const stock = params.get("stock_status");
+  return { ...emptyFilters, categories: params.getAll("category_id"), brand: params.get("brand") || "",
+    minPrice: params.get("min_price") || "", maxPrice: params.get("max_price") || "", color: params.get("color") || "",
+    stockStatus: stock === "in-stock" || stock === "out-of-stock" ? stock : "" };
 }
 
 export async function getProducts(request: CatalogRequest, signal?: AbortSignal): Promise<ApiProductPage> {
@@ -57,16 +69,19 @@ export async function getProducts(request: CatalogRequest, signal?: AbortSignal)
 }
 
 export async function getMetadata(signal?: AbortSignal): Promise<CatalogMetadata> {
-  const [categories, brands] = await Promise.all([
+  const [categories, brands, colors] = await Promise.all([
     fetch("/api/catalog/categories", { signal }).then(readJson),
     fetch("/api/catalog/brands", { signal }).then(readJson),
-  ]) as [{ items: { id: string; name: string }[] }, { items: { name: string }[] }];
+    fetch("/api/catalog/colors", { signal }).then(readJson),
+  ]) as [{ items: { id: string; name: string }[] }, { items: { name: string }[] }, { items: { value: string; label: string }[] }];
   if (!Array.isArray(categories?.items) || !categories.items.every(item => item && typeof item.id === "string" && typeof item.name === "string")
-    || !Array.isArray(brands?.items) || !brands.items.every(item => item && typeof item.name === "string")) {
+    || !Array.isArray(brands?.items) || !brands.items.every(item => item && typeof item.name === "string")
+    || !Array.isArray(colors?.items) || !colors.items.every(item => item && typeof item.value === "string" && typeof item.label === "string")) {
     throw new CatalogApiError("Không thể đọc danh mục và thương hiệu.", 502);
   }
   return {
     categories: categories.items.map(item => ({ id: item.id, label: item.name })),
     brands: brands.items.map(item => ({ id: item.name, name: item.name })),
+    colors: colors.items,
   };
 }
