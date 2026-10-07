@@ -53,7 +53,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
 def test_operation_ids_are_unique_and_tags_exist(spec):
     operations = [operation for path in spec["paths"].values() for operation in path.values()]
     identifiers = [operation["operationId"] for operation in operations]
-    assert len(identifiers) == len(set(identifiers)) == 47
+    assert len(identifiers) == len(set(identifiers)) == 59
     tags = {tag["name"] for tag in spec["tags"]}
     for operation in operations:
         assert set(operation["tags"]).issubset(tags)

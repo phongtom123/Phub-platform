@@ -3,7 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from .catalog.router import router as catalog_router
 from .auth import router as auth_router
 from .tables import router as tables_router
-from .config import frontend_origins
+from .runtime import frontend_origins
+from .orders.router import router as orders_router
+from .payments.router import router as payments_router
+from .commerce.router import router as commerce_router
+from .health import router as health_router
 from .errors import register_errors
 from .supabase import get_supabase
 from .resources import public_columns
@@ -14,7 +18,11 @@ app = FastAPI(
     title="Phub Platform API",
     version="0.3.0",
     description=DESCRIPTION,
-    openapi_tags=TAGS,
+    openapi_tags=TAGS + [
+        {"name": "Customer Orders", "description": "Customer order creation and idempotent retries."},
+        {"name": "Customer Payments", "description": "Customer payment requests and status."},
+        {"name": "Customer Shopping", "description": "Customer profile, cart, checkout and order history."},
+    ],
     swagger_ui_parameters={"defaultModelsExpandDepth": -1, "docExpansion": "none", "filter": True,
                            "displayRequestDuration": True, "withCredentials": True, "persistAuthorization": False},
 )
@@ -30,12 +38,12 @@ app.add_middleware(
 app.include_router(catalog_router)
 app.include_router(auth_router)
 app.include_router(tables_router)
+app.include_router(orders_router)
+app.include_router(payments_router)
+app.include_router(commerce_router)
+app.include_router(health_router)
 register_errors(app)
 
-@app.get("/api/health", tags=["Health"])
-def health_check() -> dict[str, str]:
-    """Application liveness, not a database readiness check."""
-    return {"status": "ok"}
 
 
 @app.get("/api/products", deprecated=True, tags=["Public Catalog"])

@@ -252,10 +252,10 @@ def test_swagger_documents_all_endpoints_parameters_and_error_models(catalog_cli
     client, _, _, _ = catalog_client
     schema = client.get("/openapi.json").json()
     paths = schema["paths"]
-    assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands"}
+    assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands", "/api/catalog/colors"}
     operation = paths["/api/catalog/products"]["get"]
     assert operation["tags"] == ["Public Catalog"]
-    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "brand", "page", "page_size", "sort"}
+    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status"}
     for path in paths.values():
         for status in ("422", "500", "503"):
             assert path["get"]["responses"][status]["content"]["application/json"]["schema"]["$ref"].endswith("/ErrorResponse")
@@ -314,6 +314,7 @@ def test_existing_products_endpoint_keeps_original_contract(monkeypatch, fails):
         else:
             assert response.status_code == 200 and response.json() == [{"ma_sp": "legacy-product"}]
         assert "/api/catalog/products" in client.get("/openapi.json").json()["paths"]
+        assert "/api/orders" in client.get("/openapi.json").json()["paths"]
     assert calls[0] == ("table", "SAN_PHAM")
     assert calls[1][0] == "select" and calls[1][1] != "*"
     assert calls[2:] == [("eq", "trang_thai", 1), ("eq", "category.trang_thai", 1), ("order", "ma_sp"), ("limit", 20)]

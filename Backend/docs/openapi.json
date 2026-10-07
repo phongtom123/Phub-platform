@@ -546,6 +546,29 @@
         "title": "CT_PHIEU_NHAPRead",
         "type": "object"
       },
+      "CartItem": {
+        "additionalProperties": false,
+        "properties": {
+          "quantity": {
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "quantity"
+        ],
+        "title": "CartItem",
+        "type": "object"
+      },
       "CatalogProduct": {
         "examples": [
           {
@@ -591,6 +614,17 @@
           },
           "category": {
             "$ref": "#/components/schemas/Category"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
           },
           "currency": {
             "description": "Mã tiền tệ; mặc định VND, có thể cấu hình CATALOG_CURRENCY.",
@@ -652,12 +686,23 @@
             "description": "Nội dung gốc của thong_so_ky_thuat, giữ nguyên khi dữ liệu là văn bản tự do.",
             "title": "Specifications Text"
           },
+          "stock_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StockStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Trả trạng thái khả dụng khi dùng bộ lọc tồn kho; null khi chưa kiểm tra tồn."
+          },
           "unit": {
             "title": "Unit",
             "type": "string"
           },
           "warranty_months": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Warranty Months",
             "type": "integer"
           }
@@ -721,6 +766,495 @@
           "items"
         ],
         "title": "CategoryList",
+        "type": "object"
+      },
+      "CheckoutLine": {
+        "additionalProperties": false,
+        "properties": {
+          "discount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Discount",
+            "type": "string"
+          },
+          "gross_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Gross Total",
+            "type": "string"
+          },
+          "line_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Line Total",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "tax_amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Tax Amount",
+            "type": "string"
+          },
+          "tax_rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Tax Rate",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unit_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Unit Price",
+            "type": "string"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sku",
+          "warehouse_id",
+          "name",
+          "unit",
+          "quantity",
+          "unit_price",
+          "gross_total",
+          "discount",
+          "tax_rate",
+          "tax_amount",
+          "line_total"
+        ],
+        "title": "CheckoutLine",
+        "type": "object"
+      },
+      "CheckoutQuote": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "discount_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Discount Total",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CheckoutLine"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "shipping_status": {
+            "const": "not_quoted",
+            "title": "Shipping Status",
+            "type": "string"
+          },
+          "subtotal": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Subtotal",
+            "type": "string"
+          },
+          "tax_application": {
+            "const": "invoice",
+            "title": "Tax Application",
+            "type": "string"
+          },
+          "tax_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Tax Total",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string"
+          },
+          "voucher_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voucher Code"
+          }
+        },
+        "required": [
+          "currency",
+          "tax_application",
+          "shipping_status",
+          "voucher_code",
+          "items",
+          "subtotal",
+          "discount_total",
+          "tax_total",
+          "total"
+        ],
+        "title": "CheckoutQuote",
+        "type": "object"
+      },
+      "ColorList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ColorOption"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ColorList",
+        "type": "object"
+      },
+      "ColorOption": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "ColorOption",
+        "type": "object"
+      },
+      "CreateOrder": {
+        "additionalProperties": false,
+        "examples": [
+          {
+            "items": [
+              {
+                "expected_unit_price": "15990000.00",
+                "quantity": 1,
+                "sku": "SKU-DEMO",
+                "warehouse_id": -900001
+              }
+            ],
+            "note": "Gọi trước khi giao",
+            "recipient": {
+              "address_line": "123 Đường thử nghiệm",
+              "name": "Nguyễn Văn A",
+              "phone": "0901234567",
+              "province": "TP Hồ Chí Minh",
+              "ward": "Phường thử nghiệm"
+            }
+          }
+        ],
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/Recipient"
+          }
+        },
+        "required": [
+          "recipient",
+          "items"
+        ],
+        "title": "CreateOrder",
+        "type": "object"
+      },
+      "CustomerOrderReceipt": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "discount_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Discount Total",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CheckoutLine"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/Recipient"
+          },
+          "sales_channel": {
+            "const": "ONLINE",
+            "title": "Sales Channel",
+            "type": "string"
+          },
+          "shipping_status": {
+            "const": "not_quoted",
+            "title": "Shipping Status",
+            "type": "string"
+          },
+          "status": {
+            "const": "MOI",
+            "title": "Status",
+            "type": "string"
+          },
+          "subtotal": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Subtotal",
+            "type": "string"
+          },
+          "tax_application": {
+            "const": "invoice",
+            "title": "Tax Application",
+            "type": "string"
+          },
+          "tax_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Tax Total",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string"
+          },
+          "voucher_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voucher Code"
+          }
+        },
+        "required": [
+          "currency",
+          "tax_application",
+          "shipping_status",
+          "voucher_code",
+          "items",
+          "subtotal",
+          "discount_total",
+          "tax_total",
+          "total",
+          "id",
+          "status",
+          "sales_channel",
+          "created_at",
+          "recipient",
+          "note"
+        ],
+        "title": "CustomerOrderReceipt",
+        "type": "object"
+      },
+      "CustomerOrderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_discount": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Expected Discount"
+          },
+          "expected_total": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Expected Total"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/Recipient"
+          },
+          "voucher_code": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voucher Code"
+          }
+        },
+        "required": [
+          "recipient",
+          "items",
+          "expected_discount",
+          "expected_total"
+        ],
+        "title": "CustomerOrderRequest",
+        "type": "object"
+      },
+      "CustomerProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "address_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Line"
+          },
+          "customer_id": {
+            "title": "Customer Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "province": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Province"
+          },
+          "ward": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward"
+          }
+        },
+        "required": [
+          "customer_id",
+          "name",
+          "phone",
+          "address_line",
+          "province",
+          "ward"
+        ],
+        "title": "CustomerProfile",
         "type": "object"
       },
       "DON_HANGPage": {
@@ -1109,6 +1643,99 @@
           "nguoi_lap"
         ],
         "title": "HOA_DONRead",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "const": "ok",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "InvoiceOverview": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "invoice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvoiceTotals"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StoredLine"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "order_id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Order Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "currency",
+          "invoice",
+          "items"
+        ],
+        "title": "InvoiceOverview",
+        "type": "object"
+      },
+      "InvoiceTotals": {
+        "additionalProperties": false,
+        "properties": {
+          "discount_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Discount Total",
+            "type": "string"
+          },
+          "issued_at": {
+            "title": "Issued At",
+            "type": "string"
+          },
+          "subtotal": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Subtotal",
+            "type": "string"
+          },
+          "tax_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Tax Total",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issued_at",
+          "discount_total",
+          "subtotal",
+          "tax_total",
+          "total"
+        ],
+        "title": "InvoiceTotals",
         "type": "object"
       },
       "KHACH_HANGCreate": {
@@ -1797,7 +2424,7 @@
           "luong": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -2071,7 +2698,7 @@
           "luong": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -2390,6 +3017,280 @@
         "title": "NHA_CUNG_CAPUpdate",
         "type": "object"
       },
+      "OrderDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StoredLine"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/StoredRecipient"
+          },
+          "status": {
+            "enum": [
+              "MOI",
+              "XAC_NHAN",
+              "DANG_CHUAN_BI",
+              "DA_XUAT_KHO",
+              "HOAN_THANH",
+              "HUY",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "created_at",
+          "currency",
+          "total",
+          "recipient",
+          "note",
+          "items"
+        ],
+        "title": "OrderDetail",
+        "type": "object"
+      },
+      "OrderItem": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_unit_price": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "description": "Giá catalog khách vừa xem, dạng chuỗi thập phân. Chỉ dùng đối chiếu; giá bán lấy từ database.",
+            "examples": [
+              "15990000.00"
+            ],
+            "pattern": "^[0-9]{1,16}(\\.[0-9]{1,2})?$",
+            "title": "Expected Unit Price",
+            "type": "string"
+          },
+          "quantity": {
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Sku",
+            "type": "string"
+          },
+          "warehouse_id": {
+            "maximum": 2147483647.0,
+            "minimum": -2147483648.0,
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sku",
+          "warehouse_id",
+          "quantity",
+          "expected_unit_price"
+        ],
+        "title": "OrderItem",
+        "type": "object"
+      },
+      "OrderPage": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OrderSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "title": "OrderPage",
+        "type": "object"
+      },
+      "OrderReceipt": {
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SoldItem"
+            },
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/Recipient"
+          },
+          "sales_channel": {
+            "const": "ONLINE",
+            "title": "Sales Channel",
+            "type": "string"
+          },
+          "status": {
+            "const": "MOI",
+            "title": "Status",
+            "type": "string"
+          },
+          "subtotal": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Subtotal",
+            "type": "string"
+          },
+          "tax_application": {
+            "const": "invoice",
+            "title": "Tax Application",
+            "type": "string"
+          },
+          "tax_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Tax Total",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "sales_channel",
+          "created_at",
+          "currency",
+          "tax_application",
+          "recipient",
+          "note",
+          "items",
+          "subtotal",
+          "tax_total",
+          "total"
+        ],
+        "title": "OrderReceipt",
+        "type": "object"
+      },
+      "OrderSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "MOI",
+              "XAC_NHAN",
+              "DANG_CHUAN_BI",
+              "DA_XUAT_KHO",
+              "HOAN_THANH",
+              "HUY",
+              "UNKNOWN"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "created_at",
+          "currency",
+          "total"
+        ],
+        "title": "OrderSummary",
+        "type": "object"
+      },
       "PHIEU_CHUYEN_KHOPage": {
         "additionalProperties": false,
         "properties": {
@@ -2685,12 +3586,12 @@
             "type": "integer"
           },
           "total": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total",
             "type": "integer"
           },
           "total_pages": {
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Total Pages",
             "type": "integer"
           }
@@ -2702,6 +3603,129 @@
           "total_pages"
         ],
         "title": "Pagination",
+        "type": "object"
+      },
+      "PaymentOverview": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "latest_transaction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentTransaction"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Trạng thái giao dịch mới nhất, có thể là thu hoặc hoàn tiền. Không phải kết luận đã tất toán toàn đơn."
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "order_id": {
+            "title": "Order Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "order_id",
+          "currency",
+          "latest_transaction",
+          "message"
+        ],
+        "title": "PaymentOverview",
+        "type": "object"
+      },
+      "PaymentRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "method": {
+            "enum": [
+              "cash",
+              "bank_transfer",
+              "card",
+              "e_wallet"
+            ],
+            "title": "Method",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method"
+        ],
+        "title": "PaymentRequest",
+        "type": "object"
+      },
+      "PaymentTransaction": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Amount",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "method": {
+            "enum": [
+              "cash",
+              "bank_transfer",
+              "card",
+              "e_wallet",
+              "unknown"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "succeeded",
+              "failed",
+              "unknown"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "collection",
+              "refund",
+              "unknown"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "method",
+          "amount",
+          "status",
+          "occurred_at",
+          "message"
+        ],
+        "title": "PaymentTransaction",
         "type": "object"
       },
       "ProductImage": {
@@ -2751,6 +3775,80 @@
           "pagination"
         ],
         "title": "ProductPage",
+        "type": "object"
+      },
+      "QuoteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CartItem"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          },
+          "voucher_code": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voucher Code"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "QuoteRequest",
+        "type": "object"
+      },
+      "Recipient": {
+        "additionalProperties": false,
+        "properties": {
+          "address_line": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Address Line",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "pattern": "^\\+?[0-9]{8,15}$",
+            "title": "Phone",
+            "type": "string"
+          },
+          "province": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Province",
+            "type": "string"
+          },
+          "ward": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Ward",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address_line",
+          "province",
+          "ward"
+        ],
+        "title": "Recipient",
         "type": "object"
       },
       "ResourceColumn": {
@@ -2953,7 +4051,7 @@
           "gia_ban_hien_tai": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -3255,7 +4353,7 @@
           "gia_ban_hien_tai": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -3496,6 +4594,64 @@
         "title": "SessionUser",
         "type": "object"
       },
+      "SoldItem": {
+        "properties": {
+          "line_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Line Total",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "tax_amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Tax Amount",
+            "type": "string"
+          },
+          "tax_rate": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Tax Rate",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unit_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Unit Price",
+            "type": "string"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sku",
+          "warehouse_id",
+          "name",
+          "unit",
+          "quantity",
+          "unit_price",
+          "tax_rate",
+          "tax_amount",
+          "line_total"
+        ],
+        "title": "SoldItem",
+        "type": "object"
+      },
       "Specification": {
         "properties": {
           "label": {
@@ -3512,6 +4668,142 @@
           "value"
         ],
         "title": "Specification",
+        "type": "object"
+      },
+      "StockStatus": {
+        "enum": [
+          "in-stock",
+          "out-of-stock"
+        ],
+        "title": "StockStatus",
+        "type": "string"
+      },
+      "StoredLine": {
+        "additionalProperties": false,
+        "properties": {
+          "discount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Discount",
+            "type": "string"
+          },
+          "line_total": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Line Total",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "tax_amount": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Tax Amount",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unit_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Unit Price",
+            "type": "string"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sku",
+          "warehouse_id",
+          "name",
+          "unit",
+          "quantity",
+          "unit_price",
+          "discount",
+          "tax_amount",
+          "line_total"
+        ],
+        "title": "StoredLine",
+        "type": "object"
+      },
+      "StoredRecipient": {
+        "additionalProperties": false,
+        "properties": {
+          "address_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Line"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "province": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Province"
+          },
+          "ward": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address_line",
+          "province",
+          "ward"
+        ],
+        "title": "StoredRecipient",
         "type": "object"
       },
       "TAI_KHOANCreate": {
@@ -3981,6 +5273,38 @@
         "title": "TON_KHORead",
         "type": "object"
       },
+      "TransactionPage": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentTransaction"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "order_id": {
+            "title": "Order Id",
+            "type": "string"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        },
+        "required": [
+          "order_id",
+          "currency",
+          "items",
+          "pagination"
+        ],
+        "title": "TransactionPage",
+        "type": "object"
+      },
       "VOUCHERCreate": {
         "additionalProperties": false,
         "example": {
@@ -3998,7 +5322,7 @@
           "gia_tri_don_toi_thieu": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -4013,7 +5337,7 @@
           "gia_tri_giam": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -4027,7 +5351,7 @@
           "giam_toi_da": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -4260,7 +5584,7 @@
           "gia_tri_don_toi_thieu": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -4274,7 +5598,7 @@
           "gia_tri_giam": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -4288,7 +5612,7 @@
           "giam_toi_da": {
             "anyOf": [
               {
-                "minimum": 0,
+                "minimum": 0.0,
                 "type": "number"
               },
               {
@@ -4875,9 +6199,88 @@
         ]
       }
     },
+    "/api/catalog/colors": {
+      "get": {
+        "description": "Đọc nhãn Màu/Màu sắc/Color/Colour trong JSON hoặc văn bản thong_so_ky_thuat.\nKhông thêm cột màu; __unspecified__ biểu thị sản phẩm chưa ghi thông tin màu.",
+        "operationId": "list_colors_api_catalog_colors_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColorList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Các màu đã ghi trong thông số sản phẩm đang bán",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
     "/api/catalog/products": {
       "get": {
-        "description": "Catalog công khai cho desktop và mobile. Sản phẩm và loại sản phẩm phải\nhoạt động (mặc định trang_thai=1). Không lọc theo tồn kho.\nTìm kiếm, lọc, sắp xếp thực hiện tại database trước khi phân trang.\nKhông có kết quả hoặc trang vượt phạm vi trả 200 với items rỗng.",
+        "description": "Catalog công khai cho desktop và mobile. Sản phẩm và loại sản phẩm phải\nhoạt động (mặc định trang_thai=1). stock_status lọc tồn khả dụng sau giữ hàng.\nTìm kiếm, lọc, sắp xếp thực hiện tại database trước khi phân trang.\nKhông có kết quả hoặc trang vượt phạm vi trả 200 với items rỗng.",
         "operationId": "list_products_api_catalog_products_get",
         "parameters": [
           {
@@ -4933,6 +6336,89 @@
               ],
               "description": "Giá trị thuong_hieu từ /api/catalog/brands; so khớp chính xác.",
               "title": "Brand"
+            }
+          },
+          {
+            "description": "Giá thấp nhất, bao gồm mức này; giá trước thuế.",
+            "in": "query",
+            "name": "min_price",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Giá thấp nhất, bao gồm mức này; giá trước thuế.",
+              "title": "Min Price"
+            }
+          },
+          {
+            "description": "Giá cao nhất, bao gồm mức này; phải >= min_price.",
+            "in": "query",
+            "name": "max_price",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Giá cao nhất, bao gồm mức này; phải >= min_price.",
+              "title": "Max Price"
+            }
+          },
+          {
+            "description": "Màu từ thông số sản phẩm, không phân biệt hoa/thường. __unspecified__ chọn sản phẩm chưa ghi màu.",
+            "in": "query",
+            "name": "color",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Màu từ thông số sản phẩm, không phân biệt hoa/thường. __unspecified__ chọn sản phẩm chưa ghi màu.",
+              "title": "Color"
+            }
+          },
+          {
+            "description": "Còn/hết hàng khả dụng trong kho hoạt động, sau lượng giữ của đơn MOI/XAC_NHAN/DANG_CHUAN_BI; kiểm tra lại khi checkout.",
+            "in": "query",
+            "name": "stock_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StockStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Còn/hết hàng khả dụng trong kho hoạt động, sau lượng giữ của đơn MOI/XAC_NHAN/DANG_CHUAN_BI; kiểm tra lại khi checkout.",
+              "title": "Stock Status"
             }
           },
           {
@@ -5153,6 +6639,1093 @@
         "summary": "Chi tiết sản phẩm công khai, ảnh và thông số",
         "tags": [
           "Customer · Catalog"
+        ]
+      }
+    },
+    "/api/customer/checkout/quote": {
+      "post": {
+        "description": "Giá/tổng do database tính; chọn một kho đủ hàng cho mỗi SKU.\nChỉ báo giá, không giữ hàng hoặc ghi lượt voucher. Tạo đơn sẽ kiểm tra lại.\nGiá trước thuế, thuế 10% áp dụng khi lập hóa đơn; phí vận chuyển chưa báo giá.",
+        "operationId": "quote_checkout_api_customer_checkout_quote_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutQuote"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "summary": "Báo giá giỏ hàng và kiểm tra voucher",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/me": {
+      "get": {
+        "description": "Chỉ đọc KHACH_HANG của danh tính đã xác minh; không tạo/sửa tài khoản.\nĐiểm nối require_customer mặc định trả 503 cho đến khi nhóm nối đăng nhập thật.",
+        "operationId": "current_profile_api_customer_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "summary": "Hồ sơ khách đang đăng nhập",
+        "tags": [
+          "Customer Shopping"
+        ]
+      },
+      "put": {
+        "description": "Cập nhật tên, điện thoại và địa chỉ mặc định của khách đã xác minh.\nKhông nhận mã khách, không sửa tài khoản đăng nhập, không tạo đơn/hóa đơn.",
+        "operationId": "save_current_profile_api_customer_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Recipient"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "summary": "Lưu thông tin nhận hàng của khách hiện tại",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/orders": {
+      "get": {
+        "operationId": "list_orders_api_customer_orders_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 1000000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "summary": "Danh sách đơn thuộc khách",
+        "tags": [
+          "Customer Shopping"
+        ]
+      },
+      "post": {
+        "description": "Một RPC transaction chốt tên/đơn vị/giá/giảm giá, giữ hàng và lượt voucher.\nKhông nhận ma_kh từ client; khách lấy từ xác thực. Retry giữ nguyên key và body.\nKhông trừ tồn thực, không lập hóa đơn hoặc thu tiền. Giao dịch thanh toán đọc riêng.",
+        "operationId": "create_customer_order_api_customer_orders_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerOrderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderReceipt"
+                }
+              }
+            },
+            "description": "Replay của cùng khách/key/nội dung."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "summary": "Đặt đơn thuộc khách với voucher và idempotency",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/orders/{order_id}": {
+      "get": {
+        "description": "Đơn không tồn tại/thuộc khách khác/khách vãng lai cùng trả 404.",
+        "operationId": "order_detail_api_customer_orders__order_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Order Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "summary": "Chi tiết đơn thuộc khách",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/orders/{order_id}/invoice": {
+      "get": {
+        "description": "Đọc tổng hóa đơn và giá/thành tiền các dòng đơn đã chốt.\nKhông trả mã giao dịch, người lập, mã số thuế hoặc dữ liệu tài khoản.\nĐơn chưa có hóa đơn trả invoice=null; không tự lập hóa đơn.",
+        "operationId": "order_invoice_api_customer_orders__order_id__invoice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Order Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "summary": "Hóa đơn công khai của đơn thuộc khách",
+        "tags": [
+          "Customer Shopping"
         ]
       }
     },
@@ -11988,8 +14561,8 @@
     },
     "/api/health": {
       "get": {
-        "description": "Application liveness, not a database readiness check.",
-        "operationId": "health_check_api_health_get",
+        "description": "Health check cho Render; không gọi database, tạo đơn hoặc kiểm tra phiên.\n\nHTTP 200 chỉ xác nhận tiến trình hoạt động, không xác nhận auth/migration đã nối.",
+        "operationId": "health_api_health_get",
         "responses": {
           "200": {
             "content": {
@@ -11998,11 +14571,7 @@
                   "status": "ok"
                 },
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Health Check Api Health Get",
-                  "type": "object"
+                  "$ref": "#/components/schemas/HealthResponse"
                 }
               }
             },
@@ -12013,6 +14582,658 @@
         "summary": "Kiểm tra API đang chạy (không kiểm tra Supabase)",
         "tags": [
           "Shared · Hệ thống"
+        ]
+      }
+    },
+    "/api/orders": {
+      "post": {
+        "description": "Khách đã xác thực, chưa thanh toán. Server chốt giá trước thuế, tên và đơn vị.\nBody cũ không có voucher được giữ; ma_kh lấy từ xác thực, dùng RPC checkout v2.\nChưa nối xác thực trả 503 AUTH_INTEGRATION_REQUIRED. Checkout có voucher dùng\nPOST /api/customer/orders. RPC v1 cũ không được dùng để tạo đơn qua HTTP nữa.\nThuế suất chốt 10%; tiền thuế đơn = 0.00, chỉ áp dụng khi nhóm lập hóa đơn.\nTồn khả dụng = tồn thực trừ lượng của các đơn MOI/XAC_NHAN/DANG_CHUAN_BI.\nĐơn tạo ở trạng thái MOI; không trừ TON_KHO trong endpoint này.\nRPC/migration và cấu hình thuế/kho phải được nhóm xác nhận trước khi sử dụng.\nĐổi thứ tự dòng hoặc cách ghi giá 10/10.00 không làm đổi nội dung idempotent.\nKhông nhận mã khách hàng/nhân viên, giá bán thực tế, thuế hay tổng tiền từ client.",
+        "operationId": "create_order_api_orders_post",
+        "parameters": [
+          {
+            "description": "UUID v4 mới cho một lần đặt; giữ nguyên key khi retry.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "description": "UUID v4 mới cho một lần đặt; giữ nguyên key khi retry.",
+              "examples": [
+                "0672b8b1-86ea-4f51-8668-1c722b8a9d99"
+              ],
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrder"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReceipt"
+                }
+              }
+            },
+            "description": "Trả lại kết quả cũ khi cùng key và cùng nội dung; không tạo đơn mới."
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập để đặt đơn."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập để đặt đơn."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không liên kết khách hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không liên kết khách hợp lệ."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "PRODUCT_NOT_AVAILABLE",
+                    "details": [],
+                    "message": "Sản phẩm hoặc kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Sản phẩm hoặc kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INSUFFICIENT_STOCK",
+                    "details": [],
+                    "message": "Thiếu hàng, giá thay đổi, key khác nội dung hoặc xung đột đồng thời."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Thiếu hàng, giá thay đổi, key khác nội dung hoặc xung đột đồng thời."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Thông tin đặt hàng không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Thông tin đặt hàng không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu đặt hàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu đặt hàng."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_CONFIGURATION_REQUIRED",
+                    "details": [],
+                    "message": "Thiếu cấu hình, migration hoặc dịch vụ dữ liệu không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Thiếu cấu hình, migration hoặc dịch vụ dữ liệu không khả dụng."
+          }
+        },
+        "summary": "Đặt đơn ONLINE từ các SKU và kho còn hàng",
+        "tags": [
+          "Customer Orders"
+        ]
+      }
+    },
+    "/api/orders/{order_id}/payment-request": {
+      "post": {
+        "description": "Chỉ nhận phương thức, không nhận số tiền hoặc mã giao dịch từ trình duyệt.\nExecution production CHƯA kết nối: trả 503 PAYMENT_INTEGRATION_REQUIRED,\nkhông ghi Supabase/thu tiền. Backend fixture riêng mô phỏng pending/idempotency.\nKhông cho khách tự xác nhận thanh toán thành công.",
+        "operationId": "request_order_payment_api_orders__order_id__payment_request_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Order Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 36,
+              "minLength": 36,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không được phép truy cập."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không được phép truy cập."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại hoặc không thuộc khách hàng; cùng một phản hồi."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại hoặc không thuộc khách hàng; cùng một phản hồi."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "IDEMPOTENCY_CONFLICT",
+                    "details": [],
+                    "message": "Lần thanh toán có nội dung khác hoặc đang được xử lý."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Lần thanh toán có nội dung khác hoặc đang được xử lý."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn hoặc tham số truy vấn không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn hoặc tham số truy vấn không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể tra cứu thanh toán."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể tra cứu thanh toán."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+          }
+        },
+        "summary": "Điểm nối yêu cầu thanh toán cho đơn thuộc khách",
+        "tags": [
+          "Customer Payments"
+        ]
+      }
+    },
+    "/api/orders/{order_id}/payments": {
+      "get": {
+        "description": "Chỉ đọc, không tạo hay cập nhật giao dịch/hóa đơn. Đơn thuộc khách đã xác thực.\n\nHiện dependency xác thực chưa được tích hợp: mọi yêu cầu trả 503\nAUTH_INTEGRATION_REQUIRED, kể cả gửi Authorization hoặc ma_kh tự khai báo.\nKhi nhóm nối xác thực, trả phương thức, số tiền và trạng thái giao dịch mới nhất\n(thu hoặc hoàn tiền). Không suy diễn đã tất toán toàn đơn từ một giao dịch.\nChưa có giao dịch trả latest_transaction=null, không giả định đã thanh toán.\nTiền dùng dữ liệu THANH_TOAN, không tự tính hoặc cộng thuế 10% lần nữa.",
+        "operationId": "payment_overview_api_orders__order_id__payments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Order Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không được phép truy cập."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không được phép truy cập."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại hoặc không thuộc khách hàng; cùng một phản hồi."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại hoặc không thuộc khách hàng; cùng một phản hồi."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn hoặc tham số truy vấn không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn hoặc tham số truy vấn không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể tra cứu thanh toán."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể tra cứu thanh toán."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+          }
+        },
+        "summary": "Xem giao dịch thanh toán mới nhất của đơn thuộc khách",
+        "tags": [
+          "Customer Payments"
+        ]
+      }
+    },
+    "/api/orders/{order_id}/transactions": {
+      "get": {
+        "description": "Phân trang 1–100 dòng, mới nhất trước; thời gian bằng nhau sắp theo khóa nội bộ.\nKhông trả khóa thanh toán, mã giao dịch nhà cung cấp hay payload nhạy cảm.\nCHO_XU_LY -> pending với thông báo chưa xác nhận thành công.\nTHANH_CONG -> succeeded; THAT_BAI -> failed; giá trị mới -> unknown.\nChưa tích hợp xác thực sẽ trả 503, không có chế độ tra cứu công khai theo mã đơn.",
+        "operationId": "transaction_history_api_orders__order_id__transactions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Order Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 1000000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không được phép truy cập."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không được phép truy cập."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại hoặc không thuộc khách hàng; cùng một phản hồi."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại hoặc không thuộc khách hàng; cùng một phản hồi."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn hoặc tham số truy vấn không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn hoặc tham số truy vấn không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể tra cứu thanh toán."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể tra cứu thanh toán."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "details": [],
+                    "message": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+          }
+        },
+        "summary": "Lịch sử thu và hoàn tiền của đơn thuộc khách",
+        "tags": [
+          "Customer Payments"
         ]
       }
     },
@@ -12101,15 +15322,26 @@
     {
       "description": "API công khai, không cần đăng nhập. Chỉ trả sản phẩm/loại đang hoạt động.",
       "name": "Customer · Catalog"
+    },
+    {
+      "description": "Customer order creation and idempotent retries.",
+      "name": "Customer Orders"
+    },
+    {
+      "description": "Customer payment requests and status.",
+      "name": "Customer Payments"
+    },
+    {
+      "description": "Customer profile, cart, checkout and order history.",
+      "name": "Customer Shopping"
     }
   ],
   "x-database-schema": "database/schema.dbml",
   "x-live-database-verified": false,
   "x-not-implemented": [
-    "Ghi chứng từ/tồn kho/tài chính theo transaction",
-    "Checkout/áp voucher",
-    "Webhook/hoàn tiền",
-    "Đăng ký/reset password/refresh token"
+    "Customer authentication dependency integration",
+    "Live deployment of customer checkout/payment RPCs",
+    "Payment gateway/webhook/refund integration",
+    "Registration/password reset/token refresh"
   ]
 }
-

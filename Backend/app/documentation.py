@@ -277,7 +277,7 @@ def install_openapi(app: FastAPI) -> None:
         describe_auth_and_public(spec)
         spec["x-database-schema"] = "database/schema.dbml"
         spec["x-live-database-verified"] = False
-        spec["x-not-implemented"] = ["Ghi chứng từ/tồn kho/tài chính theo transaction", "Checkout/áp voucher", "Webhook/hoàn tiền", "Đăng ký/reset password/refresh token"]
+        spec["x-not-implemented"] = ["Customer authentication dependency integration", "Live deployment of customer checkout/payment RPCs", "Payment gateway/webhook/refund integration", "Registration/password reset/token refresh"]
         app.openapi_schema = spec
         return spec
     app.openapi = custom_openapi
