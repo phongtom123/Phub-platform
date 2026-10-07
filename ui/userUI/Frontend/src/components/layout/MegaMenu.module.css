@@ -1,6 +1,7 @@
 .menu { background: #fff; color: #111; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 16px; border-bottom: 1px solid #eceef3; font-size: 11px; color: #666; }
 .toolbar > div { display: flex; align-items: center; gap: 12px; }
+.toolbar a { color: #0156ff; padding: 6px; font-size: 12px; }
 .toolbar button { border: 0; background: transparent; color: #0156ff; padding: 6px; font-size: 12px; }
 .toolbar button:last-child { font-size: 24px; line-height: 1; min-width: 32px; }
 .content { display: flex; min-height: 340px; }
@@ -24,6 +25,7 @@
 }
 @media (max-width: 700px) {
   .toolbar { align-items: flex-start; }
+  .toolbar > div { flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
   .column { flex-basis: 100%; border-right: 0; border-bottom: 1px solid #cacdd8; }
   .column button { min-height: 44px; }
   .products { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px 4px; gap: 0; }

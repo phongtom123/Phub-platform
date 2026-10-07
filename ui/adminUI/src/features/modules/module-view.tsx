@@ -1,66 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ArrowLeft, CircleAlert, Plus } from "lucide-react";
+import BackendDataView from "@/src/components/backend-data-view";
 import type { ModuleDefinition, ModuleKey } from "@/src/types/admin";
-import {
-  DataTable,
-  PrimaryButton,
-  SummaryStats,
-  Toolbar,
-} from "@/src/components/admin/ui";
+import { moduleResources } from "@/src/lib/backend-resources";
 
-type Props = {
-  moduleKey: ModuleKey;
-  definition: ModuleDefinition;
-  onCreate: () => void;
-  onBack: () => void;
-};
-
-export function ModuleView({ definition, onCreate, onBack }: Props) {
-  const [query, setQuery] = useState("");
-  const rows = useMemo(
-    () =>
-      definition.rows.filter((row) =>
-        Object.values(row).some((value) =>
-          String(value).toLowerCase().includes(query.toLowerCase()),
-        ),
-      ),
-    [definition.rows, query],
-  );
-  return (
-    <>
-      <button className="module-back" onClick={onBack}>
-        <ArrowLeft /> Quay lại trang trước
-      </button>
-      {definition.stats && <SummaryStats items={definition.stats} />}
-      <div className="module-toolbar-row">
-        <Toolbar
-          query={query}
-          onQueryChange={setQuery}
-          placeholder={definition.searchPlaceholder}
-          filters={definition.filters}
-        />
-        {definition.addLabel && (
-          <PrimaryButton onClick={onCreate}>
-            <Plus /> {definition.addLabel}
-          </PrimaryButton>
-        )}
-      </div>
-      <DataTable
-        rows={rows}
-        columns={definition.columns}
-        detailSection={definition.detailSection}
-      />
-      {definition.note && (
-        <div className="note schema-note">
-          <CircleAlert />
-          <p>
-            <b>Quy tắc nghiệp vụ</b>
-            <span>{definition.note}</span>
-          </p>
-        </div>
-      )}
-    </>
-  );
+export function ModuleView({ moduleKey }: {
+  moduleKey: ModuleKey; definition: ModuleDefinition; onCreate: () => void; onBack: () => void;
+}) {
+  const resource = moduleResources[moduleKey];
+  return resource ? <BackendDataView key={resource} resource={resource} /> : <p>Chức năng này chưa có API theo schema hiện tại.</p>;
 }

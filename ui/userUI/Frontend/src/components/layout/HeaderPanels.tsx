@@ -47,14 +47,14 @@ export function GuestAvatar() {
   );
 }
 
-export function CartPreview() {
+export function CartPreview({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className={styles.cartPreview}>
       <div className={styles.cartHead}>
         <h2>Giỏ hàng của tôi</h2>
         <p>0 sản phẩm</p>
       </div>
-      <Link href="/cart" className={styles.cartEdit}>Xem và Chỉnh Sửa Giỏ Hàng</Link>
+      <Link href="/cart" className={styles.cartEdit} onClick={onNavigate}>Xem và Chỉnh Sửa Giỏ Hàng</Link>
       <div className={styles.cartItems}><p>Giỏ hàng đang trống.</p></div>
       <div className={styles.cartFoot}>
         <p className={styles.subtotal}><span>Tạm tính:</span><strong>0 ₫</strong></p>

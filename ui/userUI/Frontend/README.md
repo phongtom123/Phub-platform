@@ -4,7 +4,9 @@
 
 Đã bổ sung đăng nhập mẫu, trang đăng ký tạm và route chi tiết sản phẩm từ commit `699ff4c`. `/main/landing` hiển thị cùng Home với `/`. Chi tiết đầy đủ về cách gộp và giới hạn nằm trong [MERGE-NOTES.md](MERGE-NOTES.md).
 
-Chạy từ thư mục này bằng `npm run dev` → `http://localhost:3000`. Nếu admin đang dùng cổng 3000, chạy `npm run dev -- -p 3001` (và dừng bản UI khách hàng cũ trên cổng đó nếu cần).
+Hướng dẫn chạy catalog với Backend, bao gồm cách xử lý Windows chặn SWC native
+và PowerShell chặn script, nằm trong [CATALOG-INTEGRATION.md](CATALOG-INTEGRATION.md#chạy-local).
+Giao diện khách hàng dùng cổng 3001 để chạy cùng admin ở cổng 3000.
 
 Các route chính: `/`, `/main/product`, `/main/product?view=list`, `/main/product/ps-001`, `/auth/login`, `/auth/register`, `/main/profile`, `/about-us`, `/faq`.
 
@@ -103,6 +105,5 @@ Phub-platform/
 │   ├── requirements.txt
 │   └── .env
 │
-├── docker-compose.yml
 ├── README.md
 └── .gitignore

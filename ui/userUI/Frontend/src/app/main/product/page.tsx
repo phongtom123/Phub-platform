@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { CatalogPage } from "@/components/catalog/CatalogPage";
+import { Suspense } from "react";
+import { CatalogExperience } from "@/components/catalog/CatalogExperience";
 
 export const metadata: Metadata = {
-  title: "MSI PS Series | Tech Store",
-  description: "Browse the MSI Prestige collection. Catalog interface with sample products.",
+  title: "Sản phẩm | Tech Store",
+  description: "Tìm kiếm sản phẩm theo tên, SKU, loại sản phẩm và thương hiệu.",
 };
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ view?: string | string[] }> }) {
-  const { view } = await searchParams;
-  return <CatalogPage initialView={view === "list" ? "list" : "grid"} />;
+export default function ProductsPage() {
+  return <Suspense fallback={<p role="status">Đang tải danh sách sản phẩm…</p>}><CatalogExperience /></Suspense>;
 }

@@ -5,3 +5,29 @@
 .features{min-height:664px;padding:80px 24px;color:#fff;background:radial-gradient(circle at 50% 0,#26272a,#090a0b 55%,#000)}.featuresInner{width:min(1200px,100%);margin:auto;text-align:center}.features h2{margin:0 0 25px;font-size:35px}.featuresInner>p{margin:0;color:#bcbec4;font-size:16px;line-height:1.55}.featureGrid{margin-top:62px;display:grid;grid-template-columns:repeat(4,1fr);gap:52px}.featureIcon{width:125px;height:125px;margin:0 auto 35px;display:grid;place-items:center;border-radius:50%;background:#000;color:#fff;font-size:27px;font-weight:800;font-style:italic}.feature:nth-child(2) .featureIcon{color:#8ede3f}.feature p{margin:0;color:#bcbec4;font-size:12px;line-height:1.65}.feature b{color:#fff}.footerGap{height:275px}.srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media(max-width:900px){.purchaseBar{height:auto}.purchaseInner{padding:18px 0;align-items:flex-start;flex-direction:column}.tabs{height:45px}.tabs a.activeTab:after{bottom:0}.buyArea{width:100%;flex-wrap:wrap}.productHero{grid-template-columns:1fr}.productCopy{justify-content:center}.copyInner{width:min(680px,calc(100% - 40px));padding:50px 0}.moreInfo,.detailList~.moreInfo,.specTable~.moreInfo{margin-top:70px}.productVisual{min-height:570px}.competition{height:auto;padding:80px 0}.competitionInner{grid-template-columns:1fr}.processorArt{min-height:500px}.support{height:auto}.supportInner{grid-template-columns:1fr}.supportLinks{padding:55px 0}.supportLinks a{width:100%}.agentArt{min-height:340px}.featureGrid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.purchaseInner{width:calc(100% - 28px)}.tabs{width:100%;justify-content:space-between;gap:10px}.tabs a{font-size:12px}.buyArea p{width:100%}.cartButton,.paypalButton{padding:0 20px}.copyInner{width:calc(100% - 32px)}.copyInner h1{font-size:27px}.summary{font-size:14px}.specTable{width:100%}.metaRow{align-items:flex-start;flex-direction:column}.productVisual{min-height:490px}.mainProductImage{height:330px}.competitionInner{width:calc(100% - 36px)}.competition h2{font-size:36px}.processorArt>div{width:230px;height:230px}.processorArt strong{font-size:45px}.supportInner{width:calc(100% - 36px)}.featureGrid{grid-template-columns:1fr}.footerGap{height:120px}}
+@media (max-width: 760px) {
+  .purchaseInner { gap: 16px; }
+  .buyArea { gap: 10px; }
+  .buyArea p { flex-basis: 100%; }
+  .cartButton, .paypalButton { padding-inline: 16px; min-width: 0; flex: 1; }
+  .quantity { flex-shrink: 0; }
+  .quantity button { width: 28px; height: 24px; }
+  .productVisual { grid-row: 1; min-height: 350px; padding: 24px 0 48px; }
+  .mainProductImage { height: 250px; }
+  .dots { bottom: 18px; }
+  .sideActions { top: 28px; left: 16px; }
+  .copyInner { min-width: 0; padding-block: 28px; }
+  .copyInner h1 { overflow-wrap: anywhere; font-size: 24px; }
+  .breadcrumb { margin-bottom: 20px; }
+  .moreInfo, .detailList ~ .moreInfo, .specTable ~ .moreInfo { margin-top: 28px; }
+  .specTable { width: 100%; }
+  .specTable dd { overflow-wrap: anywhere; }
+  .competition { padding: 40px 0; }
+  .competition h2 { font-size: 30px; margin-bottom: 24px; }
+  .processorArt { min-height: 300px; }
+  .supportLinks { padding-block: 32px; }
+  .features { padding: 40px 20px; }
+  .featureGrid { gap: 32px; margin-top: 32px; }
+  .featureIcon { margin-bottom: 16px; }
+  .footerGap { height: 48px; }
+}

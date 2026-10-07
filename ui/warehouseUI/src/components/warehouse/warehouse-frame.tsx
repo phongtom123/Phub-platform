@@ -6,64 +6,29 @@ import Sidebar from "@/src/components/warehouse/sidebar";
 import Header from "@/src/components/warehouse/header";
 import type { WarehouseUser } from "@/src/types/warehouse-auth";
 
-const warehouseSessionKey = "phub-warehouse-user";
-const adminLoginUrl =
-  process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
-
-const warehouseUsers: Record<string, WarehouseUser> = {
-  "phong.kho": {
-    username: "phong.kho",
-    name: "Trần Đức Phong",
-    initials: "TP",
-    employeeCode: "NV002",
-  },
-};
+const adminLoginUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
 
 export default function WarehouseFrame({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<WarehouseUser | null>(null);
-  const [checkingSession, setCheckingSession] = useState(true);
-
+  const [error, setError] = useState("");
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const access = url.searchParams.get("access");
-    const staff = url.searchParams.get("staff") ?? "";
-    const handedOffUser = access === "warehouse-demo" ? warehouseUsers[staff] : undefined;
-
-    if (handedOffUser) {
-      window.sessionStorage.setItem(
-        warehouseSessionKey,
-        JSON.stringify(handedOffUser),
-      );
-      url.searchParams.delete("access");
-      url.searchParams.delete("staff");
-      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-      setUser(handedOffUser);
-      setCheckingSession(false);
-      return;
-    }
-
-    const storedUser = window.sessionStorage.getItem(warehouseSessionKey);
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser) as WarehouseUser);
-        setCheckingSession(false);
-        return;
-      } catch {
-        window.sessionStorage.removeItem(warehouseSessionKey);
-      }
-    }
-
-    window.location.replace(adminLoginUrl);
+    const controller = new AbortController();
+    fetch("/api/backend/auth/me", { cache: "no-store", signal: controller.signal }).then(async response => {
+      if (response.status === 401) { window.location.replace(adminLoginUrl); return; }
+      const account = await response.json();
+      if (!response.ok) throw new Error(typeof account.detail === "string" ? account.detail : "Không kiểm tra được phiên đăng nhập.");
+      if (account.role !== "THU_KHO") { window.location.replace(adminLoginUrl); return; }
+      setUser({ username: account.username, name: account.name, employeeCode: account.employee_id,
+        initials: String(account.name).split(" ").slice(-2).map((part: string) => part[0]).join("") });
+    }).catch(err => { if (!controller.signal.aborted) setError(err.message); });
+    return () => controller.abort();
   }, []);
 
-  if (checkingSession || !user) {
-    return <main className="auth-loading">Đang kiểm tra quyền truy cập kho…</main>;
-  }
-
-  const logout = () => {
-    window.sessionStorage.removeItem(warehouseSessionKey);
+  if (!user) return <main className="auth-loading">{error || "Đang kiểm tra quyền truy cập kho…"}{error && <p><a href={adminLoginUrl}>Quay lại đăng nhập</a></p>}</main>;
+  const logout = async () => {
+    const response = await fetch("/api/backend/auth/logout", { method: "POST" });
+    if (!response.ok) { window.alert("Không đăng xuất được. Thử lại sau."); return; }
     window.location.assign(adminLoginUrl);
   };
-
-  return <div className="app-shell"><Sidebar user={user} onLogout={logout}/><div className="main-shell"><Header user={user}/><main className="main-content">{children}<footer className="app-footer">PHUB Warehouse · Giao diện quản lý kho nội bộ</footer></main></div></div>;
+  return <div className="app-shell"><Sidebar user={user} onLogout={logout} /><div className="main-shell"><Header user={user} /><main className="main-content">{children}<footer className="app-footer">PHUB Warehouse · Dữ liệu theo kho được phân công</footer></main></div></div>;
 }

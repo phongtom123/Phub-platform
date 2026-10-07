@@ -9,6 +9,7 @@ import { SpecsTable, type SpecsTableProps } from "./SpecsTable";
 import { StockStatus } from "./StockStatus";
 import type { ProductCardProps } from "./ProductCard";
 import styles from "./ProductListCard.module.css";
+import { CatalogImage } from "./CatalogImage";
 
 export interface ProductListCardProps extends Omit<ProductCardProps, "href" | "actions" | "onSelect"> {
   sku: string;
@@ -29,7 +30,7 @@ export function ProductListCard({ name, imageSrc, imageAlt, sku, description, sp
   return <article className={[styles.card, className].filter(Boolean).join(" ")} aria-label={name}>
     <div className={styles.body}>
       <div className={styles.media}>
-        <button className={styles.imageButton} type="button" onClick={onSelect} aria-label={`Preview ${name}`}><Image src={imageSrc} alt={imageAlt ?? name} width={280} height={240} sizes="(max-width: 540px) 160px, 280px" /></button>
+        <button className={styles.imageButton} type="button" onClick={onSelect} aria-label={`Preview ${name}`}><CatalogImage src={imageSrc} alt={imageAlt ?? name} width={280} height={240} sizes="(max-width: 540px) 160px, 280px" /></button>
         {rating !== undefined && <Rating value={rating} reviewCount={reviewCount} className={styles.rating} />}
       </div>
       <div className={styles.details}>

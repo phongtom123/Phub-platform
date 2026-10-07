@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { NewsletterForm } from "./NewsletterForm";
+import { FooterLinkGroup } from "./FooterLinkGroup";
 import { footerSections, paymentMethods } from "./footerData";
 import styles from "./Footer.module.css";
 
@@ -17,9 +18,8 @@ export default function Footer() {
         </section>
 
         <div className={styles.footerLinks}>
-          {footerSections.map(section => (
-            <section key={section.title} className={styles.col}>
-              <h3>{section.title}</h3>
+          {footerSections.map((section, index) => (
+            <FooterLinkGroup key={section.title} title={section.title} initiallyOpen={index === 1}>
               <ul>
                 {section.links.map(link => (
                   <li key={link.label}>
@@ -27,11 +27,10 @@ export default function Footer() {
                   </li>
                 ))}
               </ul>
-            </section>
+            </FooterLinkGroup>
           ))}
 
-          <section id="footer-contact" className={styles.col} aria-labelledby="footer-contact-heading">
-            <h3 id="footer-contact-heading">Liên Hệ</h3>
+          <FooterLinkGroup id="footer-contact" title="Liên hệ">
             <address className={styles.address}>
               <p>Địa chỉ: 1234 Nguyễn Thị Minh Khai, Phường 5, Quận 1, TP. HCM</p>
               <p>Hotline: <a href="tel:0901234567">090 123 4567</a></p>
@@ -39,7 +38,7 @@ export default function Footer() {
               <p>Thứ 6: 9:00 AM – 6:00 PM | Thứ 7: 11:00 AM – 5:00 PM</p>
               <p>E-mail: <a href="mailto:cskh@techstore.vn">cskh@techstore.vn</a></p>
             </address>
-          </section>
+          </FooterLinkGroup>
         </div>
 
         <div className={styles.footerBottom}>
