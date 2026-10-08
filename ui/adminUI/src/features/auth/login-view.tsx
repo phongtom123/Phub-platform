@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import { Logo } from "@/src/components/admin/ui";
 
@@ -19,14 +19,16 @@ export function LoginView({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  useEffect(() => {
+    setPasswordChanged(new URLSearchParams(window.location.search).get("passwordChanged") === "1");
+  }, []);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     const form = new FormData(event.currentTarget as HTMLFormElement);
-    const username = String(form.get("username") ?? "")
-      .trim()
-      .toLowerCase();
+    const username = String(form.get("username") ?? "").trim();
     const password = String(form.get("password") ?? "");
     setError("");
     setLoading(true);
@@ -74,6 +76,7 @@ export function LoginView({
               <small>Đăng nhập vào trang quản trị PHUB</small>
             </p>
           </div>
+          {passwordChanged && <p role="status">Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.</p>}
           <label>
             Email hoặc tên tài khoản
             <input

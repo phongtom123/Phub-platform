@@ -216,6 +216,9 @@ async def update_row(resource: ResourceName, request: Request, response: Respons
     if not existing:
         raise HTTPException(404, "Không tìm thấy dữ liệu.")
     data = await read_payload(request, name, True)
+    if name == "employees" and keys == [user.employee_id]:
+        if data.get("loai_nhan_vien", "ADMIN") != "ADMIN" or data.get("trang_thai", 1) != 1 or data.get("ma_kho") is not None:
+            raise HTTPException(409, "Không được vô hiệu hóa hoặc hạ quyền nhân viên đang đăng nhập.")
     if name == "promotions" and any(field in data for field in ["nguoi_tao", "ngay_tao"]):
         raise HTTPException(422, "Không được sửa người tạo hoặc ngày tạo.")
     validate_combined(name, {**existing[0], **data}, user)

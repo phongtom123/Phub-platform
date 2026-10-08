@@ -25,7 +25,7 @@ export interface ProductListCardProps extends Omit<ProductCardProps, "href" | "a
   onEnquire: () => void;
 }
 
-/** Presentational catalog row. The caller owns data and demo/real action state. */
+/** Presentational catalog row. The caller owns API data and session-only comparison state. */
 export function ProductListCard({ name, imageSrc, imageAlt, sku, description, specifications, amount, originalAmount, currency, locale, rating, reviewCount, stock, inCart = false, compared = false, wished = false, onSelect, onCart, onCompare, onWish, onEnquire, className }: ProductListCardProps) {
   return <article className={[styles.card, className].filter(Boolean).join(" ")} aria-label={name}>
     <div className={styles.body}>
@@ -37,8 +37,8 @@ export function ProductListCard({ name, imageSrc, imageAlt, sku, description, sp
         <p className={styles.sku}>SKU {sku}</p>
         <h2><button type="button" onClick={onSelect}>{name}{description && <span> — {description}</span>}</button></h2>
         <Price amount={amount} originalAmount={originalAmount} currency={currency} locale={locale} className={styles.price} />
-        <Button variant="outlinePrimary" className={styles.cart} onClick={onCart} aria-pressed={inCart} aria-label={`${inCart ? "Remove from" : "Add to"} demo cart: ${name}`}>
-          <Image src="/icons/header/cart.svg" alt="" width={20} height={20} />{inCart ? "Added To Cart" : "Add To Cart"}
+        <Button variant="outlinePrimary" className={styles.cart} disabled title="Chưa kết nối API giỏ hàng">
+          <Image src="/icons/header/cart.svg" alt="" width={20} height={20} />Thêm vào giỏ (chưa khả dụng)
         </Button>
       </div>
       <div className={styles.side}>

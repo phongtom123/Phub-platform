@@ -19,7 +19,7 @@ export default function WarehouseFrame({ children }: { children: ReactNode }) {
       if (!response.ok) throw new Error(typeof account.detail === "string" ? account.detail : "Không kiểm tra được phiên đăng nhập.");
       if (account.role !== "THU_KHO") { window.location.replace(adminLoginUrl); return; }
       setUser({ username: account.username, name: account.name, employeeCode: account.employee_id,
-        initials: String(account.name).split(" ").slice(-2).map((part: string) => part[0]).join("") });
+        initials: String(account.name).split(" ").slice(-2).map((part: string) => part[0]).join(""), warehouseId: account.warehouse_id });
     }).catch(err => { if (!controller.signal.aborted) setError(err.message); });
     return () => controller.abort();
   }, []);

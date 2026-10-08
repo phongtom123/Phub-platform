@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Accordion } from "@/components/common/Accordion";
 import { Button } from "@/components/common/Button";
 import { FilterOption } from "@/components/common/FilterOption";
@@ -41,7 +40,6 @@ export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, act
       </section>
       <CatalogSelectionPanel locale="vi" title="So sánh sản phẩm" emptyText="Bạn chưa có sản phẩm để so sánh." products={compared} onRemove={onCompare} onSelect={onSelect} />
       <CatalogSelectionPanel locale="vi" title="Danh sách yêu thích" emptyText="Bạn chưa có sản phẩm yêu thích." products={wished} onRemove={onWish} onSelect={onSelect} />
-      <Image className={styles.chair} src="/images/catalog/chair-promotion.png" alt="noblechairs — The Icon Series" width={233} height={370} sizes="233px" />
     </>}
   </>;
 }

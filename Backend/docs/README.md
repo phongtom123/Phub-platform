@@ -32,7 +32,11 @@ Các trang tài liệu mở được kể cả khi chưa cấu hình Supabase; g
 - **Bán hàng**: đơn hàng, hóa đơn, thanh toán.
 - **Customer**: catalog công khai và alias sản phẩm cũ (deprecated).
 
-Có **29 đường dẫn, 47 thao tác**: 19 GET bảng và 18 POST/PATCH trên 9 bảng dữ liệu nền, cộng các API xác thực/catalog/metadata/health/alias. Đây là đặc tả chức năng **đã có code**, không phải xác nhận database thật đã chạy.
+Có **47 đường dẫn, 68 thao tác**, gồm 19 GET bảng, 16 POST/PATCH trên 8 bảng dữ liệu nền, 11 thao tác tài khoản admin và các module xác thực/catalog/mua hàng. Đây là đặc tả chức năng **đã có code**, không phải xác nhận database thật đã chạy.
+
+Quản lý tài khoản dùng nhóm **Admin · Tài khoản**, prefix `/api/admin`.
+Xem [hợp đồng và các quy tắc tài khoản](../app/admin_accounts/README.md).
+`GET /api/data/accounts` vẫn đọc được; tạo/sửa qua API bảng chung bị chặn.
 
 UI vẫn gọi các URL cũ `/api/data/products`, `/api/data/orders`, ... Backend vẫn dùng router `/api/data/{resource}`. Swagger tách thành từng đường dẫn cụ thể để payload và quyền không bị trộn lẫn. Các bảng chỉ đọc không hiện POST/PATCH. Không có DELETE hoặc checkout/webhook giả.
 

@@ -38,7 +38,7 @@ Sinh JWT secret bằng lệnh sau, rồi lưu giá trị vào `.env`, không g�
 - Liveness: http://127.0.0.1:8000/api/health (không kiểm tra DB).
 - Test: `.venv\Scripts\python.exe -m pytest tests -q`.
 
-Swagger có 47 thao tác, schema/ví dụ riêng cho từng bảng, role và mã lỗi. Xem [hướng dẫn Swagger/OpenAPI](docs/README.md) để đăng nhập thử bằng cookie và cập nhật snapshot [docs/openapi.json](docs/openapi.json). Trang docs không cần Supabase để mở; thử API dữ liệu cần cấu hình thật. `.env` cũ cần thêm origin cổng 8000 nếu muốn thử POST/PATCH trực tiếp từ Swagger.
+Swagger có 68 thao tác, schema riêng cho từng module, role và mã lỗi. Xem [hướng dẫn Swagger/OpenAPI](docs/README.md) để đăng nhập thử bằng cookie và cập nhật snapshot [docs/openapi.json](docs/openapi.json). Trang docs không cần Supabase để mở; thử API dữ liệu cần cấu hình thật. `.env` cũ cần thêm origin cổng 8000 nếu muốn thử POST/PATCH/PUT trực tiếp từ Swagger.
 
 ## Chuẩn bị database
 
@@ -70,9 +70,21 @@ Nhập mật khẩu hai lần ở terminal (không hiển thị). Lưu chuỗi h
 | `GET /api/auth/me` | Tài khoản/role/kho đang đăng nhập |
 | `POST /api/auth/logout` | Xóa cookie phiên ở trình duyệt |
 
-Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. Token không trả trong JSON và không lưu localStorage. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Không có refresh token, đăng ký tự phục vụ, reset password hoặc thu hồi từng token bị đánh cắp trong đợt này. Đăng xuất xóa cookie, không phải server-side blacklist.
+Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. Token không trả trong JSON và không lưu localStorage. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, đăng ký tự phục vụ, quên mật khẩu qua email hoặc thu hồi từng token bị đánh cắp. Đăng xuất xóa cookie, không phải server-side blacklist.
 
 Request ghi phải có `Origin` nằm trong `FRONTEND_ORIGINS` (Swagger/Python CLI khi thử cần gửi header này). Login giới hạn 20 lần/IP/phút trong **một process**. Triển khai nhiều worker cần shared limiter, HTTPS và `COOKIE_SECURE=true`. Ba cổng localhost dùng chung cookie trên cùng host; không trộn `localhost` với `127.0.0.1` cho URL của ba UI.
+
+### Tài khoản admin
+
+11 thao tác ở `/api/admin`: danh sách/tìm kiếm/phân trang, tra cứu chủ tài khoản,
+tạo/chi tiết/sửa, ẩn–khóa–mở lại, đổi quyền nhân viên, cấp lại mật khẩu và quản lý
+tài khoản đang đăng nhập. UI riêng ở `/accounts`, `/accounts/new`,
+`/accounts/{id}`, `/accounts/{id}/edit`, `/account`.
+
+Xem [hợp đồng API và cách kiểm thử](app/admin_accounts/README.md). Không cần đổi
+schema cho module này nếu database đã khớp DBML và có các FK/unique/check hiện có.
+Không có DELETE; tài khoản bắt buộc gắn với đúng một hồ sơ có sẵn. Chỉ ADMIN truy cập.
+API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua quy tắc quản lý tài khoản.
 
 ### Table API
 
@@ -86,7 +98,7 @@ Request ghi phải có `Origin` nằm trong `FRONTEND_ORIGINS` (Swagger/Python C
 | --- | --- | --- |
 | warehouses | KHO | ADMIN |
 | employees | NHAN_VIEN | ADMIN |
-| accounts | TAI_KHOAN | ADMIN |
+| accounts | TAI_KHOAN | Chỉ đọc; ghi qua `/api/admin/accounts` |
 | customers | KHACH_HANG | ADMIN |
 | categories | LOAI_SP | ADMIN |
 | products | SAN_PHAM | ADMIN |
@@ -127,6 +139,7 @@ app/
   config.py      # Server environment configuration
   supabase.py    # Lazy client, injectable trong tests
   auth.py        # Hash, session cookie, current user, role
+  admin_accounts/ # Schemas, service, router quản lý tài khoản ADMIN
   resources.py   # Allowlist 19 bảng và model từ DBML
   tables.py      # Scope dữ liệu, đọc + CRUD dữ liệu nền
   errors.py      # Lỗi an toàn, không trả chi tiết DB/secret

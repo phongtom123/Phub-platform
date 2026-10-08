@@ -1,22 +1,25 @@
 "use client";
-
-import { useState } from "react";
-import { Bell, Building2, Check, LockKeyhole, Save, ShieldCheck, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Panel } from "@/src/components/warehouse/ui";
 
+type Session = { name: string; username: string; employee_id: string | null; role: string; warehouse_id: number | null };
 export default function AccountSettings({ section }: { section: "account" | "settings" }) {
-  const [saved, setSaved] = useState(false);
-  const [emailAlerts, setEmailAlerts] = useState(true);
-  const [lowStockAlerts, setLowStockAlerts] = useState(true);
-  const [transferAlerts, setTransferAlerts] = useState(true);
-  const isAccount = section === "account";
-  function save(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setSaved(true); window.setTimeout(() => setSaved(false), 2200); }
-  return <><div className="page-heading"><div><h1>{isAccount ? "Tài khoản của tôi" : "Cài đặt"}</h1><p>{isAccount ? "Quản lý hồ sơ cá nhân và thông tin phân công kho." : "Tùy chỉnh kho mặc định và các thông báo nghiệp vụ."}</p></div></div>
-    {isAccount ? <div className="account-layout"><Panel title="Thông tin cá nhân" subtitle="Thông tin liên hệ của tài khoản nhân viên"><form className="account-form" onSubmit={save}><div className="profile-banner"><span className="profile-avatar">TP</span><div><strong>Trần Đức Phong</strong><small>Nhân viên kho · NV002</small></div><span className="active-pill"><i/> Đang hoạt động</span></div><div className="form-grid"><label><span>Họ và tên</span><input defaultValue="Trần Đức Phong"/></label><label><span>Mã nhân viên</span><input value="NV002" readOnly/></label><label><span>Email công việc</span><input type="email" defaultValue="phong@phub.vn"/></label><label><span>Số điện thoại</span><input defaultValue="0918 220 114"/></label></div><div className="form-actions"><button className="button primary" type="submit"><Save size={14}/>{saved ? "Đã lưu" : "Lưu thay đổi"}</button></div></form></Panel><Panel title="Quyền và phân công" subtitle="Thông tin vai trò hiện tại"><div className="access-list"><div><ShieldCheck size={17}/><span><small>VAI TRÒ</small><strong>THU_KHO · Nhân viên kho</strong></span></div><div><Building2 size={17}/><span><small>PHẠM VI KHO</small><strong>Kho trung tâm</strong></span></div><div><UserRound size={17}/><span><small>CHI NHÁNH</small><strong>Trung tâm phân phối PHUB</strong></span></div></div><div className="module-note"><span>i</span>Quyền truy cập do quản trị viên cấp. Liên hệ quản trị viên nếu cần thay đổi vai trò hoặc kho được phân công.</div></Panel><Panel title="Bảo mật tài khoản" subtitle="Cài đặt bảo vệ tài khoản"><div className="security-row"><span className="security-icon"><LockKeyhole size={16}/></span><div><strong>Mật khẩu</strong><small>Được quản lý bởi hệ thống đăng nhập</small></div><span className="security-status">Đang bảo vệ</span></div><div className="security-row"><span className="security-icon"><ShieldCheck size={16}/></span><div><strong>Xác thực hai bước</strong><small>Liên hệ quản trị viên để bật xác thực nhiều lớp</small></div><span className="security-status muted">Chưa bật</span></div></Panel></div>
-      : <div className="settings-layout"><Panel title="Thiết lập kho" subtitle="Mặc định sử dụng khi tạo phiếu mới"><form className="account-form" onSubmit={save}><label className="setting-field"><span>Kho làm việc mặc định</span><select defaultValue="central"><option value="central">Kho trung tâm</option><option value="q1">Kho Quận 1</option><option value="td">Kho Thủ Đức</option></select></label><label className="setting-field"><span>Mức cảnh báo tồn thấp mặc định</span><div className="number-field"><input type="number" min="1" defaultValue="5"/><small>sản phẩm</small></div></label><div className="setting-hint">Có thể thiết lập mức tồn tối thiểu riêng cho từng sản phẩm trong danh mục hàng hóa.</div><div className="form-actions"><button className="button primary" type="submit"><Save size={14}/>{saved ? "Đã lưu" : "Lưu cài đặt"}</button></div></form></Panel><Panel title="Thông báo" subtitle="Chọn các loại thông báo muốn nhận"><div className="toggle-list"><Toggle icon={<Bell size={16}/>} title="Thông báo nghiệp vụ qua email" detail="Nhận thông báo khi có phiếu mới cần xử lý" checked={emailAlerts} onChange={setEmailAlerts}/><Toggle icon={<Building2 size={16}/>} title="Cảnh báo tồn kho thấp" detail="Thông báo khi sản phẩm chạm mức tồn tối thiểu" checked={lowStockAlerts} onChange={setLowStockAlerts}/><Toggle icon={<Check size={16}/>} title="Cập nhật phiếu chuyển kho" detail="Thông báo khi phiếu chuyển được giao hoặc xác nhận nhận" checked={transferAlerts} onChange={setTransferAlerts}/></div><div className="module-note"><span>i</span>Tùy chọn thông báo chỉ áp dụng cho tài khoản của bạn.</div></Panel></div>}
-  </>;
-}
-
-function Toggle({ icon, title, detail, checked, onChange }: { icon: React.ReactNode; title: string; detail: string; checked: boolean; onChange: (value: boolean) => void }) {
-  return <div className="toggle-row"><span className="toggle-icon">{icon}</span><div className="toggle-copy"><strong>{title}</strong><small>{detail}</small></div><button type="button" className={`switch ${checked ? "on" : ""}`} role="switch" aria-checked={checked} aria-label={title} onClick={() => onChange(!checked)}><i/></button></div>;
+  const [session, setSession] = useState<Session | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (section !== "account") return;
+    const controller = new AbortController();
+    fetch("/api/backend/auth/me", { cache: "no-store", signal: controller.signal })
+      .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Không tải được tài khoản."); return body; })
+      .then(body => { if (!controller.signal.aborted) setSession(body); })
+      .catch(error => { if (!controller.signal.aborted) setError(error.message); });
+    return () => controller.abort();
+  }, [section]);
+  if (section === "settings") return <Panel title="Cài đặt" subtitle="Chưa có API cài đặt kho"><p>Chưa thể tải hoặc lưu cài đặt. Kho làm việc lấy từ phân quyền thực tế của tài khoản, không chọn kho mẫu.</p></Panel>;
+  return <Panel title="Tài khoản của tôi" subtitle="Thông tin từ phiên đăng nhập">
+    {error && <p role="alert">{error}</p>}
+    {!session && !error && <p role="status">Đang tải tài khoản…</p>}
+    {session && <dl><dt>Họ tên</dt><dd>{session.name}</dd><dt>Tên đăng nhập</dt><dd>{session.username}</dd><dt>Mã nhân viên</dt><dd>{session.employee_id ?? "Chưa được gán"}</dd><dt>Vai trò</dt><dd>{session.role}</dd><dt>Mã kho được phân công</dt><dd>{session.warehouse_id ?? "Chưa được phân công"}</dd></dl>}
+    <p>Quyền và kho do quản trị viên cấp. Chức năng sửa hồ sơ/mật khẩu cho thủ kho chưa có API riêng.</p>
+  </Panel>;
 }

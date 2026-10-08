@@ -19,15 +19,13 @@ export function HeaderTopBar({ id, open, onToggle, onEnter, onLeave, onClose }: 
     <div className={styles.topInner}>
       <div className={styles.shopAnchor} onPointerEnter={onEnter} onPointerLeave={onLeave}>
         <button type="button" className={styles.hoursButton} aria-expanded={open} aria-controls={`${id}-shop`} onClick={event => onToggle(event.currentTarget)}>
-          <span>T2–T5:</span><strong>9:00 AM – 5:30 PM</strong>
+          <strong>PHUB · PC và linh kiện</strong>
           <Image src="/images/figma-mobile/header-imgFrame97.svg" alt="" width={16} height={14.7692} />
         </button>
         <div id={`${id}-shop`} className={styles.shopPanel} data-open={open} aria-hidden={!open} inert={!open}><ShopInfo /></div>
       </div>
-      <p className={styles.showroom}>Ghé thăm cửa hàng tại 1234 Nguyễn Thị Minh Khai, Quận 1. <a href="#footer-contact" onClick={onClose}>Liên hệ ngay</a></p>
-      <a href="tel:0901234567" className={styles.mobileContact}>Gọi: 090 123 4567</a>
+      <p className={styles.showroom}><a href="/main/product" onClick={onClose}>Khám phá sản phẩm</a></p>
       <div className={styles.topRight}>
-        <a href="tel:0901234567">Hotline: 090 123 4567</a>
         <Image src="/icons/header/facebook.svg" alt="Facebook" width={20} height={20} />
         <Image src="/icons/header/instagram.svg" alt="Instagram" width={20} height={20} />
       </div>

@@ -110,6 +110,8 @@ def login(body: LoginBody, request: Request, response: Response, db=Depends(get_
     secret = jwt_secret()
     username = body.username.strip()
     column = "email" if "@" in username else "ten_tai_khoan"
+    if column == "email":
+        username = username.lower()
     rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq(column, username).limit(1).execute().data
     account = rows[0] if rows else None
     try:

@@ -18,6 +18,7 @@ Phub-platform/
 │   │   ├── main.py                  # App, CORS, health, routers
 │   │   ├── config.py / supabase.py   # Cấu hình server và client database
 │   │   ├── auth.py                  # Đăng nhập/cookie, role, scope
+│   │   ├── admin_accounts/          # Quản lý tài khoản admin và tự đổi mật khẩu
 │   │   ├── resources.py             # Allowlist bảng và validation models
 │   │   ├── tables.py                # Table APIs
 │   │   ├── errors.py                # Phản hồi lỗi an toàn
@@ -30,6 +31,8 @@ Phub-platform/
     ├── adminUI/                     # Next.js 15 · :3000
     │   ├── app/api/backend/[...path]/route.ts
     │   ├── app/data/[resource]/page.tsx
+    │   ├── app/accounts/ / app/account/ # Trang quản lý tài khoản thật
+    │   ├── src/features/accounts/    # List/form/detail/profile, gọi API
     │   └── src/components/backend-data-view.tsx
     ├── warehouseUI/                 # Next.js 15 · :3002
     │   ├── app/ / src/
@@ -44,6 +47,13 @@ Phub-platform/
 
 Các UI giữ dependencies riêng để tránh xung đột Next.js/React. Không chạy `npm install` tại root.
 
+Phần tài khoản admin đã nối API/Supabase, không dùng dữ liệu mẫu. Hướng dẫn
+và hợp đồng: [Admin UI](ui/adminUI/README.md), [API tài khoản](Backend/app/admin_accounts/README.md).
+Không còn bản ghi/số liệu mẫu trong UI. Màn hình đã tích hợp lấy dữ liệu qua API;
+chức năng chưa có API hiển thị trạng thái chưa khả dụng. Điều này không đồng nghĩa
+toàn bộ nghiệp vụ quản trị đã hoàn thành. Fixtures trong tests và ví dụ Swagger
+chỉ phục vụ kiểm thử/tài liệu, không được dùng làm dữ liệu hiển thị thay thế.
+
 ## Chuẩn bị
 
 - Node.js 20.9+ (khuyến nghị Node.js 22), npm, Python 3.11+.
@@ -53,6 +63,33 @@ Các UI giữ dependencies riêng để tránh xung đột Next.js/React. Không
 - Làm theo [hướng dẫn database và tài khoản đầu tiên](Backend/README.md). Migration tạo mới chỉ dùng cho database trống; chưa chạy migration/seed lên Supabase tự động.
 
 Mỗi UI có `.env.example`; có thể tạo `.env.local` tương ứng. Gateway mặc định dùng `PHUB_API_BASE_URL=http://127.0.0.1:8000`. Không cần Supabase key trong UI.
+
+## Chạy UI local với API trên Render
+
+Trong `.env.local` của từng UI (`ui/adminUI`, `ui/warehouseUI`,
+`ui/userUI/Frontend`), đặt biến phía server rồi khởi động lại Next.js:
+
+```dotenv
+PHUB_API_BASE_URL=https://phub-api.onrender.com
+```
+
+Không thêm `/docs` hoặc `/api` vào URL này. Không cần chạy Python local khi
+endpoint cần dùng đã được deploy. Trình duyệt gọi gateway cùng origin của Next.js,
+gateway gọi API Render; không cần và không được đưa secret Supabase vào UI.
+
+Để đăng nhập và ghi dữ liệu từ local, thêm các origin local vào
+`FRONTEND_ORIGINS` của **service API trên Render**, giữ lại các origin production:
+`http://localhost:3000,http://localhost:3001,http://localhost:3002`.
+Backend kiểm tra Origin cho thao tác ghi, kể cả khi đi qua gateway.
+Nếu dùng cổng/hostname khác, thêm đúng origin đó. Không dùng wildcard hoặc
+giả mạo Origin để bỏ qua kiểm tra. Giữ `COOKIE_SECURE=true` trên cloud;
+nếu trình duyệt không chấp nhận cookie Secure ở localhost HTTP, dùng HTTPS local.
+
+Code local và API cloud có thể khác phiên bản. Ngày 07/10/2026 đã kiểm tra:
+catalog cloud trả HTTP 200; OpenAPI cloud chưa có `/api/admin/accounts`.
+Muốn thử các endpoint admin mới trước khi cho phép push/deploy, dùng backend local
+và đặt lại `PHUB_API_BASE_URL=http://127.0.0.1:8000`. Xóa dữ liệu mẫu khỏi UI
+không xóa các bản ghi đang có trong Supabase.
 
 ## Chạy bốn terminal
 
@@ -110,7 +147,7 @@ Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tà
 - Catalog/chi tiết sản phẩm khách hàng giữ kết nối API có sẵn; đăng nhập và hồ sơ/đơn/hóa đơn/thanh toán của khách đã dùng API theo tài khoản.
 - Sản phẩm sửa ảnh bằng URL `duong_dan_anh`. Upload file và ảnh chương trình chưa có schema/API.
 
-Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hình/kết nối. Các trang cài đặt, thông báo và một số màn hình storefront vẫn là UI mẫu; không coi thao tác trên đó là đã ghi database.
+Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hình/kết nối hoặc danh sách rỗng thực tế. Cài đặt, thông báo, giỏ hàng, checkout và liên hệ chưa kết nối API: không hiển thị dữ liệu mẫu hay báo lưu/gửi thành công giả.
 
 ## Giới hạn hiện tại
 
@@ -120,7 +157,7 @@ Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hìn
 
 Chi tiết endpoint, payload, quyền và backlog: [Backend/README.md](Backend/README.md).
 
-Quản lý đặc tả, đăng nhập trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot 47 thao tác: [Backend/docs/openapi.json](Backend/docs/openapi.json).
+Quản lý đặc tả, đăng nhập trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot 68 thao tác trên 47 đường dẫn: [Backend/docs/openapi.json](Backend/docs/openapi.json).
 
 ## Kiểm tra mã
 
@@ -133,4 +170,6 @@ Trong từng thư mục UI chạy `npm.cmd run build`; có thể kiểm tra Type
 
 Kiểm tra gateway dùng chung từ root: `node --test ui/shared/tests/backend-route.test.cjs` (cần dependencies admin đã cài).
 
-Không commit `node_modules`, `.next`, `.venv`, `.env`, `.env.local` hoặc thông tin khách hàng thật. Chưa commit/push thay đổi triển khai này tự động.
+Kiểm tra không tái đưa fixtures vào UI: `node --test ui/shared/tests/no-ui-fixtures.test.cjs`.
+
+Không commit `node_modules`, `.next`, `.venv`, `.env`, `.env.local` hoặc thông tin khách hàng thật. Push code không tự xác nhận API mới đã được deploy; cần kiểm tra phiên bản service Render sau khi triển khai.

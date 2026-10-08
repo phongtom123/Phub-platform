@@ -51,10 +51,10 @@ def test_schema_all_tables_and_metadata(platform_client):
     assert len(schema()) == len(RESOURCES) == 19
     resources = client.get("/api/data/resources").json()
     assert len(resources) == 19
-    assert sum(item["writable"] for item in resources) == 9
+    assert sum(item["writable"] for item in resources) == 8
     accounts = next(item for item in resources if item["name"] == "accounts")
     assert "mat_khau_hash" not in json.dumps(accounts)
-    assert "password" in accounts["create_schema"]["required"]
+    assert accounts["create_schema"] is None
 
 
 @pytest.mark.parametrize("name", RESOURCES)
@@ -145,18 +145,14 @@ def test_create_category_and_csrf(platform_client):
     assert json.loads(requests[-1].content)["trang_thai"] == 1
 
 
-def test_accounts_hash_password_and_hide_hash(platform_client):
+def test_generic_accounts_cannot_bypass_admin_account_rules(platform_client):
     client, state, requests = platform_client
     state["rows"] = [{"ma_tk": "TKNEW", "mat_khau_hash": "private"}]
     data = {"ma_tk": "TKNEW", "ten_tai_khoan": "new", "ma_kh": "KH1", "password": "test-password-long"}
     response = client.post("/api/data/accounts", json=data, headers=ORIGIN)
-    assert response.status_code == 201
-    inserted = json.loads(requests[-1].content)
-    assert "password" not in inserted
-    assert passwords.verify(data["password"], inserted["mat_khau_hash"])
-    assert "mat_khau_hash" not in response.text
-    data["ma_nhan_vien"] = "NV1"
-    assert client.post("/api/data/accounts", json=data, headers=ORIGIN).status_code == 422
+    assert response.status_code == 403
+    assert client.patch('/api/data/accounts?key=["TK1"]', json={"trang_thai": 0}, headers=ORIGIN).status_code == 403
+    assert not requests
 
 
 def test_immutable_sku_and_partial_update(platform_client):

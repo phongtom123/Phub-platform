@@ -80,3 +80,47 @@ test("oversized body and unsupported backend scheme are rejected", async () => {
   assert.equal((await invalid(new Request("http://localhost:3000/api/backend/auth/me"), ["auth", "me"])).status, 503);
   assert.equal(called, false);
 });
+
+test("admin account routes forward the correct method, query and JSON body", async () => {
+  const operations = [
+    ["GET", ["admin", "accounts"]], ["POST", ["admin", "accounts"]],
+    ["GET", ["admin", "account-owners"]], ["GET", ["admin", "accounts", "TK_001"]],
+    ["PATCH", ["admin", "accounts", "TK_001"]], ["POST", ["admin", "accounts", "TK_001", "status"]],
+    ["POST", ["admin", "accounts", "TK_001", "password"]], ["PUT", ["admin", "accounts", "TK_001", "role"]],
+    ["GET", ["admin", "me"]], ["PATCH", ["admin", "me"]], ["POST", ["admin", "me", "password"]],
+  ];
+  for (const [method, segments] of operations) {
+    const proxy = gateway(async (url, options) => {
+      assert.equal(String(url), "https://api.example.test/api/" + segments.join("/") + "?page=2&role=ADMIN");
+      assert.equal(options.method, method);
+      assert.equal(options.headers.get("Cookie"), "phub_session=test");
+      if (method !== "GET") {
+        assert.equal(options.headers.get("Content-Type"), "application/json");
+        assert.deepEqual(JSON.parse(options.body), { test: true });
+        assert.equal(options.headers.get("Origin"), "https://admin.example.test");
+      }
+      return Response.json({ ok: true });
+    }, { PHUB_API_BASE_URL: "https://api.example.test" });
+    const response = await proxy(new Request("https://admin.example.test/api/backend/x?page=2&role=ADMIN", {
+      method, headers: { Cookie: "phub_session=test", Origin: "https://admin.example.test" },
+      ...(method !== "GET" ? { body: JSON.stringify({ test: true }) } : {}),
+    }), segments);
+    assert.equal(response.status, 200);
+  }
+});
+
+test("admin gateway rejects wrong verbs, arbitrary actions and encoded traversal", async () => {
+  let calls = 0;
+  const proxy = gateway(async () => { calls++; return Response.json({}); });
+  for (const segments of [
+    ["admin", "accounts", ".."], ["admin", "accounts", "."], ["admin", "accounts", "%2e%2e"],
+    ["admin", "accounts", "a/b"], ["admin", "accounts", "a%2fb"],
+    ["admin", "accounts", "TK1", "delete"], ["admin", "me", "role"],
+  ]) assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x"), segments)).status, 404);
+  for (const [method, segments] of [
+    ["DELETE", ["admin", "accounts", "TK1"]], ["PUT", ["admin", "accounts", "TK1"]],
+    ["GET", ["admin", "me", "password"]], ["PATCH", ["admin", "accounts", "TK1", "role"]],
+    ["POST", ["admin", "account-owners"]],
+  ]) assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x", { method }), segments)).status, 404);
+  assert.equal(calls, 0);
+});

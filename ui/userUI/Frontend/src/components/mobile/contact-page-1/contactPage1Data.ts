@@ -16,30 +16,6 @@ export const contactPage1Data = {
     messageLabel: "Bạn đang nghĩ gì?",
     messagePlaceholder: "Nhập nội dung lời nhắn của bạn...",
     submitButton: "Gửi liên hệ",
-    successMessage: "Cảm ơn bạn! Thông tin liên hệ đã được gửi thành công.",
-  },
-  infoCard: {
-    address: {
-      title: "Địa chỉ:",
-      text: "1234 Street Adress, City Address, 1234",
-    },
-    phone: {
-      title: "Số điện thoại:",
-      text: "(00)1234 5678",
-      tel: "0012345678",
-    },
-    openingHours: {
-      title: "Thời gian mở cửa:",
-      schedules: [
-        "Thứ Hai – Thứ Năm: 9:00 AM – 5:30 PM",
-        "Thứ Sáu: 9:00 AM – 6:00 PM",
-        "Thứ Bảy: 11:00 AM – 5:00 PM",
-      ],
-    },
-    email: {
-      title: "E-mail:",
-      text: "shop@email.com",
-      mailto: "shop@email.com",
-    },
+    unavailableMessage: "Chưa có API gửi liên hệ. Nội dung chưa được gửi.",
   },
 };
