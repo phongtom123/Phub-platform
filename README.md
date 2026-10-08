@@ -101,6 +101,47 @@ pip install -r requirements.txt
 fastapi dev
 ```
 
+### Cấu hình Supabase và file `.env`
+
+Backend đọc thông tin kết nối Supabase từ `Backend/.env`. File này nằm trong
+`.gitignore`, vì vậy không được commit URL hoặc secret key thật lên Git.
+
+Ở lần khởi động đầu tiên, nếu chưa có `.env`, backend sẽ tự sao chép
+`Backend/.env.example` thành `Backend/.env`. Lần chạy đầu có thể dừng lại và yêu
+cầu cấu hình vì file mới vẫn chứa các giá trị mẫu.
+
+Mở `Backend/.env` và thay các giá trị sau bằng thông tin của project Supabase:
+
+```dotenv
+FRONTEND_URL=http://localhost:3000
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SECRET_KEY=sb_secret_xxxxxxxxx
+```
+
+- `SUPABASE_URL`: URL của project Supabase.
+- `SUPABASE_SECRET_KEY`: secret key chỉ dùng trong backend; không đưa biến này
+  sang frontend và không đặt tiền tố `NEXT_PUBLIC_`.
+- `FRONTEND_URL`: địa chỉ frontend mẫu; cấu hình CORS hiện nằm trong
+  `Backend/app/main.py`.
+
+Sau khi điền giá trị thật, khởi động lại backend:
+
+```powershell
+cd Backend
+.venv\Scripts\Activate.ps1
+fastapi dev
+```
+
+Nếu muốn tạo file trước khi chạy ứng dụng, có thể sao chép thủ công:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Backend không ghi đè `.env` đã tồn tại. Khi cần thêm biến môi trường mới, hãy
+cập nhật cả `.env.example` bằng giá trị mẫu an toàn để các thành viên khác biết
+cần cấu hình biến nào.
+
 ## Nguyên tắc phát triển
 
 - Mỗi nhóm làm việc trong đúng thư mục UI của mình.
