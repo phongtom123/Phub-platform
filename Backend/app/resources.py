@@ -23,7 +23,7 @@ class Resource:
 RESOURCES = {
     "warehouses": Resource("KHO", "Kho", ("ma_kho",), True, True),
     "employees": Resource("NHAN_VIEN", "Nhân viên", ("ma_nhan_vien",), True),
-    "accounts": Resource("TAI_KHOAN", "Tài khoản", ("ma_tk",), True),
+    "accounts": Resource("TAI_KHOAN", "Tài khoản", ("ma_tk",)),
     "customers": Resource("KHACH_HANG", "Khách hàng", ("ma_kh",), True),
     "categories": Resource("LOAI_SP", "Loại sản phẩm", ("ma_loai_sp",), True, True),
     "products": Resource("SAN_PHAM", "Sản phẩm", ("ma_sp",), True, True),

@@ -6,12 +6,29 @@ const resources = new Set([
   "order-lines", "invoices", "payments", "promotions", "vouchers", "voucher-uses",
 ]);
 
+function validAdminPath(path: string[], method: string): boolean {
+  if (path[0] !== "admin") return false;
+  if (path.length === 2) {
+    return (path[1] === "accounts" && ["GET", "POST"].includes(method)) ||
+      (path[1] === "account-owners" && method === "GET") ||
+      (path[1] === "me" && ["GET", "PATCH"].includes(method));
+  }
+  if (path.length === 3 && path[1] === "me") return path[2] === "password" && method === "POST";
+  const id = path[2];
+  if (path[1] !== "accounts" || !id || !/^[A-Za-z0-9_.-]{1,100}$/.test(id) || [".", ".."].includes(id)) return false;
+  if (path.length === 3) return ["GET", "PATCH"].includes(method);
+  return path.length === 4 && (
+    (["status", "password"].includes(path[3]) && method === "POST") ||
+    (path[3] === "role" && method === "PUT")
+  );
+}
+
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {
   const { path } = await context.params;
-  const valid = path.length === 2 && (
+  const valid = validAdminPath(path, request.method) || (path.length === 2 && (
     (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) ||
     (path[0] === "data" && resources.has(path[1]))
-  );
+  ));
   if (!valid) return Response.json({ detail: "Endpoint không tồn tại." }, { status: 404 });
   try {
     const base = new URL(process.env.PHUB_API_BASE_URL || "http://127.0.0.1:8000");
@@ -37,7 +54,7 @@ export async function proxyBackend(request: Request, context: Context): Promise<
     for (const value of upstream.headers.getSetCookie()) outputHeaders.append("Set-Cookie", value);
     return new Response(upstream.status === 204 ? null : await upstream.text(), { status: upstream.status, headers: outputHeaders });
   } catch {
-    return Response.json({ detail: "Không kết nối được backend Python. Kiểm tra server ở cổng 8000." }, {
+    return Response.json({ detail: "Không kết nối được API. Kiểm tra PHUB_API_BASE_URL và trạng thái backend." }, {
       status: 503, headers: { "Cache-Control": "no-store" },
     });
   }

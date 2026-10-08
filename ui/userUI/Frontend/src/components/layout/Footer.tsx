@@ -31,13 +31,7 @@ export default function Footer() {
           ))}
 
           <FooterLinkGroup id="footer-contact" title="Liên hệ">
-            <address className={styles.address}>
-              <p>Địa chỉ: 1234 Nguyễn Thị Minh Khai, Phường 5, Quận 1, TP. HCM</p>
-              <p>Hotline: <a href="tel:0901234567">090 123 4567</a></p>
-              <p>Giờ làm việc: Thứ 2 - Thứ 5: 9:00 AM – 5:30 PM</p>
-              <p>Thứ 6: 9:00 AM – 6:00 PM | Thứ 7: 11:00 AM – 5:00 PM</p>
-              <p>E-mail: <a href="mailto:cskh@techstore.vn">cskh@techstore.vn</a></p>
-            </address>
+            <address className={styles.address}><p>Thông tin liên hệ chưa được cấu hình.</p></address>
           </FooterLinkGroup>
         </div>
 
@@ -52,7 +46,7 @@ export default function Footer() {
               <li key={method.name}><Image src={method.src} alt={method.name} width={25} height={25} /></li>
             ))}
           </ul>
-          <p className={styles.copyright}>Bản quyền © 2026 TechStore Việt Nam. Đã bảo lưu mọi quyền.</p>
+          <p className={styles.copyright}>Bản quyền © 2026 PHUB. Đã bảo lưu mọi quyền.</p>
         </div>
       </div>
     </footer>

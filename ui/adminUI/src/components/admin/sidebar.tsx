@@ -142,7 +142,6 @@ export function AdminSidebar({
                     >
                       <Icon />
                       <span>{label}</span>
-                      {key === "orders" && <em>12</em>}
                     </button>
                   ))}
                 </div>
@@ -161,11 +160,11 @@ export function AdminSidebar({
           </button>
           <div className="branch">
             <b>
-              CN
+              AD
               <i />
             </b>
             <p>
-              <small>CHI NHÁNH HIỆN TẠI</small>
+              <small>PHẠM VI QUẢN TRỊ</small>
               <strong>Toàn hệ thống</strong>
             </p>
             <ChevronDown />

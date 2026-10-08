@@ -20,7 +20,7 @@ DESCRIPTION = """
 ## Nơi quản lý đặc tả PHUB API
 
 UI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.
-Catalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`.
+Catalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.
 Tất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.
 
 ### Đăng nhập và thử API
@@ -33,7 +33,7 @@ Tất cả ví dụ là dữ liệu giả minh họa, **không phải tài kho�
 **Không nhập Supabase key hoặc dán token vào nút Authorize.** Swagger không thể tự đặt cookie HttpOnly
 qua Authorize. Cookie có sẵn trên cùng host được trình duyệt gửi tự động; nếu công cụ không gửi cookie,
 dùng Postman/cookie jar hoặc đăng nhập qua UI trên cùng host trước.
-POST/PATCH kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.
+POST/PATCH/PUT kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.
 Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.
 
 ### Quy ước dữ liệu
@@ -47,14 +47,17 @@ Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển 
 
 ### Phạm vi hiện tại
 
-Đã viết API đọc 19 bảng và tạo/sửa 9 bảng dữ liệu nền; kiểm thử HTTP dùng mock.
+Đã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.
 **Chưa xác nhận kết nối live Supabase.** Không có DELETE.
 Các bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,
 nhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.
-Không có endpoint giả cho các chức năng chưa triển khai. Đăng ký/reset password/refresh token chưa có.
+Tài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.
+Đăng ký tự phục vụ, quên mật khẩu qua email và refresh token chưa có.
+Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.
 """
 
 TAGS = [
+    {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
     {"name": "Shared · Xác thực", "description": "Login/me/logout. Cookie HttpOnly, role lấy từ database."},
     {"name": "Shared · Hệ thống", "description": "Health chỉ kiểm tra API đang chạy; không kiểm tra database."},
     {"name": "Shared · Metadata", "description": "Danh mục bảng/trường/model tạo theo quyền của phiên hiện tại."},
@@ -81,7 +84,7 @@ RESOURCE_TAGS = {
     "invoices": "Bán hàng · Tài chính", "payments": "Bán hàng · Tài chính",
 }
 NOTES = {
-    "accounts": "Tài khoản phải liên kết đúng một ma_kh hoặc ma_nhan_vien. Dùng password khi tạo/đổi mật khẩu, không gửi mat_khau_hash.",
+    "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
     "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh sửa bằng URL duong_dan_anh; upload file chưa có API. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
     "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
@@ -184,7 +187,9 @@ def add_table_paths(spec: dict) -> None:
                 if name in CUSTOMER_READ:
                     description += "KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). "
                 description += "GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. "
-                if not resource.writable:
+                if name == "accounts":
+                    description += "**Quản lý tài khoản dùng `/api/admin/accounts`, không dùng API ghi bảng chung.** "
+                elif not resource.writable:
                     description += "**Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** "
             else:
                 description += "Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. "
@@ -228,9 +233,15 @@ def describe_auth_and_public(spec: dict) -> None:
     paths = spec["paths"]
     for path, operations in paths.items():
         for method, operation in operations.items():
-            if method not in {"get", "post", "patch"}:
+            if method not in {"get", "post", "patch", "put"}:
                 continue
-            if path.startswith("/api/auth/"):
+            if path.startswith("/api/admin/"):
+                operation["security"] = [{"SessionCookie": []}]
+                operation["x-roles"] = ["ADMIN"]
+                operation["x-implementation-status"] = "implemented-live-unverified"
+                if method != "get":
+                    operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
+            elif path.startswith("/api/auth/"):
                 operation["tags"] = ["Shared · Xác thực"]
                 operation["security"] = [{"SessionCookie": []}] if path.endswith("/me") else []
                 operation["x-implementation-status"] = "implemented-live-unverified"

@@ -23,7 +23,7 @@ export function HomeDialog({ content, onClose, onSelect }: { content: HomeDialog
     document.body.style.overflow = "hidden";
     return () => { element?.close(); document.body.style.overflow = previousOverflow; };
   }, []);
-  const title = content.type === "product" ? content.product.name : content.type === "catalog" ? content.title : "Thông tin thanh toán Zip";
+  const title = content.type === "product" ? content.product.name : content.type === "catalog" ? content.title : "Thông tin thanh toán";
   return <dialog ref={dialog} className={styles.dialog} aria-labelledby="home-dialog-heading" aria-describedby="home-demo-note" onCancel={event => { event.preventDefault(); onClose(); }} onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
     <div className={styles.dialogBody}>
       <button className={styles.close} aria-label="Đóng cửa sổ" onClick={onClose} autoFocus>×</button>
@@ -33,7 +33,7 @@ export function HomeDialog({ content, onClose, onSelect }: { content: HomeDialog
         <CatalogImage src={content.product.imageSrc} alt={content.product.name} width={280} height={280} />
         <div>
           <Price amount={content.product.amount} originalAmount={content.product.originalAmount} currency={content.product.currency} locale="vi-VN" uiLocale="vi" />
-          <p>Khám phá bộ sưu tập sản phẩm của Tech Store.</p>
+          <p>Thông tin sản phẩm từ catalog PHUB.</p>
           <p><Link href={productHref(content.product.id)} onClick={onClose} className="text-blue-600 underline">Xem chi tiết sản phẩm</Link></p>
           <Button onClick={onClose}>Tiếp tục xem sản phẩm</Button>
         </div>
@@ -44,7 +44,7 @@ export function HomeDialog({ content, onClose, onSelect }: { content: HomeDialog
           <span>{product.name}</span><Price amount={product.amount} originalAmount={product.originalAmount} currency={product.currency} locale="vi-VN" uiLocale="vi" />
         </button>)}
       </div>}
-      {content.type === "financing" && <p>Thông tin Zip là nội dung mẫu theo thiết kế. Dịch vụ trả góp hiện chưa được kết nối.</p>}
+      {content.type === "financing" && <p>Dịch vụ trả góp chưa được kết nối API.</p>}
     </div>
   </dialog>;
 }

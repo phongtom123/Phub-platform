@@ -28,10 +28,8 @@ export interface DemoAccount {
   shipping: string;
 }
 
-// UI-only fixture. Never represents an authenticated user or persisted account.
-export const demoAccount: DemoAccount = {
-  name: "Alex Driver", email: "ExampeAdress@gmail.com", subscribed: false, billing: "", shipping: "",
-};
+// Chỉ giữ kiểu dữ liệu và nhãn điều hướng; không có hồ sơ mẫu.
+
 
 export const emptyAccountViews = {
   orders: "You have placed no orders.",

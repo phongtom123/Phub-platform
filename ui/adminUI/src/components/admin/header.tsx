@@ -8,18 +8,17 @@ import {
   ChevronRight,
   LogOut,
   Menu,
-  Package,
   Search,
   Settings,
-  ShoppingBag,
   UserRound,
-  Users,
   X,
 } from "lucide-react";
 import type { ModuleKey } from "@/src/types/admin";
 import { getModuleHref } from "@/src/lib/admin-navigation";
 
 type Props = {
+  user: { name: string; username: string } | null;
+  onGoProfile: () => void;
   activeModule: ModuleKey;
   title: string;
   onToggleSidebar: () => void;
@@ -30,6 +29,8 @@ type Props = {
 };
 
 export function AdminHeader({
+  user,
+  onGoProfile,
   activeModule,
   title,
   onToggleSidebar,
@@ -38,6 +39,7 @@ export function AdminHeader({
   onOpenSettings,
   onLogout,
 }: Props) {
+  const initials = user?.name.split(/\s+/).filter(Boolean).slice(-2).map(word => word[0]).join("").toUpperCase() || "AD";
   const [panel, setPanel] = useState<"notifications" | "account" | null>(null);
   const followModuleLink = (
     event: MouseEvent<HTMLAnchorElement>,
@@ -93,7 +95,6 @@ export function AdminHeader({
             }
           >
             <Bell />
-            <i />
           </button>
           {panel === "notifications" && (
             <NotificationPanel
@@ -107,15 +108,18 @@ export function AdminHeader({
             className={`user ${panel === "account" ? "pressed" : ""}`}
             onClick={() => setPanel(panel === "account" ? null : "account")}
           >
-            <b>NT</b>
+            <b>{initials}</b>
             <span className="user-copy">
-              <strong>Minh Thịnh</strong>
+              <strong>{user?.name ?? "Quản trị viên"}</strong>
               <small>Quản trị viên</small>
             </span>
             <ChevronDown />
           </button>
           {panel === "account" && (
             <AccountPanel
+              user={user}
+              initials={initials}
+              onGoProfile={onGoProfile}
               onClose={() => setPanel(null)}
               onGoAccounts={onGoAccounts}
               onOpenSettings={onOpenSettings}
@@ -128,74 +132,25 @@ export function AdminHeader({
   );
 }
 
-function NotificationPanel({
-  onClose,
-  onGoAccounts,
-}: {
-  onClose: () => void;
-  onGoAccounts: () => void;
-}) {
-  return (
-    <section className="header-popup notifications-popup">
-      <header>
-        <div>
-          <b>Thông báo</b>
-          <span>3 thông báo mới</span>
-        </div>
-        <button onClick={onClose}>
-          <X />
-        </button>
-      </header>
-      <div className="notification-list">
-        <button
-          onClick={() => {
-            onClose();
-            onGoAccounts();
-          }}
-        >
-          <span className="notice-icon">
-            <Users />
-          </span>
-          <span className="notice-copy">
-            <b>Tài khoản cần kiểm tra</b>
-            <small>Một tài khoản khách hàng vừa bị tạm khóa.</small>
-            <em>5 phút trước</em>
-          </span>
-        </button>
-        <button onClick={onClose}>
-          <span className="notice-icon warning">
-            <Package />
-          </span>
-          <span className="notice-copy">
-            <b>12 sản phẩm sắp hết</b>
-            <small>Tồn kho đã xuống dưới mức cảnh báo.</small>
-            <em>32 phút trước</em>
-          </span>
-        </button>
-        <button onClick={onClose}>
-          <span className="notice-icon order">
-            <ShoppingBag />
-          </span>
-          <span className="notice-copy">
-            <b>Có 4 đơn hàng mới</b>
-            <small>Đơn hàng đang chờ xác nhận.</small>
-            <em>1 giờ trước</em>
-          </span>
-        </button>
-      </div>
-      <footer>
-        <button onClick={onClose}>Đánh dấu tất cả đã đọc</button>
-      </footer>
-    </section>
-  );
+function NotificationPanel({ onClose }: { onClose: () => void; onGoAccounts: () => void }) {
+  return <section className="header-popup notifications-popup">
+    <header><b>Thông báo</b><button onClick={onClose} aria-label="Đóng thông báo"><X /></button></header>
+    <p style={{ padding: 16 }}>Chưa kết nối API thông báo.</p>
+  </section>;
 }
 
 function AccountPanel({
+  user,
+  initials,
+  onGoProfile,
   onClose,
   onGoAccounts,
   onOpenSettings,
   onLogout,
 }: {
+  user: { name: string; username: string } | null;
+  initials: string;
+  onGoProfile: () => void;
   onClose: () => void;
   onGoAccounts: () => void;
   onOpenSettings: () => void;
@@ -208,14 +163,15 @@ function AccountPanel({
   return (
     <section className="header-popup account-popup">
       <div className="account-summary">
-        <b>NT</b>
+        <b>{initials}</b>
         <p>
-          <strong>Nguyễn Minh Thịnh</strong>
-          <small>thinh@phub.vn</small>
+          <strong>{user?.name ?? "Quản trị viên"}</strong>
+          <small>{user?.username}</small>
           <span>ADMIN · Toàn hệ thống</span>
         </p>
       </div>
       <nav>
+        <button onClick={() => run(onGoProfile)}><UserRound /> Tài khoản của tôi</button>
         <button onClick={() => run(onGoAccounts)}>
           <UserRound /> Quản lý tài khoản
         </button>

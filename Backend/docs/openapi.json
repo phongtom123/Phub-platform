@@ -1,6 +1,243 @@
 {
   "components": {
     "schemas": {
+      "AccountCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "ma_kh": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kh"
+          },
+          "ma_nhan_vien": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Nhan Vien"
+          },
+          "ma_tk": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "title": "Ma Tk",
+            "type": "string"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "ten_tai_khoan": {
+            "maxLength": 80,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "title": "Ten Tai Khoan",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_tk",
+          "ten_tai_khoan",
+          "password"
+        ],
+        "title": "AccountCreate",
+        "type": "object"
+      },
+      "AccountPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AccountRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "AccountPage",
+        "type": "object"
+      },
+      "AccountRead": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "ho_ten": {
+            "title": "Ho Ten",
+            "type": "string"
+          },
+          "is_self": {
+            "title": "Is Self",
+            "type": "boolean"
+          },
+          "ma_kh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kh"
+          },
+          "ma_kho": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kho"
+          },
+          "ma_nhan_vien": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Nhan Vien"
+          },
+          "ma_tk": {
+            "title": "Ma Tk",
+            "type": "string"
+          },
+          "owner_active": {
+            "title": "Owner Active",
+            "type": "boolean"
+          },
+          "role": {
+            "enum": [
+              "ADMIN",
+              "THU_KHO",
+              "KHACH_HANG"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "ten_tai_khoan": {
+            "title": "Ten Tai Khoan",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "title": "Trang Thai",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ma_tk",
+          "ten_tai_khoan",
+          "email",
+          "ma_nhan_vien",
+          "ma_kh",
+          "trang_thai",
+          "role",
+          "ho_ten",
+          "ma_kho",
+          "owner_active",
+          "is_self"
+        ],
+        "title": "AccountRead",
+        "type": "object"
+      },
+      "AccountUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "ten_tai_khoan": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 3,
+                "pattern": "^[A-Za-z0-9_.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ten Tai Khoan"
+          }
+        },
+        "title": "AccountUpdate",
+        "type": "object"
+      },
       "ApiErrorResponse": {
         "properties": {
           "detail": {
@@ -3291,6 +3528,81 @@
         "title": "OrderSummary",
         "type": "object"
       },
+      "OwnerPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OwnerRead"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "OwnerPage",
+        "type": "object"
+      },
+      "OwnerRead": {
+        "properties": {
+          "has_account": {
+            "title": "Has Account",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "ma_kho": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kho"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "ADMIN",
+              "THU_KHO",
+              "KHACH_HANG"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "has_account"
+        ],
+        "title": "OwnerRead",
+        "type": "object"
+      },
       "PHIEU_CHUYEN_KHOPage": {
         "additionalProperties": false,
         "properties": {
@@ -3603,6 +3915,51 @@
           "total_pages"
         ],
         "title": "Pagination",
+        "type": "object"
+      },
+      "PasswordChange": {
+        "additionalProperties": false,
+        "properties": {
+          "current_password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password",
+          "current_password"
+        ],
+        "title": "PasswordChange",
+        "type": "object"
+      },
+      "PasswordReset": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "PasswordReset",
         "type": "object"
       },
       "PaymentOverview": {
@@ -4000,6 +4357,36 @@
         ],
         "title": "ResourceName",
         "type": "string"
+      },
+      "RoleUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "ma_kho": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kho"
+          },
+          "role": {
+            "enum": [
+              "ADMIN",
+              "THU_KHO"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "RoleUpdate",
+        "type": "object"
       },
       "SAN_PHAMCreate": {
         "additionalProperties": false,
@@ -4670,6 +5057,25 @@
         "title": "Specification",
         "type": "object"
       },
+      "StatusUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "trang_thai": {
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "title": "Trang Thai",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "trang_thai"
+        ],
+        "title": "StatusUpdate",
+        "type": "object"
+      },
       "StockStatus": {
         "enum": [
           "in-stock",
@@ -4806,106 +5212,6 @@
         "title": "StoredRecipient",
         "type": "object"
       },
-      "TAI_KHOANCreate": {
-        "additionalProperties": false,
-        "example": {
-          "email": "example@example.com",
-          "ma_kh": null,
-          "ma_nhan_vien": "NV001",
-          "ma_tk": "TK001",
-          "password": "Replace_with_your_password",
-          "ten_tai_khoan": "example.admin",
-          "trang_thai": 1
-        },
-        "properties": {
-          "email": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "email",
-            "title": "Email"
-          },
-          "ma_kh": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "ma_kh",
-            "title": "Ma Kh"
-          },
-          "ma_nhan_vien": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "ma_nhan_vien",
-            "title": "Ma Nhan Vien"
-          },
-          "ma_tk": {
-            "description": "ma_tk",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Ma Tk",
-            "type": "string"
-          },
-          "password": {
-            "description": "Mật khẩu mới; server hash trước khi lưu. Khi PATCH, bỏ trường nếu không đổi mật khẩu.",
-            "format": "password",
-            "maxLength": 128,
-            "minLength": 10,
-            "title": "Password",
-            "type": "string",
-            "writeOnly": true
-          },
-          "ten_tai_khoan": {
-            "description": "ten_tai_khoan",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Ten Tai Khoan",
-            "type": "string"
-          },
-          "trang_thai": {
-            "default": 1,
-            "description": "trang_thai",
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "title": "Trang Thai",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "ma_tk",
-          "ten_tai_khoan",
-          "password"
-        ],
-        "title": "TAI_KHOANCreate",
-        "type": "object"
-      },
       "TAI_KHOANPage": {
         "additionalProperties": false,
         "properties": {
@@ -5003,101 +5309,6 @@
           "trang_thai"
         ],
         "title": "TAI_KHOANRead",
-        "type": "object"
-      },
-      "TAI_KHOANSaved": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/TAI_KHOANRead"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "type": "object"
-      },
-      "TAI_KHOANUpdate": {
-        "additionalProperties": false,
-        "description": "Chỉ gửi trường cần đổi; bỏ password nếu giữ nguyên. Không nhận PK/SKU/trường server tự gán.",
-        "example": {
-          "email": "example@example.com"
-        },
-        "minProperties": 1,
-        "properties": {
-          "email": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "email",
-            "title": "Email"
-          },
-          "ma_kh": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ma_kh",
-            "title": "Ma Kh"
-          },
-          "ma_nhan_vien": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ma_nhan_vien",
-            "title": "Ma Nhan Vien"
-          },
-          "password": {
-            "description": "Mật khẩu mới; server hash trước khi lưu. Khi PATCH, bỏ trường nếu không đổi mật khẩu.",
-            "format": "password",
-            "maxLength": 128,
-            "minLength": 10,
-            "title": "Password",
-            "type": "string",
-            "writeOnly": true
-          },
-          "ten_tai_khoan": {
-            "description": "ten_tai_khoan",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Ten Tai Khoan",
-            "type": "string"
-          },
-          "trang_thai": {
-            "description": "trang_thai",
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "title": "Trang Thai",
-            "type": "integer"
-          }
-        },
-        "title": "TAI_KHOANUpdate",
         "type": "object"
       },
       "THANH_TOANPage": {
@@ -5733,12 +5944,1607 @@
     }
   },
   "info": {
-    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, đăng nhập bằng `POST /api/auth/login` → Try it out → Execute.\n3. Trình duyệt lưu cookie HttpOnly `phub_session`; thử `GET /api/auth/me`, sau đó các API theo role.\n4. Dùng cùng hostname cho docs và UI; không trộn localhost với 127.0.0.1.\n\n**Không nhập Supabase key hoặc dán token vào nút Authorize.** Swagger không thể tự đặt cookie HttpOnly\nqua Authorize. Cookie có sẵn trên cùng host được trình duyệt gửi tự động; nếu công cụ không gửi cookie,\ndùng Postman/cookie jar hoặc đăng nhập qua UI trên cùng host trước.\nPOST/PATCH kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 9 bảng dữ liệu nền; kiểm thử HTTP dùng mock.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,\nnhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.\nKhông có endpoint giả cho các chức năng chưa triển khai. Đăng ký/reset password/refresh token chưa có.\n",
+    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, đăng nhập bằng `POST /api/auth/login` → Try it out → Execute.\n3. Trình duyệt lưu cookie HttpOnly `phub_session`; thử `GET /api/auth/me`, sau đó các API theo role.\n4. Dùng cùng hostname cho docs và UI; không trộn localhost với 127.0.0.1.\n\n**Không nhập Supabase key hoặc dán token vào nút Authorize.** Swagger không thể tự đặt cookie HttpOnly\nqua Authorize. Cookie có sẵn trên cùng host được trình duyệt gửi tự động; nếu công cụ không gửi cookie,\ndùng Postman/cookie jar hoặc đăng nhập qua UI trên cùng host trước.\nPOST/PATCH/PUT kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,\nnhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký tự phục vụ, quên mật khẩu qua email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
     "title": "Phub Platform API",
     "version": "0.3.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/account-owners": {
+      "get": {
+        "operationId": "account_owners_api_admin_account_owners_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "default": "employees",
+              "enum": [
+                "employees",
+                "customers"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Tra cứu hồ sơ để cấp tài khoản",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/accounts": {
+      "get": {
+        "operationId": "list_accounts_api_admin_accounts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ADMIN",
+                    "THU_KHO",
+                    "KHACH_HANG"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Danh sách tài khoản, lọc vai trò/trạng thái",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      },
+      "post": {
+        "description": "Vai trò lấy từ hồ sơ liên kết. Không nhận role/hash/trạng thái từ trình duyệt.\nUsername 3–80 ký tự ASCII chữ/số/._- (không có @); email chuẩn hóa chữ thường.\nMật khẩu 10–128 ký tự, hash Argon2. Không tạo hồ sơ nhân viên/khách cùng request.",
+        "operationId": "create_account_api_admin_accounts_post",
+        "parameters": [
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Cấp tài khoản cho một nhân viên hoặc khách có sẵn",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/accounts/{account_id}": {
+      "get": {
+        "operationId": "get_account_api_admin_accounts__account_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.-]+$",
+              "title": "Account Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Chi tiết tài khoản, không trả mật khẩu",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      },
+      "patch": {
+        "description": "Khóa chính và chủ sở hữu bất biến; trạng thái/vai trò/mật khẩu có API riêng.",
+        "operationId": "update_account_api_admin_accounts__account_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.-]+$",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sửa tên đăng nhập và email",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/accounts/{account_id}/password": {
+      "post": {
+        "description": "Thay hash làm token cũ không còn hợp lệ. Mật khẩu không được trả trong response.",
+        "operationId": "reset_password_api_admin_accounts__account_id__password_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.-]+$",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordReset"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "ADMIN cấp lại mật khẩu cho tài khoản khác",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/accounts/{account_id}/role": {
+      "put": {
+        "description": "Cập nhật role và ma_kho cùng một dòng NHAN_VIEN. Không nâng quyền khách hàng;\nADMIN có ma_kho=null, THU_KHO có kho hoạt động. Chặn tự hạ quyền.",
+        "operationId": "set_role_api_admin_accounts__account_id__role_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.-]+$",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Đổi quyền ADMIN/THU_KHO và kho của nhân viên",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/accounts/{account_id}/status": {
+      "post": {
+        "description": "Không xóa lịch sử; chặn tự ẩn/khóa. Phiên bị từ chối khi tài khoản không active.\nChưa có blacklist phiên: mở lại tài khoản có thể khôi phục token chưa hết hạn.",
+        "operationId": "set_status_api_admin_accounts__account_id__status_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.-]+$",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Ẩn (0), mở khóa (1), tạm khóa (2) tài khoản",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/me": {
+      "get": {
+        "operationId": "my_account_api_admin_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Thông tin tài khoản admin đang đăng nhập",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      },
+      "patch": {
+        "operationId": "update_me_api_admin_me_patch",
+        "parameters": [
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sửa tên đăng nhập/email của chính admin",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/me/password": {
+      "post": {
+        "operationId": "change_my_password_api_admin_me_password_post",
+        "parameters": [
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Quá nhiều lần thử mật khẩu; thử lại sau một phút."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Quá nhiều lần thử mật khẩu; thử lại sau một phút."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Đổi mật khẩu admin bằng mật khẩu hiện tại",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
     "/api/auth/login": {
       "post": {
         "description": "Tài khoản thật trong TAI_KHOAN, hash Argon2/bcrypt; role và kho lấy từ NHAN_VIEN/KHACH_HANG. Tạo cookie HttpOnly 8 giờ; không trả token trong JSON. Ví dụ password là placeholder, không có tài khoản demo.",
@@ -7731,7 +9537,7 @@
     },
     "/api/data/accounts": {
       "get": {
-        "description": "Bảng `TAI_KHOAN`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_tk`. Ví dụ query `key=[\"TK001\"]` (URL-encode khi gửi).\n\nTài khoản phải liên kết đúng một ma_kh hoặc ma_nhan_vien. Dùng password khi tạo/đổi mật khẩu, không gửi mat_khau_hash.",
+        "description": "Bảng `TAI_KHOAN`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Quản lý tài khoản dùng `/api/admin/accounts`, không dùng API ghi bảng chung.** \n\nKhóa chính: `ma_tk`. Ví dụ query `key=[\"TK001\"]` (URL-encode khi gửi).\n\nGET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
         "operationId": "get_accounts",
         "parameters": [
           {
@@ -7905,361 +9711,7 @@
         "x-primary-key": [
           "ma_tk"
         ],
-        "x-read-only": false,
-        "x-roles": [
-          "ADMIN"
-        ],
-        "x-table": "TAI_KHOAN"
-      },
-      "patch": {
-        "description": "Bảng `TAI_KHOAN`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_tk`. Ví dụ query `key=[\"TK001\"]` (URL-encode khi gửi).\n\nTài khoản phải liên kết đúng một ma_kh hoặc ma_nhan_vien. Dùng password khi tạo/đổi mật khẩu, không gửi mat_khau_hash.",
-        "operationId": "patch_accounts",
-        "parameters": [
-          {
-            "description": "Chuỗi JSON mảng khóa theo thứ tự ('ma_tk',); int gửi JSON number, varchar gửi JSON string.",
-            "examples": {
-              "primary_key": {
-                "summary": "Dữ liệu giả minh họa; thay bằng khóa thật",
-                "value": "[\"TK001\"]"
-              }
-            },
-            "in": "query",
-            "name": "key",
-            "required": true,
-            "schema": {
-              "maxLength": 6000,
-              "title": "Key",
-              "type": "string"
-            }
-          },
-          {
-            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
-            "example": "http://localhost:8000",
-            "in": "header",
-            "name": "Origin",
-            "required": true,
-            "schema": {
-              "format": "uri",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "examples": {
-                "illustration": {
-                  "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
-                  "value": {
-                    "email": "example@example.com"
-                  }
-                }
-              },
-              "schema": {
-                "$ref": "#/components/schemas/TAI_KHOANUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "data": [
-                    {
-                      "email": "example@example.com",
-                      "ma_kh": null,
-                      "ma_nhan_vien": "NV001",
-                      "ma_tk": "TK001",
-                      "ten_tai_khoan": "example.admin",
-                      "trang_thai": 1
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/TAI_KHOANSaved"
-                }
-              }
-            },
-            "description": "Bản ghi đã lưu, không trả mật khẩu/hash.",
-            "headers": {
-              "Cache-Control": {
-                "example": "no-store",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Bản ghi không tồn tại."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Bản ghi không tồn tại."
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": [
-                    {
-                      "loc": [
-                        "body",
-                        "ten_sp"
-                      ],
-                      "msg": "Field required",
-                      "type": "missing"
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-          }
-        },
-        "security": [
-          {
-            "SessionCookie": []
-          }
-        ],
-        "summary": "Chỉnh sửa · Tài khoản",
-        "tags": [
-          "Admin · Tổ chức"
-        ],
-        "x-implementation-status": "implemented-live-unverified",
-        "x-primary-key": [
-          "ma_tk"
-        ],
-        "x-read-only": false,
-        "x-roles": [
-          "ADMIN"
-        ],
-        "x-table": "TAI_KHOAN"
-      },
-      "post": {
-        "description": "Bảng `TAI_KHOAN`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_tk`. Ví dụ query `key=[\"TK001\"]` (URL-encode khi gửi).\n\nTài khoản phải liên kết đúng một ma_kh hoặc ma_nhan_vien. Dùng password khi tạo/đổi mật khẩu, không gửi mat_khau_hash.",
-        "operationId": "post_accounts",
-        "parameters": [
-          {
-            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
-            "example": "http://localhost:8000",
-            "in": "header",
-            "name": "Origin",
-            "required": true,
-            "schema": {
-              "format": "uri",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "examples": {
-                "illustration": {
-                  "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
-                  "value": {
-                    "email": "example@example.com",
-                    "ma_kh": null,
-                    "ma_nhan_vien": "NV001",
-                    "ma_tk": "TK001",
-                    "password": "Replace_with_your_password",
-                    "ten_tai_khoan": "example.admin",
-                    "trang_thai": 1
-                  }
-                }
-              },
-              "schema": {
-                "$ref": "#/components/schemas/TAI_KHOANCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "data": [
-                    {
-                      "email": "example@example.com",
-                      "ma_kh": null,
-                      "ma_nhan_vien": "NV001",
-                      "ma_tk": "TK001",
-                      "ten_tai_khoan": "example.admin",
-                      "trang_thai": 1
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/TAI_KHOANSaved"
-                }
-              }
-            },
-            "description": "Bản ghi đã lưu, không trả mật khẩu/hash.",
-            "headers": {
-              "Cache-Control": {
-                "example": "no-store",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": [
-                    {
-                      "loc": [
-                        "body",
-                        "ten_sp"
-                      ],
-                      "msg": "Field required",
-                      "type": "missing"
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-          }
-        },
-        "security": [
-          {
-            "SessionCookie": []
-          }
-        ],
-        "summary": "Thêm · Tài khoản",
-        "tags": [
-          "Admin · Tổ chức"
-        ],
-        "x-implementation-status": "implemented-live-unverified",
-        "x-primary-key": [
-          "ma_tk"
-        ],
-        "x-read-only": false,
+        "x-read-only": true,
         "x-roles": [
           "ADMIN"
         ],
@@ -15267,6 +16719,10 @@
     }
   ],
   "tags": [
+    {
+      "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu.",
+      "name": "Admin · Tài khoản"
+    },
     {
       "description": "Login/me/logout. Cookie HttpOnly, role lấy từ database.",
       "name": "Shared · Xác thực"

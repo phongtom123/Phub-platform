@@ -99,7 +99,7 @@ export default function AltHeader() {
   }
 
   function selectCategory(item: typeof headerCategories[number], trigger: HTMLElement) {
-    if (item.id === "laptops") toggle("mega", trigger);
+    if (item.id === "parts") toggle("mega", trigger);
     else {
       triggerRef.current = trigger;
       showPreview(item.label);
@@ -149,10 +149,10 @@ export default function AltHeader() {
             <button
               key={item.id}
               type="button"
-              aria-expanded={item.id === "laptops" ? panel === "mega" : undefined}
-              aria-controls={item.id === "laptops" ? id + "-mega" : undefined}
+              aria-expanded={item.id === "parts" ? panel === "mega" : undefined}
+              aria-controls={item.id === "parts" ? id + "-mega" : undefined}
               onPointerEnter={event => {
-                if (item.id === "laptops") hoverOpen("mega", event);
+                if (item.id === "parts") hoverOpen("mega", event);
               }}
               onClick={event => selectCategory(item, event.currentTarget)}
             >
@@ -204,7 +204,6 @@ export default function AltHeader() {
               aria-expanded={panel === "cart"} aria-controls={id + "-cart"}
               onClick={event => toggle("cart", event.currentTarget)}>
               <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />
-              <span className={styles.cartBadge} aria-hidden="true">0</span>
             </IconButton>
             <div id={id + "-cart"} className={styles.cartPanel} {...dropdownProps("cart")}>
               <CartPreview onNavigate={() => close()} />

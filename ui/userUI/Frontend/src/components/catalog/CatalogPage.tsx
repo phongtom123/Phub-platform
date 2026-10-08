@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Breadcrumb } from "@/components/common/Breadcrumb";
@@ -20,7 +19,6 @@ import styles from "./Catalog.module.css";
 export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   const { request, products, pagination, loading, error, metadata } = catalog;
   const [draft, setDraft] = useCatalogDraft(catalog);
-  const [cart, setCart] = useState<CatalogProduct[]>([]);
   const [compared, setCompared] = useState<CatalogProduct[]>([]);
   const [wished, setWished] = useState<CatalogProduct[]>([]);
   const [notice, setNotice] = useState("");
@@ -30,9 +28,9 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   const filters = request.filters;
   const total = pagination?.total ?? 0;
   const offset = (request.page - 1) * request.pageSize;
-  function toggleSelection(kind: "cart" | "compare" | "wish", product: CatalogProduct) {
-    const values = kind === "cart" ? cart : kind === "compare" ? compared : wished;
-    const setValues = kind === "cart" ? setCart : kind === "compare" ? setCompared : setWished;
+  function toggleSelection(kind: "compare" | "wish", product: CatalogProduct) {
+    const values = kind === "compare" ? compared : wished;
+    const setValues = kind === "compare" ? setCompared : setWished;
     setValues(values.some(item => item.id === product.id) ? values.filter(item => item.id !== product.id) : [...values, product]);
     setNotice("Đã cập nhật danh sách tạm trên giao diện. Chức năng tài khoản và đặt hàng chưa được kết nối.");
   }
@@ -42,7 +40,6 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   ];
   return <div className={styles.catalog}>
     <div className={styles.container}>
-      <a className={styles.banner} href="#catalog-results" aria-label="Khám phá sản phẩm"><Image src="/images/home/banner-asus.png" alt="ASUS TUF Gaming" width={1398} height={104} sizes="(max-width: 1438px) 100vw, 1398px" priority /></a>
       <Breadcrumb className={styles.breadcrumb} items={[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm" }]} />
       <h1>{request.q ? `Kết quả tìm kiếm: ${request.q}` : "Sản phẩm"}{pagination ? ` (${total})` : ""}</h1>
       <div className={styles.layout}>
@@ -65,13 +62,13 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
           <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
           {!loading && !error && (products.length ? <div className={ `${styles.productGrid} ${request.view === "list" ? styles.productList : ""}` } aria-label="Catalog products">
             {products.map(product => request.view === "list"
-              ? <ProductListCard key={product.id} {...product} inCart={cart.some(item => item.id === product.id)} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onSelect={() => setPreview(product)} onCart={() => toggleSelection("cart", product)} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
+              ? <ProductListCard key={product.id} {...product} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onSelect={() => setPreview(product)} onCart={() => setNotice("Chưa kết nối API giỏ hàng.")} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
               : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} onSelect={() => setPreview(product)} uiLocale="vi" />)}
           </div> : <div className={styles.noResults}><h2>Không tìm thấy sản phẩm</h2><p>Hãy thay đổi điều kiện tìm kiếm hoặc bộ lọc.</p><Button onClick={() => catalog.apply(emptyFilters)}>Xóa bộ lọc và về trang đầu</Button>{request.q && <Link href="/main/product">Xem tất cả sản phẩm</Link>}</div>)}
           {!loading && !error && <div className={styles.pagination}><Pagination currentPage={request.page} totalPages={pagination?.total_pages ?? 0} onPageChange={page => { catalog.turnPage(page); resultsRef.current?.scrollIntoView({ block: "start", behavior: "instant" }); }} /></div>}
           <section className={styles.description} aria-label="Hướng dẫn chọn sản phẩm">
             <div id="catalog-description" className={expanded ? styles.descriptionExpanded : styles.descriptionCollapsed}>
-              <p>Khám phá máy tính, laptop và thiết bị phù hợp với nhu cầu học tập, công việc và giải trí.</p>
+              <p>Khám phá PC nguyên bộ và linh kiện phù hợp với nhu cầu học tập, công việc và giải trí.</p>
               <p>Tìm theo tên hoặc SKU, chọn loại sản phẩm và thương hiệu, hoặc sắp xếp theo giá để dễ dàng lựa chọn.</p>
               <p>Mở chi tiết sản phẩm để xem mô tả, thời gian bảo hành và thông số kỹ thuật hiện có.</p>
             </div>

@@ -1,9 +1,12 @@
-import { BrandTile } from "@/components/common/BrandTile";
-import { brands } from "./homeData";
-import styles from "./Home.module.css";
-
+"use client";
+import { useCatalogMetadata } from "@/lib/catalog/useCatalog";
+import { CatalogStatus } from "@/components/catalog/CatalogStatus";
+import Link from "next/link";
 export function BrandSection() {
-  return <section className={styles.brands} aria-label="Thương hiệu đối tác">
-    {brands.map(brand => <BrandTile key={brand.id} name={brand.name} src={`/images/brands/${brand.id}.png`} width={153} height={80} loading="lazy" containerClassName={styles.brandTile} />)}
-  </section>;
+  const metadata = useCatalogMetadata();
+  if (metadata.loading || metadata.error) return <CatalogStatus loading={metadata.loading} error={metadata.error} retry={metadata.retry} />;
+  if (!metadata.data.brands.length) return null;
+  return <section aria-label="Thương hiệu sản phẩm"><h2>Thương hiệu</h2><div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "16px 0" }}>
+    {metadata.data.brands.map(brand => <Link key={brand.id} href={`/main/product?brand=${encodeURIComponent(brand.id)}`}>{brand.name}</Link>)}
+  </div></section>;
 }

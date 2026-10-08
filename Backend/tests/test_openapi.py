@@ -53,7 +53,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
 def test_operation_ids_are_unique_and_tags_exist(spec):
     operations = [operation for path in spec["paths"].values() for operation in path.values()]
     identifiers = [operation["operationId"] for operation in operations]
-    assert len(identifiers) == len(set(identifiers)) == 59
+    assert len(identifiers) == len(set(identifiers)) == 68
     tags = {tag["name"] for tag in spec["tags"]}
     for operation in operations:
         assert set(operation["tags"]).issubset(tags)
@@ -118,9 +118,9 @@ def test_money_and_password_contracts(spec):
     schema = spec["components"]["schemas"]
     assert schema["SAN_PHAMRead"]["properties"]["gia_ban_hien_tai"]["type"] == "string"
     assert "sku" not in schema["SAN_PHAMUpdate"]["properties"]
-    assert schema["TAI_KHOANCreate"]["properties"]["password"]["writeOnly"]
-    assert "password" in schema["TAI_KHOANCreate"]["required"]
-    assert "password" not in schema["TAI_KHOANUpdate"].get("required", [])
+    assert schema["AccountCreate"]["properties"]["password"]["writeOnly"]
+    assert "password" in schema["AccountCreate"]["required"]
+    assert "password" not in schema["AccountUpdate"]["properties"]
 
 
 def test_permissions_and_errors_are_documented(spec):

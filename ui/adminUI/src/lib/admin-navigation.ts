@@ -37,6 +37,7 @@ const sectionToModule: Record<string, ModuleKey> = {
 };
 
 export function getModuleHref(moduleKey: ModuleKey) {
+  if (moduleKey === "accounts") return "/accounts";
   return moduleKey === "dashboard" ? "/" : `/?module=${moduleKey}`;
 }
 

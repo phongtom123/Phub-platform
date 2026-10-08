@@ -2,7 +2,12 @@
 
 Giao diện quản trị cho nền tảng bán PC và linh kiện máy tính, được xây dựng bằng Next.js, React và TypeScript.
 
-Phiên bản hiện tại là **giao diện tĩnh**: dữ liệu đang được lấy từ các mảng dữ liệu mẫu trong source code, chưa kết nối API, cơ sở dữ liệu hoặc hệ thống đăng nhập thật.
+Đăng nhập và phần **Tài khoản** đã dùng API FastAPI/Supabase thật. Tài khoản có
+danh sách, tìm kiếm/lọc/phân trang, tạo, chi tiết, chỉnh sửa, ẩn/khóa/mở lại,
+phân quyền nhân viên và cấp lại mật khẩu. **Tài khoản của tôi** cho phép sửa thông
+tin đăng nhập và đổi mật khẩu bằng mật khẩu hiện tại. Không có thao tác xóa.
+
+Dashboard và danh sách dùng dữ liệu API; không có bản ghi mẫu thay thế. Các chức năng chưa tích hợp hiển thị trạng thái chưa khả dụng.
 
 ## Chức năng giao diện
 
@@ -12,7 +17,7 @@ Phiên bản hiện tại là **giao diện tĩnh**: dữ liệu đang được 
 - Quản lý khách hàng và tài khoản.
 - Quản lý sản phẩm, danh mục và tồn kho.
 - Quản lý phiếu nhập, chuyển kho và nhà cung cấp.
-- Quản lý chi nhánh, kho và nhân viên.
+- Quản lý kho và nhân viên (DB không còn chi nhánh).
 - Quản lý chương trình khuyến mãi và voucher.
 - Trang xem chi tiết và chỉnh sửa riêng cho từng bản ghi.
 - Sidebar dạng thu gọn/mở rộng và các nhóm menu dạng dropdown.
@@ -49,10 +54,23 @@ git --version
 ```bash
 git clone https://github.com/phongtom123/Phub-platform.git
 cd Phub-platform
-git checkout adminUI
+git checkout main
+cd ui/adminUI
 ```
 
-Nếu đã có source code trên máy, chỉ cần mở terminal tại thư mục chứa `package.json`.
+Nếu đã có source code trên máy, mở terminal tại `ui/adminUI`, nơi có `package.json`.
+Chạy backend theo [Backend README](../../Backend/README.md) trước khi đăng nhập.
+Tạo `.env.local` theo `.env.example`:
+
+```dotenv
+PHUB_API_BASE_URL=http://127.0.0.1:8000
+NEXT_PUBLIC_WAREHOUSE_URL=http://localhost:3002
+NEXT_PUBLIC_CUSTOMER_URL=http://localhost:3001
+```
+
+Không đặt Supabase secret hoặc JWT secret vào UI. Backend phải có Supabase URL,
+secret, JWT secret và `FRONTEND_ORIGINS` chứa `http://localhost:3000`.
+Tài khoản đầu tiên tạo theo Backend README; không có tài khoản demo hardcode.
 
 ### 2. Cài đặt thư viện
 
@@ -88,8 +106,11 @@ Sau đó truy cập `http://localhost:3000`.
 ## Cấu trúc source code
 
 ```text
-Phub-platform/
+ui/adminUI/
 ├── app/
+│   ├── accounts/               # List, new, [id], [id]/edit
+│   ├── account/page.tsx        # Tài khoản của admin đang đăng nhập
+│   ├── api/backend/[...path]/  # Gateway server tới Python
 │   ├── [section]/[id]/
 │   │   ├── edit/page.tsx       # Route chỉnh sửa một bản ghi
 │   │   └── page.tsx            # Route xem chi tiết một bản ghi
@@ -104,8 +125,9 @@ Phub-platform/
 │   │   ├── sidebar.tsx         # Logo, sidebar và menu điều hướng
 │   │   └── ui.tsx              # Các component UI dùng lại nhiều nơi
 │   ├── data/
-│   │   └── admin-data.ts       # Dữ liệu mẫu và cấu hình các module
+│   │   └── admin-data.ts       # Cấu hình module, không chứa bản ghi mẫu
 │   ├── features/
+│   │   ├── accounts/           # API client, types, list/form/detail/profile, CSS
 │   │   ├── auth/               # Màn hình đăng nhập
 │   │   ├── dashboard/          # Dashboard tổng quan
 │   │   ├── details/            # Giao diện chỉnh sửa bản ghi
@@ -124,7 +146,11 @@ Phub-platform/
 
 `app/page.tsx` tải component `AdminApp`. Component này quản lý module đang được chọn và kết hợp `Header`, `Sidebar`, dashboard cùng các trang danh sách.
 
-Nội dung bảng, bộ lọc và dữ liệu mẫu của từng module được cấu hình tập trung trong `src/data/admin-data.ts`. `ModuleView` đọc cấu hình này để tạo giao diện danh sách thống nhất, tránh lặp lại source code cho từng chức năng.
+`/accounts` và `/account` dùng `src/features/accounts`, không đọc tài khoản từ
+`admin-data.ts`. Header hiển thị tên/tài khoản thật từ `GET /api/auth/me`.
+Link tài khoản cũ `/data/accounts?...` được chuyển sang các route mới.
+
+Cấu hình nhãn/menu trong `src/data/admin-data.ts` không chứa bản ghi mẫu. `ModuleView` mở trang tài khoản chuyên biệt hoặc `BackendDataView` để đọc dữ liệu API.
 
 Các liên kết xem chi tiết sử dụng route động:
 
@@ -141,8 +167,8 @@ Các liên kết chỉnh sửa sử dụng route:
 Ví dụ:
 
 ```text
-/orders/PH240901
-/orders/PH240901/edit
+/accounts/TK001
+/accounts/TK001/edit
 ```
 
 ## Các lệnh thường dùng
@@ -156,9 +182,45 @@ Ví dụ:
 
 ## Hướng phát triển tiếp theo
 
-- Kết nối API và cơ sở dữ liệu thật.
-- Thay dữ liệu mẫu bằng dữ liệu lấy từ server.
-- Bổ sung xác thực và phân quyền quản trị viên.
-- Thêm xử lý tạo, cập nhật, khóa và ẩn dữ liệu.
-- Thêm validation cho form và thông báo kết quả thao tác.
-- Viết kiểm thử cho component và các luồng quản trị chính.
+- Hoàn thiện các nghiệp vụ còn lại bằng transaction/RPC trước khi nối UI.
+- Kiểm thử ghi trên database test riêng trước khi dùng dữ liệu production.
+- Bổ sung quên mật khẩu email, audit log và shared rate limiter khi cần.
+
+## Thử luồng tài khoản
+
+1. Đăng nhập ADMIN, mở **Tài khoản** ở sidebar hoặc `/accounts`.
+2. Tìm/lọc role và trạng thái. Chọn mã tài khoản → xem chi tiết → **Chỉnh sửa**
+   mở trang riêng. Không sửa PK/chủ sở hữu.
+3. **Thêm tài khoản**: chọn nhân viên/khách có sẵn chưa có tài khoản. Vai trò lấy
+   từ hồ sơ. Username 3–80 ký tự chữ/số/._-; mật khẩu 10–128 ký tự.
+4. Thử khóa/ẩn/mở lại trên tài khoản test khác; không được tự khóa mình.
+5. Phân quyền chỉ áp dụng cho nhân viên; thủ kho phải có kho hoạt động.
+6. Cấp lại mật khẩu sẽ vô hiệu token cũ. Menu header → **Tài khoản của tôi**:
+   tự đổi mật khẩu cần mật khẩu hiện tại; thành công trở về đăng nhập.
+
+Đọc [API contract](../../Backend/app/admin_accounts/README.md) để biết giới hạn
+phiên, quy tắc và lỗi. Từ root chạy test API/gateway:
+
+```powershell
+Backend/.venv/Scripts/python.exe -m pytest Backend/tests -q
+node --test ui/shared/tests/backend-route.test.cjs
+```
+
+Browser smoke test: chạy admin ở cổng 3000, cài Playwright vào một thư mục công
+cụ riêng (`npm.cmd install --prefix C:/temp/phub-browser-tests --no-save playwright`)
+và browser (`C:/temp/phub-browser-tests/node_modules/.bin/playwright.cmd install chromium`).
+Test dùng mock HTTP trong browser, không cần Supabase và không ghi dữ liệu thật:
+
+```powershell
+$env:PHUB_PLAYWRIGHT_MODULE='C:/temp/phub-browser-tests/node_modules/playwright'
+$env:PHUB_ADMIN_TEST_URL='http://localhost:3000'
+node ui/adminUI/tests/accounts.e2e.cjs
+```
+
+Trên Render: `PHUB_API_BASE_URL=https://phub-api.onrender.com`; hai biến
+`NEXT_PUBLIC_*` dùng URL kho/khách cloud thực tế. Deploy cả backend và adminUI
+sau khi push/merge; code local không tự cập nhật cloud.
+
+## UI local → API Render
+
+Đặt `PHUB_API_BASE_URL=https://phub-api.onrender.com` trong `.env.local` rồi khởi động lại Next.js. Không cần secret Supabase trong UI. Xem yêu cầu Origin, cookie và phiên bản endpoint trong [README gốc](../../README.md).
