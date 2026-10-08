@@ -5,9 +5,9 @@ export type CatalogProduct = Pick<ProductCardProps, "name" | "imageSrc" | "amoun
   sku: string; description: string; specifications: { label: string; value: string }[];
   categoryName?: string;
 };
-export interface CatalogFilters { categories: string[]; price: string; color: string; brand: string; inStock: boolean }
+export interface CatalogFilters { categories: string[]; price: string; color: string; brand: string; inStock: boolean; minPrice: string; maxPrice: string; stockStatus: "" | "in-stock" | "out-of-stock" }
 export type CatalogSort = "position" | "price-asc" | "price-desc" | "name";
-export const emptyFilters: CatalogFilters = { categories: [], price: "", color: "", brand: "", inStock: false };
+export const emptyFilters: CatalogFilters = { categories: [], price: "", color: "", brand: "", inStock: false, minPrice: "", maxPrice: "", stockStatus: "" };
 export const initialFilters: CatalogFilters = { ...emptyFilters, categories: ["custom", "hp"] };
 export const categoryOptions = [{ id: "custom", label: "CUSTOM PCS" }, { id: "all-in-one", label: "MSI ALL-IN-ONE PCS" }, { id: "hp", label: "HP/COMPAQ PCS" }];
 export const priceOptions = Array.from({ length: 8 }, (_, index) => ({ id: String(index), label: index === 7 ? "$7,000.00 And Above" : `$${(index * 1000).toLocaleString("en-US")}.00 - $${((index + 1) * 1000).toLocaleString("en-US")}.00`, min: index * 1000, max: index === 7 ? Infinity : (index + 1) * 1000 }));
@@ -47,5 +47,5 @@ export function selectProducts(filters: CatalogFilters, sort: CatalogSort) {
   });
 }
 export function filterCount(filters: CatalogFilters) {
-  return filters.categories.length + Number(Boolean(filters.price)) + Number(Boolean(filters.color)) + Number(Boolean(filters.brand)) + Number(filters.inStock);
+  return filters.categories.length + Number(Boolean(filters.price || filters.minPrice || filters.maxPrice)) + Number(Boolean(filters.color)) + Number(Boolean(filters.brand)) + Number(Boolean(filters.stockStatus || filters.inStock));
 }

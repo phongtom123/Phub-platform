@@ -30,6 +30,13 @@ async function ready() {
 async function overflow() {
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "horizontal page overflow");
 }
+async function checkTaxNotice(scope = page.locator("main")) {
+  const notice = scope.getByText("chưa áp dụng thuế 10%", { exact: true }).first();
+  await notice.waitFor({ state: "visible" });
+  assert.deepEqual(await notice.evaluate(element => ({
+    tag: element.tagName, color: getComputedStyle(element).color, size: getComputedStyle(element).fontSize,
+  })), { tag: "SMALL", color: "rgb(185, 28, 28)", size: "10px" });
+}
 
 try {
   const reference = await api("?page_size=100");
@@ -44,9 +51,12 @@ try {
     await page.getByRole("heading", { level: 1, name: `Sản phẩm (${reference.pagination.total})`, exact: true }).waitFor();
     assert.equal(await page.locator('[aria-busy] article').count(), Math.min(width <= 760 ? 12 : 20, reference.pagination.total));
     await overflow();
+    await checkTaxNotice();
+    assert.equal(await page.locator('[aria-busy] article').getByText("chưa áp dụng thuế 10%", { exact: true }).count(), await page.locator('[aria-busy] article').count());
     if (width === 375 || width === 1280) await page.screenshot({ path: path.join(artifacts, `catalog-${width}.png`), fullPage: true });
     passed(`Catalog ${width}px: real products and no horizontal overflow`);
   }
+  passed("Every product shows the small red VAT notice across desktop/mobile widths");
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(base + "/main/product?view=list&page_size=4");
@@ -102,8 +112,10 @@ try {
   const dialog = page.getByRole("dialog");
   await dialog.waitFor({ state: "visible" });
   assert((await dialog.innerText()).includes(sample.sku));
+  await checkTaxNotice(dialog);
   await dialog.getByRole("link", { name: "Xem chi tiết sản phẩm" }).click();
   await page.getByRole("heading", { name: sample.name, exact: true }).waitFor();
+  await checkTaxNotice();
   await page.getByRole("navigation", { name: "Product information tabs" }).getByRole("link", { name: "Specs", exact: true }).click();
   await page.waitForURL(/tab=specs/);
   for (const spec of sample.specifications) assert((await page.locator("main").innerText()).includes(spec.value));
@@ -118,6 +130,8 @@ try {
   await overflow();
   await page.screenshot({ path: path.join(artifacts, "detail-mobile.png"), fullPage: true });
   passed("Mobile detail uses the dedicated mobile layout and real data");
+  await checkTaxNotice();
+  passed("Desktop/mobile detail and product preview retain untaxed prices with the VAT notice");
 
   await page.goto(base + "/main/product"); await ready();
   await page.getByRole("button", { name: "Lọc", exact: true }).click();
@@ -151,6 +165,8 @@ try {
 
   await page.goto(base + "/");
   await page.getByRole("heading", { name: "Sản phẩm đang bán", exact: true }).waitFor();
+  await checkTaxNotice();
+  passed("Home products show the small red VAT notice");
   await page.getByRole("button", { name: sample.name, exact: true }).first().click();
   await page.getByRole("dialog").getByRole("link", { name: "Xem chi tiết sản phẩm" }).click();
   await page.getByRole("heading", { name: sample.name, exact: true }).waitFor();

@@ -7,7 +7,7 @@ from .errors import CatalogError, CatalogRoute
 from .repository import CatalogRepository
 from .schemas import (
     BrandList, CatalogProduct, CatalogQuery, CategoryList, ErrorResponse,
-    ProductPage, clean_text,
+    ProductPage, clean_text, ColorList,
 )
 
 
@@ -53,7 +53,7 @@ Repository = Annotated[CatalogRepository, Depends(get_repository)]
 @router.get("/products", response_model=ProductPage, summary="Danh sách sản phẩm đang bán")
 def list_products(filters: Annotated[CatalogQuery, Query()], repository: Repository):
     """Catalog công khai cho desktop và mobile. Sản phẩm và loại sản phẩm phải
-    hoạt động (mặc định trang_thai=1). Không lọc theo tồn kho.
+    hoạt động (mặc định trang_thai=1). stock_status lọc tồn khả dụng sau giữ hàng.
     Tìm kiếm, lọc, sắp xếp thực hiện tại database trước khi phân trang.
     Không có kết quả hoặc trang vượt phạm vi trả 200 với items rỗng.
     """
@@ -92,3 +92,11 @@ def list_brands(repository: Repository):
     schema hiện tại không có bảng thương hiệu hoặc brand_id.
     """
     return BrandList(items=repository.list_brands())
+
+
+@router.get("/colors", response_model=ColorList, summary="Các màu đã ghi trong thông số sản phẩm đang bán")
+def list_colors(repository: Repository):
+    """Đọc nhãn Màu/Màu sắc/Color/Colour trong JSON hoặc văn bản thong_so_ky_thuat.
+    Không thêm cột màu; __unspecified__ biểu thị sản phẩm chưa ghi thông tin màu.
+    """
+    return ColorList(items=repository.list_colors())

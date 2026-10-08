@@ -1,0 +1,257 @@
+.notice {
+  position: fixed;
+  z-index: 80;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, calc(100% - 24px));
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid #b4c7ff;
+  border-radius: 8px;
+  background: #f5f7ff;
+  color: #163c76;
+  font-size: 13px;
+  box-shadow: 0 3px 15px #0002;
+}
+.notice span {
+  flex: 1;
+}
+.notice button {
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+}
+.notice a {
+  white-space: nowrap;
+  color: #0156ff;
+}
+.gate {
+  padding: 24px;
+  border: 1px solid #cacdd8;
+  background: #f5f7ff;
+  border-radius: 6px;
+  margin: 16px 0;
+}
+.gate button,
+.gate a {
+  display: inline-block;
+  border: 1px solid #0156ff;
+  border-radius: 20px;
+  background: #fff;
+  color: #0156ff;
+  padding: 8px 18px;
+  cursor: pointer;
+}
+.error {
+  color: #a11919;
+  background: #fff2f2;
+  padding: 12px;
+  border: 1px solid #e9b6b6;
+  border-radius: 4px;
+}
+.panel {
+  padding: 18px;
+  border: 1px solid #cacdd8;
+  border-radius: 5px;
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+.panel h2,
+.panel h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.panel p {
+  margin: 7px 0;
+}
+.panel button {
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #0156ff;
+  border-radius: 18px;
+  color: #0156ff;
+  cursor: pointer;
+}
+.orders {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+.orders li {
+  padding: 15px;
+  border: 1px solid #cacdd8;
+  border-radius: 5px;
+}
+.orders a {
+  color: #0156ff;
+  overflow-wrap: anywhere;
+}
+.totals {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.totals p {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 0;
+}
+.totals strong {
+  white-space: nowrap;
+}
+.total {
+  font-size: 18px;
+  font-weight: 600;
+}
+.pending {
+  color: #8b5e00;
+  background: #fff8df;
+  padding: 10px;
+}
+.success {
+  color: #187b34;
+  background: #effaf2;
+  padding: 10px;
+}
+.table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table th,
+.table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #cacdd8;
+  text-align: left;
+  vertical-align: top;
+}
+.tableWrap {
+  overflow: auto;
+}
+.table td:nth-child(3) {
+  white-space: nowrap;
+}
+.pager {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+}
+.muted {
+  font-size: 12px;
+  color: #626772;
+}
+.checkoutGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 28px;
+}
+.checkoutGrid > section,
+.checkoutGrid > aside { min-width: 0; }
+.sectionHeading { margin-top: 24px !important; }
+.confirmationField { margin: 24px 0; }
+.emptyField { min-height: 44px; border: 1px solid #cacdd8; border-radius: 4px; background: #f5f7ff; }
+.finalPrice { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+.finalPrice strong { min-width: 80px; min-height: 28px; font-size: 20px; }
+.container {
+  width: min(1200px, calc(100% - 32px));
+  margin: 28px auto 90px;
+}
+.container h1 {
+  font-size: 32px;
+  font-weight: 600;
+  margin: 24px 0;
+}
+.form h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.form {
+  display: grid;
+  gap: 16px;
+}
+.form label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.form input,
+.form select,
+.form textarea {
+  width: 100%;
+  border: 1px solid #a2a6b0;
+  border-radius: 3px;
+  padding: 12px;
+  font: inherit;
+}
+.primary {
+  background: #0156ff !important;
+  color: #fff !important;
+  border: 0 !important;
+  padding: 12px 24px !important;
+  border-radius: 24px;
+  cursor: pointer;
+}
+.primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.cartItem {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #cacdd8;
+}
+.cartItem img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+.cartItem p {
+  font-size: 12px;
+  margin: 4px 0;
+}
+.cartItem input {
+  width: 70px;
+  padding: 7px;
+}
+.inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.retry {
+  background: #fff8df;
+  border: 1px solid #ddbd58;
+  padding: 14px;
+  margin: 16px 0;
+}
+@media (max-width: 760px) {
+  .checkoutGrid {
+    grid-template-columns: 1fr;
+  }
+  .container {
+    width: calc(100% - 24px);
+  }
+  .table th,
+  .table td {
+    padding: 8px 5px;
+    font-size: 11px;
+  }
+  .notice {
+    font-size: 12px;
+    gap: 8px;
+  }
+}

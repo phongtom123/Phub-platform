@@ -9,10 +9,13 @@ export interface ApiProduct {
   images: { url: string; alt: string }[];
   specifications: { label: string; value: string }[];
   specifications_text: string | null;
+  color?: string | null;
+  stock_status?: "in-stock" | "out-of-stock" | null;
 }
 export interface CatalogMetadata {
   categories: { id: string; label: string }[];
   brands: { id: string; name: string }[];
+  colors: { value: string; label: string }[];
 }
 export interface CatalogPagination { page: number; page_size: number; total: number; total_pages: number }
 export interface ApiProductPage { items: ApiProduct[]; pagination: CatalogPagination }
@@ -36,7 +39,8 @@ export function catalogProduct(product: ApiProduct): CatalogProduct {
   return {
     id: product.id, sku: product.sku, name: product.name,
     category: product.category.id, categoryName: product.category.name,
-    brand: product.brand ?? "", color: "", position: 0,
+    brand: product.brand ?? "", color: product.color ?? "", position: 0,
+    stock: product.stock_status === "in-stock" ? "in-stock" : product.stock_status === "out-of-stock" ? "check-availability" : undefined,
     amount: Number(product.price), currency: product.currency, locale: "vi-VN",
     imageSrc: safeImageUrl(product.images[0]?.url),
     description: product.description ?? "", specifications: product.specifications,
