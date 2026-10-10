@@ -116,9 +116,13 @@ def clean(rows: list[dict]) -> list[dict]:
 @router.get("/{resource}", responses=READ_ERRORS)
 def read_rows(resource: ResourceName, response: Response, page: int = Query(1, ge=1),
               page_size: int = Query(20, ge=1, le=100), q: str = Query("", max_length=100),
-              key: str | None = Query(None, max_length=6000), user: User = Depends(current_user), db=Depends(get_supabase)):
+              key: str | None = Query(None, max_length=6000),
+              order_id: str | None = Query(None, min_length=1, max_length=100),
+              user: User = Depends(current_user), db=Depends(get_supabase)):
     name = resource.value
     access(name, user)
+    if order_id is not None and (name not in {"orders", *CUSTOMER_CHILDREN} or not order_id.strip()):
+        raise HTTPException(422, "order_id chỉ dùng để lọc đơn hàng và các bảng liên quan đến đơn hàng.")
     search = None
     if q.strip():
         # imatch regex literal, JSON quoted to prevent PostgREST filter injection.
@@ -127,13 +131,19 @@ def read_rows(resource: ResourceName, response: Response, page: int = Query(1, g
         if fields:
             search = ",".join(f"{field}.imatch.{pattern}" for field in fields)
     query = scoped_query(name, user, db, search)
+    if order_id is not None:
+        # Exact equality composes with, never replaces, the user's permission scope.
+        query = query.eq("ma_donhang", order_id)
     if key is not None:
         query = apply_keys(query, name, key_values(name, key))
     for field in RESOURCES[name].keys:
         query = query.order(field)
     result = query.range((page - 1) * page_size, page * page_size - 1).execute()
     response.headers["Cache-Control"] = "no-store"
-    return {"data": clean(result.data), "total": result.count or 0, "page": page, "page_size": page_size}
+    body = {"data": clean(result.data), "total": result.count or 0, "page": page, "page_size": page_size}
+    if order_id is not None:
+        body["order_id"] = order_id  # UI can detect an old API that silently ignores the filter.
+    return body
 
 
 async def read_payload(request: Request, name: str, patch: bool) -> dict:

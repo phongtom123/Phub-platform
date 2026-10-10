@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import BackendDataView from "@/src/components/backend-data-view";
 import type { ModuleKey } from "@/src/types/admin";
+import { useDashboardData } from "./use-dashboard-data";
+import { DashboardCharts } from "./dashboard-charts";
 
 const metrics: { label: string; resource: string; target: ModuleKey }[] = [
   { label: "Đơn hàng", resource: "orders", target: "orders" },
@@ -12,15 +13,14 @@ const metrics: { label: string; resource: string; target: ModuleKey }[] = [
 ];
 
 export function DashboardView({ onNavigate }: { onNavigate: (key: ModuleKey) => void }) {
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  useEffect(() => {
-    const controller = new AbortController();
-    metrics.forEach(metric => {
-      fetch(`/api/backend/data/${metric.resource}?page_size=1`, { cache: "no-store", signal: controller.signal })
-        .then(async response => { if (!response.ok) return; const body = await response.json(); setCounts(current => ({ ...current, [metric.resource]: body.total })); })
-        .catch(() => {});
-    });
-    return () => controller.abort();
-  }, []);
-  return <><div className="metrics">{metrics.map(metric => <article className="metric" key={metric.resource}><button className="metric-link" aria-label={`Mở ${metric.label}`} onClick={() => onNavigate(metric.target)}>↗</button><span>{metric.label}</span><strong>{counts[metric.resource] ?? "—"}</strong><p>Tổng bản ghi trên Supabase</p></article>)}</div><BackendDataView resource="orders" /></>;
+  const data = useDashboardData();
+  return <>
+    <div className="metrics">{metrics.map(metric => <article className="metric" key={metric.resource}>
+      <button className="metric-link" aria-label={`Mở ${metric.label}`} onClick={() => onNavigate(metric.target)}>↗</button>
+      <span>{metric.label}</span><strong>{data.counts[metric.resource]?.toLocaleString("vi-VN") ?? "—"}</strong>
+      <p>{data.countErrors[metric.resource] ? "Không tải được dữ liệu" : "Tổng bản ghi trên Supabase"}</p>
+    </article>)}</div>
+    <DashboardCharts data={data} onNavigate={onNavigate} />
+    <BackendDataView resource="orders" embedded />
+  </>;
 }
