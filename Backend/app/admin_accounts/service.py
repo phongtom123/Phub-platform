@@ -1,12 +1,14 @@
-"""One-table writes, explicit public projections and server-side account rules."""
+"""Account rules, explicit public projections and atomic new-person registration."""
 import json
 import re
+from uuid import uuid4
 
 from fastapi import HTTPException
+from postgrest.exceptions import APIError
 from pwdlib.exceptions import UnknownHashError
 
 from ..auth import User, passwords
-from .schemas import AccountCreate, AccountRead, AccountUpdate, RoleUpdate
+from .schemas import AccountCreate, AccountRead, AccountUpdate, NewAccountCreate, RoleUpdate
 
 ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,email,ma_nhan_vien,ma_kh,trang_thai"
 EMPLOYEE_COLUMNS = "ma_nhan_vien,ho_ten,loai_nhan_vien,ma_kho,trang_thai"
@@ -107,6 +109,30 @@ class Accounts:
         if not result:
             raise RuntimeError("Account insert returned no rows")
         return self.detail(body.ma_tk)
+
+    def create_new(self, body: NewAccountCreate):
+        owner = body.new_owner
+        owner_id = ("KH_" if owner.role == "KHACH_HANG" else "NV_") + uuid4().hex
+        # Both inserts happen inside one PostgreSQL RPC transaction. Never leave
+        # a new employee/customer behind when account uniqueness checks fail.
+        try:
+            result = self.db.rpc("admin_create_account_v1", {
+                "p_actor_account_id": self.actor.account_id,
+                "p_username": body.ten_tai_khoan,
+                "p_email": body.email,
+                "p_password_hash": passwords.hash(body.password),
+                "p_owner_id": owner_id,
+                "p_name": owner.ho_ten,
+                "p_role": owner.role,
+                "p_warehouse_id": owner.ma_kho,
+            }).execute()
+        except APIError as exc:
+            if str(exc.code) == "PGRST202":
+                raise HTTPException(503, "Chưa cài chức năng tạo tài khoản mới trong database. Cần chạy migration 20261010_admin_account_creation.sql.") from None
+            if str(exc.code) == "42501":
+                raise HTTPException(403, "Phiên quản trị không còn hợp lệ hoặc API chưa được cấp quyền gọi chức năng tạo tài khoản.") from None
+            raise
+        return AccountRead.model_validate(result.data)
 
     def update(self, account_id: str, body: AccountUpdate):
         self.account(account_id)

@@ -92,7 +92,9 @@ def key_values(name: str, key: str) -> list:
         for field, value in zip(RESOURCES[name].keys, values):
             kind = next(c["type"] for c in public_columns(name) if c["name"] == field)
             if kind == "int":
-                if type(value) is not int or value < 1:
+                # PostgreSQL integer keys are signed; existing seed IDs are negative.
+                # Reject booleans, floats and overflow, not legitimate stored IDs.
+                if type(value) is not int or not -(2**31) <= value <= 2**31 - 1:
                     raise ValueError
             elif not isinstance(value, str) or not 1 <= len(value) <= 2000:
                 raise ValueError

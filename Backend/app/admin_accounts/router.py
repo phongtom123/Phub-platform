@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from ..auth import User, check_origin, current_user, logout, throttle
 from ..api_contracts import READ_ERRORS, WRITE_ERRORS, error_response
 from ..supabase import get_supabase
-from .schemas import AccountCreate, AccountPage, AccountRead, AccountUpdate, Identifier, OwnerPage, PasswordChange, PasswordReset, Role, RoleUpdate, Status, StatusUpdate
+from .schemas import AccountCreate, AccountPage, AccountRead, AccountUpdate, Identifier, NewAccountCreate, OwnerPage, PasswordChange, PasswordReset, Role, RoleUpdate, Status, StatusUpdate
 from .service import Accounts
 
 router = APIRouter(prefix="/api/admin", tags=["Admin · Tài khoản"])
@@ -45,13 +45,17 @@ def account_owners(service: Read, kind: Literal["employees", "customers"] = "emp
     return service.owners(kind, page, page_size, q)
 
 
-@router.post("/accounts", status_code=201, response_model=AccountRead, responses=ERRORS, summary="Cấp tài khoản cho một nhân viên hoặc khách có sẵn")
-def create_account(body: AccountCreate, service: Write):
-    """Vai trò lấy từ hồ sơ liên kết. Không nhận role/hash/trạng thái từ trình duyệt.
+@router.post("/accounts", status_code=201, response_model=AccountRead, responses=ERRORS, summary="Tạo người mới cùng tài khoản, hoặc cấp tài khoản cho người có sẵn")
+def create_account(body: NewAccountCreate | AccountCreate, service: Write):
+    """UI tạo mới gửi new_owner (họ tên, role, kho nếu là thủ kho).
+    Backend tự sinh mã tài khoản theo loại (AD/KHO/KH + số), mã người dùng,
+    hash mật khẩu và tạo cả hai bản ghi trong
+    một transaction RPC; cần migration 20261010_admin_account_creation.sql.
+    Payload ma_nhan_vien/ma_kh cũ vẫn hỗ trợ để tương thích API, không dùng trên form mới.
     Username 3–80 ký tự ASCII chữ/số/._- (không có @); email chuẩn hóa chữ thường.
-    Mật khẩu 10–128 ký tự, hash Argon2. Không tạo hồ sơ nhân viên/khách cùng request.
+    Mật khẩu 10–128 ký tự, hash Argon2. Chỉ ADMIN được tạo người và cấp quyền.
     """
-    return service.create(body)
+    return service.create_new(body) if isinstance(body, NewAccountCreate) else service.create(body)
 
 
 @router.get("/accounts/{account_id}", response_model=AccountRead, responses=ERRORS, summary="Chi tiết tài khoản, không trả mật khẩu")

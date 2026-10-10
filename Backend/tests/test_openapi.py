@@ -120,6 +120,8 @@ def test_money_and_password_contracts(spec):
     assert "sku" not in schema["SAN_PHAMUpdate"]["properties"]
     assert schema["AccountCreate"]["properties"]["password"]["writeOnly"]
     assert "password" in schema["AccountCreate"]["required"]
+    assert "ma_tk" not in schema["NewAccountCreate"]["properties"]
+    assert schema["NewAccountCreate"]["properties"]["password"]["writeOnly"]
     assert "password" not in schema["AccountUpdate"]["properties"]
 
 

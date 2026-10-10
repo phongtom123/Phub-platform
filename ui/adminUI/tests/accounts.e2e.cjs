@@ -16,6 +16,7 @@ async function main() {
       { ma_tk: "TK2", ten_tai_khoan: "warehouse", email: null, ma_nhan_vien: "NV2", ma_kh: null, trang_thai: 1, role: "THU_KHO", ho_ten: "Warehouse Test", ma_kho: 7, owner_active: true, is_self: false },
     ];
     const mutations = [];
+    const accountNumbers = { ADMIN: 0, THU_KHO: 0, KHACH_HANG: 0 };
     await page.route("**/api/backend/**", async route => {
       const request = route.request();
       const url = new URL(request.url());
@@ -29,8 +30,8 @@ async function main() {
         : respond({ detail: "Vui lòng đăng nhập." }, 401);
       if (path === "auth/login") { loggedIn = true; return respond({ username: actor.ten_tai_khoan, role: actor.role }); }
       if (path === "auth/logout") { loggedIn = false; return route.fulfill({ status: 204 }); }
-      if (path === "data/warehouses") return respond({ data: [{ ma_kho: 7, ten_kho: "Kho test", trang_thai: 1 }], total: 1, page: 1, page_size: 100 });
-      if (path === "admin/account-owners") return respond({ data: [{ id: "NV3", name: "New Employee", role: "ADMIN", ma_kho: null, has_account: false }], total: 1, page: 1, page_size: 20 });
+      if (path === "data/warehouses") return respond({ data: [{ ma_kho: 7, ten_kho: "Kho test", trang_thai: 1 }, { ma_kho: -900003, ten_kho: "Kho mã âm", trang_thai: 1 }, { ma_kho: 8, ten_kho: "Kho ngừng hoạt động", trang_thai: 0 }], total: 3, page: 1, page_size: 100 });
+      if (path === "admin/account-owners") throw new Error("New account form must not select an old owner");
       if (path === "admin/accounts" && method === "GET") {
         let data = records.filter(row => !url.searchParams.get("role") || row.role === url.searchParams.get("role"));
         if (url.searchParams.has("status")) data = data.filter(row => row.trang_thai === Number(url.searchParams.get("status")));
@@ -39,8 +40,18 @@ async function main() {
       }
       if (path === "admin/accounts" && method === "POST") {
         mutations.push({ path, method, body });
-        const row = { ...actor, ...body, ho_ten: "New Employee", is_self: false, trang_thai: 1 };
+        assert(body.new_owner, "Create must include a new person, not an old owner ID");
+        assert.equal("ma_nhan_vien" in body, false);
+        assert.equal("ma_kh" in body, false);
+        assert.equal("ma_tk" in body, false, "Account code must be assigned by the backend");
+        const customer = body.new_owner.role === "KHACH_HANG";
+        const prefix = { ADMIN: "AD", THU_KHO: "KHO", KHACH_HANG: "KH" }[body.new_owner.role];
+        const id = prefix + String(++accountNumbers[body.new_owner.role]).padStart(6, "0");
+        const row = { ...actor, ...body, ma_tk: id, ho_ten: body.new_owner.ho_ten, role: body.new_owner.role,
+          ma_kho: body.new_owner.ma_kho, ma_nhan_vien: customer ? null : "NV_" + id,
+          ma_kh: customer ? "KH_" + id : null, is_self: false, trang_thai: 1 };
         delete row.password;
+        delete row.new_owner;
         records.push(row);
         return respond(row, 201);
       }
@@ -69,19 +80,22 @@ async function main() {
     await area.getByLabel("Vai trò", { exact: true }).selectOption("");
     await area.getByRole("link", { name: "+ Thêm tài khoản", exact: true }).click();
     await page.waitForURL("**/accounts/new");
-    await area.getByLabel(/^Mã tài khoản/).fill("TK4");
+    assert.equal(await area.getByLabel(/^Mã tài khoản/).count(), 0);
     await area.getByLabel(/^Tên đăng nhập/).fill("new.user");
     await area.getByLabel(/^Email/).fill("new@example.test");
-    await area.getByLabel(/^Chủ tài khoản/).selectOption("NV3");
+    assert.equal(await area.getByRole("button", { name: "Tìm hồ sơ" }).count(), 0);
+    assert.equal(await area.getByLabel(/^Chủ tài khoản/).count(), 0);
+    await area.getByLabel(/^Họ tên/).fill("New Admin");
+    await area.getByLabel(/^Loại tài khoản/).selectOption("ADMIN");
     await area.getByLabel(/^Mật khẩu \*/).fill("test-new-password");
     await area.getByLabel(/^Nhập lại mật khẩu/).fill("test-new-password");
     await area.getByRole("button", { name: "Tạo tài khoản", exact: true }).click();
-    await page.waitForURL("**/accounts/TK4");
+    await page.waitForURL("**/accounts/AD000001");
     await area.getByRole("link", { name: "Chỉnh sửa", exact: true }).click();
-    await page.waitForURL("**/accounts/TK4/edit");
+    await page.waitForURL("**/accounts/AD000001/edit");
     await area.getByLabel(/^Tên đăng nhập/).fill("updated.user");
     await area.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
-    await page.waitForURL("**/accounts/TK4");
+    await page.waitForURL("**/accounts/AD000001");
     await area.locator(".live-field").filter({ hasText: "Tên đăng nhập" }).filter({ hasText: "updated.user" }).waitFor();
     await area.getByRole("button", { name: "Tạm khóa", exact: true }).click();
     await area.getByRole("button", { name: "Mở khóa / hiện lại", exact: true }).waitFor();
@@ -99,6 +113,26 @@ async function main() {
     await area.getByLabel(/^Nhập lại mật khẩu/).fill("test-reset-password");
     await area.getByRole("button", { name: "Cấp lại mật khẩu", exact: true }).click();
     await area.getByText("Đã cấp lại mật khẩu. Các phiên cũ không còn hợp lệ.").waitFor();
+
+    for (const [id, role] of [["KH000001", "KHACH_HANG"], ["KHO000001", "THU_KHO"]]) {
+      await page.goto(base + "/accounts/new");
+      assert.equal(await area.getByLabel(/^Mã tài khoản/).count(), 0);
+      await area.getByLabel(/^Tên đăng nhập/).fill("user." + role.toLowerCase());
+      await area.getByLabel(/^Họ tên/).fill("New " + role);
+      await area.getByLabel(/^Loại tài khoản/).selectOption(role);
+      if (role === "THU_KHO") {
+        const select = area.getByLabel(/^Kho phụ trách/);
+        await select.selectOption("-900003");
+        assert.equal(await select.locator('option[value="8"]').count(), 0);
+      } else assert.equal(await area.getByLabel(/^Kho phụ trách/).count(), 0);
+      await area.getByLabel(/^Mật khẩu \*/).fill("test-new-password");
+      await area.getByLabel(/^Nhập lại mật khẩu/).fill("test-new-password");
+      await area.getByRole("button", { name: "Tạo tài khoản", exact: true }).click();
+      await page.waitForURL("**/accounts/" + id);
+      const created = records.find(row => row.ma_tk === id);
+      assert.equal(created.role, role);
+      assert.equal(created.ma_kho, role === "THU_KHO" ? -900003 : null);
+    }
 
     await page.locator("button.user").click();
     await page.getByRole("button", { name: /Tài khoản của tôi/ }).click();
@@ -127,9 +161,9 @@ async function main() {
 
     assert(mutations.some(call => call.method === "PUT" && call.path.endsWith("/role")));
     assert(mutations.some(call => call.path === "admin/me/password"));
-    assert.equal(records.find(row => row.ma_tk === "TK4").ten_tai_khoan, "updated.user");
+    assert.equal(records.find(row => row.ma_tk === "AD000001").ten_tai_khoan, "updated.user");
     assert.deepEqual(browserErrors, []);
-    console.log("PASS: list/filter/create/detail/edit/hide/lock/unlock/role/reset/profile/password/logout/legacy/mobile");
+    console.log("PASS: create NEW admin/customer/warehouse person without owner picker; list/filter/detail/edit/status/role/reset/profile/password/logout/legacy/mobile");
   } finally {
     await browser.close();
   }

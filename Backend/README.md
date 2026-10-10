@@ -82,8 +82,13 @@ tài khoản đang đăng nhập. UI riêng ở `/accounts`, `/accounts/new`,
 `/accounts/{id}`, `/accounts/{id}/edit`, `/account`.
 
 Xem [hợp đồng API và cách kiểm thử](app/admin_accounts/README.md). Không cần đổi
-schema cho module này nếu database đã khớp DBML và có các FK/unique/check hiện có.
-Không có DELETE; tài khoản bắt buộc gắn với đúng một hồ sơ có sẵn. Chỉ ADMIN truy cập.
+schema bảng cho module này nếu database đã khớp DBML và có các FK/unique/check hiện có.
+Form tạo mới cần cài sequence và hàm RPC bằng `migrations/20261010_admin_account_creation.sql`:
+tạo người mới và tài khoản trong một transaction, không chọn hồ sơ cũ, không để lại
+hồ sơ dở dang khi lỗi trùng username/email. Mã nhân viên/khách do backend tự sinh.
+Mã tài khoản do database tự cấp theo loại: `AD` (admin), `KHO` (thủ kho), `KH` (khách)
+cộng số tự tăng, tối thiểu 6 chữ số. UI không nhập mã; các mã tài khoản cũ giữ nguyên.
+Không có DELETE; tài khoản bắt buộc gắn với đúng một nhân viên/khách. Chỉ ADMIN truy cập.
 API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua quy tắc quản lý tài khoản.
 
 ### Table API

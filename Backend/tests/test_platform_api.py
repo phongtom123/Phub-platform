@@ -10,7 +10,7 @@ from postgrest import SyncPostgrestClient
 
 from app.auth import User, current_user, login_attempts, passwords
 from app.main import app
-from app.resources import RESOURCES, payload_model, schema
+from app.resources import RESOURCES, payload_model, public_columns, schema
 from app.supabase import get_supabase
 
 ADMIN = User("TK1", "admin", "ADMIN", "Quản trị", employee_id="NV1")
@@ -164,11 +164,56 @@ def test_immutable_sku_and_partial_update(platform_client):
     assert json.loads(requests[-1].content) == {"duong_dan_anh": "https://example.test/cpu.jpg"}
 
 
-@pytest.mark.parametrize("key", ['1', '[true]', '[null]', '[{}]', '["one","two"]', '[-1]'])
+@pytest.mark.parametrize("key", [
+    '1', '[true]', '[null]', '[{}]', '["one","two"]', '["-900003"]',
+    '[-900003.0]', '[2147483648]', '[-2147483649]', '[]', 'not-json',
+])
 def test_key_validation(platform_client, key):
     client, _, requests = platform_client
     assert client.get("/api/data/warehouses", params={"key": key}).status_code == 422
     assert not requests
+
+
+INTEGER_KEY_RESOURCES = [
+    name for name, resource in RESOURCES.items()
+    if any(column["type"] == "int" and column["name"] in resource.keys
+           for column in public_columns(name))
+]
+
+
+@pytest.mark.parametrize("name", INTEGER_KEY_RESOURCES)
+@pytest.mark.parametrize("value", [-900003, -1, 0, 1, -2147483648, 2147483647])
+def test_signed_integer_detail_keys(platform_client, name, value):
+    client, state, requests = platform_client
+    types = {column["name"]: column["type"] for column in public_columns(name)}
+    row = {field: value if types[field] == "int" else "SKU-TEST" for field in RESOURCES[name].keys}
+    state["rows"], state["total"] = [row], 1
+    key = json.dumps([row[field] for field in RESOURCES[name].keys])
+    response = client.get(f"/api/data/{name}", params={"key": key})
+    assert response.status_code == 200
+    assert response.json()["data"] == [row]
+    for field in RESOURCES[name].keys:
+        assert requests[-1].url.params[field] == f"eq.{row[field]}"
+
+
+def test_negative_warehouse_key_can_be_edited(platform_client):
+    client, state, requests = platform_client
+    state["rows"] = [{"ma_kho": -900003, "ten_kho": "Warehouse test", "dia_chi": "Test", "trang_thai": 1}]
+    response = client.patch("/api/data/warehouses", params={"key": "[-900003]"},
+                            json={"ten_kho": "Updated warehouse"}, headers=ORIGIN)
+    assert response.status_code == 200
+    assert [request.method for request in requests] == ["GET", "PATCH"]
+    assert all(request.url.params["ma_kho"] == "eq.-900003" for request in requests)
+    assert json.loads(requests[-1].content) == {"ten_kho": "Updated warehouse"}
+
+
+def test_signed_keys_do_not_remove_warehouse_scope(platform_client):
+    client, state, requests = platform_client
+    state["actor"] = User("TK2", "kho", "THU_KHO", "Warehouse", employee_id="NV2", warehouse_id=-900001)
+    response = client.get("/api/data/inventory", params={"key": '[-900003,"SKU-TEST"]'})
+    assert response.status_code == 200
+    assert requests[-1].url.params.get_list("ma_kho") == ["eq.-900001", "eq.-900003"]
+    assert requests[-1].url.params["sku"] == "eq.SKU-TEST"
 
 
 def test_unknown_table_and_pagination(platform_client):
