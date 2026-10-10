@@ -35,13 +35,13 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     ], note: "Kho xuất phải khác kho nhận. Tồn kho nhận chỉ tăng sau khi xác nhận nhận đủ hàng.",
   },
   dispatches: {
-    title: "Phiếu xuất", description: "Lập và theo dõi các lần xuất hàng khỏi kho.", searchPlaceholder: "Tìm mã phiếu, đơn hàng hoặc người nhận...", addLabel: "Tạo phiếu xuất", filters: ["Kho xuất", "Trạng thái"],
+    title: "Phiếu xuất", description: "Theo dõi và xuất hàng từ các đơn hàng đã được tạo.", searchPlaceholder: "Tìm mã phiếu, đơn hàng hoặc người nhận...", filters: ["Kho xuất", "Trạng thái"],
     columns: [{ key: "id", label: "MÃ PHIẾU", kind: "link" }, { key: "order", label: "ĐƠN HÀNG", kind: "strong" }, { key: "warehouse", label: "KHO XUẤT" }, { key: "items", label: "SẢN PHẨM" }, { key: "created", label: "NGÀY TẠO" }, { key: "status", label: "TRẠNG THÁI", kind: "status" }],
     rows: [
       { id: "PX-260927-08", order: "PH240931", warehouse: "Kho trung tâm", items: "4 SKU · 7 SP", created: "27/09/2026", status: "Chờ xác nhận" },
       { id: "PX-260926-04", order: "PH240918", warehouse: "Kho trung tâm", items: "2 SKU · 3 SP", created: "26/09/2026", status: "Đã xuất" },
       { id: "PX-260925-02", order: "PH240905", warehouse: "Kho trung tâm", items: "1 SKU · 1 SP", created: "25/09/2026", status: "Đang soạn" },
-    ], note: "Đối chiếu đơn hàng và số lượng thực tế trước khi xác nhận xuất kho.",
+    ], note: "Phiếu xuất được tạo từ đơn hàng. Đối chiếu đơn hàng và số lượng thực tế trước khi xác nhận xuất kho.",
   },
   products: {
     title: "Sản phẩm", description: "Tra cứu mã hàng, danh mục và thông tin sản phẩm trong kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Danh mục", "Tình trạng tồn"],
