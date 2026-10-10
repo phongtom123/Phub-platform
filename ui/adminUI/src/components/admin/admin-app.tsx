@@ -15,7 +15,7 @@ import { DashboardView } from "@/src/features/dashboard/dashboard-view";
 import { ModuleView } from "@/src/features/modules/module-view";
 import { EntityDrawer } from "@/src/features/forms/entity-drawer";
 import BackendDataView from "@/src/components/backend-data-view";
-import { resourceModule } from "@/src/lib/backend-resources";
+import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
 import AccountsView from "@/src/features/accounts/accounts-view";
 import type { AccountView } from "@/src/features/accounts/types";
 
@@ -115,6 +115,7 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
       />
       <div className="main">
         <AdminHeader
+          dataResource={accountsPage || activeModule === "accounts" ? undefined : dataResource ?? moduleResources[activeModule]}
           activeModule={activeModule}
           title={moduleNames[activeModule]}
           onToggleSidebar={toggleSidebar}

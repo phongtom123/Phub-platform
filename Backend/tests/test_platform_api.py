@@ -46,6 +46,46 @@ def test_health_is_offline():
         assert client.get("/api/health").json() == {"status": "ok"}
 
 
+@pytest.mark.parametrize("name", ["orders", "order-lines", "invoices", "payments", "voucher-uses"])
+@pytest.mark.parametrize("actor", [ADMIN, CUSTOMER])
+def test_order_relation_filter_is_exact_and_preserves_scope(platform_client, name, actor):
+    client, state, requests = platform_client
+    state["actor"] = actor
+    state["total"] = 3
+    order_id = 'ORDER-1,or(ma_kh.eq.OTHER)'
+    response = client.get(f"/api/data/{name}", params={"order_id": order_id, "page": 2, "page_size": 2, "q": "item"})
+    assert response.status_code == 200
+    params = requests[-1].url.params
+    assert params["ma_donhang"] == "eq." + order_id
+    assert params["offset"] == "2" and params["limit"] == "2"
+    assert "or" in params  # Search is additional, not the parent filter.
+    if actor == CUSTOMER:
+        assert params["ma_kh" if name == "orders" else "scope.ma_kh"] == "eq.KH3"
+    assert response.json()["total"] == 3
+    assert response.json()["order_id"] == order_id
+
+
+@pytest.mark.parametrize("name", ["products", "warehouses", "receipts", "transfers", "accounts"])
+def test_order_filter_rejected_for_unrelated_tables(platform_client, name):
+    client, _, requests = platform_client
+    assert client.get(f"/api/data/{name}", params={"order_id": "ORDER-1"}).status_code == 422
+    assert requests == []
+
+
+@pytest.mark.parametrize("order_id", ["", " ", "X" * 101])
+def test_invalid_order_filter_is_rejected(platform_client, order_id):
+    client, _, requests = platform_client
+    assert client.get("/api/data/payments", params={"order_id": order_id}).status_code == 422
+    assert requests == []
+
+
+def test_order_filter_combines_with_primary_key(platform_client):
+    client, _, requests = platform_client
+    assert client.get("/api/data/payments", params={"order_id": "ORDER-1", "key": "[-5]"}).status_code == 200
+    assert requests[-1].url.params["ma_thanh_toan"] == "eq.-5"
+    assert requests[-1].url.params["ma_donhang"] == "eq.ORDER-1"
+
+
 def test_schema_all_tables_and_metadata(platform_client):
     client, _, _ = platform_client
     assert len(schema()) == len(RESOURCES) == 19

@@ -92,6 +92,14 @@ Chỉ ADMIN có quyền. PATCH chỉ gửi trường thay đổi; PK và SKU b�
 
 Thứ tự là `ma_kho` rồi `sku`; số phải là JSON number, mã là JSON string. THU_KHO chỉ xem kho được phân công. Không có API CRUD số lượng tồn.
 
+### Lọc dữ liệu liên quan đến một đơn hàng
+
+`GET /api/data/order-lines?order_id=ORDER-001` (tương tự `invoices`, `payments`,
+`voucher-uses`) lọc chính xác `ma_donhang` tại backend. Có thể kết hợp `q`, `key`,
+`page`, `page_size`; tổng kết quả và phân trang tính sau khi lọc. Phạm vi quyền
+khách hàng vẫn giữ nguyên. Tham số này không dùng cho các bảng không liên quan.
+Response kèm `order_id` đã lọc, giúp UI phát hiện API cũ chưa hỗ trợ tham số này.
+
 ### Tạo tài khoản
 
 ADMIN gọi `POST /api/admin/accounts`, không dùng `/api/data/accounts`. Form tạo mới gửi

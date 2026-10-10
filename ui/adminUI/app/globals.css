@@ -1,4 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+.live-data .live-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.live-data .live-section-heading h2 { margin-bottom: 0; }
+.live-data .live-related { margin-top: 24px; }
+.live-data .live-related h3 { font-size: 18px; }
+.live-data .live-related a { display: inline-flex; padding: 10px 16px; border: 1px solid #dce1db; border-radius: 8px; background: white; color: #181818; text-decoration: none; }
+.live-data .live-related a:hover { background: #edf8e9; border-color: #14a800; }
+.topbar .crumb { min-width: 0; flex-wrap: wrap; }
 :root {
   --green: #14a800;
   --darkgreen: #108a00;

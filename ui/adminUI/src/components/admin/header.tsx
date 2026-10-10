@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import type { ModuleKey } from "@/src/types/admin";
 import { getModuleHref } from "@/src/lib/admin-navigation";
+import { DataBreadcrumb } from "./data-breadcrumb";
 
 type Props = {
+  dataResource?: string;
   user: { name: string; username: string } | null;
   onGoProfile: () => void;
   activeModule: ModuleKey;
@@ -29,6 +31,7 @@ type Props = {
 };
 
 export function AdminHeader({
+  dataResource,
   user,
   onGoProfile,
   activeModule,
@@ -64,7 +67,7 @@ export function AdminHeader({
       <button className="hamb" onClick={onToggleSidebar}>
         <Menu />
       </button>
-      <nav className="crumb" aria-label="Breadcrumb">
+      {dataResource ? <DataBreadcrumb resource={dataResource} /> : <nav className="crumb" aria-label="Breadcrumb">
         <Link
           href={getModuleHref("dashboard")}
           onClick={(event) => followModuleLink(event, "dashboard")}
@@ -80,7 +83,7 @@ export function AdminHeader({
         >
           {title}
         </Link>
-      </nav>
+      </nav>}
       <div className="top-actions">
         <label>
           <Search />

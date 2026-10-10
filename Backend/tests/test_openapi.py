@@ -59,6 +59,12 @@ def test_operation_ids_are_unique_and_tags_exist(spec):
         assert set(operation["tags"]).issubset(tags)
 
 
+def test_order_filter_is_documented_only_for_related_tables(spec):
+    for name in RESOURCES:
+        params = spec["paths"][f"/api/data/{name}"]["get"]["parameters"]
+        assert any(p["name"] == "order_id" for p in params) == (name in {"orders", "order-lines", "invoices", "payments", "voucher-uses"})
+
+
 def test_all_local_references_resolve(spec):
     def walk(value):
         if isinstance(value, dict):

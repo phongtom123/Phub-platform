@@ -11,6 +11,19 @@ Dashboard và danh sách dùng dữ liệu API; không có bản ghi mẫu thay 
 
 ## Chức năng giao diện
 
+Breadcrumb các trang dữ liệu chỉ hiển thị một lần trên header, với link đến danh sách,
+chi tiết và chỉnh sửa. Dashboard không nhúng breadcrumb/link bảng liên quan của đơn hàng.
+Trong chi tiết đơn hàng, nhóm thông tin liên quan mở các trang dòng hàng, hóa đơn,
+thanh toán và voucher với bộ lọc `order_id` chính xác ở backend. Cần deploy backend
+hỗ trợ bộ lọc này; UI báo lỗi rõ ràng nếu API đang chạy bản cũ, không hiện dữ liệu khác đơn.
+
+Dashboard có 4 biểu đồ dùng dữ liệu API thật: số đơn theo ngày (7/30/90 ngày, giờ
+Việt Nam), trạng thái đơn, tổng số lượng tồn theo kho và kênh bán. Hai biểu đồ phân
+bố đơn dùng tất cả đơn, gồm đơn hủy; không coi số đơn là doanh thu. Có làm mới,
+bảng số liệu, trạng thái tải/lỗi/rỗng; không có dữ liệu mẫu thay thế. UI tải đầy đủ
+các trang, tối đa 20.000 dòng mỗi tập; dữ liệu lớn hơn cần API tổng hợp riêng,
+không thống kê trên mẫu bị cắt. Chưa thêm endpoint hoặc migration cho phần chart.
+
 - Đăng nhập quản trị viên.
 - Dashboard tổng quan hoạt động kinh doanh.
 - Quản lý đơn hàng, hóa đơn và thanh toán.

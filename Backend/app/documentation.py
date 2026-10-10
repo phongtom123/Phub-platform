@@ -164,6 +164,10 @@ def add_table_paths(spec: dict) -> None:
             "properties": {"data": {"type": "array", "items": read_ref}, "total": {"type": "integer", "minimum": 0},
                            "page": {"type": "integer", "minimum": 1}, "page_size": {"type": "integer", "minimum": 1, "maximum": 100}},
         }
+        if name in {"orders", "order-lines", "invoices", "payments", "voucher-uses"}:
+            schemas[f"{base}Page"]["properties"]["order_id"] = {
+                "type": "string", "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
+            }
         if resource.writable:
             schemas[f"{base}Saved"] = {"type": "object", "additionalProperties": False, "required": ["data"],
                                        "properties": {"data": {"type": "array", "items": read_ref}}}
@@ -198,13 +202,16 @@ def add_table_paths(spec: dict) -> None:
             description += "\n\n" + NOTES.get(name, "Khóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.")
             operation["description"] = description
             operation["summary"] = {"get": "Danh sách / chi tiết", "post": "Thêm", "patch": "Chỉnh sửa"}[method] + " · " + resource.title
-            parameters = [p for p in operation.get("parameters", []) if p["name"] != "resource"]
+            parameters = [p for p in operation.get("parameters", []) if p["name"] != "resource"
+                          and (p["name"] != "order_id" or name in {"orders", "order-lines", "invoices", "payments", "voucher-uses"})]
             for parameter in parameters:
                 if parameter["name"] == "key":
                     parameter["description"] = f"Chuỗi JSON mảng khóa theo thứ tự {resource.keys}; int gửi JSON number, varchar gửi JSON string."
                     parameter["examples"] = {"primary_key": {"summary": "Dữ liệu giả minh họa; thay bằng khóa thật", "value": key}}
                 if parameter["name"] == "q":
                     parameter["description"] = "Tìm chuỗi literal trong các trường varchar, không phân biệt hoa/thường; không tìm theo giá/số lượng."
+                if parameter["name"] == "order_id":
+                    parameter["description"] = "Lọc chính xác ma_donhang; kết hợp với key, tìm kiếm và phạm vi quyền của phiên. Không phải tìm kiếm gần đúng."
                 if parameter["name"] == "page":
                     parameter["description"] = "Trang tính từ 1; sắp xếp ổn định theo khóa chính."
                 if parameter["name"] == "page_size":

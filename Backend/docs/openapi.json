@@ -599,6 +599,10 @@
             },
             "type": "array"
           },
+          "order_id": {
+            "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
+            "type": "string"
+          },
           "page": {
             "minimum": 1,
             "type": "integer"
@@ -1503,6 +1507,10 @@
             },
             "type": "array"
           },
+          "order_id": {
+            "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
+            "type": "string"
+          },
           "page": {
             "minimum": 1,
             "type": "integer"
@@ -1756,6 +1764,10 @@
               "$ref": "#/components/schemas/HOA_DONRead"
             },
             "type": "array"
+          },
+          "order_id": {
+            "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
+            "type": "string"
           },
           "page": {
             "minimum": 1,
@@ -4912,6 +4924,10 @@
             },
             "type": "array"
           },
+          "order_id": {
+            "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
+            "type": "string"
+          },
           "page": {
             "minimum": 1,
             "type": "integer"
@@ -5401,6 +5417,10 @@
               "$ref": "#/components/schemas/THANH_TOANRead"
             },
             "type": "array"
+          },
+          "order_id": {
+            "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
+            "type": "string"
           },
           "page": {
             "minimum": 1,
@@ -11666,6 +11686,25 @@
               ],
               "title": "Key"
             }
+          },
+          {
+            "description": "Lọc chính xác ma_donhang; kết hợp với key, tìm kiếm và phạm vi quyền của phiên. Không phải tìm kiếm gần đúng.",
+            "in": "query",
+            "name": "order_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
+            }
           }
         ],
         "responses": {
@@ -11854,6 +11893,25 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "description": "Lọc chính xác ma_donhang; kết hợp với key, tìm kiếm và phạm vi quyền của phiên. Không phải tìm kiếm gần đúng.",
+            "in": "query",
+            "name": "order_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
             }
           }
         ],
@@ -12046,6 +12104,25 @@
               ],
               "title": "Key"
             }
+          },
+          {
+            "description": "Lọc chính xác ma_donhang; kết hợp với key, tìm kiếm và phạm vi quyền của phiên. Không phải tìm kiếm gần đúng.",
+            "in": "query",
+            "name": "order_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
+            }
           }
         ],
         "responses": {
@@ -12237,6 +12314,25 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "description": "Lọc chính xác ma_donhang; kết hợp với key, tìm kiếm và phạm vi quyền của phiên. Không phải tìm kiếm gần đúng.",
+            "in": "query",
+            "name": "order_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
             }
           }
         ],
@@ -14898,6 +14994,25 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "description": "Lọc chính xác ma_donhang; kết hợp với key, tìm kiếm và phạm vi quyền của phiên. Không phải tìm kiếm gần đúng.",
+            "in": "query",
+            "name": "order_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order Id"
             }
           }
         ],
