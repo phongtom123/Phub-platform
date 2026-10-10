@@ -14,6 +14,7 @@ def safe_identifier(value: str) -> str:
 Identifier = Annotated[str, Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_.-]+$"), AfterValidator(safe_identifier)]
 Password = Annotated[str, Field(min_length=10, max_length=128, json_schema_extra={"writeOnly": True, "format": "password"})]
 Username = Annotated[str, Field(min_length=3, max_length=80, pattern=r"^[A-Za-z0-9_.-]+$")]
+WarehouseId = Annotated[int, Field(strict=True, ge=-(2**31), le=2**31 - 1)]
 
 
 class Input(BaseModel):
@@ -56,6 +57,32 @@ class AccountCreate(Input):
             raise ValueError("Chọn đúng một nhân viên hoặc một khách hàng.")
         return self
 
+
+class NewOwner(Input):
+    ho_ten: Annotated[str, Field(min_length=1, max_length=200)]
+    role: Role
+    ma_kho: WarehouseId | None = None
+
+    @field_validator("ho_ten", mode="before")
+    @classmethod
+    def trim_name(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+    @model_validator(mode="after")
+    def warehouse_assignment(self):
+        if (self.role == "THU_KHO") != (self.ma_kho is not None):
+            raise ValueError("Nhân viên kho phải chọn kho; quản trị viên và khách hàng không gán kho.")
+        return self
+
+
+class NewAccountCreate(Input):
+    """Create a new person and login atomically; the database allocates the account ID."""
+    ten_tai_khoan: Username
+    email: str | None = None
+    password: Password
+    new_owner: NewOwner
+
+
 class AccountUpdate(Input):
     ten_tai_khoan: Username | None = None
     email: str | None = None
@@ -91,7 +118,7 @@ class PasswordChange(PasswordReset):
 
 class RoleUpdate(Input):
     role: Literal["ADMIN", "THU_KHO"]
-    ma_kho: Annotated[int, Field(strict=True, gt=0)] | None = None
+    ma_kho: WarehouseId | None = None
 
     @model_validator(mode="after")
     def warehouse_assignment(self):

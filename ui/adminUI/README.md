@@ -191,8 +191,13 @@ Ví dụ:
 1. Đăng nhập ADMIN, mở **Tài khoản** ở sidebar hoặc `/accounts`.
 2. Tìm/lọc role và trạng thái. Chọn mã tài khoản → xem chi tiết → **Chỉnh sửa**
    mở trang riêng. Không sửa PK/chủ sở hữu.
-3. **Thêm tài khoản**: chọn nhân viên/khách có sẵn chưa có tài khoản. Vai trò lấy
-   từ hồ sơ. Username 3–80 ký tự chữ/số/._-; mật khẩu 10–128 ký tự.
+3. **Thêm tài khoản**: nhập họ tên, loại tài khoản, username và mật khẩu; chọn kho
+   hoạt động nếu là nhân viên kho. Backend tạo mới người và tài khoản trong một
+   transaction, không cần chọn hồ sơ cũ hoặc nhập mã tài khoản. Mã được cấp khi lưu:
+   ADMIN → `AD000001`, THU_KHO → `KHO000001`, KHACH_HANG → `KH000001` (số tự tăng).
+   Username 3–80 ký tự chữ/số/._-; mật khẩu
+   10–128 ký tự. Cần cài migration `Backend/migrations/20261010_admin_account_creation.sql`
+   trên database của backend trước khi thử lưu; app không tự chạy migration.
 4. Thử khóa/ẩn/mở lại trên tài khoản test khác; không được tự khóa mình.
 5. Phân quyền chỉ áp dụng cho nhân viên; thủ kho phải có kho hoạt động.
 6. Cấp lại mật khẩu sẽ vô hiệu token cũ. Menu header → **Tài khoản của tôi**:

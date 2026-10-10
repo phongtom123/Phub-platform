@@ -24,6 +24,8 @@ OPERATIONS = [
     ("POST", "/accounts/TK2/password", {"password": PASSWORD}),
     ("GET", "/me", None), ("PATCH", "/me", {"email": None}),
     ("POST", "/me/password", {"current_password": PASSWORD, "password": "new-test-password"}),
+    ("POST", "/accounts", {"ten_tai_khoan": "new.person", "password": PASSWORD,
+                            "new_owner": {"ho_ten": "New Person", "role": "ADMIN"}}),
 ]
 
 
@@ -45,13 +47,32 @@ def accounts_client(monkeypatch):
             {"ma_nhan_vien": "NV3", "ho_ten": "New employee", "loai_nhan_vien": "ADMIN", "ma_kho": None, "trang_thai": 1},
         ],
         "KHACH_HANG": [{"ma_kh": "KH1", "ten_kh": "Customer"}, {"ma_kh": "KH2", "ten_kh": "New customer"}],
-        "KHO": [{"ma_kho": 7, "trang_thai": 1}, {"ma_kho": 8, "trang_thai": 0}],
+        "KHO": [{"ma_kho": 7, "trang_thai": 1}, {"ma_kho": 8, "trang_thai": 0}, {"ma_kho": -900003, "trang_thai": 1}],
     }
     requests = []
-    state = {"actor": ADMIN, "conflict": False}
+    state = {"actor": ADMIN, "conflict": False, "rpc_error": None, "account_numbers": {"ADMIN": 0, "THU_KHO": 0, "KHACH_HANG": 0}}
 
     def handle(request):
         requests.append(request)
+        if request.url.path.endswith("/rpc/admin_create_account_v1"):
+            if state["rpc_error"] or state["conflict"]:
+                return httpx.Response(400, json={"code": state["rpc_error"] or "23505", "message": "private SQL details", "details": "private", "hint": None})
+            data = json.loads(request.content)
+            customer = data["p_role"] == "KHACH_HANG"
+            assert "p_account_id" not in data
+            state["account_numbers"][data["p_role"]] += 1
+            prefix = {"ADMIN": "AD", "THU_KHO": "KHO", "KHACH_HANG": "KH"}[data["p_role"]]
+            account_id = prefix + f"{state['account_numbers'][data['p_role']]:06d}"
+            owner_id = data["p_owner_id"]
+            if customer:
+                tables["KHACH_HANG"].append({"ma_kh": owner_id, "ten_kh": data["p_name"]})
+            else:
+                tables["NHAN_VIEN"].append({"ma_nhan_vien": owner_id, "ho_ten": data["p_name"], "loai_nhan_vien": data["p_role"], "ma_kho": data["p_warehouse_id"], "trang_thai": 1})
+            row = {"ma_tk": account_id, "ten_tai_khoan": data["p_username"], "email": data["p_email"], "mat_khau_hash": data["p_password_hash"],
+                   "ma_nhan_vien": None if customer else owner_id, "ma_kh": owner_id if customer else None, "trang_thai": 1}
+            tables["TAI_KHOAN"].append(row)
+            result = {k: v for k, v in row.items() if k != "mat_khau_hash"}
+            return httpx.Response(200, json=result | {"role": data["p_role"], "ho_ten": data["p_name"], "ma_kho": data["p_warehouse_id"], "owner_active": True, "is_self": False})
         table = request.url.path.split("/")[-1]
         rows = tables[table]
         params = request.url.params
@@ -217,6 +238,84 @@ def test_unique_conflict_is_safe(accounts_client):
     state["conflict"] = True
     response = client.post("/api/admin/accounts", json=OPERATIONS[2][2], headers=ORIGIN)
     assert response.status_code == 409 and "private" not in response.text
+
+
+@pytest.mark.parametrize("role,warehouse", [("ADMIN", None), ("KHACH_HANG", None), ("THU_KHO", -900003)])
+def test_create_new_person_atomically_and_login(accounts_client, role, warehouse):
+    client, tables, requests, _ = accounts_client
+    payload = {"ten_tai_khoan": " New.Person ", "email": " NEW@Example.Test ", "password": "  new-password-space  ",
+               "new_owner": {"ho_ten": "  New Person  ", "role": role, "ma_kho": warehouse}}
+    result = client.post("/api/admin/accounts", json=payload, headers=ORIGIN)
+    assert result.status_code == 201
+    assert len(requests) == 1 and requests[0].url.path.endswith("/rpc/admin_create_account_v1")
+    args = json.loads(requests[0].content)
+    assert args["p_actor_account_id"] == ADMIN.account_id
+    assert "p_account_id" not in args
+    assert args["p_owner_id"].startswith("KH_" if role == "KHACH_HANG" else "NV_")
+    assert args["p_name"] == "New Person"
+    assert args["p_email"] == "new@example.test"
+    assert args["p_username"] == "New.Person"
+    assert args["p_warehouse_id"] == warehouse
+    assert passwords.verify(payload["password"], args["p_password_hash"])
+    assert payload["password"] not in result.text and "mat_khau_hash" not in result.text
+    assert result.json()["role"] == role
+    assert result.json()["ma_tk"] == {"ADMIN": "AD000001", "THU_KHO": "KHO000001", "KHACH_HANG": "KH000001"}[role]
+    assert len(tables["TAI_KHOAN"]) == 4
+    assert len(tables["KHACH_HANG"]) == (3 if role == "KHACH_HANG" else 2)
+    assert len(tables["NHAN_VIEN"]) == (3 if role == "KHACH_HANG" else 4)
+    app.dependency_overrides.pop(current_user)
+    login = client.post("/api/auth/login", json={"username": "new@example.test", "password": payload["password"]}, headers=ORIGIN)
+    assert login.status_code == 200 and login.json()["role"] == role
+
+
+@pytest.mark.parametrize("owner", [
+    {}, {"ho_ten": " ", "role": "ADMIN"}, {"ho_ten": "x" * 201, "role": "ADMIN"},
+    {"ho_ten": "Test", "role": "ROOT"}, {"ho_ten": "Test", "role": "THU_KHO"},
+    {"ho_ten": "Test", "role": "ADMIN", "ma_kho": 7}, {"ho_ten": "Test", "role": "KHACH_HANG", "ma_kho": 7},
+    {"ho_ten": "Test", "role": "THU_KHO", "ma_kho": True}, {"ho_ten": "Test", "role": "THU_KHO", "ma_kho": "7"},
+    {"ho_ten": "Test", "role": "THU_KHO", "ma_kho": 2147483648},
+    {"ho_ten": "Test", "role": "THU_KHO", "ma_kho": -2147483649},
+    {"ho_ten": "Test", "role": "ADMIN", "ma_nhan_vien": "NV1"},
+])
+def test_invalid_new_person_never_calls_database(accounts_client, owner):
+    client, _, requests, _ = accounts_client
+    result = client.post("/api/admin/accounts", json={"ten_tai_khoan": "new.person", "password": PASSWORD, "new_owner": owner}, headers=ORIGIN)
+    assert result.status_code == 422
+    assert not requests and PASSWORD not in result.text
+
+
+def test_new_person_cannot_be_combined_with_existing_owner(accounts_client):
+    client, _, requests, _ = accounts_client
+    payload = OPERATIONS[-1][2] | {"ma_nhan_vien": "NV1"}
+    assert client.post("/api/admin/accounts", json=payload, headers=ORIGIN).status_code == 422
+    assert not requests
+
+
+def test_new_person_cannot_override_automatic_account_id(accounts_client):
+    client, _, requests, _ = accounts_client
+    payload = OPERATIONS[-1][2] | {"ma_tk": "MY_MANUAL_ID"}
+    assert client.post("/api/admin/accounts", json=payload, headers=ORIGIN).status_code == 422
+    assert not requests
+
+
+@pytest.mark.parametrize("code,status", [("23505", 409), ("23514", 422), ("PGRST202", 503), ("42501", 403)])
+def test_new_person_rpc_failure_is_safe(accounts_client, code, status):
+    client, tables, requests, state = accounts_client
+    before = deepcopy(tables)
+    state["rpc_error"] = code
+    result = client.post("/api/admin/accounts", json=OPERATIONS[-1][2], headers=ORIGIN)
+    assert result.status_code == status
+    assert "private" not in result.text and PASSWORD not in result.text
+    assert tables == before and len(requests) == 1
+    if code == "PGRST202":
+        assert "20261010_admin_account_creation.sql" in result.text
+
+
+def test_role_assignment_accepts_existing_negative_warehouse(accounts_client):
+    client, tables, _, _ = accounts_client
+    result = client.put("/api/admin/accounts/TK2/role", json={"role": "THU_KHO", "ma_kho": -900003}, headers=ORIGIN)
+    assert result.status_code == 200 and result.json()["ma_kho"] == -900003
+    assert tables["NHAN_VIEN"][1]["ma_kho"] == -900003
 
 
 @pytest.mark.parametrize("body", [{}, {"ma_tk": "OTHER"}, {"ma_nhan_vien": "NV3"}, {"password": PASSWORD}, {"trang_thai": 2}, {"role": "ADMIN"}, {"ten_tai_khoan": None}])

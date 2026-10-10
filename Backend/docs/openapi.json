@@ -3254,6 +3254,87 @@
         "title": "NHA_CUNG_CAPUpdate",
         "type": "object"
       },
+      "NewAccountCreate": {
+        "additionalProperties": false,
+        "description": "Create a new person and login atomically; the database allocates the account ID.",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "new_owner": {
+            "$ref": "#/components/schemas/NewOwner"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "ten_tai_khoan": {
+            "maxLength": 80,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "title": "Ten Tai Khoan",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ten_tai_khoan",
+          "password",
+          "new_owner"
+        ],
+        "title": "NewAccountCreate",
+        "type": "object"
+      },
+      "NewOwner": {
+        "additionalProperties": false,
+        "properties": {
+          "ho_ten": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Ho Ten",
+            "type": "string"
+          },
+          "ma_kho": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": -2147483648.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kho"
+          },
+          "role": {
+            "enum": [
+              "ADMIN",
+              "THU_KHO",
+              "KHACH_HANG"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ho_ten",
+          "role"
+        ],
+        "title": "NewOwner",
+        "type": "object"
+      },
       "OrderDetail": {
         "additionalProperties": false,
         "properties": {
@@ -4364,7 +4445,8 @@
           "ma_kho": {
             "anyOf": [
               {
-                "exclusiveMinimum": 0.0,
+                "maximum": 2147483647.0,
+                "minimum": -2147483648.0,
                 "type": "integer"
               },
               {
@@ -6257,7 +6339,7 @@
         ]
       },
       "post": {
-        "description": "Vai trò lấy từ hồ sơ liên kết. Không nhận role/hash/trạng thái từ trình duyệt.\nUsername 3–80 ký tự ASCII chữ/số/._- (không có @); email chuẩn hóa chữ thường.\nMật khẩu 10–128 ký tự, hash Argon2. Không tạo hồ sơ nhân viên/khách cùng request.",
+        "description": "UI tạo mới gửi new_owner (họ tên, role, kho nếu là thủ kho).\nBackend tự sinh mã tài khoản theo loại (AD/KHO/KH + số), mã người dùng,\nhash mật khẩu và tạo cả hai bản ghi trong\nmột transaction RPC; cần migration 20261010_admin_account_creation.sql.\nPayload ma_nhan_vien/ma_kh cũ vẫn hỗ trợ để tương thích API, không dùng trên form mới.\nUsername 3–80 ký tự ASCII chữ/số/._- (không có @); email chuẩn hóa chữ thường.\nMật khẩu 10–128 ký tự, hash Argon2. Chỉ ADMIN được tạo người và cấp quyền.",
         "operationId": "create_account_api_admin_accounts_post",
         "parameters": [
           {
@@ -6276,7 +6358,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AccountCreate"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/NewAccountCreate"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountCreate"
+                  }
+                ],
+                "title": "Body"
               }
             }
           },
@@ -6386,7 +6476,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Cấp tài khoản cho một nhân viên hoặc khách có sẵn",
+        "summary": "Tạo người mới cùng tài khoản, hoặc cấp tài khoản cho người có sẵn",
         "tags": [
           "Admin · Tài khoản"
         ],

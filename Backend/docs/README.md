@@ -94,7 +94,13 @@ Thứ tự là `ma_kho` rồi `sku`; số phải là JSON number, mã là JSON s
 
 ### Tạo tài khoản
 
-ADMIN gọi `POST /api/data/accounts`. Body có `password` (10–128 ký tự), không có `mat_khau_hash`. Gán **đúng một** `ma_kh` hoặc `ma_nhan_vien`. Mã người dùng phải tồn tại. Response không chứa password/hash.
+ADMIN gọi `POST /api/admin/accounts`, không dùng `/api/data/accounts`. Form tạo mới gửi
+`new_owner: { ho_ten, role, ma_kho }` cùng username, email và password (10–128 ký tự).
+Không gửi `ma_tk`: database tự cấp mã `AD`/`KHO`/`KH` cộng số theo loại tài khoản;
+response trả mã đã tạo để UI mở trang chi tiết.
+Backend tạo người mới và tài khoản bằng một RPC transaction; cần migration
+`Backend/migrations/20261010_admin_account_creation.sql`. Không nhận/trả hash từ UI.
+Payload cũ gán đúng một `ma_kh`/`ma_nhan_vien` có sẵn vẫn được hỗ trợ để tương thích.
 
 ## Đọc schema và lỗi
 

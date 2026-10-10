@@ -10,6 +10,7 @@ export function recordHref(section: string, id: string, edit = false): string | 
   // A legacy single-ID URL cannot identify a composite primary key.
   if (["inventory", "receipt-lines", "transfer-lines"].includes(resource)) return `/data/${resource}`;
   const value = integerKeys.has(resource) ? Number(id) : id;
-  if (typeof value === "number" && (!Number.isSafeInteger(value) || value <= 0)) return `/data/${resource}`;
+  // Match PostgreSQL's signed integer range, including negative seed IDs.
+  if (typeof value === "number" && (!/^-?\d+$/.test(id) || !Number.isSafeInteger(value) || value < -(2 ** 31) || value > 2 ** 31 - 1)) return `/data/${resource}`;
   return `/data/${resource}?key=${encodeURIComponent(JSON.stringify([value]))}${edit ? "&edit=1" : ""}`;
 }
