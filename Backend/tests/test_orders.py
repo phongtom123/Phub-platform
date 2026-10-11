@@ -89,8 +89,8 @@ def test_existing_order_endpoint_cannot_bypass_customer_auth(orders_client, orde
     client, _, requests, _ = orders_client
     client.app.dependency_overrides.pop(require_customer)
     response = post(client, order_body)
-    assert response.status_code == 503
-    assert response.json()["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
     assert requests == [] and response.headers["Cache-Control"] == "no-store"
 
 

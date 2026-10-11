@@ -66,14 +66,14 @@ def payments_client():
 
 @pytest.mark.parametrize("endpoint", ["payments", "transactions"])
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer forged-token", "X-Customer-Id": CUSTOMER_ID, "Cookie": "ma_kh=CUSTOMER-A"}])
-def test_unconnected_auth_blocks_every_request_before_database(payments_client, endpoint, headers):
+def test_shared_auth_blocks_every_request_without_session_before_database(payments_client, endpoint, headers):
     client, _, requests, _, app = payments_client
     app.dependency_overrides.pop(require_customer)
     response = client.get(f"{BASE}/{endpoint}", headers=headers)
-    assert response.status_code == 503
+    assert response.status_code == 401
     assert response.json() == {"error": {
-        "code": "AUTH_INTEGRATION_REQUIRED",
-        "message": "Chưa kết nối phần xác thực khách hàng. Không thể sử dụng chức năng mua hàng lúc này.", "details": [],
+        "code": "AUTHENTICATION_REQUIRED",
+        "message": "Bạn cần đăng nhập để tra cứu thanh toán.", "details": [],
     }}
     assert response.headers["Cache-Control"] == "no-store"
     assert requests == []
@@ -319,10 +319,9 @@ def test_all_payment_paths_and_contracts_are_in_swagger(payments_client):
     for suffix, schema in [("payments", "PaymentOverview"), ("transactions", "TransactionPage")]:
         operation = spec["paths"][f"/api/orders/{{order_id}}/{suffix}"]["get"]
         assert operation["tags"] == ["Customer Payments"]
-        assert "AUTH_INTEGRATION_REQUIRED" in operation["description"] or "503" in operation["description"]
         assert set(operation["responses"]) == {"200", "401", "403", "404", "422", "500", "503"}
         assert operation["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith(schema)
-        assert operation["responses"]["503"]["content"]["application/json"]["example"]["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+        assert operation["responses"]["503"]["content"]["application/json"]["example"]["error"]["code"] == "PAYMENT_SCHEMA_NOT_READY"
     fields = spec["components"]["schemas"]["PaymentTransaction"]["properties"]
     assert set(fields) == {"type", "method", "amount", "status", "occurred_at", "message"}
     assert fields["amount"]["type"] == "string"
@@ -353,7 +352,7 @@ def test_payment_request_foreign_order_and_invalid_idempotency_are_blocked(payme
     assert result.status_code == 404
     app.dependency_overrides.pop(require_customer)
     requests.clear()
-    assert client.post(f"{BASE}/payment-request", json={"method":"cash"}, headers={"Idempotency-Key":str(uuid4())}).status_code == 503
+    assert client.post(f"{BASE}/payment-request", json={"method":"cash"}, headers={"Idempotency-Key":str(uuid4())}).status_code == 401
     assert requests == []
 
 
@@ -368,7 +367,7 @@ def test_main_registers_payments_without_requiring_auth_at_startup(monkeypatch):
     spec.loader.exec_module(module)
     with TestClient(module.app) as client:
         assert client.get("/docs").status_code == 200
-        assert client.get(f"{BASE}/payments").json()["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+        assert client.get(f"{BASE}/payments").json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
         paths = client.get("/openapi.json").json()["paths"]
         assert "/api/catalog/products" in paths and "/api/orders" in paths
         assert "/api/orders/{order_id}/transactions" in paths

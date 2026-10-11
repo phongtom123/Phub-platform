@@ -78,6 +78,8 @@
 .accountPanel { right: 0; width: 240px; max-width: calc(100vw - 24px); }
 .accountPanel::before { right: 12px; }
 .accountMenu { padding-block: 6px; }
+.accountIdentity { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 12px 16px; border-bottom: 1px solid #e5e7eb; color: #111827; font-size: 13px; overflow-wrap: anywhere; }
+.accountIdentity span { color: #6b7280; font-size: 12px; }
 .accountMenu button, .accountMenu a { display: block; width: 100%; border: 0; padding: 12px 16px; text-align: left; background: transparent; color: #111; font-size: 14px; font-weight: 600; transition: background-color 150ms ease; }
 .accountMenu button:hover, .accountMenu a:hover { background: #f3f4f6; }
 .cartPanel { right: -10px; width: 320px; max-width: calc(100vw - 24px); border-radius: 8px; }

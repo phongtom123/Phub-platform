@@ -18,6 +18,7 @@ import BackendDataView from "@/src/components/backend-data-view";
 import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
 import AccountsView from "@/src/features/accounts/accounts-view";
 import type { AccountView } from "@/src/features/accounts/types";
+import { getSession, logoutSession } from "../../../../shared/auth-client";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
@@ -38,10 +39,8 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/backend/auth/me", { cache: "no-store", signal: controller.signal })
-      .then(async response => {
-        if (!response.ok) { setLoggedIn(false); return; }
-        const user = await response.json();
+    getSession(controller.signal)
+      .then(user => {
         if (user.role === "THU_KHO") { window.location.replace(warehouseUrl); return; }
         if (user.role === "KHACH_HANG") { window.location.replace(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001"); return; }
         setLoggedIn(user.role === "ADMIN");
@@ -94,8 +93,12 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
   const openSettings = () =>
     setDrawer({ moduleKey: "settings", mode: "settings" });
   const logout = async () => {
-    const response = await fetch("/api/backend/auth/logout", { method: "POST" });
-    if (!response.ok) { window.alert("Không đăng xuất được. Kiểm tra backend và thử lại."); return; }
+    try {
+      await logoutSession();
+    } catch {
+      window.alert("Không đăng xuất được. Kiểm tra backend và thử lại.");
+      return;
+    }
     window.history.replaceState({}, "", "/");
     setActiveModule("dashboard");
     setLoggedIn(false);

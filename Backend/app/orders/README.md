@@ -7,7 +7,7 @@ Xem mô tả cả bốn mục tiêu ở [Backend/README.md](../../README.md).
 **Cập nhật mục tiêu 4:** body/receipt không voucher vẫn giữ nguyên, kể cả cùng SKU
 phân bổ vào các kho khác nhau. Endpoint nay dùng dependency xác thực chung và RPC
 `customer_checkout_v2` để chốt `ma_kh` từ Backend; không còn cho guest tạo đơn.
-Auth thật chưa được nối nên mặc định trả 503 trước khi đọc/ghi database.
+Auth dùng phiên JWT/cookie chung; thiếu phiên trả 401 và sai role trả 403 trước khi đọc/ghi database.
 Cần migration ngày 04/10 rồi 06/10, cả hai **chưa áp dụng trên Supabase chung**.
 Checkout UI sử dụng `/api/customer/orders` có voucher; xem [commerce README](../commerce/README.md).
 
@@ -86,7 +86,7 @@ có luồng xóa đơn vĩnh viễn, thống nhất cách lưu lịch sử/key t
 | 401/403 | `AUTHENTICATION_REQUIRED`, `ACCESS_DENIED`, `AUTH_CUSTOMER_UNAVAILABLE` |
 | 404 | `PRODUCT_NOT_AVAILABLE`, `WAREHOUSE_NOT_AVAILABLE` |
 | 409 | `PRICE_CHANGED`, `INSUFFICIENT_STOCK`, `CHECKOUT_CHANGED`, `IDEMPOTENCY_CONFLICT`, `RETRYABLE_CONFLICT` |
-| 503 | `AUTH_INTEGRATION_REQUIRED`, `ORDER_CONFIGURATION_REQUIRED`, `ORDER_DATABASE_NOT_READY`, `DATA_SERVICE_UNAVAILABLE` |
+| 503 | `ORDER_CONFIGURATION_REQUIRED`, `ORDER_DATABASE_NOT_READY`, `DATA_SERVICE_UNAVAILABLE` |
 | 500 | `INTERNAL_ERROR` |
 
 Giá thay đổi: khách kiểm tra lại giá, xác nhận request mới rồi dùng key cho lần đặt

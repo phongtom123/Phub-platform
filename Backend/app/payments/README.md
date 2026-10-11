@@ -9,51 +9,21 @@ Module chỉ đọc trạng thái thanh toán và lịch sử thu/hoàn tiền c
 từ `DON_HANG` và `THANH_TOAN` hiện có; không cần migration mới, không tạo hoặc sửa
 giao dịch, hóa đơn, tài khoản, UI đăng nhập, UI admin hay phần kho.
 
-## Phần còn thiếu: kết nối xác thực của thành viên phụ trách đăng nhập
+## Xác thực khách hàng dùng chung
 
-**Code đăng ký/đăng nhập thật chưa có trong workspace hiện tại. Phần này được để
-riêng theo yêu cầu của bạn; module không tự làm lại đăng nhập.** Vì chưa có hợp đồng
-token/cookie hoặc hàm xác thực của nhóm, chưa thể xác định khách nào đang gọi API.
+Điểm nối nằm ở [auth.py](auth.py). `require_customer()` phụ thuộc vào guard khách
+hàng trong `app/auth.py`, nên dùng cùng cơ chế với admin và thủ kho:
 
-Điểm nối nằm ở [auth.py](auth.py):
+- JWT chỉ nằm trong cookie HttpOnly `phub_session`; UI không đọc hoặc lưu token.
+- Backend xác minh chữ ký, issuer, audience, hạn dùng và phiên bản mật khẩu.
+- Backend tải lại `TAI_KHOAN` và `KHACH_HANG` ở mỗi request; tài khoản khóa, sai role
+  hoặc không có `ma_kh` bị từ chối trước khi truy vấn đơn/thanh toán.
+- Header `Authorization`, `X-Customer-Id`, query/body chứa mã khách không được dùng
+  làm danh tính.
+- `CurrentCustomer(customer_id=...)` chỉ được tạo từ `User` đã xác minh.
 
-- `CurrentCustomer(customer_id=...)` là kết quả tin cậy của Backend sau xác thực.
-- `require_customer()` hiện luôn trả **503 `AUTH_INTEGRATION_REQUIRED`**.
-- Cả hai endpoint bị chặn trước khi truy vấn database, kể cả có header
-  `Authorization`, cookie, `X-Customer-Id` hay mã khách tự khai báo.
-- Không có chế độ đọc công khai theo mã đơn. Khách chỉ xem catalog không cần tài
-  khoản; tra cứu thanh toán phải xác minh danh tính và quyền sở hữu đơn.
-
-Khi phần đăng nhập được gộp, thành viên phụ trách cần cung cấp:
-
-1. Hàm/dependency xác thực thật và định dạng kết quả: tài khoản đã xác minh, trạng
-   thái hoạt động, `ma_kh`; quy tắc token/cookie, hết hạn và tài khoản bị khóa.
-2. Adapter ở `require_customer()` sử dụng kết quả đó rồi trả `CurrentCustomer`.
-   Không lấy danh tính trực tiếp từ query, body, cookie thô hoặc token chỉ được
-   decode mà chưa xác minh.
-3. Nếu module đăng nhập chỉ trả `ma_tk`, adapter ánh xạ **tài khoản đã xác minh**
-   qua `TAI_KHOAN.ma_kh`. Tài khoản nhân viên hoặc không liên kết khách phải bị từ
-   chối; không tự tạo `KHACH_HANG` hay lấy email/số điện thoại để đoán khách.
-4. Giữ lỗi 401/403 từ phần xác thực; `PaymentRoute` chuyển thành lỗi công khai
-   nhất quán. Bổ sung cơ chế xác thực thực tế vào Swagger sau khi chốt hợp đồng.
-   Hiện Swagger chưa tuyên bố một token/cookie nào được hỗ trợ.
-
-Có thể tích hợp bằng cách sửa dependency này để gọi module xác thực của nhóm,
-hoặc đăng ký dependency đã xác minh trong bước tạo app:
-
-```python
-from app.payments.auth import require_customer
-
-# verified_customer_dependency là hàm thật do module xác thực cung cấp.
-# Hàm phải trả CurrentCustomer và xác minh tài khoản trước khi trả kết quả.
-app.dependency_overrides[require_customer] = verified_customer_dependency
-```
-
-Nếu dùng dependency override, cần cập nhật khai báo xác thực trong OpenAPI riêng;
-override runtime không tự thay đổi khai báo security của dependency ban đầu.
-**Không đăng ký một dependency trả khách cố định trong ứng dụng chạy thật.**
-Khách giả lập chỉ xuất hiện trong pytest và backend fixture riêng cho E2E;
-fixture không được import bởi ứng dụng thật và không kết nối Supabase.
+Pytest và fixture local vẫn có thể override `require_customer` bằng danh tính giả
+để kiểm tra repository cô lập; ứng dụng production không đăng ký override cố định.
 
 ### Liên kết đơn với khách cũng cần phối hợp khi nối xác thực
 
@@ -149,18 +119,18 @@ Cả thành công và lỗi có `Cache-Control: no-store`.
 
 | HTTP | Mã |
 | --- | --- |
-| 401 | `AUTHENTICATION_REQUIRED` — sau khi nối xác thực |
-| 403 | `ACCESS_DENIED` — sau khi nối xác thực |
+| 401 | `AUTHENTICATION_REQUIRED` |
+| 403 | `ACCESS_DENIED` |
 | 404 | `ORDER_NOT_FOUND` |
 | 422 | `VALIDATION_ERROR` |
-| 503 | `AUTH_INTEGRATION_REQUIRED`, `PAYMENT_SCHEMA_NOT_READY`, `PAYMENT_CONFIGURATION_REQUIRED`, `DATA_SERVICE_UNAVAILABLE` |
+| 503 | `PAYMENT_SCHEMA_NOT_READY`, `PAYMENT_CONFIGURATION_REQUIRED`, `DATA_SERVICE_UNAVAILABLE` |
 | 500 | `INTERNAL_ERROR` |
 
 ## Code và kiểm thử
 
 | File | Trách nhiệm |
 | --- | --- |
-| `auth.py` | Điểm nối xác thực còn thiếu, model khách đã được xác minh |
+| `auth.py` | Adapter từ phiên JWT/cookie chung sang model khách đã được xác minh |
 | `schemas.py` | Validation mã đơn/query và các trường công khai |
 | `repository.py` | Truy vấn chỉ đọc, kiểm tra sở hữu, Decimal, ánh xạ trạng thái/phương thức và phân trang |
 | `errors.py` | Lỗi riêng cho module, che nội dung nhạy cảm, no-store |
@@ -176,17 +146,14 @@ Từ terminal tại `Backend`:
 .\.venv\Scripts\python.exe scripts/check_payments_schema.py
 ```
 
-Đã đạt **68 kiểm thử payments**, toàn bộ **214 kiểm thử Python** gồm cả 75 catalog
-và 71 orders; **5 kiểm tra schema/query Supabase chỉ đọc** đã đạt. Test payments
-dùng transport PostgREST giả lập và dependency khách đã xác minh giả lập trong
-pytest. Chúng kiểm tra phần thanh toán độc lập, không chứng minh đăng nhập thật
-đã được tích hợp. Script schema xác minh FK join, cast tiền, filter và count trên
+Test payments dùng transport PostgREST giả lập và dependency khách đã xác minh
+trong pytest. Bộ kiểm thử auth chung có thêm luồng đăng nhập khách qua cookie JWT
+và adapter `require_customer`. Script schema xác minh FK join, cast tiền, filter và count trên
 Supabase bằng mã giả; không đăng nhập khách, không đọc bản ghi giao dịch thật.
 
-Swagger chạy cùng Backend tại `/docs`, nhóm **Customer Payments**. Thử hai
-endpoint lúc này sẽ thấy 503 `AUTH_INTEGRATION_REQUIRED`; đây là hành vi dự kiến.
-Để thử phản hồi thành công độc lập, chạy pytest ở trên. Sau khi nối xác thực,
-cần thêm kiểm thử tích hợp đăng nhập thật với hai khách khác nhau, khách bị khóa,
-token/session hết hạn và đơn thuộc từng khách trên môi trường thử nghiệm.
+Swagger chạy cùng Backend tại `/docs`, nhóm **Customer Payments**. Không có phiên
+trả 401; phiên nhân viên trả 403; phiên khách hợp lệ mới được kiểm tra quyền sở hữu
+đơn. Cần kiểm thử tích hợp với hai khách khác nhau, khách bị khóa, phiên hết hạn và
+đơn thuộc từng khách trên môi trường staging trước khi triển khai production.
 
 Tổng quan cả ba mục tiêu: [Backend/README.md](../../README.md).

@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 
-from ..auth import User, check_origin, current_user, logout, throttle
+from ..auth import User, check_origin, logout, require_admin, throttle
 from ..api_contracts import READ_ERRORS, WRITE_ERRORS, error_response
 from ..supabase import get_supabase
 from .schemas import AccountCreate, AccountPage, AccountRead, AccountUpdate, Identifier, NewAccountCreate, OwnerPage, PasswordChange, PasswordReset, Role, RoleUpdate, Status, StatusUpdate
@@ -12,14 +12,7 @@ router = APIRouter(prefix="/api/admin", tags=["Admin · Tài khoản"])
 ERRORS = {**WRITE_ERRORS, 404: error_response(404, "Tài khoản không tồn tại.")}
 
 
-def admin(user: User = Depends(current_user)) -> User:
-    from fastapi import HTTPException
-    if user.role != "ADMIN":
-        raise HTTPException(403, "Chỉ quản trị viên được quản lý tài khoản.")
-    return user
-
-
-def read_service(response: Response, user: User = Depends(admin), db=Depends(get_supabase)):
+def read_service(response: Response, user: User = Depends(require_admin), db=Depends(get_supabase)):
     response.headers["Cache-Control"] = "no-store"
     return Accounts(db, user)
 

@@ -8,10 +8,10 @@ cách chạy UI và kiểm thử ở [SHOPPING-INTEGRATION.md](../../../ui/userU
 ## Trạng thái và phần cần nhóm phối hợp
 
 Code API, proxy và UI đã có. **Chưa áp dụng migration lên Supabase chung.**
-Xác thực thật của thành viên khác chưa có trong workspace; tất cả API có dữ liệu
-khách dùng chung `app/payments/auth.py::require_customer`, mặc định trả 503
-`AUTH_INTEGRATION_REQUIRED` trước khi truy vấn database. Catalog vẫn công khai.
-Không nhận `ma_kh` do frontend tự khai báo. Không có đăng nhập giả trong `app.main`.
+Tất cả API có dữ liệu khách dùng `app/payments/auth.py::require_customer`, được
+chuyển từ phiên JWT/cookie chung trong `app/auth.py`. Backend kiểm tra lại trạng
+thái tài khoản, role và liên kết khách từ database ở mỗi request. Catalog vẫn
+công khai; không nhận `ma_kh`, bearer hoặc header danh tính do frontend tự khai báo.
 
 Kiểm tra chỉ đọc Supabase đang cấu hình ngày 06/10/2026 xác nhận chưa có
 `customer_create_order_v1`, `customer_checkout_v2` và `customer_read_orders_v2`
@@ -22,8 +22,7 @@ Việc chọn database triển khai và danh tính khách test cần được ch
 chạy luồng ghi thật. Catalog thật đã đạt 17 kiểm tra API chỉ đọc và 27 kiểm tra
 trình duyệt với dữ liệu hiện có; không có thay đổi database trong các kiểm tra.
 
-Để chạy với dữ liệu thật, nhóm cần nối dependency xác thực trả `CurrentCustomer`
-từ tài khoản đã được kiểm chứng, và triển khai hai migration đã review trên staging
+Để chạy checkout với dữ liệu thật, nhóm cần triển khai hai migration đã review trên staging
 rồi database chung. Tài khoản cần liên kết `TAI_KHOAN.ma_kh`; đơn cũ `ma_kh=NULL`
 không được tự gán lại. Hợp đồng token/cookie và security scheme trong Swagger
 sẽ được hoàn thiện cùng module đăng nhập, không tuyên bố một cơ chế chưa tồn tại.
@@ -145,7 +144,7 @@ Lỗi chung `{"error":{"code":"...","message":"...","details":[]}}`.
 | 404 | `ORDER_NOT_FOUND`, `PRODUCT_NOT_AVAILABLE`, `WAREHOUSE_NOT_AVAILABLE` |
 | 409 | `PRICE_CHANGED`, `INSUFFICIENT_STOCK`, `CHECKOUT_CHANGED`, `IDEMPOTENCY_CONFLICT`, `RETRYABLE_CONFLICT`, lỗi voucher |
 | 422 | `VALIDATION_ERROR`, `AMOUNT_OUT_OF_RANGE` |
-| 503 | `AUTH_INTEGRATION_REQUIRED`, `ORDER_CONFIGURATION_REQUIRED`, database/mạng chưa sẵn sàng |
+| 503 | `CHECKOUT_DATABASE_NOT_READY`, `ORDER_CONFIGURATION_REQUIRED`, database/mạng chưa sẵn sàng |
 | 500 | `INTERNAL_ERROR`, phản hồi repository không hợp lệ |
 
 Không trả/log SQL exception, thông tin người nhận, token hoặc dữ liệu giao dịch thô.

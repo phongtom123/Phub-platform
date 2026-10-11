@@ -1,7 +1,8 @@
+from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ..auth import User, require_customer_user
 from ..catalog.schemas import clean_text
-from .errors import PaymentError
 
 
 class CurrentCustomer(BaseModel):
@@ -16,13 +17,6 @@ class CurrentCustomer(BaseModel):
         return clean_text(value) if isinstance(value, str) else value
 
 
-def require_customer() -> CurrentCustomer:
-    """Integration boundary: replace with the team's verified customer dependency.
-
-    It must validate the session/token, account status and KHACH_HANG relation.
-    No fallback to ma_kh, cookies, phone numbers or unverified bearer tokens.
-    """
-    raise PaymentError(
-        503, "AUTH_INTEGRATION_REQUIRED",
-        "Chưa kết nối phần xác thực khách hàng. Không thể sử dụng chức năng mua hàng lúc này.",
-    )
+def require_customer(user: User = Depends(require_customer_user)) -> CurrentCustomer:
+    """Adapt the shared, DB-verified session to customer commerce dependencies."""
+    return CurrentCustomer(customer_id=user.customer_id)

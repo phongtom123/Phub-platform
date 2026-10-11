@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import { Logo } from "@/src/components/admin/ui";
+import { loginSession, type UserRole } from "../../../../shared/auth-client";
 
-export type StaffRole = "ADMIN" | "THU_KHO";
+export type StaffRole = Extract<UserRole, "ADMIN" | "THU_KHO">;
 
 type LoginResult = {
   role: StaffRole;
@@ -33,11 +34,7 @@ export function LoginView({
     setError("");
     setLoading(true);
     try {
-      const response = await fetch("/api/backend/auth/login", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "Thông tin đăng nhập không hợp lệ.");
+      const result = await loginSession(username, password);
       if (result.role === "KHACH_HANG") {
         window.location.assign(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
         return;

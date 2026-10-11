@@ -79,7 +79,7 @@ def test_all_customer_shopping_endpoints_block_before_db_without_auth(commerce_c
     client, _, requests, _, app = commerce_client
     app.dependency_overrides.pop(require_customer)
     response = client.request(method, "/api/customer" + path, json=body, headers={"Authorization": "Bearer forged", "X-Customer-Id": "KH-A"})
-    assert response.status_code == 503 and response.json()["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+    assert response.status_code == 401 and response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
     assert requests == [] and response.headers["Cache-Control"] == "no-store"
 
 

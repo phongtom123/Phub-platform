@@ -6,8 +6,8 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
+from app.auth import User
 from app.payments.auth import require_customer
-from app.payments.errors import PaymentError
 from scripts.supabase_test_support import COOKIE, create_test_app, local_settings
 
 
@@ -131,9 +131,8 @@ def test_local_override_does_not_change_production_auth(local_client):
     web, _, _ = local_client
     enter(web)
     assert web.get("/api/customer/me").status_code == 200
-    with pytest.raises(PaymentError) as exc:
-        require_customer()
-    assert exc.value.code == "AUTH_INTEGRATION_REQUIRED"
+    customer = require_customer(User("TK1", "customer", "KHACH_HANG", "Customer", customer_id="KH-FIRST"))
+    assert customer.customer_id == "KH-FIRST"
     assert "/__supabase_test" not in web.get("/openapi.json").json()["paths"]
 
 
@@ -157,9 +156,8 @@ def test_automatic_mode_does_not_offer_misleading_logout_or_change_production_au
     result = web.post("/__supabase_test/logout", headers={"Origin": "http://127.0.0.1:8001"})
     assert result.status_code == 409 and result.json()["error"]["code"] == "TEST_LOGIN_DISABLED"
     assert web.get("/api/customer/me").status_code == 200
-    with pytest.raises(PaymentError) as exc:
-        require_customer()
-    assert exc.value.code == "AUTH_INTEGRATION_REQUIRED"
+    customer = require_customer(User("TK1", "customer", "KHACH_HANG", "Customer", customer_id="KH-FIRST"))
+    assert customer.customer_id == "KH-FIRST"
 
 
 @pytest.mark.parametrize("local_client", [True], indirect=True)
