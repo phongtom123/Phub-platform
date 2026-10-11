@@ -4,15 +4,16 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowLeftRight, ArrowRight, ArrowUpFromLine, Clock3, Package, Search, TriangleAlert } from "lucide-react";
 import { MetricCard, Panel, StatusBadge } from "@/src/components/warehouse/ui";
-import { modules } from "@/src/data/warehouse-data";
 import type { DataRow } from "@/src/types/warehouse";
 import { getDispatches, getInventory, getReceipts, getTransfers, hasApiToken } from "@/src/lib/warehouse-api";
 
 export default function Dashboard() {
   const [query, setQuery] = useState("");
   const [apiInventory, setApiInventory] = useState<DataRow[] | null>(null);
-  const [metrics, setMetrics] = useState({ sku: "1,842", pending: "5", pendingFoot: "3 phiếu nhập · 2 phiếu chuyển" });
+  const [metrics, setMetrics] = useState({ sku: "—", pending: "—", pendingFoot: "Chưa có dữ liệu" });
   const [activities, setActivities] = useState<{ kind: "receipt" | "transfer" | "dispatch"; title: string; detail: string; code: string; time: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState("");
   useEffect(() => {
     if (!hasApiToken()) return;
     let cancelled = false;
@@ -29,16 +30,16 @@ export default function Dashboard() {
         ...transfers.slice(-3).map(item => ({ kind: "transfer" as const, title: item.status === "Đã nhận" ? "Phiếu chuyển đã nhận" : "Phiếu chuyển đang xử lý", detail: `${item.items} · ${item.from} → ${item.to}`, code: item.id, time: item.created })),
         ...dispatches.slice(-3).map(item => ({ kind: "dispatch" as const, title: item.status === "Đã xuất" ? "Đơn hàng đã xuất kho" : "Đơn hàng cần xuất kho", detail: `${item.items} · ${item.order}`, code: item.id, time: item.created })),
       ].slice(-4).reverse());
-    }).catch(() => undefined);
+    }).catch(error => { if (!cancelled) setApiError(error instanceof Error ? error.message : "Không thể tải dữ liệu dashboard."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
-  const fallbackInventory = modules.inventory!.rows;
-  const inventory = useMemo(() => (apiInventory ?? fallbackInventory).filter((row) => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi")))), [apiInventory, fallbackInventory, query]);
+  const inventory = useMemo(() => (apiInventory ?? []).filter((row) => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi")))), [apiInventory, query]);
   const today = new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
   return <><div className="page-heading dashboard-heading"><div className="date-pill"><Clock3 size={14}/> {today} <span>⌄</span></div></div>
     <section className="metric-grid"><MetricCard label="Tổng SKU trong kho" value={metrics.sku} foot="Theo dữ liệu tồn kho hiện tại" icon="box" href="/products"/><MetricCard label="Phiếu chờ xử lý" value={metrics.pending} foot={metrics.pendingFoot} icon="clock" href="/pending"/></section>
     <div className="dashboard-grid"><Panel title="Tồn kho" subtitle="Số lượng sản phẩm đang lưu tại kho trung tâm" action={<Link className="text-link" href="/inventory">Xem tất cả <ArrowRight size={13}/></Link>}>
-        <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm sản phẩm..." aria-label="Tìm sản phẩm"/></label></div><InventoryTable rows={inventory}/>
+        <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm sản phẩm..." aria-label="Tìm sản phẩm"/></label></div>{loading ? <div className="module-note">Đang tải dữ liệu thật từ backend…</div> : apiError ? <div className="module-note">Không tải được dữ liệu dashboard: {apiError}</div> : <InventoryTable rows={inventory}/>} 
       </Panel>
       <Panel title="Hoạt động gần đây" subtitle="Giao dịch mới nhất tại kho" action={<Link className="text-link" href="/history">Lịch sử <ArrowRight size={13}/></Link>}>
         <div className="activity-list">{activities.length ? activities.map(item => <Activity key={`${item.kind}-${item.code}`} icon={item.kind === "receipt" ? <ArrowDownToLine size={15}/> : item.kind === "transfer" ? <ArrowLeftRight size={15}/> : <ArrowUpFromLine size={15}/>} title={item.title} detail={item.detail} code={item.code} time={item.time}/>) : <div className="module-note"><Package size={15}/> Chưa có hoạt động kho.</div>}</div>

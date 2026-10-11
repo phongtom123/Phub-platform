@@ -1,5 +1,6 @@
 export type InventoryApiItem = { ma_kho: number; sku: string; so_luong_ton: number; cap_nhat_luc?: string | null };
-export type ProductApiItem = { ma_sp: string; sku: string; ten_sp: string; don_vi?: string | null };
+export type ProductApiItem = { ma_sp: string; sku: string; ten_sp: string; ma_loai_sp?: string | null; thuong_hieu?: string | null; don_vi?: string | null };
+export type CategoryApiItem = { ma_loai_sp: string; ten_loai_sp: string };
 export type SupplierApiItem = { ma_ncc: number; ten_ncc: string };
 export type WarehouseApiItem = { ma_kho: number; ten_kho?: string | null };
 export type ReceiptApiItem = { ma_phieu_nhap: number; ma_phieu_code: string; ma_ncc: number; ma_kho: number; ngay_tao: string; trang_thai: string; ghi_chu?: string | null };
@@ -24,6 +25,14 @@ export async function login(username: string, password: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+  });
+}
+
+export async function changeMyPassword(currentPassword: string, newPassword: string) {
+  await request<void>("/api/backend/auth/me/password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   });
 }
 
@@ -71,12 +80,13 @@ function transferStatus(value: string) {
 }
 
 export async function getProducts() {
-  const [products, inventory] = await Promise.all([page<ProductApiItem>("products"), page<InventoryApiItem>("inventory")]);
+  const [products, inventory, categories] = await Promise.all([page<ProductApiItem>("products"), page<InventoryApiItem>("inventory"), page<CategoryApiItem>("categories")]);
   const quantities = new Map<string, number>();
   inventory.data.forEach(item => quantities.set(item.sku, (quantities.get(item.sku) ?? 0) + item.so_luong_ton));
+  const categoryMap = new Map(categories.data.map(category => [category.ma_loai_sp, category.ten_loai_sp]));
   return products.data.map(product => {
     const quantity = quantities.get(product.sku) ?? 0;
-    return { id: product.ma_sp, name: product.ten_sp, code: product.sku, category: "—", brand: "—", quantity, status: quantity > 0 ? "Còn hàng" : "Hết hàng" };
+    return { id: product.ma_sp, name: product.ten_sp, code: product.sku, category: categoryMap.get(product.ma_loai_sp ?? "") ?? product.ma_loai_sp ?? "—", brand: product.thuong_hieu ?? "—", quantity, status: quantity > 0 ? "Còn hàng" : "Hết hàng" };
   });
 }
 

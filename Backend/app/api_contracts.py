@@ -22,6 +22,7 @@ class SessionUser(BaseModel):
     customer_id: str | None = None
     employee_id: str | None = None
     warehouse_id: int | None = None
+    email: str | None = None
 
 
 class ResourceColumn(BaseModel):
