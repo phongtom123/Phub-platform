@@ -1,0 +1,91 @@
+HƯỚNG DẪN — UI LOCAL LẤY API TỪ RENDER
+
+CẤU HÌNH HIỆN TẠI
+
+Admin local:      http://localhost:3000
+Khách hàng local: http://localhost:3001
+Kho local:        http://localhost:3002
+API đang dùng:    https://phub-api.onrender.com
+
+Luồng dữ liệu:
+Trình duyệt -> gateway Next.js local -> API Render -> Supabase cloud.
+
+Không cần chạy backend Python local hoặc điền secret Supabase trên máy
+để dùng những endpoint đã deploy trên Render.
+Không đổi cấu hình Render hoặc ghi dữ liệu Supabase trong lần kiểm tra này.
+Push mã lên nhánh feat/backend-middleware-api không đồng nghĩa API đã được deploy.
+
+1. ENV ĐÃ CẤU HÌNH
+
+Admin — ui/adminUI/.env.local:
+PHUB_API_BASE_URL=https://phub-api.onrender.com
+NEXT_PUBLIC_WAREHOUSE_URL=http://localhost:3002
+NEXT_PUBLIC_CUSTOMER_URL=http://localhost:3001
+
+Khách hàng — ui/userUI/Frontend/.env.local:
+PHUB_API_BASE_URL=https://phub-api.onrender.com
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
+NEXT_PUBLIC_WAREHOUSE_URL=http://localhost:3002
+
+Kho — ui/warehouseUI/.env.local:
+PHUB_API_BASE_URL=https://phub-api.onrender.com
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
+
+Giữ URL chuyển role localhost vì cả ba giao diện đều chạy local.
+Không thêm /api hoặc /docs vào PHUB_API_BASE_URL.
+Không đặt Supabase secret hoặc JWT_SECRET trong UI.
+Các file .env.local được Git bỏ qua.
+
+2. KẾT QUẢ ĐÃ KIỂM TRA
+
+- Catalog local trả HTTP 200, tổng 33 sản phẩm.
+- Response catalog local và API Render giống nhau với cùng truy vấn.
+- Trang /main/product hiển thị 20 sản phẩm ở trang đầu, tổng 33.
+- Không có lỗi JavaScript trong lần kiểm tra trình duyệt.
+- Gateway admin, khách hàng và kho đều gọi được /api/auth/me trên Render.
+  HTTP 401 khi chưa đăng nhập là bình thường, không phải lỗi kết nối.
+- API Render cho phép origin localhost:3000, localhost:3001, localhost:3002.
+- Chưa kiểm thử đăng nhập bằng tài khoản thật hoặc thao tác ghi dữ liệu.
+- API tài khoản admin mới /api/admin/accounts chưa có trên Render;
+  gateway local tới endpoint này trả HTTP 404.
+
+3. LỆNH CHẠY LOCAL
+
+Nếu UI đang chạy, không chạy thêm bản trùng cổng.
+Khi cần khởi động hoặc chạy lại, dùng ba terminal riêng:
+
+Admin:
+cd C:\Users\Thinh\Desktop\BanPC\ui\adminUI
+npm.cmd run dev
+
+Khách hàng:
+cd C:\Users\Thinh\Desktop\BanPC\ui\userUI\Frontend
+npm.cmd run dev -- -p 3001
+
+Kho:
+cd C:\Users\Thinh\Desktop\BanPC\ui\warehouseUI
+npm.cmd run dev
+
+Sau khi sửa env, khởi động lại UI nếu cấu hình chưa được tải lại.
+
+4. NẾU GẶP TIMEOUT HOẶC HTTP 500
+
+Lần thử đầu đã gặp timeout; một request catalog trên Render cũng từng trả 500.
+Các lần kiểm tra lại đã thành công.
+Chờ một lúc rồi tải lại/thử lại. Nếu lỗi lặp lại, cần kiểm tra log API Render.
+Không dùng dữ liệu mẫu để thay thế lỗi backend.
+
+5. NẾU MUỐN THỬ API ADMIN MỚI CHƯA DEPLOY
+
+Dùng backend local ở cổng 8000:
+- Điền secret Supabase MỚI trực tiếp trong Backend/.env.
+- Backend/.env và JWT_SECRET local đã được chuẩn bị; không gửi secret qua chat.
+- Giữ COOKIE_SECURE=false cho HTTP local, không áp cấu hình này lên cloud.
+- Đổi PHUB_API_BASE_URL của UI về http://127.0.0.1:8000.
+- Khởi động lại UI và chạy:
+
+cd C:\Users\Thinh\Desktop\BanPC\Backend
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --reload-include .env
+
+Swagger local: http://127.0.0.1:8000/docs
+Đổi env không tự deploy endpoint mới lên Render.

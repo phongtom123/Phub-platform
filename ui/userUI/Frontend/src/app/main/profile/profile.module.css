@@ -1,0 +1,48 @@
+.page { color: #000; background: #fff; font-family: var(--font-poppins), Arial, sans-serif; min-height: 1130px; padding-bottom: 100px; }
+.layout { display: grid; grid-template-columns: 327px minmax(0, 1fr); gap: 80px; width: min(1398px, calc(100% - 48px)); margin: 10px auto 0; align-items: start; }
+.sidebar { min-width: 0; }
+.navigation { padding: 16px 17px; background: #f5f7ff; }
+.navigation ul { margin: 0; padding: 0; list-style: none; }
+.navigation ul + ul { margin-top: 8px; padding-top: 8px; border-top: 1px solid #cacdd8; }
+.navigation button { position: relative; width: 100%; padding: 9px 3px; border: 0; color: #666; background: transparent; text-align: left; font: inherit; font-size: 14px; line-height: 20px; cursor: pointer; }
+.navigation button[aria-current] { color: #000; font-weight: 600; }
+.navigation button[aria-current]::before { content: ""; position: absolute; width: 3px; top: 5px; bottom: 5px; left: -17px; background: #0156ff; }
+.navigation button:hover { color: #0156ff; }
+.summaryBox { margin-top: 7px; padding: 16px 18px 30px; background: #f5f7ff; text-align: center; }
+.summaryBox h2 { margin: 0 0 22px; font-size: 16px; line-height: 24px; font-weight: 600; }
+.summaryBox p { margin: 0; font-size: 13px; line-height: 1.6; }
+.content { min-width: 0; }
+.section + .section { margin-top: 54px; }
+.sectionHeading { display: flex; align-items: baseline; gap: 20px; padding: 0 0 14px; border-bottom: 1px solid #cacdd8; margin-bottom: 22px; }
+.sectionHeading h2 { margin: 0; font-size: 18px; font-weight: 600; line-height: 26px; }
+.detailsGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: 45px; }
+.detail h3 { margin: 0 0 16px; font-size: 16px; font-weight: 500; line-height: 24px; }
+.detail p { margin: 0; color: #777; font-size: 16px; line-height: 20px; min-height: 40px; overflow-wrap: anywhere; }
+.links { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 32px; }
+.links button, .textAction { border: 0; background: transparent; color: #0156ff; font: inherit; font-size: 14px; line-height: 22px; padding: 4px 0; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.page button:focus-visible, .dialog button:focus-visible { outline: 2px solid #0156ff; outline-offset: 3px; }
+.empty { font-size: 16px; line-height: 1.6; color: #666; }
+.message { padding: 14px 18px; margin: 0 0 24px; font-size: 13px; line-height: 1.6; color: #163c76; background: #f5f7ff; border-left: 3px solid #0156ff; }
+.dialog { position: fixed; inset: 0; width: min(540px, calc(100% - 32px)); max-height: calc(100dvh - 48px); margin: auto; padding: 28px; border: 1px solid #cacdd8; border-radius: 8px; background: #fff; color: #000; box-shadow: 0 16px 60px #0003; font-family: var(--font-poppins), Arial, sans-serif; overflow-y: auto; }
+.dialog::backdrop { background: #0006; }
+.dialogHeading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.dialogHeading h2 { margin: 0; font-size: 20px; line-height: 1.4; font-weight: 600; }
+.closeButton { background: transparent; border: 0; min-width: 36px; min-height: 36px; font-size: 28px; cursor: pointer; }
+.demoHint { margin: 16px 0 24px; color: #666; font-size: 13px; line-height: 1.6; }
+.form { display: grid; gap: 20px; }
+.formActions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+@media (max-width: 1100px) { .layout { grid-template-columns: 260px minmax(0, 1fr); gap: 32px; } .detailsGrid { gap: 24px; } .page { min-height: 1000px; } }
+@media (max-width: 767px) {
+  .page { min-height: auto; padding-bottom: 80px; }
+  .layout { width: calc(100% - 32px); grid-template-columns: minmax(0, 1fr); gap: 32px; margin-top: 0; }
+  .navigation { padding-block: 10px; }
+  .navigation ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+  .navigation button { min-height: 44px; }
+  .summaryBox { padding-bottom: 20px; }
+  .summaryBox h2 { margin-bottom: 12px; }
+  .detailsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .sectionHeading { flex-wrap: wrap; gap: 6px 16px; }
+  .links { margin-top: 24px; gap: 12px; }
+  .dialog { padding: 20px; }
+}
+@media (max-width: 480px) { .detailsGrid { grid-template-columns: minmax(0, 1fr); gap: 32px; } .detail p { min-height: 0; } .links { margin-top: 16px; } }

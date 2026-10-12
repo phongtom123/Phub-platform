@@ -34,7 +34,6 @@ class User:
     customer_id: str | None = None
     employee_id: str | None = None
     warehouse_id: int | None = None
-    email: str | None = None
 
 
 def check_origin(request: Request) -> None:
@@ -57,11 +56,11 @@ def identity(account: dict, db) -> User:
         role = profile["loai_nhan_vien"]
         if role not in {"ADMIN", "THU_KHO"} or (role == "THU_KHO" and profile["ma_kho"] is None):
             raise HTTPException(403, "Chưa được phân quyền hoặc phân kho.")
-        return User(account["ma_tk"], account["ten_tai_khoan"], role, profile["ho_ten"], employee_id=employee, warehouse_id=profile["ma_kho"], email=account.get("email"))
+        return User(account["ma_tk"], account["ten_tai_khoan"], role, profile["ho_ten"], employee_id=employee, warehouse_id=profile["ma_kho"])
     rows = db.table("KHACH_HANG").select("ma_kh,ten_kh").eq("ma_kh", customer).limit(1).execute().data
     if not rows:
         raise HTTPException(403, "Không tìm thấy khách hàng.")
-    return User(account["ma_tk"], account["ten_tai_khoan"], "KHACH_HANG", rows[0]["ten_kh"], customer_id=customer, email=account.get("email"))
+    return User(account["ma_tk"], account["ten_tai_khoan"], "KHACH_HANG", rows[0]["ten_kh"], customer_id=customer)
 
 
 def password_version(value: str) -> str:
@@ -77,7 +76,7 @@ def current_user(request: Request, db=Depends(get_supabase)) -> User:
                             options={"require": ["sub", "exp", "iat", "iss", "aud", "ver"]})
     except jwt.InvalidTokenError:
         raise HTTPException(401, "Phiên đăng nhập đã hết hạn.") from None
-    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,email,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", claims["sub"]).limit(1).execute().data
+    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", claims["sub"]).limit(1).execute().data
     if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
         raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.")
     return identity(rows[0], db)
@@ -87,11 +86,6 @@ class LoginBody(BaseModel):
     username: str = Field(min_length=1, max_length=254, description="Tên tài khoản hoặc email đã tạo trong database.", examples=["example.admin"])
     password: str = Field(min_length=1, max_length=128, description="Mật khẩu của tài khoản thật; không phải khóa Supabase.",
                           json_schema_extra={"writeOnly": True, "format": "password"})
-
-
-class PasswordChangeBody(BaseModel):
-    current_password: str = Field(min_length=1, max_length=128, json_schema_extra={"writeOnly": True, "format": "password"})
-    new_password: str = Field(min_length=10, max_length=128, json_schema_extra={"writeOnly": True, "format": "password"})
 
 
 def throttle(request: Request) -> None:
@@ -118,7 +112,7 @@ def login(body: LoginBody, request: Request, response: Response, db=Depends(get_
     column = "email" if "@" in username else "ten_tai_khoan"
     if column == "email":
         username = username.lower()
-    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,email,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq(column, username).limit(1).execute().data
+    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq(column, username).limit(1).execute().data
     account = rows[0] if rows else None
     try:
         valid = passwords.verify(body.password, account["mat_khau_hash"] if account else dummy_hash)
@@ -140,17 +134,6 @@ def login(body: LoginBody, request: Request, response: Response, db=Depends(get_
 def me(response: Response, user: User = Depends(current_user)):
     response.headers["Cache-Control"] = "no-store"
     return asdict(user)
-
-
-@router.post("/me/password", status_code=204, summary="Đổi mật khẩu tài khoản hiện tại")
-def change_my_password(body: PasswordChangeBody, request: Request, response: Response, user: User = Depends(current_user), db=Depends(get_supabase)):
-    check_origin(request)
-    rows = db.table("TAI_KHOAN").select("mat_khau_hash").eq("ma_tk", user.account_id).limit(1).execute().data
-    if not rows or not passwords.verify(body.current_password, rows[0]["mat_khau_hash"]):
-        raise HTTPException(422, "Mật khẩu hiện tại không đúng.")
-    db.table("TAI_KHOAN").update({"mat_khau_hash": passwords.hash(body.new_password)}).eq("ma_tk", user.account_id).execute()
-    response.delete_cookie(COOKIE_NAME, path="/", secure=os.getenv("COOKIE_SECURE", "false").lower() == "true", samesite="lax")
-    response.headers["Cache-Control"] = "no-store"
 
 
 @router.post("/logout", status_code=204, summary="Đăng xuất và xóa cookie ở trình duyệt",

@@ -1,0 +1,17 @@
+.dialog { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: #000; font-family: var(--font-poppins), Arial, sans-serif; }
+.dialog::backdrop { background: #0009; }
+.panel { width: min(299px, calc(100vw - 56px)); min-height: 100%; max-height: 100dvh; overflow-y: auto; background: #fff; box-shadow: 4px 0 18px #0002; }
+.heading { height: 69px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px 0 25px; border-bottom: 1px solid #cacdd8; }
+.heading > img { display: block; width: 34px; height: 40px; }
+.close { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: transparent; }
+.close img { display: block; }
+.items { list-style: none; margin: 0; padding: 0; }
+.item, .back { display: flex; width: 100%; min-height: 37px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 20px 5px 25px; border: 0; background: #fff; color: #000; text-align: left; font: 600 13px/26px var(--font-poppins), Arial, sans-serif; cursor: pointer; }
+.item:hover, .item:focus-visible { background: #f5f7ff; }
+.item img { flex-shrink: 0; transform: rotate(90deg); }
+.deals { display: block; width: 238px; height: 37px; margin: 16px auto 0; border: 2px solid #0156ff; border-radius: 50px; background: #fff; color: #0156ff; font-size: 13px; font-weight: 600; }
+.back { justify-content: flex-start; gap: 14px; min-height: 42px; background: #f5f7ff; }
+.back img { transform: rotate(-90deg); }
+.menu2 .items { padding-top: 3px; }
+.dialog button:focus-visible { outline: 2px solid #0156ff; outline-offset: -2px; }
+@media (prefers-reduced-motion: no-preference) { .panel { animation: drawer-enter 180ms ease-out; } @keyframes drawer-enter { from { transform: translateX(-100%); } to { transform: translateX(0); } } }

@@ -124,61 +124,15 @@ Catalog công khai hiện có `/api/catalog/products`, `/products/{ma_sp}`, `/ca
 
 ## Phần chưa triển khai
 
-Đây là nền API + CRUD dữ liệu nền. Các API ghi chứng từ kho đi qua các RPC transaction riêng, không dùng CRUD tổng quát.
+Đây là nền API + CRUD dữ liệu nền, **không phải toàn bộ nghiệp vụ backend đã hoàn thành**. Các API ghi đơn hàng/dòng hàng/hóa đơn/thanh toán/phiếu nhập/chuyển kho/tồn/sử dụng voucher cố ý bị chặn.
 
-Bước tiếp theo còn cần PostgreSQL RPC/transaction cho:
+Bước tiếp theo cần PostgreSQL RPC/transaction cho:
 
-1. Sửa/hủy phiếu nhập nháp và xác nhận nhập: tăng tồn một lần, chống xác nhận trùng.
-2. Sửa/hủy phiếu chuyển nháp và xuất/nhận phiếu chuyển: khóa tồn, chặn âm tồn, xác nhận idempotent.
+1. Tạo/sửa phiếu nhập nháp và xác nhận nhập: tăng tồn một lần, chống xác nhận trùng.
+2. Tạo/xuất/nhận phiếu chuyển: khóa tồn, chặn âm tồn, xác nhận idempotent.
 3. Checkout/áp voucher/hủy đơn: giá do server chốt, mỗi đơn tối đa một voucher, kiểm tra giới hạn lượt theo khách bằng transaction.
 4. Xuất kho/hoàn thành/lập hóa đơn: snapshot giá/thuế/discount; tính tiền bằng Decimal/PostgreSQL numeric.
 5. Thanh toán/webhook/hoàn tiền: xác minh provider và chống ghi nhận trùng mã giao dịch.
-
-### Workflow phiếu nhập đang triển khai
-
-Migration `../database/migrations/002_receipt_workflow.sql` thêm RPC
-`confirm_receipt(p_ma_phieu_nhap, p_nguoi_xac_nhan, p_ma_kho_duoc_phep)`. Endpoint
-`POST /api/warehouse/receipts/{receipt_id}/confirm` chỉ cho `ADMIN` và `THU_KHO`;
-thủ kho bị giới hạn theo `ma_kho`, còn admin được xử lý mọi kho. RPC khóa phiếu,
-khóa từng dòng tồn, cộng tồn và chuyển trạng thái sang `DA_NHAP` trong cùng một
-transaction. Gọi lại phiếu đã xác nhận sẽ bị từ chối, không cộng tồn lần hai.
-
-Chỉ áp dụng migration sau khi đã review trên staging. Backend cần được cài
-dependency từ `requirements-dev.txt` trước khi chạy test.
-
-Migration `../database/migrations/003_transfer_workflow.sql` thêm hai RPC
-`dispatch_transfer` và `receive_transfer`. Endpoint giao là
-`POST /api/warehouse/transfers/{transfer_id}/dispatch`; endpoint nhận là
-`POST /api/warehouse/transfers/{transfer_id}/receive`. Giao chỉ được thực hiện
-từ trạng thái `NHAP` và trừ tồn kho xuất; nhận chỉ được thực hiện từ
-`DANG_CHUYEN` và cộng tồn kho nhận. Hai thao tác khóa phiếu/tồn và từ chối gọi
-lặp trong cùng transaction.
-
-Migration `../database/migrations/004_warehouse_draft_workflows.sql` thêm RPC
-`create_receipt_draft` và `create_transfer_draft`. Hai endpoint tương ứng là
-`POST /api/warehouse/receipts/draft` và `POST /api/warehouse/transfers/draft`.
-Body nhận các mã kho/nhà cung cấp và mảng `lines`; header và dòng hàng được
-ghi trong cùng transaction. Thủ kho chỉ được tạo phiếu với kho được phân công.
-
-Có thể dùng [warehouse_demo.sql](../database/seed/warehouse_demo.sql) để tạo dữ
-liệu local và [warehouse_workflow_test.sql](../database/seed/warehouse_workflow_test.sql)
-để kiểm tra toàn bộ luồng tạo nháp → nhập → chuyển → nhận; test tự rollback.
-
-Migration `../database/migrations/005_stock_movement_audit.sql` thêm bảng
-`LICH_SU_TON_KHO` và trigger ghi lịch sử mỗi lần thay đổi tồn kho bởi workflow.
-Migration `006_warehouse_draft_cancellation.sql` và `007_warehouse_draft_updates.sql`
-thêm hủy/sửa phiếu nháp; chỉ phiếu ở trạng thái nháp mới được sửa hoặc hủy.
-
-Migration `008_order_dispatch_workflow.sql` thêm RPC `dispatch_order` và endpoint
-`POST /api/warehouse/dispatches/{order_id}/dispatch`. Endpoint khóa đơn và các
-dòng tồn trong cùng transaction, kiểm tra đủ tồn, trừ tồn, ghi audit và chuyển
-đơn sang `DA_XUAT_KHO`. Thủ kho chỉ xuất được đơn có các dòng hàng thuộc kho
-được phân công; ADMIN có thể xuất mọi kho. Đơn nhiều kho phải được tách workflow
-theo kho trước khi xuất, tránh trừ nhầm tồn của một kho.
-
-Khi áp dụng trên database đang dùng, chạy migration theo thứ tự `001` đến `008`.
-Nếu đã chạy `002` hoặc `003` trước khi có audit trigger, cần chạy lại `002` và
-`003` sau `005` để các RPC cũ cũng ghi đúng người thao tác vào lịch sử tồn.
 
 Không thực hiện nhiều `.insert/.update` liên tiếp qua HTTP rồi coi đó là transaction. Cũng cần kiểm thử live Supabase, E2E browser và cạnh tranh dữ liệu trước khi hoàn thành các Issue tương ứng trên Project.
 

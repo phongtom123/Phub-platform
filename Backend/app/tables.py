@@ -68,7 +68,7 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
     if user.role == "KHACH_HANG":
         query = query.eq("scope.ma_kh" if name in CUSTOMER_CHILDREN else "ma_kh", user.customer_id)
     if user.role == "THU_KHO":
-        if name in {"warehouses", "inventory", "receipts", "stock-movements"}:
+        if name in {"warehouses", "inventory", "receipts"}:
             query = query.eq("ma_kho", user.warehouse_id)
         elif name == "receipt-lines":
             query = query.eq("scope.ma_kho", user.warehouse_id)

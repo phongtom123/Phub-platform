@@ -1,0 +1,91 @@
+.page { display: none; }
+
+@media (max-width: 760px) {
+  .page {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    margin-inline: auto;
+    background: #fff;
+    color: #000;
+    font-family: var(--font-poppins), Arial, sans-serif;
+  }
+  .page *, .page *::before, .page *::after { box-sizing: border-box; }
+  .page a { text-decoration: none; }
+  .page button { font-family: inherit; }
+  .page a:focus-visible, .page button:focus-visible { outline: 2px solid #0156ff; outline-offset: 2px; }
+
+  .gallery { position: relative; display: grid; place-items: center; height: 230px; background: #fff; }
+  .galleryImage { display: block; width: 210px; height: 210px; object-fit: contain; }
+  .galleryActions { position: absolute; top: 28px; left: 30px; width: 31px; height: 103px; }
+  .gallerySparkle { position: absolute; top: 20px; right: 39px; color: #0156ff; font: 27px/1 Arial, sans-serif; }
+  .zipRow { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 33px; margin-bottom: 8px; }
+  .zipRow img { display: block; flex: none; }
+  .zipRow p { margin: 0; color: #555; font-size: 8px; line-height: 11px; }
+  .zipRow a { color: inherit; text-decoration: underline; }
+
+  .info { padding: 0 30px 16px; }
+  .tabs { gap: 20px; flex-wrap: nowrap; }
+  .tabs a { flex: none; padding: 6px 0 7px; border-bottom-width: 2px; color: #666; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .tabs a[aria-current="page"] { color: #000; }
+  .info h1 { margin: 11px 0 7px; font-size: 22px; font-weight: 600; line-height: 1.3; }
+  .reviewPrompt { margin: 0; color: #0156ff; font-size: 10px; line-height: 17px; }
+  .summary { margin: 19px 0 13px; font-size: 12px; line-height: 1.57; }
+  .swatches { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .swatches label > span { width: 27px; height: 27px; }
+  .detailList { margin: 18px 0; padding-left: 18px; font-size: 12px; line-height: 1.9; }
+  .detailList li { padding-left: 1px; }
+  .specsTable { margin-top: 18px; border: 0; }
+  .specsTable th, .specsTable td { padding: 5px 14px; font-size: 12px; line-height: 19px; }
+  .specsTable th { width: 50%; }
+  .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 18px; font-size: 9px; line-height: 16px; }
+  .meta p { margin: 0; }
+  .meta a { color: #0156ff; text-decoration: underline; }
+  .meta span { white-space: nowrap; }
+
+  .purchase { padding: 12px 18px 11px; border-top: 1px solid #f2f2f2; background: #fff; }
+  .purchaseControls { display: grid; grid-template-columns: 55px minmax(0, 1fr) 129px; align-items: center; gap: 8px; }
+  .quantity { width: 55px; height: 38px; border-radius: 5px; }
+  .quantity input { width: 34px; height: 38px; font-size: 11px; }
+  .quantity button { width: 17px; height: 17px; }
+  .quantity button img { width: 12px; height: 12px; }
+  .cartButton { width: 100%; min-width: 0; height: 38px; min-height: 38px; padding: 0 5px; white-space: nowrap; font-size: 11px; }
+  .paypalButton { width: 129px; height: 38px; border: 0; border-radius: 20px; padding: 0; background: transparent; cursor: pointer; }
+  .paypalButton img { display: block; width: 129px; height: 38px; }
+  .salePrice { display: flex; align-items: center; justify-content: center; gap: 3px; min-height: 32px; margin-top: 8px; border-radius: 4px; background: #f5f7ff; font-size: 11px; }
+  .salePrice > div { display: inline-flex; line-height: 1; }
+  .salePrice strong { font-size: 11px; }
+
+  .competition { min-height: 622px; background: #000; color: #fff; }
+  .chipImage { display: block; width: 100%; height: auto; }
+  .competitionCopy { padding: 5px 25px 32px; }
+  .competition h2 { max-width: 320px; margin: 0 0 18px; font-size: 32px; font-weight: 500; line-height: 1.2; }
+  .competition p { margin: 0 0 17px; color: #e9e9eb; font-size: 13px; line-height: 1.58; }
+  .competition p:last-child { margin-bottom: 0; }
+
+  .support { position: relative; height: 311px; overflow: hidden; background: #f5f7ff; }
+  .supportImage { position: absolute; right: 0; bottom: 0; width: 336px; height: 311px; object-fit: contain; }
+  .supportLinks { position: relative; z-index: 1; display: grid; gap: 14px; width: 241px; max-width: calc(100% - 64px); padding-top: 35px; margin-left: 33px; }
+  .supportLink { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 40px; padding: 0 17px; border: 1px solid #cacdd8; border-radius: 6px; background: #fff; color: #333; font-size: 13px; line-height: 1.2; }
+  .supportLink span:last-child { color: #0156ff; font-size: 19px; line-height: 1; }
+
+  .features { min-height: 982px; padding: 50px 30px 50px; background: radial-gradient(circle at 50% 42%, #171719, #060607 56%, #000 100%); color: #fff; text-align: center; }
+  .features h2 { margin: 0; font-size: 36px; font-weight: 500; line-height: 1.3; }
+  .featuresIntro { max-width: 310px; margin: 18px auto 0; color: #ddd; font-size: 12px; line-height: 1.58; }
+  .featuresList { display: grid; gap: 31px; margin-top: 42px; }
+  .feature img { display: block; width: 80px; height: 80px; margin: 0 auto 15px; }
+  .feature p { max-width: 274px; margin: 0 auto; color: #d6d6d8; font-size: 12px; line-height: 1.65; }
+  .feature strong { color: #fff; font-weight: 700; }
+  .page > section:last-child { background: #f5f7ff; }
+}
+
+@media (max-width: 350px) {
+  .info { padding-inline: 18px; }
+  .tabs { gap: 13px; }
+  .tabs a { font-size: 11px; }
+  .purchase { padding-inline: 10px; }
+  .purchaseControls { grid-template-columns: 50px minmax(0, 1fr) 105px; gap: 5px; }
+  .quantity { width: 50px; }
+  .paypalButton, .paypalButton img { width: 105px; height: 31px; }
+  .supportLinks { margin-left: 20px; }
+}

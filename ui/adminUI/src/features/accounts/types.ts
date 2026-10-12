@@ -1,0 +1,22 @@
+export type Role = "ADMIN" | "THU_KHO" | "KHACH_HANG";
+export type AccountStatus = 0 | 1 | 2;
+export type Account = {
+  ma_tk: string;
+  ten_tai_khoan: string;
+  email: string | null;
+  ma_nhan_vien: string | null;
+  ma_kh: string | null;
+  trang_thai: AccountStatus;
+  role: Role;
+  ho_ten: string;
+  ma_kho: number | null;
+  owner_active: boolean;
+  is_self: boolean;
+};
+export type AccountPage = { data: Account[]; total: number; page: number; page_size: number };
+export type Owner = { id: string; name: string; role: Role; ma_kho: number | null; has_account: boolean };
+export type OwnerPage = { data: Owner[]; total: number; page: number; page_size: number };
+export type AccountView = { mode: "list" | "create" | "detail" | "edit" | "self"; id?: string };
+export const roleLabels: Record<Role, string> = { ADMIN: "Quản trị viên", THU_KHO: "Nhân viên kho", KHACH_HANG: "Khách hàng" };
+export const statusLabels: Record<AccountStatus, string> = { 0: "Đã ẩn", 1: "Hoạt động", 2: "Tạm khóa" };
+export const accountHref = (id: string, edit = false) => `/accounts/${encodeURIComponent(id)}${edit ? "/edit" : ""}`;

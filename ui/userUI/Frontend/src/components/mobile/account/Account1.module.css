@@ -1,0 +1,16 @@
+.menu {
+  display: flex;
+  flex-direction: column;
+  padding: 17px 22px 18px;
+  background: #fff;
+  font: 500 13px/30px var(--font-poppins), Arial, sans-serif;
+}
+.menu a, .menu span {
+  display: block;
+  min-height: 30px;
+  color: #000;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.menu a:hover { color: #0156ff; }
+.menu a:focus-visible { outline: 2px solid #0156ff; outline-offset: 2px; }

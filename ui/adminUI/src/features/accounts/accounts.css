@@ -1,0 +1,15 @@
+.accounts-page h2 { margin-top: 20px; }
+.accounts-page h3 { margin: 0; font-size: 20px; }
+.accounts-page .account-wide { grid-column: 1 / -1; }
+.accounts-page .account-section { margin-top: 24px; }
+.accounts-page .account-help { color: #52614f; line-height: 1.6; font-size: 16px; }
+.accounts-page .account-inactive { display: block; margin-top: 5px; font-size: 14px; color: #61705e; }
+.accounts-page .account-status { display: inline-flex; border-radius: 20px; padding: 5px 12px; font-size: 15px; }
+.accounts-page .status-1 { background: #edf9e9; color: #126d04; }
+.accounts-page .status-2 { background: #fff2dd; color: #825100; }
+.accounts-page .status-0 { background: #ededed; color: #444; }
+.accounts-page input, .accounts-page select { min-width: 0; max-width: 100%; }
+@media (max-width: 600px) {
+  .accounts-page .live-form { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .accounts-page .live-tools > input { flex-basis: 100%; }
+}

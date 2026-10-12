@@ -48,9 +48,9 @@ Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển 
 ### Phạm vi hiện tại
 
 Đã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.
-Phiếu kho có API tạo/sửa/hủy nháp và RPC transaction cho nhập/chuyển/nhận; xuất
-kho đơn hàng có transaction riêng và chuyển đơn sang `DA_XUAT_KHO`. Checkout,
-chốt hóa đơn, webhook/hoàn tiền và áp voucher vẫn đang tách riêng.
+**Chưa xác nhận kết nối live Supabase.** Không có DELETE.
+Các bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,
+nhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.
 Tài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.
 Đăng ký tự phục vụ, quên mật khẩu qua email và refresh token chưa có.
 Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.
@@ -65,10 +65,10 @@ TAGS = [
     {"name": "Admin · Khách hàng", "description": "ADMIN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình."},
     {"name": "Admin · Sản phẩm", "description": "Loại sản phẩm và sản phẩm PC/linh kiện. SKU không đổi sau khi tạo."},
     {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Áp voucher cho đơn chưa có API ghi."},
-    {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực và lịch sử biến động; không mở CRUD số lượng tồn."},
+    {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
     {"name": "Kho · Nhà cung cấp", "description": "ADMIN và THU_KHO tạo/sửa nhà cung cấp."},
-    {"name": "Kho · Phiếu nhập", "description": "Tạo phiếu nháp và xác nhận nhập qua transaction; dữ liệu đọc được giới hạn theo kho."},
-    {"name": "Kho · Chuyển kho", "description": "Tạo nháp, giao và nhận chuyển kho qua transaction; thấy phiếu liên quan kho được gán."},
+    {"name": "Kho · Phiếu nhập", "description": "Phiếu và dòng hàng chỉ đọc. Xác nhận nhập cần transaction riêng."},
+    {"name": "Kho · Chuyển kho", "description": "Phiếu và dòng hàng chỉ đọc; thấy phiếu liên quan kho xuất hoặc kho nhận được gán."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
     {"name": "Bán hàng · Tài chính", "description": "Hóa đơn, thanh toán chỉ đọc. Không ghi tiền qua CRUD tổng quát."},
     {"name": "Customer · Catalog", "description": "API công khai, không cần đăng nhập. Chỉ trả sản phẩm/loại đang hoạt động."},
@@ -77,7 +77,7 @@ RESOURCE_TAGS = {
     "warehouses": "Admin · Tổ chức", "employees": "Admin · Tổ chức", "accounts": "Admin · Tổ chức",
     "customers": "Admin · Khách hàng", "categories": "Admin · Sản phẩm", "products": "Admin · Sản phẩm",
     "promotions": "Admin · Khuyến mãi", "vouchers": "Admin · Khuyến mãi", "voucher-uses": "Admin · Khuyến mãi",
-    "inventory": "Kho · Tồn kho", "stock-movements": "Kho · Tồn kho", "suppliers": "Kho · Nhà cung cấp",
+    "inventory": "Kho · Tồn kho", "suppliers": "Kho · Nhà cung cấp",
     "receipts": "Kho · Phiếu nhập", "receipt-lines": "Kho · Phiếu nhập",
     "transfers": "Kho · Chuyển kho", "transfer-lines": "Kho · Chuyển kho",
     "orders": "Bán hàng · Đơn hàng", "order-lines": "Bán hàng · Đơn hàng",

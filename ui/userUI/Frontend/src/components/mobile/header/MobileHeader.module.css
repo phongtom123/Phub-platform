@@ -1,0 +1,35 @@
+.header { display: none; }
+@media (max-width: 760px) {
+  .header { display: flex; flex-direction: column; background: #0156ff; color: #fff; height: 110px; padding: 0 16px 10px 19px; gap: 10px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 50px; flex-shrink: 0; }
+  .toolbar > button { color: #fff; flex-shrink: 0; padding: 0; }
+  .toolbar > button:first-child { width: 26px; height: 40px; }
+  .logo { display: grid; place-items: center; width: 43px; height: 47px; }
+  .toolbar .deals { width: 121px; height: 35px; min-height: 35px; padding: 0 16px; border: 2px solid #fff; border-radius: 50px; font-size: 14px; font-weight: 600; background: transparent; }
+  .toolbar .cart { width: 34px; height: 40px; position: relative; }
+  .cart > img { transform: scaleX(-1); }
+  .badge { position: absolute; top: 2px; right: 0; width: 17.419px; height: 17.419px; display: grid; place-items: center; border-radius: 50%; color: #0156ff; background: #fff; font-size: 9px; font-weight: 700; }
+  .toolbar .account { width: 34px; height: 34px; position: relative; }
+  .accountRing { position: absolute; inset: 0; }
+  .badge img { position: absolute; inset: 0; }
+  .badge span { position: relative; }
+  .header .search { width: 100%; height: 40px; min-height: 40px; border: 0; border-radius: 25px; background: #fff; flex-direction: row-reverse; gap: 8px; padding: 0 13px; }
+  .header .search input { font-size: 12px; color: #000; padding: 0; }
+  .search input::placeholder { color: #cacdd8; opacity: 1; }
+  .header .search button { width: 18px; min-width: 18px; height: 40px; margin: 0; padding: 0; }
+  .search button img { opacity: 1; }
+}
+@media (max-width: 350px) {
+  .header { padding-inline: 12px; }
+  .toolbar { gap: 5px; }
+  .toolbar .deals { width: 100px; }
+  .logo { width: 30px; }
+}
+@media (max-width: 760px) {
+  .compact { height: 72px; padding: 0 12px; gap: 0; }
+  .compact .toolbar { width: 100%; height: 72px; gap: 10px; }
+  .compact .search { flex: 1 1 auto; width: auto; min-width: 0; margin: 0; }
+  .compact .search input { min-width: 0; }
+}
+@media (max-width: 350px) { .compact { padding-inline: 9px; } .compact .toolbar { gap: 6px; } }
+@media (prefers-reduced-motion: reduce) { .header * { scroll-behavior: auto; } }

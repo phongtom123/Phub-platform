@@ -1,6 +1,10 @@
-node_modules/
-.next/
-out/
-next-env.d.ts
-tsconfig.tsbuildinfo
-npm-debug.log*
+node_modules
+.next
+out
+.venv
+__pycache__
+*.pyc
+*.log
+*.tsbuildinfo
+.env*
+!.env.example
