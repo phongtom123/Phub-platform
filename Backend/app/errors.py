@@ -23,7 +23,15 @@ def register_errors(app: FastAPI) -> None:
 
     @app.exception_handler(RequestError)
     async def connection_error(request: Request, exc: RequestError):
-        return JSONResponse({"detail": "Không kết nối được Supabase."}, status_code=503)
+        route = request.scope.get("route")
+        logger.warning(
+            "Database connection failed method=%s route=%s error_type=%s",
+            request.method, getattr(route, "path", "unknown"), type(exc).__name__,
+        )
+        return JSONResponse(
+            {"detail": "Không kết nối được Supabase."}, status_code=503,
+            headers={"Retry-After": "1", "Cache-Control": "no-store"},
+        )
 
     @app.exception_handler(RuntimeError)
     async def configuration_error(request: Request, exc: RuntimeError):

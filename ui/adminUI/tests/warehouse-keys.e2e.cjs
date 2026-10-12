@@ -28,7 +28,7 @@ async function main() {
       if (!url.pathname.startsWith("/api/")) return route.continue();
       assert.equal(request.method(), "GET", "This browser test must not write data");
       const respond = data => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
-      if (url.pathname === "/api/backend/auth/me") return respond({ username: "admin.test", role: "ADMIN", name: "Admin Test" });
+      if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", username: "admin.test", role: "ADMIN", name: "Admin Test" });
       if (url.pathname === "/api/backend/data/resources") return respond([metadata]);
       if (url.pathname === "/api/backend/data/warehouses") {
         const key = url.searchParams.get("key");

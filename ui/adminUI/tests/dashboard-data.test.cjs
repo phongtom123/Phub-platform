@@ -65,6 +65,13 @@ test("empty API data remains genuinely empty", async () => {
   const data = load(async () => ({ ok: true, json: async () => ({ data: [], total: 0, page: 1, page_size: 100 }) }));
   assert.deepEqual(plain(await data.readAllRows("orders", new AbortController().signal)), []);
 });
+test("counts only fetch one row instead of downloading 100 unused records", async () => {
+  const data = load(async url => {
+    assert.equal(new URL(url, "http://test").searchParams.get("page_size"), "1");
+    return { ok: true, json: async () => ({ data: [{ id: 1 }], total: 123, page: 1, page_size: 1 }) };
+  });
+  assert.equal(await data.readCount("products", new AbortController().signal), 123);
+});
 test("API error, incomplete/changed/oversized datasets fail instead of producing fake charts", async () => {
   for (const variant of ["error", "malformed", "short", "changed", "too-large"]) {
     const data = load(async url => {

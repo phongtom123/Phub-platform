@@ -10,11 +10,11 @@ const statuses: Record<string, string> = {
   DA_XUAT_KHO: "Đã xuất kho", HOAN_THANH: "Hoàn thành", HUY: "Đã hủy",
 };
 
-async function readPage<T>(resource: string, page: number, signal: AbortSignal): Promise<DataPage<T>> {
-  const response = await fetch(`/api/backend/data/${resource}?page=${page}&page_size=100`, { signal, cache: "no-store" });
+async function readPage<T>(resource: string, page: number, signal: AbortSignal, pageSize = 100): Promise<DataPage<T>> {
+  const response = await fetch(`/api/backend/data/${resource}?page=${page}&page_size=${pageSize}`, { signal, cache: "no-store" });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không tải được dữ liệu thống kê.");
-  if (!body || !Array.isArray(body.data) || !Number.isSafeInteger(body.total) || body.total < 0 || body.page !== page || body.page_size !== 100) {
+  if (!body || !Array.isArray(body.data) || !Number.isSafeInteger(body.total) || body.total < 0 || body.page !== page || body.page_size !== pageSize) {
     throw new Error("API trả dữ liệu thống kê không hợp lệ.");
   }
   return body;
@@ -35,7 +35,7 @@ export async function readAllRows<T>(resource: string, signal: AbortSignal): Pro
 }
 
 export async function readCount(resource: string, signal: AbortSignal): Promise<number> {
-  return (await readPage(resource, 1, signal)).total;
+  return (await readPage(resource, 1, signal, 1)).total;
 }
 
 /** Treat timestamps without an offset as Vietnam local time, not browser local time. */
