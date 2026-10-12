@@ -1,16 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Panel } from "@/src/components/warehouse/ui";
+import { getSession, type SessionUser } from "../../../../shared/auth-client";
 
-type Session = { name: string; username: string; employee_id: string | null; role: string; warehouse_id: number | null };
 export default function AccountSettings({ section }: { section: "account" | "settings" }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<SessionUser | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     if (section !== "account") return;
     const controller = new AbortController();
-    fetch("/api/backend/auth/me", { cache: "no-store", signal: controller.signal })
-      .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Không tải được tài khoản."); return body; })
+    getSession(controller.signal)
       .then(body => { if (!controller.signal.aborted) setSession(body); })
       .catch(error => { if (!controller.signal.aborted) setError(error.message); });
     return () => controller.abort();

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/src/components/warehouse/sidebar";
 import Header from "@/src/components/warehouse/header";
 import type { WarehouseUser } from "@/src/types/warehouse-auth";
+import { AuthRequestError, getSession, logoutSession } from "../../../../shared/auth-client";
 
 const adminLoginUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
 
@@ -13,21 +14,25 @@ export default function WarehouseFrame({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/backend/auth/me", { cache: "no-store", signal: controller.signal }).then(async response => {
-      if (response.status === 401) { window.location.replace(adminLoginUrl); return; }
-      const account = await response.json();
-      if (!response.ok) throw new Error(typeof account.detail === "string" ? account.detail : "Không kiểm tra được phiên đăng nhập.");
-      if (account.role !== "THU_KHO") { window.location.replace(adminLoginUrl); return; }
+    getSession(controller.signal).then(account => {
+      if (account.role !== "THU_KHO" || !account.employee_id || account.warehouse_id === null) {
+        window.location.replace(adminLoginUrl);
+        return;
+      }
       setUser({ username: account.username, name: account.name, employeeCode: account.employee_id,
         initials: String(account.name).split(" ").slice(-2).map((part: string) => part[0]).join(""), warehouseId: account.warehouse_id });
-    }).catch(err => { if (!controller.signal.aborted) setError(err.message); });
+    }).catch(err => {
+      if (controller.signal.aborted) return;
+      if (err instanceof AuthRequestError && err.status === 401) { window.location.replace(adminLoginUrl); return; }
+      setError(err instanceof Error ? err.message : "Không kiểm tra được phiên đăng nhập.");
+    });
     return () => controller.abort();
   }, []);
 
   if (!user) return <main className="auth-loading">{error || "Đang kiểm tra quyền truy cập kho…"}{error && <p><a href={adminLoginUrl}>Quay lại đăng nhập</a></p>}</main>;
   const logout = async () => {
-    const response = await fetch("/api/backend/auth/logout", { method: "POST" });
-    if (!response.ok) { window.alert("Không đăng xuất được. Thử lại sau."); return; }
+    try { await logoutSession(); }
+    catch { window.alert("Không đăng xuất được. Thử lại sau."); return; }
     window.location.assign(adminLoginUrl);
   };
   return <div className="app-shell"><Sidebar user={user} onLogout={logout} /><div className="main-shell"><Header user={user} /><main className="main-content">{children}<footer className="app-footer">PHUB Warehouse · Dữ liệu theo kho được phân công</footer></main></div></div>;

@@ -5,3 +5,4 @@ export const dynamic = "force-dynamic";
 export const GET = proxyBackend;
 export const POST = proxyBackend;
 export const PATCH = proxyBackend;
+export const PUT = proxyBackend;

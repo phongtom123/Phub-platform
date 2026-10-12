@@ -119,7 +119,9 @@ def test_invoice_and_order_require_verified_auth_before_db(reads_client, path):
     web, _, requests, app = reads_client
     app.dependency_overrides.pop(require_customer)
     result = web.get("/api/customer/" + path)
-    assert result.status_code == 503 and requests == []
+    assert result.status_code == 401
+    assert result.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
+    assert requests == []
 
 
 def test_invoice_query_validation_and_swagger(reads_client):

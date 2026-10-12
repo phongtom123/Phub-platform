@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { loginSession } from "../../../../../../shared/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,13 +15,14 @@ export default function LoginPage() {
     const form = new FormData(event.currentTarget);
     setLoading(true); setError("");
     try {
-      const response = await fetch("/api/backend/auth/login", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: String(form.get("account") ?? "").trim(), password: String(form.get("password") ?? "") }) });
-      const account = await response.json();
-      if (!response.ok) throw new Error(typeof account.detail === "string" ? account.detail : "Thông tin đăng nhập không hợp lệ.");
+      const account = await loginSession(
+        String(form.get("account") ?? ""),
+        String(form.get("password") ?? ""),
+      );
       if (account.role === "ADMIN") { window.location.assign(process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000"); return; }
       if (account.role === "THU_KHO") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
-      router.push("/main/landing"); router.refresh();
+      router.push("/main/landing");
+      router.refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Không kết nối được backend."); }
     finally { setLoading(false); }
   };
@@ -75,15 +77,9 @@ export default function LoginPage() {
           />
         </label>
 
-        <div className="mt-5 flex items-center justify-between gap-4 text-sm">
-          <label className="flex items-center gap-2 text-zinc-600">
-            <input type="checkbox" defaultChecked className="size-4 accent-green-700" />
-            Ghi nhớ đăng nhập
-          </label>
-          <button type="button" className="font-medium text-green-700 hover:underline">
-            Quên mật khẩu?
-          </button>
-        </div>
+        <p className="mt-5 text-xs leading-5 text-zinc-500">
+          Phiên đăng nhập được bảo vệ bằng cookie HttpOnly và tự hết hạn sau 8 giờ.
+        </p>
 
         {error && <p role="alert" className="mt-5 text-red-700">{error}</p>}
         <button

@@ -25,12 +25,12 @@ def get_repository():
 
 
 ERRORS = {
-    401: documented_error("AUTHENTICATION_REQUIRED", "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."),
+    401: documented_error("AUTHENTICATION_REQUIRED", "Cần đăng nhập bằng phiên PHUB hợp lệ."),
     403: documented_error("ACCESS_DENIED", "Tài khoản không được phép truy cập."),
     404: documented_error("ORDER_NOT_FOUND", "Đơn không tồn tại hoặc không thuộc khách hàng; cùng một phản hồi."),
     422: documented_error("VALIDATION_ERROR", "Mã đơn hoặc tham số truy vấn không hợp lệ."),
     500: documented_error("INTERNAL_ERROR", "Không thể tra cứu thanh toán."),
-    503: documented_error("AUTH_INTEGRATION_REQUIRED", "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."),
+    503: documented_error("PAYMENT_SCHEMA_NOT_READY", "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."),
 }
 
 
@@ -44,9 +44,8 @@ def payment_overview(
 ):
     """Chỉ đọc, không tạo hay cập nhật giao dịch/hóa đơn. Đơn thuộc khách đã xác thực.
 
-    Hiện dependency xác thực chưa được tích hợp: mọi yêu cầu trả 503
-    AUTH_INTEGRATION_REQUIRED, kể cả gửi Authorization hoặc ma_kh tự khai báo.
-    Khi nhóm nối xác thực, trả phương thức, số tiền và trạng thái giao dịch mới nhất
+    Phiên dùng chung xác minh JWT/cookie, trạng thái tài khoản và quan hệ khách hàng;
+    không chấp nhận Authorization giả hoặc ma_kh tự khai báo. Trả phương thức, số tiền và trạng thái giao dịch mới nhất
     (thu hoặc hoàn tiền). Không suy diễn đã tất toán toàn đơn từ một giao dịch.
     Chưa có giao dịch trả latest_transaction=null, không giả định đã thanh toán.
     Tiền dùng dữ liệu THANH_TOAN, không tự tính hoặc cộng thuế 10% lần nữa.
@@ -66,7 +65,7 @@ def transaction_history(
     Không trả khóa thanh toán, mã giao dịch nhà cung cấp hay payload nhạy cảm.
     CHO_XU_LY -> pending với thông báo chưa xác nhận thành công.
     THANH_CONG -> succeeded; THAT_BAI -> failed; giá trị mới -> unknown.
-    Chưa tích hợp xác thực sẽ trả 503, không có chế độ tra cứu công khai theo mã đơn.
+    Không có chế độ tra cứu công khai theo mã đơn.
     """
     return repository.history(order_id, customer, query)
 

@@ -4301,6 +4301,70 @@
         "title": "Recipient",
         "type": "object"
       },
+      "RegisterBody": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "examples": [
+              "customer@example.com"
+            ],
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "examples": [
+              "Nguyen Van A"
+            ],
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 128,
+            "minLength": 10,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "0901234567"
+            ],
+            "title": "Phone"
+          },
+          "username": {
+            "examples": [
+              "nguyenvana"
+            ],
+            "maxLength": 80,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "username",
+          "email",
+          "password"
+        ],
+        "title": "RegisterBody",
+        "type": "object"
+      },
       "ResourceColumn": {
         "properties": {
           "choices": {
@@ -6046,7 +6110,7 @@
     }
   },
   "info": {
-    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, đăng nhập bằng `POST /api/auth/login` → Try it out → Execute.\n3. Trình duyệt lưu cookie HttpOnly `phub_session`; thử `GET /api/auth/me`, sau đó các API theo role.\n4. Dùng cùng hostname cho docs và UI; không trộn localhost với 127.0.0.1.\n\n**Không nhập Supabase key hoặc dán token vào nút Authorize.** Swagger không thể tự đặt cookie HttpOnly\nqua Authorize. Cookie có sẵn trên cùng host được trình duyệt gửi tự động; nếu công cụ không gửi cookie,\ndùng Postman/cookie jar hoặc đăng nhập qua UI trên cùng host trước.\nPOST/PATCH/PUT kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,\nnhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký tự phục vụ, quên mật khẩu qua email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
+    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, đăng nhập bằng `POST /api/auth/login` → Try it out → Execute.\n3. Trình duyệt lưu cookie HttpOnly `phub_session`; thử `GET /api/auth/me`, sau đó các API theo role.\n4. Dùng cùng hostname cho docs và UI; không trộn localhost với 127.0.0.1.\n\n**Không nhập Supabase key hoặc dán token vào nút Authorize.** Swagger không thể tự đặt cookie HttpOnly\nqua Authorize. Cookie có sẵn trên cùng host được trình duyệt gửi tự động; nếu công cụ không gửi cookie,\ndùng Postman/cookie jar hoặc đăng nhập qua UI trên cùng host trước.\nPOST/PATCH/PUT kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,\nnhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
     "title": "Phub Platform API",
     "version": "0.3.0"
   },
@@ -7958,6 +8022,164 @@
         "x-implementation-status": "implemented-live-unverified"
       }
     },
+    "/api/auth/register": {
+      "post": {
+        "description": "Tạo KHACH_HANG và TAI_KHOAN trong một transaction, chỉ cho role KHACH_HANG. Mật khẩu hash Argon2 ở backend; thành công tạo cookie HttpOnly 8 giờ và không trả token/hash.",
+        "operationId": "register_api_auth_register_post",
+        "parameters": [
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "email": "customer@example.com",
+                "name": "Nguyễn Văn A",
+                "password": "Replace_with_10+_characters",
+                "phone": "0901234567",
+                "username": "nguyenvana"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "account_id": "KH000001",
+                  "customer_id": "KH_generated",
+                  "employee_id": null,
+                  "name": "Nguyễn Văn A",
+                  "role": "KHACH_HANG",
+                  "username": "nguyenvana",
+                  "warehouse_id": null
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SessionUser"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Cookie HttpOnly tự lưu ở trình duyệt.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Quá 5 lần đăng ký/IP/phút; thử lại sau một phút."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Quá 5 lần đăng ký/IP/phút; thử lại sau một phút."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Đăng ký tài khoản khách hàng",
+        "tags": [
+          "Shared · Xác thực"
+        ],
+        "x-implementation-status": "implemented-live-unverified"
+      }
+    },
     "/api/catalog/brands": {
       "get": {
         "description": "Trả các chuỗi thuong_hieu duy nhất. Dùng name làm giá trị query brand;\nschema hiện tại không có bảng thương hiệu hoặc brand_id.",
@@ -8590,7 +8812,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -8598,7 +8820,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -8690,9 +8912,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
                   }
                 },
                 "schema": {
@@ -8700,7 +8922,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
         "summary": "Báo giá giỏ hàng và kiểm tra voucher",
@@ -8711,7 +8933,7 @@
     },
     "/api/customer/me": {
       "get": {
-        "description": "Chỉ đọc KHACH_HANG của danh tính đã xác minh; không tạo/sửa tài khoản.\nĐiểm nối require_customer mặc định trả 503 cho đến khi nhóm nối đăng nhập thật.",
+        "description": "Chỉ đọc KHACH_HANG của danh tính đã xác minh; không tạo/sửa tài khoản.\nDanh tính khách lấy từ dependency JWT/cookie dùng chung và được đối chiếu lại với database.",
         "operationId": "current_profile_api_customer_me_get",
         "responses": {
           "200": {
@@ -8731,7 +8953,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -8739,7 +8961,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -8831,9 +9053,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
                   }
                 },
                 "schema": {
@@ -8841,7 +9063,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
         "summary": "Hồ sơ khách đang đăng nhập",
@@ -8880,7 +9102,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -8888,7 +9110,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -8980,9 +9202,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
                   }
                 },
                 "schema": {
@@ -8990,7 +9212,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
         "summary": "Lưu thông tin nhận hàng của khách hiện tại",
@@ -9046,7 +9268,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -9054,7 +9276,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -9146,9 +9368,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
                   }
                 },
                 "schema": {
@@ -9156,7 +9378,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
         "summary": "Danh sách đơn thuộc khách",
@@ -9218,7 +9440,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -9226,7 +9448,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -9318,9 +9540,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
                   }
                 },
                 "schema": {
@@ -9328,7 +9550,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
         "summary": "Đặt đơn thuộc khách với voucher và idempotency",
@@ -9372,7 +9594,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -9380,7 +9602,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -9472,9 +9694,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
                   }
                 },
                 "schema": {
@@ -9482,7 +9704,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
         "summary": "Chi tiết đơn thuộc khách",
@@ -9526,7 +9748,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập bằng module xác thực của nhóm."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -9534,7 +9756,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập bằng module xác thực của nhóm."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -9626,9 +9848,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
                   }
                 },
                 "schema": {
@@ -9636,7 +9858,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
         "summary": "Hóa đơn công khai của đơn thuộc khách",
@@ -16244,7 +16466,7 @@
     },
     "/api/orders": {
       "post": {
-        "description": "Khách đã xác thực, chưa thanh toán. Server chốt giá trước thuế, tên và đơn vị.\nBody cũ không có voucher được giữ; ma_kh lấy từ xác thực, dùng RPC checkout v2.\nChưa nối xác thực trả 503 AUTH_INTEGRATION_REQUIRED. Checkout có voucher dùng\nPOST /api/customer/orders. RPC v1 cũ không được dùng để tạo đơn qua HTTP nữa.\nThuế suất chốt 10%; tiền thuế đơn = 0.00, chỉ áp dụng khi nhóm lập hóa đơn.\nTồn khả dụng = tồn thực trừ lượng của các đơn MOI/XAC_NHAN/DANG_CHUAN_BI.\nĐơn tạo ở trạng thái MOI; không trừ TON_KHO trong endpoint này.\nRPC/migration và cấu hình thuế/kho phải được nhóm xác nhận trước khi sử dụng.\nĐổi thứ tự dòng hoặc cách ghi giá 10/10.00 không làm đổi nội dung idempotent.\nKhông nhận mã khách hàng/nhân viên, giá bán thực tế, thuế hay tổng tiền từ client.",
+        "description": "Khách đã xác thực, chưa thanh toán. Server chốt giá trước thuế, tên và đơn vị.\nBody cũ không có voucher được giữ; ma_kh lấy từ xác thực, dùng RPC checkout v2.\nXác thực dùng phiên JWT/cookie chung. Checkout có voucher dùng\nPOST /api/customer/orders. RPC v1 cũ không được dùng để tạo đơn qua HTTP nữa.\nThuế suất chốt 10%; tiền thuế đơn = 0.00, chỉ áp dụng khi nhóm lập hóa đơn.\nTồn khả dụng = tồn thực trừ lượng của các đơn MOI/XAC_NHAN/DANG_CHUAN_BI.\nĐơn tạo ở trạng thái MOI; không trừ TON_KHO trong endpoint này.\nRPC/migration và cấu hình thuế/kho phải được nhóm xác nhận trước khi sử dụng.\nĐổi thứ tự dòng hoặc cách ghi giá 10/10.00 không làm đổi nội dung idempotent.\nKhông nhận mã khách hàng/nhân viên, giá bán thực tế, thuế hay tổng tiền từ client.",
         "operationId": "create_order_api_orders_post",
         "parameters": [
           {
@@ -16477,7 +16699,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -16485,7 +16707,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -16577,9 +16799,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "PAYMENT_SCHEMA_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+                    "message": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
                   }
                 },
                 "schema": {
@@ -16587,7 +16809,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+            "description": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
           }
         },
         "summary": "Điểm nối yêu cầu thanh toán cho đơn thuộc khách",
@@ -16598,7 +16820,7 @@
     },
     "/api/orders/{order_id}/payments": {
       "get": {
-        "description": "Chỉ đọc, không tạo hay cập nhật giao dịch/hóa đơn. Đơn thuộc khách đã xác thực.\n\nHiện dependency xác thực chưa được tích hợp: mọi yêu cầu trả 503\nAUTH_INTEGRATION_REQUIRED, kể cả gửi Authorization hoặc ma_kh tự khai báo.\nKhi nhóm nối xác thực, trả phương thức, số tiền và trạng thái giao dịch mới nhất\n(thu hoặc hoàn tiền). Không suy diễn đã tất toán toàn đơn từ một giao dịch.\nChưa có giao dịch trả latest_transaction=null, không giả định đã thanh toán.\nTiền dùng dữ liệu THANH_TOAN, không tự tính hoặc cộng thuế 10% lần nữa.",
+        "description": "Chỉ đọc, không tạo hay cập nhật giao dịch/hóa đơn. Đơn thuộc khách đã xác thực.\n\nPhiên dùng chung xác minh JWT/cookie, trạng thái tài khoản và quan hệ khách hàng;\nkhông chấp nhận Authorization giả hoặc ma_kh tự khai báo. Trả phương thức, số tiền và trạng thái giao dịch mới nhất\n(thu hoặc hoàn tiền). Không suy diễn đã tất toán toàn đơn từ một giao dịch.\nChưa có giao dịch trả latest_transaction=null, không giả định đã thanh toán.\nTiền dùng dữ liệu THANH_TOAN, không tự tính hoặc cộng thuế 10% lần nữa.",
         "operationId": "payment_overview_api_orders__order_id__payments_get",
         "parameters": [
           {
@@ -16631,7 +16853,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -16639,7 +16861,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -16714,9 +16936,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "PAYMENT_SCHEMA_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+                    "message": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
                   }
                 },
                 "schema": {
@@ -16724,7 +16946,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+            "description": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
           }
         },
         "summary": "Xem giao dịch thanh toán mới nhất của đơn thuộc khách",
@@ -16735,7 +16957,7 @@
     },
     "/api/orders/{order_id}/transactions": {
       "get": {
-        "description": "Phân trang 1–100 dòng, mới nhất trước; thời gian bằng nhau sắp theo khóa nội bộ.\nKhông trả khóa thanh toán, mã giao dịch nhà cung cấp hay payload nhạy cảm.\nCHO_XU_LY -> pending với thông báo chưa xác nhận thành công.\nTHANH_CONG -> succeeded; THAT_BAI -> failed; giá trị mới -> unknown.\nChưa tích hợp xác thực sẽ trả 503, không có chế độ tra cứu công khai theo mã đơn.",
+        "description": "Phân trang 1–100 dòng, mới nhất trước; thời gian bằng nhau sắp theo khóa nội bộ.\nKhông trả khóa thanh toán, mã giao dịch nhà cung cấp hay payload nhạy cảm.\nCHO_XU_LY -> pending với thông báo chưa xác nhận thành công.\nTHANH_CONG -> succeeded; THAT_BAI -> failed; giá trị mới -> unknown.\nKhông có chế độ tra cứu công khai theo mã đơn.",
         "operationId": "transaction_history_api_orders__order_id__transactions_get",
         "parameters": [
           {
@@ -16792,7 +17014,7 @@
                   "error": {
                     "code": "AUTHENTICATION_REQUIRED",
                     "details": [],
-                    "message": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
                   }
                 },
                 "schema": {
@@ -16800,7 +17022,7 @@
                 }
               }
             },
-            "description": "Cần đăng nhập, sau khi nhóm kết nối dependency xác thực."
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
           },
           "403": {
             "content": {
@@ -16875,9 +17097,9 @@
               "application/json": {
                 "example": {
                   "error": {
-                    "code": "AUTH_INTEGRATION_REQUIRED",
+                    "code": "PAYMENT_SCHEMA_NOT_READY",
                     "details": [],
-                    "message": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+                    "message": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
                   }
                 },
                 "schema": {
@@ -16885,7 +17107,7 @@
                 }
               }
             },
-            "description": "Chưa nối xác thực, schema/cấu hình chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
+            "description": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
           }
         },
         "summary": "Lịch sử thu và hoàn tiền của đơn thuộc khách",
@@ -16929,7 +17151,7 @@
       "name": "Admin · Tài khoản"
     },
     {
-      "description": "Login/me/logout. Cookie HttpOnly, role lấy từ database.",
+      "description": "Login/register/me/logout. Cookie HttpOnly, role lấy từ database.",
       "name": "Shared · Xác thực"
     },
     {
@@ -17000,9 +17222,8 @@
   "x-database-schema": "database/schema.dbml",
   "x-live-database-verified": false,
   "x-not-implemented": [
-    "Customer authentication dependency integration",
     "Live deployment of customer checkout/payment RPCs",
     "Payment gateway/webhook/refund integration",
-    "Registration/password reset/token refresh"
+    "Email verification/password reset/token refresh"
   ]
 }

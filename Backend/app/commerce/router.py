@@ -24,20 +24,20 @@ def get_repository():
 
 Repository = Annotated[CommerceRepository, Depends(get_repository)]
 ERRORS = {
-    401: documented_error("AUTHENTICATION_REQUIRED", "Cần đăng nhập bằng module xác thực của nhóm."),
+    401: documented_error("AUTHENTICATION_REQUIRED", "Cần đăng nhập bằng phiên PHUB hợp lệ."),
     403: documented_error("ACCESS_DENIED", "Tài khoản không có quyền hoặc không liên kết khách."),
     404: documented_error("ORDER_NOT_FOUND", "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."),
     409: documented_error("CHECKOUT_CHANGED", "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."),
     422: documented_error("VALIDATION_ERROR", "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."),
     500: documented_error("INTERNAL_ERROR", "Không thể xử lý yêu cầu."),
-    503: documented_error("AUTH_INTEGRATION_REQUIRED", "Chưa nối xác thực/migration hoặc dịch vụ dữ liệu chưa sẵn sàng."),
+    503: documented_error("CHECKOUT_DATABASE_NOT_READY", "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."),
 }
 
 
 @router.get("/me", response_model=CustomerProfile, responses=ERRORS, summary="Hồ sơ khách đang đăng nhập")
 def current_profile(customer: Customer, repository: Repository, query: Annotated[NoQuery, Query()]):
     """Chỉ đọc KHACH_HANG của danh tính đã xác minh; không tạo/sửa tài khoản.
-    Điểm nối require_customer mặc định trả 503 cho đến khi nhóm nối đăng nhập thật.
+    Danh tính khách lấy từ dependency JWT/cookie dùng chung và được đối chiếu lại với database.
     """
     return repository.profile(customer)
 

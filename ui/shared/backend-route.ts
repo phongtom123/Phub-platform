@@ -23,12 +23,38 @@ function validAdminPath(path: string[], method: string): boolean {
   );
 }
 
+function validIdentifier(value: string | undefined): boolean {
+  return Boolean(value && /^[A-Za-z0-9_.-]{1,100}$/.test(value) && ![".", ".."].includes(value));
+}
+
+function validCustomerPath(path: string[], method: string): boolean {
+  if (path[0] === "customer") {
+    if (path.length === 2 && path[1] === "me") return ["GET", "PUT"].includes(method);
+    if (path.length === 3 && path[1] === "checkout" && path[2] === "quote") return method === "POST";
+    if (path[1] !== "orders") return false;
+    if (path.length === 2) return ["GET", "POST"].includes(method);
+    if (!validIdentifier(path[2])) return false;
+    if (path.length === 3) return method === "GET";
+    return path.length === 4 && path[3] === "invoice" && method === "GET";
+  }
+  if (path[0] !== "orders") return false;
+  if (path.length === 1) return method === "POST";
+  if (!validIdentifier(path[1]) || path.length !== 3) return false;
+  if (["payments", "transactions"].includes(path[2])) return method === "GET";
+  return path[2] === "payment-request" && method === "POST";
+}
+
+function validAuthPath(path: string[], method: string): boolean {
+  if (path.length !== 2 || path[0] !== "auth") return false;
+  if (["login", "register", "logout"].includes(path[1])) return method === "POST";
+  return path[1] === "me" && method === "GET";
+}
+
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {
   const { path } = await context.params;
-  const valid = validAdminPath(path, request.method) || (path.length === 2 && (
-    (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) ||
-    (path[0] === "data" && resources.has(path[1]))
-  ));
+  const valid = validAdminPath(path, request.method) || validCustomerPath(path, request.method) ||
+    validAuthPath(path, request.method) ||
+    (path.length === 2 && path[0] === "data" && resources.has(path[1]));
   if (!valid) return Response.json({ detail: "Endpoint không tồn tại." }, { status: 404 });
   try {
     const base = new URL(process.env.PHUB_API_BASE_URL || "http://127.0.0.1:8000");

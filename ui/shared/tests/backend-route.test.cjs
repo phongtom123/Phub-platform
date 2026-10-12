@@ -21,7 +21,26 @@ test("allowlist rejects traversal and arbitrary backend endpoints", async () => 
   for (const segments of [["..", "secret"], ["data", "pg_authid"], ["auth", "me", "extra"], ["catalog", "products"]]) {
     assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x"), segments)).status, 404);
   }
+  for (const [method, segments] of [
+    ["GET", ["auth", "login"]], ["GET", ["auth", "register"]],
+    ["POST", ["auth", "me"]], ["GET", ["auth", "logout"]],
+  ]) assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x", { method }), segments)).status, 404);
   assert.equal(called, false);
+});
+
+test("registration is forwarded only through the server gateway", async () => {
+  const proxy = gateway(async (url, options) => {
+    assert.equal(String(url), "http://127.0.0.1:8000/api/auth/register");
+    assert.equal(options.method, "POST");
+    assert.equal(options.headers.get("Origin"), "http://localhost:3001");
+    assert.equal(options.headers.get("Authorization"), null);
+    return Response.json({ role: "KHACH_HANG" }, { status: 201 });
+  });
+  const response = await proxy(new Request("http://localhost:3001/api/backend/auth/register", {
+    method: "POST", headers: { Origin: "http://localhost:3001" },
+    body: JSON.stringify({ username: "customer", password: "customer-password" }),
+  }), ["auth", "register"]);
+  assert.equal(response.status, 201);
 });
 
 test("forwards only session cookie and real Origin; keeps response cookie HttpOnly", async () => {
@@ -122,5 +141,31 @@ test("admin gateway rejects wrong verbs, arbitrary actions and encoded traversal
     ["GET", ["admin", "me", "password"]], ["PATCH", ["admin", "accounts", "TK1", "role"]],
     ["POST", ["admin", "account-owners"]],
   ]) assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x", { method }), segments)).status, 404);
+  assert.equal(calls, 0);
+});
+
+test("customer gateway exposes only authenticated commerce contracts", async () => {
+  const allowed = [
+    ["GET", ["customer", "me"]], ["PUT", ["customer", "me"]],
+    ["POST", ["customer", "checkout", "quote"]],
+    ["GET", ["customer", "orders"]], ["POST", ["customer", "orders"]],
+    ["GET", ["customer", "orders", "ORDER-1"]],
+    ["GET", ["customer", "orders", "ORDER-1", "invoice"]],
+    ["POST", ["orders"]], ["GET", ["orders", "ORDER-1", "payments"]],
+    ["GET", ["orders", "ORDER-1", "transactions"]],
+    ["POST", ["orders", "ORDER-1", "payment-request"]],
+  ];
+  for (const [method, segments] of allowed) {
+    const proxy = gateway(async () => Response.json({ ok: true }));
+    assert.equal((await proxy(new Request("http://localhost:3001/api/backend/x", { method }), segments)).status, 200);
+  }
+
+  let calls = 0;
+  const proxy = gateway(async () => { calls++; return Response.json({}); });
+  for (const [method, segments] of [
+    ["DELETE", ["customer", "me"]], ["GET", ["customer", "checkout", "quote"]],
+    ["GET", ["customer", "orders", ".."]], ["POST", ["customer", "orders", "ORDER-1"]],
+    ["GET", ["orders", "ORDER-1", "payment-request"]], ["GET", ["orders", "ORDER-1", "private"]],
+  ]) assert.equal((await proxy(new Request("http://localhost:3001/api/backend/x", { method }), segments)).status, 404);
   assert.equal(calls, 0);
 });

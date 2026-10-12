@@ -12,6 +12,7 @@ import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
 import styles from "./Header.module.css";
 import { useRouter } from "next/navigation";
+import { AUTH_SESSION_EVENT, getSession, logoutSession, type SessionUser } from "../../../../../shared/auth-client";
 
 type Dropdown = "shop" | "account" | "cart" | "mega";
 type Panel = Dropdown | "mobile" | "notice" | null;
@@ -26,6 +27,8 @@ export default function AltHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [session, setSession] = useState<SessionUser | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
 
   function close(restoreFocus = false) {
     setPanel(null);
@@ -69,6 +72,23 @@ export default function AltHeader() {
   }
 
   useEffect(() => {
+    const controller = new AbortController();
+    function changed(event: Event) {
+      setSession((event as CustomEvent<SessionUser | null>).detail);
+      setSessionLoading(false);
+    }
+    window.addEventListener(AUTH_SESSION_EVENT, changed);
+    getSession(controller.signal)
+      .then(setSession)
+      .catch(() => setSession(null))
+      .finally(() => setSessionLoading(false));
+    return () => {
+      controller.abort();
+      window.removeEventListener(AUTH_SESSION_EVENT, changed);
+    };
+  }, []);
+
+  useEffect(() => {
     function dismissOutside(event: Event) {
       if (!rootRef.current?.contains(event.target as Node)) {
         hoverRef.current = null;
@@ -93,6 +113,18 @@ export default function AltHeader() {
       document.removeEventListener("keydown", escape);
     };
   }, [panel, searchOpen]);
+
+  async function signOut() {
+    try {
+      await logoutSession();
+      setSession(null);
+      close();
+      router.refresh();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Không thể đăng xuất lúc này.");
+      setPanel("notice");
+    }
+  }
 
   function dropdownProps(name: Dropdown) {
     return { "data-open": panel === name, "aria-hidden": panel !== name, inert: panel !== name };
@@ -217,15 +249,20 @@ export default function AltHeader() {
           >
             <IconButton
               className={styles.actionButton}
-              label="Mở tài khoản"
+              label={session ? `Mở tài khoản của ${session.name}` : "Mở tài khoản"}
               aria-expanded={panel === "account"}
               aria-controls={id + "-account"}
               onClick={event => toggle("account", event.currentTarget)}
             >
-              <GuestAvatar />
+              <GuestAvatar name={session?.name} />
             </IconButton>
             <div className={styles.accountPanel} id={id + "-account"} {...dropdownProps("account")}>
-              <AccountMenu onNavigate={() => close()} />
+              <AccountMenu
+                onNavigate={() => close()}
+                user={session}
+                loading={sessionLoading}
+                onLogout={signOut}
+              />
             </div>
           </div>
         </div>

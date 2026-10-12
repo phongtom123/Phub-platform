@@ -41,7 +41,7 @@ def create_order(
 ):
     """Khách đã xác thực, chưa thanh toán. Server chốt giá trước thuế, tên và đơn vị.
     Body cũ không có voucher được giữ; ma_kh lấy từ xác thực, dùng RPC checkout v2.
-    Chưa nối xác thực trả 503 AUTH_INTEGRATION_REQUIRED. Checkout có voucher dùng
+    Xác thực dùng phiên JWT/cookie chung. Checkout có voucher dùng
     POST /api/customer/orders. RPC v1 cũ không được dùng để tạo đơn qua HTTP nữa.
     Thuế suất chốt 10%; tiền thuế đơn = 0.00, chỉ áp dụng khi nhóm lập hóa đơn.
     Tồn khả dụng = tồn thực trừ lượng của các đơn MOI/XAC_NHAN/DANG_CHUAN_BI.

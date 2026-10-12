@@ -67,10 +67,19 @@ Nhập mật khẩu hai lần ở terminal (không hiển thị). Lưu chuỗi h
 | Endpoint | Mục đích |
 | --- | --- |
 | `POST /api/auth/login` | `{ "username": "...", "password": "..." }`, username hoặc email |
+| `POST /api/auth/register` | Tạo nguyên tử hồ sơ + tài khoản khách hàng và đăng nhập ngay |
 | `GET /api/auth/me` | Tài khoản/role/kho đang đăng nhập |
 | `POST /api/auth/logout` | Xóa cookie phiên ở trình duyệt |
 
-Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. Token không trả trong JSON và không lưu localStorage. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, đăng ký tự phục vụ, quên mật khẩu qua email hoặc thu hồi từng token bị đánh cắp. Đăng xuất xóa cookie, không phải server-side blacklist.
+Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. Token không trả trong JSON và không lưu localStorage. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, quên mật khẩu qua email, xác minh email hoặc thu hồi từng token bị đánh cắp. Đăng xuất xóa cookie, không phải server-side blacklist.
+
+Đăng ký khách hàng cần chạy `migrations/20261011080003_customer_self_registration.sql`. RPC chỉ cấp `EXECUTE` cho `service_role`; browser gọi backend qua `/api/backend/auth/register`, không nhận Supabase secret. Hai bản ghi `KHACH_HANG` và `TAI_KHOAN` được tạo trong cùng transaction nên không để lại hồ sơ dở dang khi username/email bị trùng. Đăng ký giới hạn 5 lần/IP/phút trong một process.
+
+Ba cổng dùng cùng một cơ chế: `current_user` xác minh JWT và tải lại danh tính từ
+database; `require_admin`, `require_warehouse`, `require_customer_user` kiểm tra
+role và dữ liệu bắt buộc của từng cổng. `require_customer` chỉ chuyển danh tính
+khách đã xác minh sang model commerce. Các UI gọi chung `ui/shared/auth-client.ts`
+qua gateway `/api/backend/auth/*`; không UI nào tự decode JWT hoặc giữ token.
 
 Request ghi phải có `Origin` nằm trong `FRONTEND_ORIGINS` (Swagger/Python CLI khi thử cần gửi header này). Login giới hạn 20 lần/IP/phút trong **một process**. Triển khai nhiều worker cần shared limiter, HTTPS và `COOKIE_SECURE=true`. Ba cổng localhost dùng chung cookie trên cùng host; không trộn `localhost` với `127.0.0.1` cho URL của ba UI.
 
@@ -253,9 +262,10 @@ toán/tham chiếu/payload nhạy cảm. Thành công/lỗi đều `no-store`.
 không phải đã thanh toán; một khoản thu hoặc hoàn tiền không xác nhận toàn đơn
 đã tất toán. UI có trạng thái/lịch sử trên chi tiết đơn và nút cập nhật.
 
-Khó khăn vẫn để riêng theo yêu cầu: `auth.py::require_customer` cần kết quả xác
-thực của thành viên đăng nhập, hiện luôn 503. Không tin cookie thô, bearer chưa
-xác minh hay `X-Customer-Id` tự khai báo. Không tự gán lại đơn cũ.
+`app/payments/auth.py::require_customer` nay dùng trực tiếp danh tính từ
+`app/auth.py`: JWT trong cookie HttpOnly được kiểm tra chữ ký/hết hạn, sau đó
+tài khoản, trạng thái, role và liên kết `TAI_KHOAN.ma_kh` được tải lại từ database.
+Không tin bearer chưa xác minh, `X-Customer-Id` hoặc mã khách do client tự khai báo.
 Tài liệu file/handoff: [payments README](app/payments/README.md).
 
 ## Mục tiêu 4 — Luồng mua hàng khách hàng
@@ -345,4 +355,8 @@ khi startup; không thay dependency/lockfile của các thành viên khác.
 
 ## Integration status on feat/backend-middleware-api
 
-The shared authentication, table APIs and customer commerce APIs are registered together. Customer checkout/payment still use the explicit `require_customer` integration boundary (503 until connected to verified customer authentication). SQL migration files are included for team review; no live database migration or real payment was run when integrating this branch. The OpenAPI snapshot includes all 59 operations.
+The shared JWT/cookie authentication now serves admin, warehouse and customer
+roles. Customer checkout/payment adapt the same verified `current_user` identity
+through `require_customer`; missing sessions return 401 and wrong roles return
+403 before customer data is queried. SQL migration files are included for team
+review; no live database migration or real payment was run when integrating this branch.

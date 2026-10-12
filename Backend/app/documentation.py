@@ -52,13 +52,13 @@ Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển 
 Các bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,
 nhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.
 Tài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.
-Đăng ký tự phục vụ, quên mật khẩu qua email và refresh token chưa có.
+Đăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.
 Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.
 """
 
 TAGS = [
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
-    {"name": "Shared · Xác thực", "description": "Login/me/logout. Cookie HttpOnly, role lấy từ database."},
+    {"name": "Shared · Xác thực", "description": "Login/register/me/logout. Cookie HttpOnly, role lấy từ database."},
     {"name": "Shared · Hệ thống", "description": "Health chỉ kiểm tra API đang chạy; không kiểm tra database."},
     {"name": "Shared · Metadata", "description": "Danh mục bảng/trường/model tạo theo quyền của phiên hiện tại."},
     {"name": "Admin · Tổ chức", "description": "Kho, nhân viên, tài khoản. Mật khẩu chỉ có trong request, không có trong response."},
@@ -264,18 +264,28 @@ def describe_auth_and_public(spec: dict) -> None:
                 operation["summary"] = "Kiểm tra API đang chạy (không kiểm tra Supabase)"
                 operation["security"] = []
                 operation["responses"]["200"]["content"]["application/json"]["example"] = {"status": "ok"}
-    for name in ["login", "logout"]:
+    for name in ["login", "register", "logout"]:
         operation = paths[f"/api/auth/{name}"]["post"]
         operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
-        code = "200" if name == "login" else "204"
+        code = {"login": "200", "register": "201", "logout": "204"}[name]
         operation["responses"][code].setdefault("headers", {})["Set-Cookie"] = {
-            "description": "Cookie HttpOnly tự lưu ở trình duyệt." if name == "login" else "Xóa cookie ở trình duyệt; không thu hồi token đã bị sao chép phía server.",
+            "description": "Cookie HttpOnly tự lưu ở trình duyệt." if name != "logout" else "Xóa cookie ở trình duyệt; không thu hồi token đã bị sao chép phía server.",
             "schema": {"type": "string"},
         }
     login = paths["/api/auth/login"]["post"]
     login["description"] = "Tài khoản thật trong TAI_KHOAN, hash Argon2/bcrypt; role và kho lấy từ NHAN_VIEN/KHACH_HANG. Tạo cookie HttpOnly 8 giờ; không trả token trong JSON. Ví dụ password là placeholder, không có tài khoản demo."
     login["requestBody"]["content"]["application/json"]["example"] = {"username": "example.admin", "password": "Replace_with_your_password"}
     login["responses"]["200"]["content"]["application/json"]["example"] = SESSION_EXAMPLE
+    registration = paths["/api/auth/register"]["post"]
+    registration["description"] = "Tạo KHACH_HANG và TAI_KHOAN trong một transaction, chỉ cho role KHACH_HANG. Mật khẩu hash Argon2 ở backend; thành công tạo cookie HttpOnly 8 giờ và không trả token/hash."
+    registration["requestBody"]["content"]["application/json"]["example"] = {
+        "name": "Nguyễn Văn A", "username": "nguyenvana", "email": "customer@example.com",
+        "phone": "0901234567", "password": "Replace_with_10+_characters",
+    }
+    registration["responses"]["201"]["content"]["application/json"]["example"] = {
+        **SESSION_EXAMPLE, "account_id": "KH000001", "username": "nguyenvana", "role": "KHACH_HANG",
+        "name": "Nguyễn Văn A", "customer_id": "KH_generated", "employee_id": None, "warehouse_id": None,
+    }
     paths["/api/auth/me"]["get"]["responses"]["200"]["content"]["application/json"]["example"] = SESSION_EXAMPLE
     paths["/api/auth/logout"]["post"]["description"] = "Xóa cookie phub_session. Không yêu cầu phiên còn hiệu lực; vẫn kiểm tra Origin. Thành công trả 204 không có body. Chưa có blacklist token/refresh token."
 
@@ -295,7 +305,7 @@ def install_openapi(app: FastAPI) -> None:
         describe_auth_and_public(spec)
         spec["x-database-schema"] = "database/schema.dbml"
         spec["x-live-database-verified"] = False
-        spec["x-not-implemented"] = ["Customer authentication dependency integration", "Live deployment of customer checkout/payment RPCs", "Payment gateway/webhook/refund integration", "Registration/password reset/token refresh"]
+        spec["x-not-implemented"] = ["Live deployment of customer checkout/payment RPCs", "Payment gateway/webhook/refund integration", "Email verification/password reset/token refresh"]
         app.openapi_schema = spec
         return spec
     app.openapi = custom_openapi

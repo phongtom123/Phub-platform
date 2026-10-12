@@ -53,7 +53,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
 def test_operation_ids_are_unique_and_tags_exist(spec):
     operations = [operation for path in spec["paths"].values() for operation in path.values()]
     identifiers = [operation["operationId"] for operation in operations]
-    assert len(identifiers) == len(set(identifiers)) == 68
+    assert len(identifiers) == len(set(identifiers)) == 69
     tags = {tag["name"] for tag in spec["tags"]}
     for operation in operations:
         assert set(operation["tags"]).issubset(tags)
@@ -85,13 +85,17 @@ def test_cookie_auth_and_public_operations(spec):
     cookie = spec["components"]["securitySchemes"]["SessionCookie"]
     assert (cookie["type"], cookie["in"], cookie["name"]) == ("apiKey", "cookie", "phub_session")
     assert spec["paths"]["/api/auth/me"]["get"]["security"] == [{"SessionCookie": []}]
-    for path in ["/api/auth/login", "/api/auth/logout", "/api/health", "/api/products", "/api/catalog/products"]:
+    for path in ["/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/health", "/api/products", "/api/catalog/products"]:
         for operation in spec["paths"][path].values():
             assert operation["security"] == []
     login = spec["paths"]["/api/auth/login"]["post"]
     assert "Set-Cookie" in login["responses"]["200"]["headers"]
     assert "429" in login["responses"]
     assert spec["components"]["schemas"]["LoginBody"]["properties"]["password"]["writeOnly"]
+    registration = spec["paths"]["/api/auth/register"]["post"]
+    assert "Set-Cookie" in registration["responses"]["201"]["headers"]
+    assert "429" in registration["responses"]
+    assert spec["components"]["schemas"]["RegisterBody"]["properties"]["password"]["writeOnly"]
     assert "content" not in spec["paths"]["/api/auth/logout"]["post"]["responses"]["204"]
 
 

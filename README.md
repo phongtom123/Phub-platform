@@ -139,7 +139,7 @@ Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tà
 
 ## Những phần đã nối backend
 
-- Đăng nhập, phiên cookie HttpOnly, kiểm tra role/trạng thái/kho và đăng xuất.
+- Đăng nhập, đăng ký khách hàng, phiên cookie HttpOnly, kiểm tra role/trạng thái/kho và đăng xuất.
 - API đọc/phân trang/tìm kiếm cho 19 bảng, kiểm tra scope theo role.
 - Tạo/sửa 9 bảng dữ liệu nền: kho, nhân viên, tài khoản, khách hàng, loại sản phẩm, sản phẩm, nhà cung cấp, chương trình khuyến mãi, voucher.
 - Danh sách/chi tiết/form dữ liệu thật trên admin và kho, route riêng `/data/{resource}`; URL chi tiết cũ chuyển sang route này.
