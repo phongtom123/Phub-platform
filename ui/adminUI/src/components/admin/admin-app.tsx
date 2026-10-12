@@ -18,7 +18,7 @@ import BackendDataView from "@/src/components/backend-data-view";
 import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
 import AccountsView from "@/src/features/accounts/accounts-view";
 import type { AccountView } from "@/src/features/accounts/types";
-import { getSession, logoutSession } from "../../../../shared/auth-client";
+import { AuthRequestError, getSession, logoutSession } from "../../../../shared/auth-client";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
@@ -32,6 +32,8 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [sessionUser, setSessionUser] = useState<{ name: string; username: string } | null>(null);
   const [sessionVersion, setSessionVersion] = useState(0);
+  const [sessionError, setSessionError] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
   const [activeModule, setActiveModule] = useState<ModuleKey>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -39,13 +41,23 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
 
   useEffect(() => {
     const controller = new AbortController();
+    setCheckingSession(true);
+    setSessionError("");
     getSession(controller.signal)
       .then(user => {
+        if (controller.signal.aborted) return;
         if (user.role === "THU_KHO") { window.location.replace(warehouseUrl); return; }
         if (user.role === "KHACH_HANG") { window.location.replace(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001"); return; }
+        if (user.role !== "ADMIN") throw new Error("API trả thông tin phiên không hợp lệ.");
         setLoggedIn(user.role === "ADMIN");
         setSessionUser(user);
-      }).catch(() => { if (!controller.signal.aborted) setLoggedIn(false); });
+      }).catch(error => {
+        if (controller.signal.aborted) return;
+        if (error instanceof AuthRequestError && (error.status === 401 || error.status === 403)) {
+          setLoggedIn(false); setSessionUser(null); return;
+        }
+        setSessionError("Chưa kiểm tra được phiên đăng nhập. API tạm thời không khả dụng; phiên chưa bị xóa.");
+      }).finally(() => { if (!controller.signal.aborted) setCheckingSession(false); });
 
     const syncModuleWithUrl = () =>
       setActiveModule(accountsPage ? "accounts" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(window.location.search));
@@ -69,11 +81,24 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
       return;
     }
 
-    setLoggedIn(true);
+    // Verify /me before mounting the dashboard and its parallel data requests.
+    setLoggedIn(null);
+    setSessionUser(null);
+    setSessionError("");
+    setCheckingSession(true);
     setSessionVersion(value => value + 1);
   };
 
-  if (loggedIn === null) return null;
+  const retrySession = () => setSessionVersion(value => value + 1);
+  if (loggedIn === null) return (
+    <main className="session-gate" aria-busy={checkingSession}>
+      <h1>PHUB Admin</h1>
+      {checkingSession ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : <>
+        <p role="alert">{sessionError}</p>
+        <button type="button" className="btn primary" onClick={retrySession}>Thử kết nối lại</button>
+      </>}
+    </main>
+  );
 
   if (!loggedIn) return <LoginView onLogin={login} />;
 
@@ -102,6 +127,8 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
     window.history.replaceState({}, "", "/");
     setActiveModule("dashboard");
     setLoggedIn(false);
+    setSessionUser(null);
+    setSessionVersion(value => value + 1);
   };
   const definition = modules[activeModule];
 
@@ -130,6 +157,10 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
           onGoProfile={() => window.location.assign("/account")}
         />
         <main className="content">
+          {sessionError && <div className="session-warning" role="alert">
+            <span>{sessionError}</span>
+            <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
+          </div>}
           {accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : definition ? (

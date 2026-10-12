@@ -30,7 +30,7 @@ async function main() {
       if (!url.pathname.startsWith("/api/")) return route.continue();
       assert.equal(request.method(), "GET");
       const respond = body => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
-      if (url.pathname === "/api/backend/auth/me") return respond({ name: "Admin Test", username: "test.admin", role: "ADMIN" });
+      if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", name: "Admin Test", username: "test.admin", role: "ADMIN" });
       if (url.pathname === "/api/backend/data/resources") return respond(resources);
       const name = url.pathname.split("/").pop();
       const meta = resources.find(r => r.name === name);
