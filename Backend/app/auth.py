@@ -11,6 +11,7 @@ from uuid import uuid4
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBearer
 from postgrest.exceptions import APIError
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pwdlib import PasswordHash
@@ -28,6 +29,12 @@ dummy_hash = passwords.hash("not-a-valid-login-password")
 login_attempts: dict[str, tuple[float, int]] = {}
 registration_attempts: dict[str, tuple[float, int]] = {}
 attempt_lock = Lock()
+TOKEN_TTL_SECONDS = 8 * 3600
+bearer_auth = HTTPBearer(
+    scheme_name="BearerAuth", bearerFormat="JWT", auto_error=False,
+    description="Lấy access_token từ POST /api/auth/token. Chỉ dán token, không thêm tiền tố Bearer; không dùng Supabase key.",
+)
+cookie_auth = APIKeyCookie(name=COOKIE_NAME, scheme_name="SessionCookie", auto_error=False)
 
 
 @dataclass
@@ -72,22 +79,38 @@ def password_version(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def current_user(request: Request, db=Depends(get_supabase)) -> User:
-    token = request.cookies.get(COOKIE_NAME)
+def current_user(
+    request: Request, db=Depends(get_supabase),
+    bearer: HTTPAuthorizationCredentials | None = Depends(bearer_auth),
+    cookie: str | None = Depends(cookie_auth),
+) -> User:
+    # Explicit Authorization always wins; malformed headers must not fall back to cookies.
+    if "authorization" in request.headers:
+        if bearer is None:
+            raise HTTPException(401, "Authorization phải có dạng Bearer <token>.", headers={"WWW-Authenticate": "Bearer"})
+        token = bearer.credentials
+    else:
+        token = cookie
     if not token:
-        raise HTTPException(401, "Vui lòng đăng nhập.")
+        raise HTTPException(401, "Vui lòng đăng nhập.", headers={"WWW-Authenticate": "Bearer"})
+    claims = verify_access_token(token)
+    account_id = claims["sub"]
+    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", account_id).limit(1).execute().data
+    if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
+        raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.", headers={"WWW-Authenticate": "Bearer"})
+    return identity(rows[0], db)
+
+
+def verify_access_token(token: str) -> dict:
     try:
         claims = jwt.decode(token, jwt_secret(), algorithms=["HS256"], issuer="phub-backend", audience="phub-ui",
                             options={"require": ["sub", "exp", "iat", "iss", "aud", "ver"]})
     except jwt.InvalidTokenError:
-        raise HTTPException(401, "Phiên đăng nhập đã hết hạn.") from None
+        raise HTTPException(401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.", headers={"WWW-Authenticate": "Bearer"}) from None
     account_id = claims.get("sub")
     if not isinstance(account_id, str) or not account_id or len(account_id) > 100:
-        raise HTTPException(401, "Phiên đăng nhập không hợp lệ.")
-    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", account_id).limit(1).execute().data
-    if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
-        raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.")
-    return identity(rows[0], db)
+        raise HTTPException(401, "Phiên đăng nhập không hợp lệ.", headers={"WWW-Authenticate": "Bearer"})
+    return claims
 
 
 def require_admin(user: User = Depends(current_user)) -> User:
@@ -112,6 +135,12 @@ class LoginBody(BaseModel):
     username: str = Field(min_length=1, max_length=254, description="Tên tài khoản hoặc email đã tạo trong database.", examples=["example.admin"])
     password: str = Field(min_length=1, max_length=128, description="Mật khẩu của tài khoản thật; không phải khóa Supabase.",
                           json_schema_extra={"writeOnly": True, "format": "password"})
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int = TOKEN_TTL_SECONDS
 
 
 class RegisterBody(BaseModel):
@@ -167,20 +196,21 @@ def throttle(request: Request, attempts: dict[str, tuple[float, int]] = login_at
         attempts[host] = (start, count + 1)
 
 
-def issue_session(response: Response, user: User, password_hash: str) -> None:
+def create_access_token(user: User, password_hash: str) -> str:
     now = datetime.now(timezone.utc)
-    token = jwt.encode({"sub": user.account_id, "iat": now, "exp": now + timedelta(hours=8),
+    return jwt.encode({"sub": user.account_id, "iat": now, "exp": now + timedelta(seconds=TOKEN_TTL_SECONDS),
                         "iss": "phub-backend", "aud": "phub-ui", "ver": password_version(password_hash)},
                        jwt_secret(), algorithm="HS256")
+
+
+def issue_session(response: Response, user: User, password_hash: str) -> None:
+    token = create_access_token(user, password_hash)
     response.set_cookie(COOKIE_NAME, token, httponly=True, secure=os.getenv("COOKIE_SECURE", "false").lower() == "true",
-                        samesite="lax", max_age=8 * 3600, path="/")
+                        samesite="lax", max_age=TOKEN_TTL_SECONDS, path="/")
     response.headers["Cache-Control"] = "no-store"
 
 
-@router.post("/login", summary="Đăng nhập bằng tên tài khoản hoặc email", response_model=SessionUser,
-             responses={**WRITE_ERRORS, 429: error_response(429, "Quá 20 lần đăng nhập/IP/phút; thử lại sau một phút.")})
-def login(body: LoginBody, request: Request, response: Response, db=Depends(get_supabase)):
-    check_origin(request)
+def authenticate_credentials(body: LoginBody, request: Request, db) -> tuple[User, str]:
     throttle(request)
     jwt_secret()  # Fail before password work when the server is not configured.
     username = body.username.strip()
@@ -196,8 +226,28 @@ def login(body: LoginBody, request: Request, response: Response, db=Depends(get_
     if not account or not valid:
         raise HTTPException(401, "Tài khoản hoặc mật khẩu không đúng.")
     user = identity(account, db)
-    issue_session(response, user, account["mat_khau_hash"])
+    return user, account["mat_khau_hash"]
+
+
+@router.post("/login", summary="Đăng nhập bằng tên tài khoản hoặc email", response_model=SessionUser,
+             responses={**WRITE_ERRORS, 429: error_response(429, "Quá 20 lần đăng nhập/IP/phút; thử lại sau một phút.")})
+def login(body: LoginBody, request: Request, response: Response, db=Depends(get_supabase)):
+    check_origin(request)
+    user, password_hash = authenticate_credentials(body, request, db)
+    issue_session(response, user, password_hash)
     return asdict(user)
+
+
+@router.post("/token", summary="Lấy JWT Bearer để thử API trong Swagger/Postman", response_model=TokenResponse,
+             responses={**WRITE_ERRORS, 429: error_response(429, "Dùng chung giới hạn 20 lần đăng nhập/IP/phút với /api/auth/login.")})
+def issue_token(body: LoginBody, request: Request, response: Response, db=Depends(get_supabase)):
+    # No ambient cookie is used or set. CLI clients may omit Origin; browsers must be trusted.
+    if "origin" in request.headers:
+        check_origin(request)
+    user, password_hash = authenticate_credentials(body, request, db)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    return TokenResponse(access_token=create_access_token(user, password_hash))
 
 
 @router.post("/register", status_code=201, summary="Đăng ký tài khoản khách hàng", response_model=SessionUser,

@@ -38,7 +38,7 @@ Sinh JWT secret bằng lệnh sau, rồi lưu giá trị vào `.env`, không g�
 - Liveness: http://127.0.0.1:8000/api/health (không kiểm tra DB).
 - Test: `.venv\Scripts\python.exe -m pytest tests -q`.
 
-Swagger có 68 thao tác, schema riêng cho từng module, role và mã lỗi. Xem [hướng dẫn Swagger/OpenAPI](docs/README.md) để đăng nhập thử bằng cookie và cập nhật snapshot [docs/openapi.json](docs/openapi.json). Trang docs không cần Supabase để mở; thử API dữ liệu cần cấu hình thật. `.env` cũ cần thêm origin cổng 8000 nếu muốn thử POST/PATCH/PUT trực tiếp từ Swagger.
+Swagger có 70 thao tác, schema riêng cho từng module, role và mã lỗi. Xem [hướng dẫn Swagger/OpenAPI](docs/README.md) để đăng nhập thử bằng Bearer/cookie và cập nhật snapshot [docs/openapi.json](docs/openapi.json). Trang docs không cần Supabase để mở; thử API dữ liệu cần cấu hình thật. `.env` cũ cần thêm origin cổng 8000 nếu muốn thử POST/PATCH/PUT trực tiếp từ Swagger.
 
 ## Chuẩn bị database
 
@@ -67,11 +67,14 @@ Nhập mật khẩu hai lần ở terminal (không hiển thị). Lưu chuỗi h
 | Endpoint | Mục đích |
 | --- | --- |
 | `POST /api/auth/login` | `{ "username": "...", "password": "..." }`, username hoặc email |
+| `POST /api/auth/token` | Cùng body đăng nhập; trả `access_token`, `token_type: "bearer"`, `expires_in: 28800` cho Swagger/Postman |
 | `POST /api/auth/register` | Tạo nguyên tử hồ sơ + tài khoản khách hàng và đăng nhập ngay |
 | `GET /api/auth/me` | Tài khoản/role/kho đang đăng nhập |
 | `POST /api/auth/logout` | Xóa cookie phiên ở trình duyệt |
 
-Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. Token không trả trong JSON và không lưu localStorage. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, quên mật khẩu qua email, xác minh email hoặc thu hồi từng token bị đánh cắp. Đăng xuất xóa cookie, không phải server-side blacklist.
+Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. `/login` và `/register` không trả token trong JSON; UI không lưu token ở localStorage. `/token` trả JWT trong JSON, không đặt cookie, dùng chung `authenticate_credentials` và `create_access_token` với đăng nhập cookie. Trong Swagger chọn **Authorize → BearerAuth** và dán riêng token, không thêm `Bearer`; xem [hướng dẫn test](docs/README.md#lấy-jwt-và-thử-bằng-bearer-swaggerpostman).
+
+`current_user` nhận Bearer hoặc cookie và dùng chung `verify_access_token`. Khi có Authorization thì ưu tiên Bearer; header/token sai trả 401, không chuyển sang cookie. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, quên mật khẩu qua email, xác minh email hoặc thu hồi từng token bị đánh cắp. Đăng xuất chỉ xóa cookie; token Bearer đã cấp vẫn có hiệu lực đến khi hết hạn hoặc tài khoản/mật khẩu mất hiệu lực.
 
 Đăng ký khách hàng cần chạy `migrations/20261011080003_customer_self_registration.sql`. RPC chỉ cấp `EXECUTE` cho `service_role`; browser gọi backend qua `/api/backend/auth/register`, không nhận Supabase secret. Hai bản ghi `KHACH_HANG` và `TAI_KHOAN` được tạo trong cùng transaction nên không để lại hồ sơ dở dang khi username/email bị trùng. Đăng ký giới hạn 5 lần/IP/phút trong một process.
 
@@ -81,7 +84,7 @@ role và dữ liệu bắt buộc của từng cổng. `require_customer` chỉ 
 khách đã xác minh sang model commerce. Các UI gọi chung `ui/shared/auth-client.ts`
 qua gateway `/api/backend/auth/*`; không UI nào tự decode JWT hoặc giữ token.
 
-Request ghi phải có `Origin` nằm trong `FRONTEND_ORIGINS` (Swagger/Python CLI khi thử cần gửi header này). Login giới hạn 20 lần/IP/phút trong **một process**. Triển khai nhiều worker cần shared limiter, HTTPS và `COOKIE_SECURE=true`. Ba cổng localhost dùng chung cookie trên cùng host; không trộn `localhost` với `127.0.0.1` cho URL của ba UI.
+Các API ghi có yêu cầu `Origin` vẫn cần giá trị nằm trong `FRONTEND_ORIGINS`, kể cả khi dùng Bearer. Riêng `/token` cho Postman/CLI bỏ Origin; nếu gửi thì phải thuộc allowlist. `/login` và `/token` dùng chung giới hạn 20 lần/IP/phút trong **một process**. Triển khai nhiều worker cần shared limiter, HTTPS và `COOKIE_SECURE=true`. Ba cổng localhost dùng chung cookie trên cùng host; không trộn `localhost` với `127.0.0.1` cho URL của ba UI.
 
 ### Tài khoản admin
 

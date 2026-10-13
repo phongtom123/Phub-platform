@@ -356,3 +356,123 @@ def test_invalid_stored_hash_is_not_a_server_error(platform_client):
     response = client.post("/api/auth/login", json={"username": "admin", "password": "long-test-password"}, headers=ORIGIN)
     assert response.status_code == 401
     assert "invalid-not-a-hash" not in response.text
+
+
+def test_bearer_token_flow_and_live_account_checks(platform_client):
+    client, state, requests = platform_client
+    account, profile = configure_login(state)
+    app.dependency_overrides.pop(current_user)
+    response = client.post("/api/auth/token", json={"username": " ADMIN@EXAMPLE.TEST ", "password": "long-test-password"})
+    assert response.status_code == 200
+    assert requests[0].url.params["email"] == "eq.admin@example.test"
+    body = response.json()
+    assert set(body) == {"access_token", "token_type", "expires_in"}
+    assert body["token_type"] == "bearer" and body["expires_in"] == 28800
+    assert "set-cookie" not in response.headers and not client.cookies
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["pragma"] == "no-cache"
+    claims = jwt.decode(body["access_token"], "test-only-" + "x" * 64, algorithms=["HS256"],
+                        issuer="phub-backend", audience="phub-ui")
+    assert claims["sub"] == "TK1" and claims["exp"] - claims["iat"] == 28800
+    assert "role" not in claims and "mat_khau_hash" not in claims
+    headers = {"Authorization": "Bearer " + body["access_token"]}
+    assert client.get("/api/auth/me", headers=headers).json()["role"] == "ADMIN"
+    assert client.get("/api/data/resources", headers=headers).status_code == 200
+    assert client.get("/api/auth/me").status_code == 401
+    # Header wins even if the browser has an expired/malformed cookie.
+    client.cookies.set("phub_session", "invalid-cookie")
+    assert client.get("/api/auth/me", headers=headers).status_code == 200
+    client.cookies.clear()
+    profile["loai_nhan_vien"], profile["ma_kho"] = "THU_KHO", 7
+    assert client.get("/api/auth/me", headers=headers).json()["warehouse_id"] == 7
+    assert client.get("/api/admin/accounts", headers=headers).status_code == 403
+    account["trang_thai"] = 0
+    assert client.get("/api/auth/me", headers=headers).status_code == 401
+    account["trang_thai"] = 1
+    account["mat_khau_hash"] = passwords.hash("changed-password")
+    assert client.get("/api/auth/me", headers=headers).status_code == 401
+
+
+@pytest.mark.parametrize("authorization", ["", "Basic abc", "Bearer", "Bearer ", "Bearer invalid-token"])
+def test_invalid_authorization_never_falls_back_to_valid_cookie(platform_client, authorization):
+    client, state, _ = platform_client
+    configure_login(state)
+    app.dependency_overrides.pop(current_user)
+    assert client.post("/api/auth/login", json={"username": "admin", "password": "long-test-password"}, headers=ORIGIN).status_code == 200
+    assert client.get("/api/auth/me").status_code == 200
+    response = client.get("/api/auth/me", headers={"Authorization": authorization})
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+@pytest.mark.parametrize("case", ["expired", "signature", "issuer", "audience", "missing_ver", "invalid_sub"])
+def test_invalid_bearer_claims_are_rejected_before_database_lookup(platform_client, case):
+    client, _, requests = platform_client
+    app.dependency_overrides.pop(current_user)
+    now = datetime.now(timezone.utc)
+    claims = {"sub": "TK1", "iss": "phub-backend", "aud": "phub-ui", "iat": now - timedelta(hours=2),
+              "exp": now + timedelta(hours=1), "ver": "test"}
+    secret = "test-only-" + "x" * 64
+    if case == "expired":
+        claims["exp"] = now - timedelta(hours=1)
+    elif case == "signature":
+        secret = "other-secret-" + "y" * 64
+    elif case == "issuer":
+        claims["iss"] = "other-issuer"
+    elif case == "audience":
+        claims["aud"] = "other-audience"
+    elif case == "missing_ver":
+        del claims["ver"]
+    else:
+        claims["sub"] = ""
+    token = jwt.encode(claims, secret, algorithm="HS256")
+    response = client.get("/api/auth/me", headers={"Authorization": "Bearer " + token})
+    assert response.status_code == 401 and requests == []
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+@pytest.mark.parametrize("case,status", [("password", 401), ("hash", 401), ("disabled", 401), ("profile", 403)])
+def test_token_issuance_rejects_invalid_accounts(platform_client, case, status):
+    client, state, _ = platform_client
+    account, profile = configure_login(state)
+    password = "long-test-password"
+    if case == "password":
+        password = "wrong"
+    elif case == "hash":
+        account["mat_khau_hash"] = "invalid-hash"
+    elif case == "disabled":
+        account["trang_thai"] = 0
+    else:
+        profile["trang_thai"] = 0
+    response = client.post("/api/auth/token", json={"username": "admin", "password": password})
+    assert response.status_code == status
+    assert "access_token" not in response.json() and "set-cookie" not in response.headers
+
+
+@pytest.mark.parametrize("first,second", [("token", "login"), ("login", "token")])
+def test_token_and_cookie_login_share_rate_limit(platform_client, first, second):
+    import time
+    client, state, _ = platform_client
+    configure_login(state)
+    login_attempts["testclient"] = (time.monotonic(), 19)
+    body = {"username": "admin", "password": "long-test-password"}
+    assert client.post("/api/auth/" + first, json=body, headers=ORIGIN).status_code == 200
+    assert client.post("/api/auth/" + second, json=body, headers=ORIGIN).status_code == 429
+
+
+def test_token_origin_policy_and_cookie_csrf_stay_explicit(platform_client):
+    client, state, requests = platform_client
+    configure_login(state)
+    body = {"username": "admin", "password": "long-test-password"}
+    assert client.post("/api/auth/token", json=body, headers={"Origin": "https://evil.example"}).status_code == 403
+    assert requests == []
+    response = client.post("/api/auth/token", json=body, headers=ORIGIN)
+    assert response.status_code == 200
+    headers = {"Authorization": "Bearer " + response.json()["access_token"]}
+    assert client.post("/api/auth/login", json=body, headers=headers).status_code == 403
+    assert client.post("/api/auth/logout", headers=headers).status_code == 403
+    assert client.post("/api/data/warehouses", json={"ten_kho": "Test", "dia_chi": "Test"}, headers=headers).status_code == 403
+    app.dependency_overrides.pop(current_user)
+    # Cookie logout doesn't revoke independently held Bearer tokens.
+    assert client.post("/api/auth/logout", headers=ORIGIN).status_code == 204
+    assert client.get("/api/auth/me", headers=headers).status_code == 200

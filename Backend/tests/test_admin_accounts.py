@@ -435,7 +435,7 @@ def test_openapi_documents_admin_security_without_password_read_fields():
     for method, path, _ in OPERATIONS:
         path = path.replace("/TK2", "/{account_id}")
         operation = spec["paths"]["/api/admin" + path][method.lower()]
-        assert operation["security"] == [{"SessionCookie": []}]
+        assert operation["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
         assert operation["x-roles"] == ["ADMIN"]
         if method != "GET":
             assert any(p["name"] == "Origin" for p in operation["parameters"])

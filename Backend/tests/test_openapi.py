@@ -41,7 +41,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
         methods = spec["paths"][f"/api/data/{name}"]
         assert set(methods) == ({"get", "post", "patch"} if resource.writable else {"get"})
         for operation in methods.values():
-            assert operation["security"] == [{"SessionCookie": []}]
+            assert operation["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
             assert operation["x-table"] == resource.table
             assert operation["x-primary-key"] == list(resource.keys)
             assert not any(p["in"] == "path" for p in operation.get("parameters", []))
@@ -53,7 +53,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
 def test_operation_ids_are_unique_and_tags_exist(spec):
     operations = [operation for path in spec["paths"].values() for operation in path.values()]
     identifiers = [operation["operationId"] for operation in operations]
-    assert len(identifiers) == len(set(identifiers)) == 69
+    assert len(identifiers) == len(set(identifiers)) == 70
     tags = {tag["name"] for tag in spec["tags"]}
     for operation in operations:
         assert set(operation["tags"]).issubset(tags)
@@ -84,8 +84,10 @@ def test_all_local_references_resolve(spec):
 def test_cookie_auth_and_public_operations(spec):
     cookie = spec["components"]["securitySchemes"]["SessionCookie"]
     assert (cookie["type"], cookie["in"], cookie["name"]) == ("apiKey", "cookie", "phub_session")
-    assert spec["paths"]["/api/auth/me"]["get"]["security"] == [{"SessionCookie": []}]
-    for path in ["/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/health", "/api/products", "/api/catalog/products"]:
+    bearer = spec["components"]["securitySchemes"]["BearerAuth"]
+    assert (bearer["type"], bearer["scheme"], bearer["bearerFormat"]) == ("http", "bearer", "JWT")
+    assert spec["paths"]["/api/auth/me"]["get"]["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
+    for path in ["/api/auth/login", "/api/auth/token", "/api/auth/register", "/api/auth/logout", "/api/health", "/api/products", "/api/catalog/products"]:
         for operation in spec["paths"][path].values():
             assert operation["security"] == []
     login = spec["paths"]["/api/auth/login"]["post"]
@@ -97,6 +99,13 @@ def test_cookie_auth_and_public_operations(spec):
     assert "429" in registration["responses"]
     assert spec["components"]["schemas"]["RegisterBody"]["properties"]["password"]["writeOnly"]
     assert "content" not in spec["paths"]["/api/auth/logout"]["post"]["responses"]["204"]
+    token = spec["paths"]["/api/auth/token"]["post"]
+    assert "Set-Cookie" not in token["responses"]["200"]["headers"]
+    assert "429" in token["responses"]
+    assert token["requestBody"]["content"]["application/json"]["schema"] == {"$ref": "#/components/schemas/LoginBody"}
+    for path in ["/api/orders", "/api/customer/me", "/api/data/resources"]:
+        for operation in spec["paths"][path].values():
+            assert operation["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
 
 
 @pytest.mark.parametrize("name", RESOURCES)

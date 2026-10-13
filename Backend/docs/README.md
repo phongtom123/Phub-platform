@@ -32,7 +32,7 @@ Các trang tài liệu mở được kể cả khi chưa cấu hình Supabase; g
 - **Bán hàng**: đơn hàng, hóa đơn, thanh toán.
 - **Customer**: catalog công khai và alias sản phẩm cũ (deprecated).
 
-Có **47 đường dẫn, 68 thao tác**, gồm 19 GET bảng, 16 POST/PATCH trên 8 bảng dữ liệu nền, 11 thao tác tài khoản admin và các module xác thực/catalog/mua hàng. Đây là đặc tả chức năng **đã có code**, không phải xác nhận database thật đã chạy.
+Có **49 đường dẫn, 70 thao tác**, gồm 19 GET bảng, 16 POST/PATCH trên 8 bảng dữ liệu nền, 11 thao tác tài khoản admin và các module xác thực/catalog/mua hàng. Đây là đặc tả chức năng **đã có code**, không phải xác nhận database thật đã chạy.
 
 Quản lý tài khoản dùng nhóm **Admin · Tài khoản**, prefix `/api/admin`.
 Xem [hợp đồng và các quy tắc tài khoản](../app/admin_accounts/README.md).
@@ -40,7 +40,23 @@ Xem [hợp đồng và các quy tắc tài khoản](../app/admin_accounts/README
 
 UI vẫn gọi các URL cũ `/api/data/products`, `/api/data/orders`, ... Backend vẫn dùng router `/api/data/{resource}`. Swagger tách thành từng đường dẫn cụ thể để payload và quyền không bị trộn lẫn. Các bảng chỉ đọc không hiện POST/PATCH. Không có DELETE hoặc checkout/webhook giả.
 
-## Đăng nhập và thử
+## Lấy JWT và thử bằng Bearer (Swagger/Postman)
+
+1. Mở **Shared · Xác thực → POST /api/auth/token → Try it out**.
+2. Gửi JSON `{"username": "tài_khoản_hoặc_email", "password": "mật_khẩu_thật"}`.
+3. Response gồm `access_token`, `token_type: "bearer"`, `expires_in: 28800` (8 giờ); endpoint không đặt cookie.
+4. Bấm **Authorize → BearerAuth**, dán riêng `access_token`, **không thêm tiền tố `Bearer`**. Swagger tự thêm tiền tố khi gửi request.
+5. Gọi **GET /api/auth/me**, rồi các API theo quyền tài khoản. Trong Postman, chọn Authorization → Bearer Token hoặc gửi header `Authorization: Bearer <access_token>`.
+
+`/token` dùng chung kiểm tra username/email, mật khẩu, trạng thái/role và giới hạn 20 lần/IP/phút với `/login`.
+Postman/CLI có thể bỏ Origin khi gọi `/token`; nếu gửi Origin thì phải thuộc `FRONTEND_ORIGINS`.
+Các API ghi có yêu cầu Origin vẫn cần header này kể cả khi dùng Bearer.
+Khi có Authorization, backend ưu tiên Bearer; header/token sai trả 401, không chuyển sang cookie.
+Role và trạng thái tài khoản được đọc lại từ database mỗi request; đổi mật khẩu làm token cũ mất hiệu lực.
+Khi xong, xóa token ở **Authorize → BearerAuth → Logout**. `/api/auth/logout` chỉ xóa cookie, không thu hồi Bearer token phía server.
+Không nhập Supabase key vào Authorize. Swagger không lưu authorization qua lần tải lại trang.
+
+## Đăng nhập và thử bằng cookie (luồng UI hiện tại)
 
 1. Cấu hình `.env` và tạo tài khoản thật trong database. Không có tài khoản demo cố định.
 2. Nếu `.env` đã dùng cấu hình origin cũ, bổ sung `http://localhost:8000,http://127.0.0.1:8000` vào `FRONTEND_ORIGINS`, rồi restart backend. Không thay bằng wildcard `*`.
@@ -50,7 +66,7 @@ UI vẫn gọi các URL cũ `/api/data/products`, `/api/data/orders`, ... Backen
 6. Response 200 kèm cookie HttpOnly `phub_session`; browser tự lưu cookie. Thử **GET /api/auth/me → Execute**, rồi endpoint theo role.
 7. Khi xong, gọi **POST /api/auth/logout**. Đăng xuất chỉ xóa cookie trình duyệt, chưa có server-side blacklist token.
 
-**Không nhập Supabase key hoặc dán token vào Authorize.** Cookie auth được mô tả trong OpenAPI, nhưng Swagger không thể tự đặt cookie HttpOnly qua Authorize. Trang này bật `withCredentials`; dùng cookie đã được browser lưu trên cùng host. Nếu công cụ/browser không gửi cookie, dùng Postman/cookie jar hoặc đăng nhập UI trên cùng host rồi thử lại.
+Cookie auth được mô tả trong OpenAPI, nhưng ô **SessionCookie** trong Authorize không tự đặt cookie HttpOnly. Trang này bật `withCredentials`; dùng cookie đã được browser lưu trên cùng host. Xóa BearerAuth trước nếu muốn kiểm thử đúng phiên cookie. Nếu công cụ/browser không gửi cookie, có thể dùng luồng Bearer ở trên.
 
 POST/PATCH yêu cầu Origin tin cậy để chống CSRF. Browser tự gửi Origin của trang đang mở; dù Swagger hiển thị field Origin, bạn không thể giả một origin khác bằng field này. Trong Postman/CLI cần gửi `Origin: http://localhost:8000` (hoặc giá trị nằm trong cấu hình).
 
