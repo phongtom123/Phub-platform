@@ -11,6 +11,15 @@ Dashboard và danh sách dùng dữ liệu API; không có bản ghi mẫu thay 
 
 ## Chức năng giao diện
 
+Admin xác nhận `/auth/me` trước khi tải dashboard sau đăng nhập. HTTP 401/403
+đưa về đăng nhập; lỗi mạng/503 không xóa cookie hoặc coi phiên đã hết hạn.
+Khi chưa xác nhận được phiên, màn hình chờ/báo lỗi không mở dashboard. Nếu phiên
+đã được xác nhận trước đó, giữ màn hình và báo lỗi kiểm tra lại; backend vẫn kiểm
+tra quyền trên từng request, không bỏ qua tài khoản bị khóa. Có nút **Thử kết nối lại**,
+không có timer reload, tự gửi lại login hay thao tác ghi dữ liệu.
+Số tổng sản phẩm/khách hàng chỉ lấy một dòng và `total`, không tải 100 dòng bỏ đi.
+Backend xử lý retry có giới hạn cho request đọc; xem [hướng dẫn](../../Backend/README.md#xử-lý-kết-nối-lỗi-tạm-thời-503).
+
 Breadcrumb các trang dữ liệu chỉ hiển thị một lần trên header, với link đến danh sách,
 chi tiết và chỉnh sửa. Dashboard không nhúng breadcrumb/link bảng liên quan của đơn hàng.
 Trong chi tiết đơn hàng, nhóm thông tin liên quan mở các trang dòng hàng, hóa đơn,

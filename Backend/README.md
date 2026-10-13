@@ -40,6 +40,31 @@ Sinh JWT secret bằng lệnh sau, rồi lưu giá trị vào `.env`, không g�
 
 Swagger có 70 thao tác, schema riêng cho từng module, role và mã lỗi. Xem [hướng dẫn Swagger/OpenAPI](docs/README.md) để đăng nhập thử bằng Bearer/cookie và cập nhật snapshot [docs/openapi.json](docs/openapi.json). Trang docs không cần Supabase để mở; thử API dữ liệu cần cấu hình thật. `.env` cũ cần thêm origin cổng 8000 nếu muốn thử POST/PATCH/PUT trực tiếp từ Swagger.
 
+## Xử lý kết nối lỗi tạm thời (503)
+
+Backend dùng HTTP client/pool chung cho Supabase, HTTP/1.1, tối đa 20 kết nối
+và 10 kết nối giữ lại. Timeout mỗi thao tác: connect 2 giây, read 4 giây,
+write 10 giây, chờ pool 1 giây. Đây không phải giới hạn thời gian toàn endpoint.
+HTTP/1.1 là lựa chọn thận trọng, chưa chứng minh HTTP/2 gây lỗi trên Render.
+
+GET/HEAD không có body được thử tối đa 3 lượt (lượt đầu + 2 retry) khi gặp
+ConnectError/ConnectTimeout/ReadError/ReadTimeout/RemoteProtocolError hoặc
+HTTP 502/503/504. Retry chờ 0,25 rồi 0,5 giây kèm jitter; không bắt đầu retry
+nếu vượt ngân sách 8 giây. Không retry lỗi pool/429/4xx, không replay
+POST/PATCH/PUT/DELETE hoặc transaction RPC: ghi dữ liệu có thể đã thành công
+trước khi kết nối mất. UI/gateway không retry thêm để tránh nhân số lượt gọi.
+
+Log lỗi mạng ghi loại exception, phương thức, route; log retry ghi host và
+thời gian. Không ghi query, body, token, mật khẩu hoặc nội dung exception.
+Kiểm tra `Database read retry` / `Database connection failed` để tìm nguyên nhân;
+`503` không tự chứng minh bảng/schema sai. Health 200 chỉ là liveness.
+
+Kiểm thử offline: `.venv\Scripts\python.exe -m pytest tests/test_database_transport.py -q`.
+Để thử Supabase thật từ backend local, điền `SUPABASE_SECRET_KEY` trong `.env`,
+chạy uvicorn và đặt `ui/adminUI/.env.local`:
+`PHUB_API_BASE_URL=http://127.0.0.1:8000`; khởi động lại admin. Đăng nhập lại vì
+JWT secret local có thể khác Render. Không cần SQL migration cho thay đổi này.
+
 ## Chuẩn bị database
 
 Nguồn chuẩn là [schema.dbml](../database/schema.dbml), gồm 19 bảng, SKU, loại sản phẩm và tổng tiền giảm trên hóa đơn, không có bảng chi nhánh.

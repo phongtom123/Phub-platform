@@ -1,9 +1,20 @@
 import os
 from functools import lru_cache
 
-from supabase import Client, create_client
+import httpx
+from supabase import Client, ClientOptions, create_client
 
 from . import config  # Loads Backend/.env, regardless of the working directory.
+from .database_transport import DatabaseTransport
+
+
+@lru_cache
+def get_http_client() -> httpx.Client:
+    return httpx.Client(
+        transport=DatabaseTransport(),
+        timeout=httpx.Timeout(connect=2.0, read=4.0, write=10.0, pool=1.0),
+        follow_redirects=False,
+    )
 
 
 @lru_cache
@@ -12,7 +23,17 @@ def get_supabase() -> Client:
     key = os.getenv("SUPABASE_SECRET_KEY", "")
     if not url or not key or "your-project" in url or key.startswith("replace-"):
         raise RuntimeError("Configure SUPABASE_URL and SUPABASE_SECRET_KEY in Backend/.env")
-    return create_client(url, key)
+    return create_client(url, key, options=ClientOptions(
+        httpx_client=get_http_client(), auto_refresh_token=False, persist_session=False,
+    ))
+
+
+def close_supabase() -> None:
+    """Release pools on shutdown without initializing a client for health checks."""
+    if get_http_client.cache_info().currsize:
+        get_http_client().close()
+    get_supabase.cache_clear()
+    get_http_client.cache_clear()
 
 
 class LazyClient:

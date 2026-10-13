@@ -360,6 +360,7 @@ def test_main_registers_payments_without_requiring_auth_at_startup(monkeypatch):
     stub = ModuleType("app.supabase")
     stub.supabase = SimpleNamespace()
     stub.get_supabase = lambda: stub.supabase
+    stub.close_supabase = lambda: None
     monkeypatch.setitem(sys.modules, "app.supabase", stub)
     location = Path(__file__).resolve().parents[1] / "app" / "main.py"
     spec = importlib.util.spec_from_file_location("app.payment_main_check", location)

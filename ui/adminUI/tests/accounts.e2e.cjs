@@ -28,7 +28,7 @@ async function main() {
       if (path === "auth/me") return loggedIn
         ? respond({ account_id: actor.ma_tk, username: actor.ten_tai_khoan, role: actor.role, name: actor.ho_ten })
         : respond({ detail: "Vui lòng đăng nhập." }, 401);
-      if (path === "auth/login") { loggedIn = true; return respond({ username: actor.ten_tai_khoan, role: actor.role }); }
+      if (path === "auth/login") { loggedIn = true; return respond({ account_id: actor.ma_tk, username: actor.ten_tai_khoan, role: actor.role, name: actor.ho_ten }); }
       if (path === "auth/logout") { loggedIn = false; return route.fulfill({ status: 204 }); }
       if (path === "data/warehouses") return respond({ data: [{ ma_kho: 7, ten_kho: "Kho test", trang_thai: 1 }, { ma_kho: -900003, ten_kho: "Kho mã âm", trang_thai: 1 }, { ma_kho: 8, ten_kho: "Kho ngừng hoạt động", trang_thai: 0 }], total: 3, page: 1, page_size: 100 });
       if (path === "admin/account-owners") throw new Error("New account form must not select an old owner");

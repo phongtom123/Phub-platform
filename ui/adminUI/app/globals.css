@@ -38,6 +38,9 @@ button {
   min-height: 100vh;
   background: #fafbfa;
 }
+.session-gate { max-width: 640px; margin: 12vh auto; padding: 24px; font-size: 16px; }
+.session-gate h1 { font-size: 26px; }
+.session-warning { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px; margin-bottom: 20px; border: 1px solid #f1dba8; border-radius: 10px; background: #fffbeb; }
 .main {
   padding-left: var(--side);
 }
