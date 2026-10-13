@@ -23,9 +23,28 @@ function validAdminPath(path: string[], method: string): boolean {
   );
 }
 
+function validWarehousePath(path: string[], method: string): boolean {
+  if (path[0] !== "warehouse") return false;
+  if (path.length === 2 && path[1] === "options") return method === "GET";
+  if (path.length === 2 && path[1] === "dispatches") return method === "GET";
+  if (path.length === 3 && ["receipts", "transfers"].includes(path[1])) {
+    return path[2] === "draft" && method === "POST";
+  }
+  if (path.length === 4 && path[1] === "dispatches") {
+    return path[3] === "dispatch" && method === "POST" && /^[A-Za-z0-9_.-]{1,100}$/.test(path[2]);
+  }
+  if (path.length === 4 && ["receipts", "transfers"].includes(path[1])) {
+    return /^\d+$/.test(path[2]) && ["confirm", "cancel", "draft", "dispatch", "receive"].includes(path[3]) &&
+      ((path[1] === "receipts" && ["confirm", "cancel", "draft"].includes(path[3])) ||
+       (path[1] === "transfers" && ["cancel", "draft", "dispatch", "receive"].includes(path[3]))) &&
+      ((path[3] === "draft" && method === "PUT") || (path[3] !== "draft" && method === "POST"));
+  }
+  return false;
+}
+
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {
   const { path } = await context.params;
-  const valid = validAdminPath(path, request.method) || (path.length === 2 && (
+  const valid = validAdminPath(path, request.method) || validWarehousePath(path, request.method) || (path.length === 2 && (
     (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) ||
     (path[0] === "data" && resources.has(path[1]))
   ));

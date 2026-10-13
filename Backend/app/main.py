@@ -9,6 +9,7 @@ from .payments.router import router as payments_router
 from .commerce.router import router as commerce_router
 from .health import router as health_router
 from .admin_accounts.router import router as admin_accounts_router
+from .warehouse.router import router as warehouse_router
 from .errors import register_errors
 from .supabase import get_supabase
 from .resources import public_columns
@@ -44,6 +45,7 @@ app.include_router(payments_router)
 app.include_router(commerce_router)
 app.include_router(health_router)
 app.include_router(admin_accounts_router)
+app.include_router(warehouse_router)
 register_errors(app)
 
 
