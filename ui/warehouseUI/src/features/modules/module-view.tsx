@@ -1,7 +1,7 @@
 "use client";
 
-import BackendDataView from "@/src/components/backend-data-view";
-import type { ModuleDefinition } from "@/src/types/warehouse";
+import BackendDataView from "@warehouse/src/components/backend-data-view";
+import type { ModuleDefinition } from "@warehouse/src/types/warehouse";
 
 const resources: Record<string, string> = { inventory: "inventory", receipts: "receipts", transfers: "transfers", products: "products" };
 

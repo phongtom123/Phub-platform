@@ -2,11 +2,11 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import Sidebar from "@/src/components/warehouse/sidebar";
-import Header from "@/src/components/warehouse/header";
-import type { WarehouseUser } from "@/src/types/warehouse-auth";
+import Sidebar from "@warehouse/src/components/warehouse/sidebar";
+import Header from "@warehouse/src/components/warehouse/header";
+import type { WarehouseUser } from "@warehouse/src/types/warehouse-auth";
 
-const adminLoginUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000";
+const adminLoginUrl = "/";
 
 export default function WarehouseFrame({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<WarehouseUser | null>(null);

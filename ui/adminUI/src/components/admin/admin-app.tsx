@@ -18,17 +18,16 @@ import BackendDataView from "@/src/components/backend-data-view";
 import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
 import AccountsView from "@/src/features/accounts/accounts-view";
 import type { AccountView } from "@/src/features/accounts/types";
+import WarehouseApp from "@warehouse/src/components/warehouse/warehouse-app";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
   mode: "create" | "edit" | "settings";
 } | null;
 
-const warehouseUrl =
-  process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002";
-
 export default function AdminApp({ dataResource, accountsPage }: { dataResource?: string; accountsPage?: AccountView } = {}) {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
   const [sessionUser, setSessionUser] = useState<{ name: string; username: string } | null>(null);
   const [sessionVersion, setSessionVersion] = useState(0);
   const [activeModule, setActiveModule] = useState<ModuleKey>("dashboard");
@@ -42,7 +41,7 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
       .then(async response => {
         if (!response.ok) { setLoggedIn(false); return; }
         const user = await response.json();
-        if (user.role === "THU_KHO") { window.location.replace(warehouseUrl); return; }
+        if (user.role === "THU_KHO") { setStaffRole("THU_KHO"); setLoggedIn(true); setSessionUser(user); return; }
         if (user.role === "KHACH_HANG") { window.location.replace(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001"); return; }
         setLoggedIn(user.role === "ADMIN");
         setSessionUser(user);
@@ -65,11 +64,7 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
     role: StaffRole;
     username: string;
   }) => {
-    if (role === "THU_KHO") {
-      window.location.assign(warehouseUrl);
-      return;
-    }
-
+    setStaffRole(role);
     setLoggedIn(true);
     setSessionVersion(value => value + 1);
   };
@@ -77,6 +72,7 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
   if (loggedIn === null) return null;
 
   if (!loggedIn) return <LoginView onLogin={login} />;
+  if (staffRole === "THU_KHO") return <WarehouseApp />;
 
   const navigate = (moduleKey: ModuleKey) => {
     if (moduleKey === "accounts" || dataResource || accountsPage) { window.location.assign(getModuleHref(moduleKey)); return; }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "../../warehouseUI/app/globals.css";
 import "./globals.css";
 import "../../shared/data-manager.css";
 import "@/src/features/accounts/accounts.css";

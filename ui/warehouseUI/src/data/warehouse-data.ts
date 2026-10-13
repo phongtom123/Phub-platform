@@ -1,4 +1,4 @@
-import type { FormFieldDefinition, ModuleDefinition, ModuleKey } from "@/src/types/warehouse";
+import type { FormFieldDefinition, ModuleDefinition, ModuleKey } from "@warehouse/src/types/warehouse";
 
 export const moduleNames: Record<ModuleKey, string> = {
   dashboard: "Tổng quan", inventory: "Tồn kho", receipts: "Phiếu nhập", transfers: "Chuyển kho", stocktake: "Kiểm kê", products: "Sản phẩm", history: "Lịch sử kho", account: "Tài khoản", settings: "Cài đặt",

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Panel } from "@/src/components/warehouse/ui";
+import { Panel } from "@warehouse/src/components/warehouse/ui";
 
 type Session = { name: string; username: string; employee_id: string | null; role: string; warehouse_id: number | null };
 export default function AccountSettings({ section }: { section: "account" | "settings" }) {
