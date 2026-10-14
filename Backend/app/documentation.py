@@ -26,14 +26,16 @@ Tất cả ví dụ là dữ liệu giả minh họa, **không phải tài kho�
 ### Đăng nhập và thử API
 
 1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.
-2. Mở **http://localhost:8000/docs**, đăng nhập bằng `POST /api/auth/login` → Try it out → Execute.
-3. Trình duyệt lưu cookie HttpOnly `phub_session`; thử `GET /api/auth/me`, sau đó các API theo role.
-4. Dùng cùng hostname cho docs và UI; không trộn localhost với 127.0.0.1.
+2. Mở **http://localhost:8000/docs**, gọi `POST /api/auth/token` với username/email và password thật.
+3. Sao chép `access_token`, bấm **Authorize → BearerAuth** và dán riêng token (không thêm `Bearer`).
+4. Thử `GET /api/auth/me`, sau đó các API theo role. Swagger tự gửi `Authorization: Bearer <token>`.
 
-**Không nhập Supabase key hoặc dán token vào nút Authorize.** Swagger không thể tự đặt cookie HttpOnly
-qua Authorize. Cookie có sẵn trên cùng host được trình duyệt gửi tự động; nếu công cụ không gửi cookie,
-dùng Postman/cookie jar hoặc đăng nhập qua UI trên cùng host trước.
-POST/PATCH/PUT kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.
+UI vẫn dùng `POST /api/auth/login` để lưu JWT trong cookie HttpOnly `phub_session`; login không trả token JSON.
+Cookie có sẵn trên cùng host được trình duyệt gửi tự động; dùng cùng hostname, không trộn localhost với 127.0.0.1.
+**Không nhập Supabase key vào Authorize.** Ô SessionCookie không tự đặt được cookie HttpOnly.
+Bearer được ưu tiên khi có Authorization; token sai không chuyển sang cookie. JWT có hạn 8 giờ.
+Logout chỉ xóa cookie; khi thử Bearer hãy xóa token ở Authorize. Chưa có thu hồi từng token phía server.
+Các API ghi đang yêu cầu Origin vẫn kiểm tra Origin kể cả khi dùng Bearer. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.
 Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.
 
 ### Quy ước dữ liệu
@@ -58,7 +60,7 @@ Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkou
 
 TAGS = [
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
-    {"name": "Shared · Xác thực", "description": "Login/register/me/logout. Cookie HttpOnly, role lấy từ database."},
+    {"name": "Shared · Xác thực", "description": "Login/token/register/me/logout. JWT qua Bearer hoặc cookie HttpOnly, role lấy từ database."},
     {"name": "Shared · Hệ thống", "description": "Health chỉ kiểm tra API đang chạy; không kiểm tra database."},
     {"name": "Shared · Metadata", "description": "Danh mục bảng/trường/model tạo theo quyền của phiên hiện tại."},
     {"name": "Admin · Tổ chức", "description": "Kho, nhân viên, tài khoản. Mật khẩu chỉ có trong request, không có trong response."},
@@ -84,6 +86,7 @@ RESOURCE_TAGS = {
     "invoices": "Bán hàng · Tài chính", "payments": "Bán hàng · Tài chính",
 }
 NOTES = {
+    "categories": "ma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
     "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh sửa bằng URL duong_dan_anh; upload file chưa có API. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
@@ -176,7 +179,7 @@ def add_table_paths(spec: dict) -> None:
             operation = deepcopy(templates[method])
             operation["operationId"] = f"{method}_{name.replace('-', '_')}"
             operation["tags"] = [RESOURCE_TAGS[name]]
-            operation["security"] = [{"SessionCookie": []}]
+            operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
             operation["x-roles"] = roles_for(name, method != "get")
             operation["x-table"] = resource.table
             operation["x-primary-key"] = list(resource.keys)
@@ -243,18 +246,18 @@ def describe_auth_and_public(spec: dict) -> None:
             if method not in {"get", "post", "patch", "put"}:
                 continue
             if path.startswith("/api/admin/"):
-                operation["security"] = [{"SessionCookie": []}]
+                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
                 operation["x-roles"] = ["ADMIN"]
                 operation["x-implementation-status"] = "implemented-live-unverified"
                 if method != "get":
                     operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
             elif path.startswith("/api/auth/"):
                 operation["tags"] = ["Shared · Xác thực"]
-                operation["security"] = [{"SessionCookie": []}] if path.endswith("/me") else []
+                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}] if path.endswith("/me") else []
                 operation["x-implementation-status"] = "implemented-live-unverified"
             elif path == "/api/data/resources":
                 operation["tags"] = ["Shared · Metadata"]
-                operation["security"] = [{"SessionCookie": []}]
+                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
                 operation["description"] = "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền của role, không phải mọi bảng đều có API ghi. create_schema là JSON Schema cho body tạo; không có hash mật khẩu."
             elif path.startswith("/api/catalog/") or path == "/api/products":
                 operation["tags"] = ["Customer · Catalog"]
@@ -276,6 +279,20 @@ def describe_auth_and_public(spec: dict) -> None:
     login["description"] = "Tài khoản thật trong TAI_KHOAN, hash Argon2/bcrypt; role và kho lấy từ NHAN_VIEN/KHACH_HANG. Tạo cookie HttpOnly 8 giờ; không trả token trong JSON. Ví dụ password là placeholder, không có tài khoản demo."
     login["requestBody"]["content"]["application/json"]["example"] = {"username": "example.admin", "password": "Replace_with_your_password"}
     login["responses"]["200"]["content"]["application/json"]["example"] = SESSION_EXAMPLE
+    token = paths["/api/auth/token"]["post"]
+    token["description"] = "Dùng chung xác thực tài khoản, hàm tạo JWT và giới hạn 20 lần/IP/phút với /api/auth/login. Trả access_token, token_type=bearer, expires_in=28800; không đặt cookie. Trong Authorize → BearerAuth chỉ dán access_token, không thêm Bearer. Khi có Origin phải thuộc FRONTEND_ORIGINS; Postman/CLI có thể bỏ Origin ở endpoint này. Role/trạng thái được đọc lại từ database mỗi request; đổi mật khẩu làm token cũ mất hiệu lực. Logout chỉ xóa cookie, không thu hồi Bearer token."
+    token["requestBody"]["content"]["application/json"]["example"] = deepcopy(login["requestBody"]["content"]["application/json"]["example"])
+    token["responses"]["200"]["content"]["application/json"]["example"] = {
+        "access_token": "JWT_PLACEHOLDER_REPLACE_WITH_REAL_ACCESS_TOKEN", "token_type": "bearer", "expires_in": 28800,
+    }
+    token["responses"]["200"]["headers"] = {
+        "Cache-Control": {"schema": {"type": "string"}, "description": "no-store"},
+        "Pragma": {"schema": {"type": "string"}, "description": "no-cache"},
+    }
+    token.setdefault("parameters", []).append({
+        **deepcopy(ORIGIN_DOCUMENTATION), "required": False,
+        "description": "Nếu gửi Origin thì phải thuộc FRONTEND_ORIGINS. Postman/CLI có thể bỏ; trình duyệt tự gửi Origin.",
+    })
     registration = paths["/api/auth/register"]["post"]
     registration["description"] = "Tạo KHACH_HANG và TAI_KHOAN trong một transaction, chỉ cho role KHACH_HANG. Mật khẩu hash Argon2 ở backend; thành công tạo cookie HttpOnly 8 giờ và không trả token/hash."
     registration["requestBody"]["content"]["application/json"]["example"] = {
@@ -299,7 +316,7 @@ def install_openapi(app: FastAPI) -> None:
                            servers=[{"url": "/", "description": "Cùng origin với trang Swagger; tránh trộn hostname của cookie."}])
         spec.setdefault("components", {}).setdefault("securitySchemes", {})["SessionCookie"] = {
             "type": "apiKey", "in": "cookie", "name": COOKIE_NAME,
-            "description": "Đăng nhập qua POST /api/auth/login trên cùng host để trình duyệt lưu cookie HttpOnly. Không nhập token hoặc Supabase key vào Authorize.",
+            "description": "Đăng nhập qua POST /api/auth/login trên cùng host để trình duyệt lưu cookie HttpOnly. Ô này không đặt được cookie HttpOnly; muốn dùng token hãy chọn BearerAuth.",
         }
         add_table_paths(spec)
         describe_auth_and_public(spec)

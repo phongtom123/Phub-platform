@@ -30,7 +30,7 @@ class CatalogQuery(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     q: str | None = Field(default=None, max_length=100, description="Tìm chuỗi trong tên hoặc SKU, không phân biệt hoa/thường; ký tự đặc biệt được tìm nguyên văn.")
-    category_id: list[Identifier] = Field(default_factory=list, max_length=20, description="Mã LOAI_SP; lặp tham số để chọn nhiều loại. Các loại được kết hợp bằng OR.")
+    category_id: list[Identifier] = Field(default_factory=list, max_length=20, description="Mã LOAI_SP; gồm loại đã chọn và các loại con đang hoạt động ở mọi cấp. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.")
     brand: str | None = Field(default=None, max_length=100, description="Giá trị thuong_hieu từ /api/catalog/brands; so khớp chính xác.")
     min_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá thấp nhất, bao gồm mức này; giá trước thuế.")
     max_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá cao nhất, bao gồm mức này; phải >= min_price.")
@@ -64,6 +64,10 @@ class CatalogQuery(BaseModel):
 class Category(BaseModel):
     id: str
     name: str
+
+
+class CategoryNode(Category):
+    parent_id: str | None = Field(default=None, description="ma_loai_cha; null là danh mục gốc. Trạng thái mỗi loại độc lập; cha ẩn có thể không xuất hiện trong danh sách.")
 
 
 class Brand(BaseModel):
@@ -129,7 +133,7 @@ class ProductPage(BaseModel):
 
 
 class CategoryList(BaseModel):
-    items: list[Category]
+    items: list[CategoryNode]
 
 
 class BrandList(BaseModel):

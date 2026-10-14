@@ -173,6 +173,8 @@ async def read_payload(request: Request, name: str, patch: bool) -> dict:
 
 
 def validate_combined(name: str, data: dict, user: User) -> None:
+    if name == "categories" and data.get("ma_loai_cha") is not None and data["ma_loai_cha"] == data.get("ma_loai_sp"):
+        raise HTTPException(422, "Danh mục không thể là cha của chính nó.")
     if name == "accounts" and bool(data.get("ma_kh")) == bool(data.get("ma_nhan_vien")):
         raise HTTPException(422, "Tài khoản phải thuộc đúng một khách hàng hoặc một nhân viên.")
     if name == "employees":

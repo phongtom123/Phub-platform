@@ -1,6 +1,7 @@
 import json
 
 import httpx
+import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
@@ -8,6 +9,7 @@ from postgrest import SyncPostgrestClient
 from app.auth import (
     User,
     current_user,
+    login_attempts,
     passwords,
     registration_attempts,
     require_admin,
@@ -67,8 +69,10 @@ def test_warehouse_guard_requires_an_assigned_warehouse():
     assert client.get("/warehouse").status_code == 403
 
 
-def test_customer_login_cookie_flows_through_the_shared_dependency(monkeypatch):
+@pytest.mark.parametrize("endpoint", ["login", "token"])
+def test_customer_auth_flows_through_the_shared_dependency(monkeypatch, endpoint):
     monkeypatch.setenv("JWT_SECRET", "test-only-" + "x" * 64)
+    login_attempts.clear()
     account = {
         "ma_tk": "TK3", "ten_tai_khoan": "customer", "ma_kh": "KH3",
         "ma_nhan_vien": None, "trang_thai": 1,
@@ -92,14 +96,19 @@ def test_customer_login_cookie_flows_through_the_shared_dependency(monkeypatch):
         app.dependency_overrides[get_supabase] = lambda: db
         with TestClient(app) as client:
             login = client.post(
-                "/api/auth/login",
+                "/api/auth/" + endpoint,
                 json={"username": "customer", "password": "customer-password"},
                 headers={"Origin": "http://localhost:3000"},
             )
             assert login.status_code == 200
-            assert login.json()["role"] == "KHACH_HANG"
-            assert "HttpOnly" in login.headers["set-cookie"]
-            assert client.get("/customer").json() == {"customer_id": "KH3"}
+            headers = {}
+            if endpoint == "login":
+                assert login.json()["role"] == "KHACH_HANG"
+                assert "HttpOnly" in login.headers["set-cookie"]
+            else:
+                assert "set-cookie" not in login.headers
+                headers = {"Authorization": "Bearer " + login.json()["access_token"]}
+            assert client.get("/customer", headers=headers).json() == {"customer_id": "KH3"}
 
 
 def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch):

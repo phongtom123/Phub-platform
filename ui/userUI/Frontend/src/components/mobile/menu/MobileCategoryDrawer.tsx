@@ -4,11 +4,13 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { IconButton } from "@/components/common/icon";
-import { useCatalogMetadata } from "@/lib/catalog/useCatalog";
+import type { useCategories } from "@/lib/catalog/useCategories";
+import { categoryHref, childCategories, rootCategories } from "@/lib/catalog/categories";
 import { CatalogStatus } from "@/components/catalog/CatalogStatus";
 import styles from "./MobileCategoryDrawer.module.css";
 
 interface Props {
+  catalog: ReturnType<typeof useCategories>;
   id: string;
   open: boolean;
   selectedCategoryId: string | null;
@@ -17,10 +19,11 @@ interface Props {
 }
 
 /** Menu 1 and Menu 2 are two states of the same accessible drawer. */
-export function MobileCategoryDrawer({ id, open, selectedCategoryId, onSelectCategory, onClose }: Props) {
+export function MobileCategoryDrawer({ catalog, id, open, selectedCategoryId, onSelectCategory, onClose }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const router = useRouter();
-  const metadata = useCatalogMetadata();
+  const selected = catalog.data.find(category => category.id === selectedCategoryId);
+  const categories = selected ? childCategories(catalog.data, selected.id) : rootCategories(catalog.data);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -57,9 +60,15 @@ export function MobileCategoryDrawer({ id, open, selectedCategoryId, onSelectCat
           <Image src="/images/figma-mobile/menu-close.svg" width={14} height={14} alt="" />
         </IconButton>
       </div>
-      <CatalogStatus loading={metadata.loading} error={metadata.error} retry={metadata.retry} />
-      {!metadata.loading && !metadata.error && <nav className={styles.items}>
-        {metadata.data.categories.map(category => <button type="button" key={category.id} className={styles.item} onClick={() => navigate(`/main/product?category_id=${encodeURIComponent(category.id)}`)}>{category.label}</button>)}
+      <CatalogStatus loading={catalog.loading} error={catalog.error} retry={catalog.retry} />
+      {!catalog.loading && !catalog.error && <nav className={styles.items} aria-label="Chọn danh mục">
+        {selected && <>
+          <button type="button" className={styles.back} onClick={() => onSelectCategory(selected.parentId)}>← Quay lại</button>
+          <button type="button" className={styles.item} onClick={() => navigate(categoryHref(selected.id))}>Xem tất cả {selected.label}</button>
+        </>}
+        {categories.map(category => <button type="button" key={category.id} className={styles.item}
+          onClick={() => childCategories(catalog.data, category.id).length ? onSelectCategory(category.id) : navigate(categoryHref(category.id))}
+        >{category.label}{childCategories(catalog.data, category.id).length > 0 && <span aria-hidden="true">›</span>}</button>)}
         <button type="button" className={styles.item} onClick={() => navigate("/main/product")}>Tất cả sản phẩm</button>
       </nav>}
     </div>

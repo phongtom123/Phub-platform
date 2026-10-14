@@ -11,12 +11,12 @@ import styles from "./Catalog.module.css";
 
 interface Props {
   draft: CatalogFilters; onChange: (value: CatalogFilters) => void; onApply: () => void; onClear: () => void; onBrand: (brand: string) => void; activeBrand: string;
-  compared: CatalogProduct[]; wished: CatalogProduct[]; onCompare: (product: CatalogProduct) => void; onWish: (product: CatalogProduct) => void; onSelect: (product: CatalogProduct) => void;
+  compared: CatalogProduct[]; wished: CatalogProduct[]; onCompare: (product: CatalogProduct) => void; onWish: (product: CatalogProduct) => void;
   metadata: CatalogController["metadata"]; locale?: "en" | "vi"; filtersOnly?: boolean;
 }
 const logos: Record<string, string> = { msi: "msi", hp: "hp", "hewlett packard": "hp", adata: "adata", gigabyte: "gigabyte", thermaltake: "thermaltake", roccat: "roccat" };
 
-export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, activeBrand, compared, wished, onCompare, onWish, onSelect, metadata, filtersOnly = false }: Props) {
+export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, activeBrand, compared, wished, onCompare, onWish, metadata, filtersOnly = false }: Props) {
   return <>
     <section className={styles.filters} aria-labelledby="filters-heading">
       <div className={styles.filterHeading}><h2 id="filters-heading">Bộ lọc</h2><Button variant="outline" onClick={onClear}>Xóa bộ lọc</Button></div>
@@ -38,8 +38,8 @@ export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, act
           </button>;
         })}</div>
       </section>
-      <CatalogSelectionPanel locale="vi" title="So sánh sản phẩm" emptyText="Bạn chưa có sản phẩm để so sánh." products={compared} onRemove={onCompare} onSelect={onSelect} />
-      <CatalogSelectionPanel locale="vi" title="Danh sách yêu thích" emptyText="Bạn chưa có sản phẩm yêu thích." products={wished} onRemove={onWish} onSelect={onSelect} />
+      <CatalogSelectionPanel locale="vi" title="So sánh sản phẩm" emptyText="Bạn chưa có sản phẩm để so sánh." products={compared} onRemove={onCompare} />
+      <CatalogSelectionPanel locale="vi" title="Danh sách yêu thích" emptyText="Bạn chưa có sản phẩm yêu thích." products={wished} onRemove={onWish} />
     </>}
   </>;
 }

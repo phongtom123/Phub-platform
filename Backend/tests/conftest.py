@@ -25,7 +25,7 @@ def product_row():
 
 @pytest.fixture
 def catalog_client(product_row):
-    state = {"rows": [deepcopy(product_row)], "total": 1, "error": None, "handler": None}
+    state = {"rows": [deepcopy(product_row)], "categories": [], "total": 1, "error": None, "handler": None}
     requests = []
 
     def handle(request):
@@ -34,7 +34,7 @@ def catalog_client(product_row):
             raise state["error"]
         if state["handler"]:
             return state["handler"](request)
-        rows = state["rows"]
+        rows = state["categories"] if request.url.path.endswith("/LOAI_SP") else state["rows"]
         headers = {"content-range": f"0-{max(0, len(rows) - 1)}/{state['total']}"}
         return httpx.Response(200, json=rows, headers=headers)
 

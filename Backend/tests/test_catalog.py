@@ -194,12 +194,75 @@ def test_specification_formats_preserve_content(raw, expected):
 
 def test_categories_are_active_and_ordered(catalog_client):
     client, state, requests, _ = catalog_client
-    state["rows"] = [{"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop"}]
+    state["categories"] = [{"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop", "ma_loai_cha": None}]
     response = client.get("/api/catalog/categories")
     assert response.status_code == 200
-    assert response.json() == {"items": [{"id": "LAPTOP", "name": "Laptop"}]}
+    assert response.json() == {"items": [{"id": "LAPTOP", "name": "Laptop", "parent_id": None}]}
     assert requests[-1].url.path.endswith("/LOAI_SP")
     assert requests[-1].url.params["trang_thai"] == "eq.1"
+
+
+def test_parent_filter_includes_descendants_before_count_sort_and_pagination(catalog_client):
+    client, state, requests, _ = catalog_client
+    state["categories"] = [
+        {"ma_loai_sp": id, "ten_loai_sp": id, "ma_loai_cha": parent}
+        for id, parent in [("PC", None), ("CPU", "PC"), ("INTEL", "CPU"), ("RAM", "PC"), ("MOUSE", None)]
+    ]
+    state["total"] = 21
+    response = client.get("/api/catalog/products", params=[("category_id", "PC"), ("category_id", "CPU"),
+        ("page", "2"), ("page_size", "10"), ("sort", "price-desc")])
+    assert response.status_code == 200
+    assert response.json()["pagination"]["total"] == 21
+    params = requests[-1].url.params
+    assert params["ma_loai_sp"] == 'in.("PC","CPU","RAM","INTEL")'
+    assert params["offset"] == "10" and params["limit"] == "10"
+    assert params["order"] == "gia_ban_hien_tai.desc,ma_sp.asc"
+    assert sum(request.url.path.endswith("/LOAI_SP") for request in requests) == 1
+    response = client.get("/api/catalog/categories")
+    assert response.json()["items"][2]["parent_id"] == "CPU"
+
+
+def test_category_expansion_reads_all_pages_and_terminates_on_cycles(catalog_client):
+    _, state, requests, repository = catalog_client
+    def handle(request):
+        assert "trang_thai" not in request.url.params
+        offset = int(request.url.params["offset"])
+        rows = [{"ma_loai_sp": f"C{i}", "ten_loai_sp": str(i), "ma_loai_cha": "ROOT"} for i in range(500)] if offset == 0 else [
+            {"ma_loai_sp": "LATE", "ten_loai_sp": "Late", "ma_loai_cha": "C499"},
+            {"ma_loai_sp": "ROOT", "ten_loai_sp": "Root", "ma_loai_cha": "LATE"},
+        ]
+        return httpx.Response(200, json=rows)
+    state["handler"] = handle
+    expanded = repository.expand_categories(["ROOT"])
+    assert len(expanded) == len(set(expanded)) == 502
+    assert expanded[-1] == "LATE" and len(requests) == 2
+
+
+def test_expanded_filter_is_reused_for_out_of_range_count(catalog_client):
+    client, state, requests, _ = catalog_client
+    def handle(request):
+        if request.url.path.endswith("/LOAI_SP"):
+            return httpx.Response(200, json=[{"ma_loai_sp": "CPU", "ten_loai_sp": "CPU", "ma_loai_cha": "PC"}])
+        assert request.url.params["ma_loai_sp"] == 'in.("PC","CPU")'
+        if request.method == "GET":
+            return httpx.Response(416, json={"code": "PGRST103", "message": "out of range", "details": None, "hint": None})
+        return httpx.Response(200, json=[], headers={"content-range": "*/12"})
+    state["handler"] = handle
+    response = client.get("/api/catalog/products", params={"category_id": "PC", "page": 50})
+    assert response.status_code == 200 and response.json()["pagination"]["total"] == 12
+    assert len(requests) == 3
+
+
+def test_hidden_parent_does_not_hide_active_descendants(catalog_client):
+    client, state, requests, _ = catalog_client
+    state["categories"] = [
+        {"ma_loai_sp": "HIDDEN", "ten_loai_sp": "Hidden", "ma_loai_cha": "PC", "trang_thai": 0},
+        {"ma_loai_sp": "CHILD", "ten_loai_sp": "Active child", "ma_loai_cha": "HIDDEN", "trang_thai": 1},
+    ]
+    assert client.get("/api/catalog/products", params={"category_id": "PC"}).status_code == 200
+    assert "trang_thai" not in requests[0].url.params
+    assert requests[-1].url.params["ma_loai_sp"] == 'in.("PC","HIDDEN","CHILD")'
+    assert requests[-1].url.params["category.trang_thai"] == "eq.1"
 
 
 def test_brands_are_unique_sorted_and_include_later_database_pages(catalog_client):

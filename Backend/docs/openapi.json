@@ -997,7 +997,7 @@
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/Category"
+              "$ref": "#/components/schemas/CategoryNode"
             },
             "title": "Items",
             "type": "array"
@@ -1007,6 +1007,36 @@
           "items"
         ],
         "title": "CategoryList",
+        "type": "object"
+      },
+      "CategoryNode": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_loai_cha; null là danh mục gốc. Trạng thái mỗi loại độc lập; cha ẩn có thể không xuất hiện trong danh sách.",
+            "title": "Parent Id"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CategoryNode",
         "type": "object"
       },
       "CheckoutLine": {
@@ -2437,11 +2467,27 @@
       "LOAI_SPCreate": {
         "additionalProperties": false,
         "example": {
+          "ma_loai_cha": null,
           "ma_loai_sp": "CPU",
           "ten_loai_sp": "Vi xử lý",
           "trang_thai": 1
         },
         "properties": {
+          "ma_loai_cha": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ma_loai_cha",
+            "title": "Ma Loai Cha"
+          },
           "ma_loai_sp": {
             "description": "ma_loai_sp",
             "maxLength": 2000,
@@ -2509,11 +2555,23 @@
       "LOAI_SPRead": {
         "additionalProperties": false,
         "example": {
+          "ma_loai_cha": null,
           "ma_loai_sp": "CPU",
           "ten_loai_sp": "Vi xử lý",
           "trang_thai": 1
         },
         "properties": {
+          "ma_loai_cha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_loai_cha"
+          },
           "ma_loai_sp": {
             "description": "ma_loai_sp",
             "type": "string"
@@ -2530,6 +2588,7 @@
         "required": [
           "ma_loai_sp",
           "ten_loai_sp",
+          "ma_loai_cha",
           "trang_thai"
         ],
         "title": "LOAI_SPRead",
@@ -2558,6 +2617,20 @@
         },
         "minProperties": 1,
         "properties": {
+          "ma_loai_cha": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_loai_cha",
+            "title": "Ma Loai Cha"
+          },
           "ten_loai_sp": {
             "description": "ten_loai_sp",
             "maxLength": 2000,
@@ -5650,6 +5723,30 @@
         "title": "TON_KHORead",
         "type": "object"
       },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_in": {
+            "default": 28800,
+            "title": "Expires In",
+            "type": "integer"
+          },
+          "token_type": {
+            "const": "bearer",
+            "default": "bearer",
+            "title": "Token Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token"
+        ],
+        "title": "TokenResponse",
+        "type": "object"
+      },
       "TransactionPage": {
         "additionalProperties": false,
         "properties": {
@@ -6101,8 +6198,14 @@
       }
     },
     "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "description": "Lấy access_token từ POST /api/auth/token. Chỉ dán token, không thêm tiền tố Bearer; không dùng Supabase key.",
+        "scheme": "bearer",
+        "type": "http"
+      },
       "SessionCookie": {
-        "description": "Đăng nhập qua POST /api/auth/login trên cùng host để trình duyệt lưu cookie HttpOnly. Không nhập token hoặc Supabase key vào Authorize.",
+        "description": "Đăng nhập qua POST /api/auth/login trên cùng host để trình duyệt lưu cookie HttpOnly. Ô này không đặt được cookie HttpOnly; muốn dùng token hãy chọn BearerAuth.",
         "in": "cookie",
         "name": "phub_session",
         "type": "apiKey"
@@ -6110,7 +6213,7 @@
     }
   },
   "info": {
-    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, đăng nhập bằng `POST /api/auth/login` → Try it out → Execute.\n3. Trình duyệt lưu cookie HttpOnly `phub_session`; thử `GET /api/auth/me`, sau đó các API theo role.\n4. Dùng cùng hostname cho docs và UI; không trộn localhost với 127.0.0.1.\n\n**Không nhập Supabase key hoặc dán token vào nút Authorize.** Swagger không thể tự đặt cookie HttpOnly\nqua Authorize. Cookie có sẵn trên cùng host được trình duyệt gửi tự động; nếu công cụ không gửi cookie,\ndùng Postman/cookie jar hoặc đăng nhập qua UI trên cùng host trước.\nPOST/PATCH/PUT kiểm tra CSRF qua Origin. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,\nnhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
+    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, gọi `POST /api/auth/token` với username/email và password thật.\n3. Sao chép `access_token`, bấm **Authorize → BearerAuth** và dán riêng token (không thêm `Bearer`).\n4. Thử `GET /api/auth/me`, sau đó các API theo role. Swagger tự gửi `Authorization: Bearer <token>`.\n\nUI vẫn dùng `POST /api/auth/login` để lưu JWT trong cookie HttpOnly `phub_session`; login không trả token JSON.\nCookie có sẵn trên cùng host được trình duyệt gửi tự động; dùng cùng hostname, không trộn localhost với 127.0.0.1.\n**Không nhập Supabase key vào Authorize.** Ô SessionCookie không tự đặt được cookie HttpOnly.\nBearer được ưu tiên khi có Authorization; token sai không chuyển sang cookie. JWT có hạn 8 giờ.\nLogout chỉ xóa cookie; khi thử Bearer hãy xóa token ở Authorize. Chưa có thu hồi từng token phía server.\nCác API ghi đang yêu cầu Origin vẫn kiểm tra Origin kể cả khi dùng Bearer. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,\nnhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
     "title": "Phub Platform API",
     "version": "0.3.0"
   },
@@ -6243,6 +6346,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -6410,6 +6516,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -6557,6 +6666,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -6687,6 +6799,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -6838,6 +6953,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -6992,6 +7110,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -7144,6 +7265,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -7298,6 +7422,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -7414,6 +7541,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -7552,6 +7682,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -7705,6 +7838,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -8012,6 +8148,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -8174,6 +8313,163 @@
         },
         "security": [],
         "summary": "Đăng ký tài khoản khách hàng",
+        "tags": [
+          "Shared · Xác thực"
+        ],
+        "x-implementation-status": "implemented-live-unverified"
+      }
+    },
+    "/api/auth/token": {
+      "post": {
+        "description": "Dùng chung xác thực tài khoản, hàm tạo JWT và giới hạn 20 lần/IP/phút với /api/auth/login. Trả access_token, token_type=bearer, expires_in=28800; không đặt cookie. Trong Authorize → BearerAuth chỉ dán access_token, không thêm Bearer. Khi có Origin phải thuộc FRONTEND_ORIGINS; Postman/CLI có thể bỏ Origin ở endpoint này. Role/trạng thái được đọc lại từ database mỗi request; đổi mật khẩu làm token cũ mất hiệu lực. Logout chỉ xóa cookie, không thu hồi Bearer token.",
+        "operationId": "issue_token_api_auth_token_post",
+        "parameters": [
+          {
+            "description": "Nếu gửi Origin thì phải thuộc FRONTEND_ORIGINS. Postman/CLI có thể bỏ; trình duyệt tự gửi Origin.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": false,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "password": "Replace_with_your_password",
+                "username": "example.admin"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/LoginBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "access_token": "JWT_PLACEHOLDER_REPLACE_WITH_REAL_ACCESS_TOKEN",
+                  "expires_in": 28800,
+                  "token_type": "bearer"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "no-store",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Pragma": {
+                "description": "no-cache",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dùng chung giới hạn 20 lần đăng nhập/IP/phút với /api/auth/login."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dùng chung giới hạn 20 lần đăng nhập/IP/phút với /api/auth/login."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Lấy JWT Bearer để thử API trong Swagger/Postman",
         "tags": [
           "Shared · Xác thực"
         ],
@@ -8441,12 +8737,12 @@
             }
           },
           {
-            "description": "Mã LOAI_SP; lặp tham số để chọn nhiều loại. Các loại được kết hợp bằng OR.",
+            "description": "Mã LOAI_SP; gồm loại đã chọn và các loại con đang hoạt động ở mọi cấp. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
             "in": "query",
             "name": "category_id",
             "required": false,
             "schema": {
-              "description": "Mã LOAI_SP; lặp tham số để chọn nhiều loại. Các loại được kết hợp bằng OR.",
+              "description": "Mã LOAI_SP; gồm loại đã chọn và các loại con đang hoạt động ở mọi cấp. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
               "items": {
                 "maxLength": 100,
                 "minLength": 1,
@@ -8925,6 +9221,14 @@
             "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Báo giá giỏ hàng và kiểm tra voucher",
         "tags": [
           "Customer Shopping"
@@ -9066,6 +9370,14 @@
             "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Hồ sơ khách đang đăng nhập",
         "tags": [
           "Customer Shopping"
@@ -9215,6 +9527,14 @@
             "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Lưu thông tin nhận hàng của khách hiện tại",
         "tags": [
           "Customer Shopping"
@@ -9381,6 +9701,14 @@
             "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Danh sách đơn thuộc khách",
         "tags": [
           "Customer Shopping"
@@ -9553,6 +9881,14 @@
             "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Đặt đơn thuộc khách với voucher và idempotency",
         "tags": [
           "Customer Shopping"
@@ -9707,6 +10043,14 @@
             "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Chi tiết đơn thuộc khách",
         "tags": [
           "Customer Shopping"
@@ -9861,6 +10205,14 @@
             "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Hóa đơn công khai của đơn thuộc khách",
         "tags": [
           "Customer Shopping"
@@ -10032,6 +10384,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -10052,7 +10407,7 @@
     },
     "/api/data/categories": {
       "get": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `LOAI_SP`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
         "operationId": "get_categories",
         "parameters": [
           {
@@ -10124,6 +10479,7 @@
                 "example": {
                   "data": [
                     {
+                      "ma_loai_cha": null,
                       "ma_loai_sp": "CPU",
                       "ten_loai_sp": "Vi xử lý",
                       "trang_thai": 1
@@ -10212,6 +10568,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -10231,7 +10590,7 @@
         "x-table": "LOAI_SP"
       },
       "patch": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
         "operationId": "patch_categories",
         "parameters": [
           {
@@ -10288,6 +10647,7 @@
                 "example": {
                   "data": [
                     {
+                      "ma_loai_cha": null,
                       "ma_loai_sp": "CPU",
                       "ten_loai_sp": "Vi xử lý",
                       "trang_thai": 1
@@ -10399,6 +10759,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -10417,7 +10780,7 @@
         "x-table": "LOAI_SP"
       },
       "post": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
         "operationId": "post_categories",
         "parameters": [
           {
@@ -10439,6 +10802,7 @@
                 "illustration": {
                   "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
                   "value": {
+                    "ma_loai_cha": null,
                     "ma_loai_sp": "CPU",
                     "ten_loai_sp": "Vi xử lý",
                     "trang_thai": 1
@@ -10459,6 +10823,7 @@
                 "example": {
                   "data": [
                     {
+                      "ma_loai_cha": null,
                       "ma_loai_sp": "CPU",
                       "ten_loai_sp": "Vi xử lý",
                       "trang_thai": 1
@@ -10556,6 +10921,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -10739,6 +11107,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -10930,6 +11301,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -11093,6 +11467,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -11279,6 +11656,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -11472,6 +11852,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -11641,6 +12024,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -11822,6 +12208,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -12032,6 +12421,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -12241,6 +12633,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -12453,6 +12848,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -12658,6 +13056,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -12847,6 +13248,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -13044,6 +13448,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -13219,6 +13626,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -13404,6 +13814,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -13596,6 +14009,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -13760,6 +14176,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -13941,6 +14360,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -14132,6 +14554,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -14233,6 +14658,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -14407,6 +14835,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -14598,6 +15029,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -14761,6 +15195,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -14942,6 +15379,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -15132,6 +15572,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -15337,6 +15780,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -15525,6 +15971,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -15720,6 +16169,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -15891,6 +16343,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -16072,6 +16527,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -16261,6 +16719,9 @@
         },
         "security": [
           {
+            "BearerAuth": []
+          },
+          {
             "SessionCookie": []
           }
         ],
@@ -16419,6 +16880,9 @@
           }
         },
         "security": [
+          {
+            "BearerAuth": []
+          },
           {
             "SessionCookie": []
           }
@@ -16637,6 +17101,14 @@
             "description": "Thiếu cấu hình, migration hoặc dịch vụ dữ liệu không khả dụng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Đặt đơn ONLINE từ các SKU và kho còn hàng",
         "tags": [
           "Customer Orders"
@@ -16812,6 +17284,14 @@
             "description": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Điểm nối yêu cầu thanh toán cho đơn thuộc khách",
         "tags": [
           "Customer Payments"
@@ -16949,6 +17429,14 @@
             "description": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Xem giao dịch thanh toán mới nhất của đơn thuộc khách",
         "tags": [
           "Customer Payments"
@@ -17110,6 +17598,14 @@
             "description": "Schema/cấu hình thanh toán chưa sẵn sàng hoặc dịch vụ dữ liệu không khả dụng."
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Lịch sử thu và hoàn tiền của đơn thuộc khách",
         "tags": [
           "Customer Payments"
@@ -17151,7 +17647,7 @@
       "name": "Admin · Tài khoản"
     },
     {
-      "description": "Login/register/me/logout. Cookie HttpOnly, role lấy từ database.",
+      "description": "Login/token/register/me/logout. JWT qua Bearer hoặc cookie HttpOnly, role lấy từ database.",
       "name": "Shared · Xác thực"
     },
     {

@@ -6,7 +6,8 @@ import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEv
 import { IconButton } from "@/components/common/icon";
 import { SearchInput } from "@/components/common/SearchInput";
 import { AccountMenu, CartPreview, GuestAvatar } from "./HeaderPanels";
-import { headerCategories } from "./headerData";
+import { useCategories } from "@/lib/catalog/useCategories";
+import { categoryHref, childCategories, rootCategories } from "@/lib/catalog/categories";
 import { MegaMenu } from "./MegaMenu";
 import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
@@ -27,6 +28,10 @@ export default function AltHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [menuCategoryId, setMenuCategoryId] = useState<string | null>(null);
+  const catalog = useCategories();
+  const roots = rootCategories(catalog.data);
+  const menuCategory = catalog.data.find(category => category.id === menuCategoryId);
   const [session, setSession] = useState<SessionUser | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -48,6 +53,7 @@ export default function AltHeader() {
   }
 
   function hoverOpen(next: Dropdown, event: ReactPointerEvent<HTMLElement>) {
+    if (!window.matchMedia("(min-width: 1100px) and (hover: hover)").matches) return;
     if (event.pointerType !== "mouse" || searchOpen || (panel && hoverRef.current === null)) return;
     triggerRef.current =
       event.currentTarget instanceof HTMLButtonElement
@@ -62,13 +68,6 @@ export default function AltHeader() {
       hoverRef.current = null;
       setPanel(null);
     }
-  }
-
-  function showPreview(label: string) {
-    hoverRef.current = null;
-    setSearchOpen(false);
-    setNotice(label + ": hiện chỉ là giao diện, chưa kết nối chức năng.");
-    setPanel("notice");
   }
 
   useEffect(() => {
@@ -130,12 +129,15 @@ export default function AltHeader() {
     return { "data-open": panel === name, "aria-hidden": panel !== name, inert: panel !== name };
   }
 
-  function selectCategory(item: typeof headerCategories[number], trigger: HTMLElement) {
-    if (item.id === "parts") toggle("mega", trigger);
+  function selectCategory(categoryId: string, trigger: HTMLElement) {
+    if (menuCategoryId === categoryId) toggle("mega", trigger);
     else {
       triggerRef.current = trigger;
-      showPreview(item.label);
+      hoverRef.current = null;
+      setSearchOpen(false);
+      setPanel("mega");
     }
+    setMenuCategoryId(categoryId);
   }
 
   return (
@@ -177,20 +179,29 @@ export default function AltHeader() {
           aria-label="Danh mục sản phẩm"
           className={[styles.navigation, searchOpen && styles.navigationHidden].filter(Boolean).join(" ")}
         >
-          {headerCategories.map(item => (
-            <button
-              key={item.id}
-              type="button"
-              aria-expanded={item.id === "parts" ? panel === "mega" : undefined}
-              aria-controls={item.id === "parts" ? id + "-mega" : undefined}
+          {catalog.loading && <span role="status">Đang tải danh mục…</span>}
+          {catalog.error && <span role="alert">Không tải được danh mục. <button type="button" onClick={catalog.retry}>Thử lại</button></span>}
+          {roots.map(item => (
+            <div key={item.id} className={styles.navItem}
               onPointerEnter={event => {
-                if (item.id === "parts") hoverOpen("mega", event);
+                if (childCategories(catalog.data, item.id).length) {
+                  if (event.pointerType === "mouse" && !searchOpen && (!panel || hoverRef.current !== null)) {
+                    setMenuCategoryId(item.id);
+                    hoverOpen("mega", event);
+                  }
+                } else if (hoverRef.current === "mega") { hoverRef.current = null; setPanel(null); }
               }}
-              onClick={event => selectCategory(item, event.currentTarget)}
             >
-              {item.label}
-            </button>
+              <Link href={categoryHref(item.id)} onClick={() => close()}>{item.label}</Link>
+              {childCategories(catalog.data, item.id).length > 0 && <button type="button"
+                aria-label={`Danh mục con của ${item.label}`}
+                aria-expanded={panel === "mega" && menuCategoryId === item.id}
+                aria-controls={id + "-mega"}
+                onClick={event => selectCategory(item.id, event.currentTarget)}
+              >⌄</button>}
+            </div>
           ))}
+          <Link href="/main/product" onClick={() => close()}>Tất Cả Sản Phẩm</Link>
         </nav>
 
         {searchOpen && (
@@ -268,6 +279,7 @@ export default function AltHeader() {
         </div>
 
         <MobileCategoryDrawer
+          catalog={catalog}
           id={id + "-mobile"}
           open={panel === "mobile"}
           selectedCategoryId={selectedCategoryId}
@@ -275,7 +287,7 @@ export default function AltHeader() {
           onClose={() => close(true)}
         />
         <div id={id + "-mega"} className={styles.megaPanel} {...dropdownProps("mega")}>
-          <MegaMenu onClose={() => close(true)} />
+          {menuCategory && <MegaMenu categories={catalog.data} category={menuCategory} onClose={() => close(true)} />}
         </div>
         {panel === "notice" && (
           <div className={styles.notice}>

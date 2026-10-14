@@ -157,7 +157,7 @@ Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hìn
 
 Chi tiết endpoint, payload, quyền và backlog: [Backend/README.md](Backend/README.md).
 
-Quản lý đặc tả, đăng nhập trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot 68 thao tác trên 47 đường dẫn: [Backend/docs/openapi.json](Backend/docs/openapi.json).
+Quản lý đặc tả, đăng nhập bằng Bearer/cookie trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot 70 thao tác trên 49 đường dẫn: [Backend/docs/openapi.json](Backend/docs/openapi.json).
 
 ## Kiểm tra mã
 

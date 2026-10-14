@@ -7,6 +7,8 @@ Xem [CATALOG-INTEGRATION.md](../../../CATALOG-INTEGRATION.md) để chạy ứng
 cấu hình backend, xem phạm vi chức năng và kiểm tra. `CatalogExperience` quản lý
 dữ liệu/URL; desktop dùng `CatalogPage`, mobile dùng `HomePage2` ở mốc 760px.
 Giá/loại/thương hiệu/ảnh/thông số đọc từ API; các bộ lọc chưa hỗ trợ bị vô hiệu hóa.
+Bấm ảnh hoặc tên sản phẩm mở thẳng `/main/product/{ma_sp}` ở cả chế độ lưới,
+danh sách và các danh sách yêu thích/so sánh; nút hỏi thông tin vẫn mở xem nhanh.
 
 **Các ghi chú bên dưới lưu lịch sử thiết kế và fixtures trước khi tích hợp API;
 số lượng, giá và trạng thái mẫu không còn được dùng trên route catalog thật.**
