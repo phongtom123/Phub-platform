@@ -43,6 +43,13 @@ Website Start Command:
 npm --prefix ui/userUI/Frontend run start -- --hostname 0.0.0.0 --port $PORT
 ```
 
+Script `build` của website dùng `next build --webpack`. Bản Turbopack hiện tại
+đã báo `Cannot find module '@vercel/turbopack/postcss'` khi build CSS trên Render;
+Webpack xử lý PostCSS/CSS Modules qua pipeline production khác. Giữ lệnh
+`npm ... run build` để áp dụng lựa chọn này; không thay bằng `next build` trực tiếp.
+Khi deploy bản sửa lần đầu, chọn **Clear build cache & deploy** để bỏ artifacts
+Turbopack cũ. Không cần cài thêm package `@vercel/turbopack/postcss`.
+
 Build Filters (Included Paths, tính từ gốc repository):
 
 - API: `Backend/**`, `database/schema.dbml`.
