@@ -86,6 +86,7 @@ RESOURCE_TAGS = {
     "invoices": "Bán hàng · Tài chính", "payments": "Bán hàng · Tài chính",
 }
 NOTES = {
+    "categories": "ma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
     "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh sửa bằng URL duong_dan_anh; upload file chưa có API. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",

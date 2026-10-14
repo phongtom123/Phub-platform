@@ -24,25 +24,25 @@ function useHomeProducts(categoryId = "", pageSize = 8) {
   return { ...state, loading: state.key !== key, retry: () => { setState(current => ({ ...current, key: "" })); setAttempt(value => value + 1); } };
 }
 
-function CategoryShelf({ category, onSelect }: { category: { id: string; label: string }; onSelect: (product: HomeProduct) => void }) {
+function CategoryShelf({ category }: { category: { id: string; label: string } }) {
   const data = useHomeProducts(category.id, 5);
   const router = useRouter();
   const shelf: HomeCategory = { id: category.id, title: category.label, image: "category-generic.svg", mobileImage: "", groups: [{ label: category.label, products: data.products }] };
   if (data.loading || data.error) return <section aria-label={category.label}><h2>{category.label}</h2><CatalogStatus loading={data.loading} error={data.error} retry={data.retry} /></section>;
   if (!data.products.length) return null;
-  return <ProductShelf category={shelf} onSelect={onSelect} onViewAll={() => router.push(`/main/product?${new URLSearchParams({ category_id: category.id })}`)} />;
+  return <ProductShelf category={shelf} onViewAll={() => router.push(`/main/product?${new URLSearchParams({ category_id: category.id })}`)} />;
 }
 
-export function HomeFeaturedProducts({ onSelect }: { onSelect: (product: HomeProduct) => void }) {
+export function HomeFeaturedProducts() {
   const data = useHomeProducts();
   const router = useRouter();
   if (data.loading || data.error) return <CatalogStatus loading={data.loading} error={data.error} retry={data.retry} />;
   if (!data.products.length) return <p>Hiện chưa có sản phẩm đang bán.</p>;
-  return <NewProducts products={data.products} onSelect={onSelect} onViewAll={() => router.push("/main/product")} title="Sản phẩm đang bán" />;
+  return <NewProducts products={data.products} onViewAll={() => router.push("/main/product")} title="Sản phẩm đang bán" />;
 }
 
-export function HomeCategoryProducts({ onSelect }: { onSelect: (product: HomeProduct) => void }) {
+export function HomeCategoryProducts() {
   const metadata = useCatalogMetadata();
   if (metadata.loading || metadata.error) return <CatalogStatus loading={metadata.loading} error={metadata.error} retry={metadata.retry} />;
-  return <>{metadata.data.categories.map(category => <CategoryShelf key={category.id} category={category} onSelect={onSelect} />)}</>;
+  return <>{metadata.data.categories.map(category => <CategoryShelf key={category.id} category={category} />)}</>;
 }

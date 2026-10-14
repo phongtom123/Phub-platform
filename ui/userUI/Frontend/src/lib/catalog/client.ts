@@ -1,4 +1,4 @@
-import type { ApiProduct, ApiProductPage, CatalogMetadata, CatalogRequest } from "./types";
+import type { ApiProduct, ApiProductPage, CatalogCategory, CatalogMetadata, CatalogRequest } from "./types";
 
 export class CatalogApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -56,17 +56,27 @@ export async function getProducts(request: CatalogRequest, signal?: AbortSignal)
   return { ...data, items: data.items.map(validateProduct) };
 }
 
+export async function getCategories(signal?: AbortSignal): Promise<CatalogCategory[]> {
+  const categories = await readJson(await fetch("/api/catalog/categories", { signal })) as {
+    items: { id: string; name: string; parent_id?: string | null }[];
+  };
+  if (!Array.isArray(categories?.items) || !categories.items.every(item => item && typeof item.id === "string"
+    && typeof item.name === "string" && (item.parent_id == null || typeof item.parent_id === "string"))) {
+    throw new CatalogApiError("Không thể đọc danh mục sản phẩm.", 502);
+  }
+  return categories.items.map(item => ({ id: item.id, label: item.name, parentId: item.parent_id ?? null }));
+}
+
 export async function getMetadata(signal?: AbortSignal): Promise<CatalogMetadata> {
   const [categories, brands] = await Promise.all([
-    fetch("/api/catalog/categories", { signal }).then(readJson),
+    getCategories(signal),
     fetch("/api/catalog/brands", { signal }).then(readJson),
-  ]) as [{ items: { id: string; name: string }[] }, { items: { name: string }[] }];
-  if (!Array.isArray(categories?.items) || !categories.items.every(item => item && typeof item.id === "string" && typeof item.name === "string")
-    || !Array.isArray(brands?.items) || !brands.items.every(item => item && typeof item.name === "string")) {
+  ]) as [CatalogCategory[], { items: { name: string }[] }];
+  if (!Array.isArray(brands?.items) || !brands.items.every(item => item && typeof item.name === "string")) {
     throw new CatalogApiError("Không thể đọc danh mục và thương hiệu.", 502);
   }
   return {
-    categories: categories.items.map(item => ({ id: item.id, label: item.name })),
+    categories,
     brands: brands.items.map(item => ({ id: item.name, name: item.name })),
   };
 }

@@ -8,7 +8,7 @@ from supabase import Client
 from .availability import available_skus, rows as all_rows
 
 from .schemas import (
-    Brand, CatalogProduct, CatalogQuery, CatalogSort, Category,
+    Brand, CatalogProduct, CatalogQuery, CatalogSort, Category, CategoryNode,
     Pagination, ProductImage, ProductPage, Specification, ColorOption, StockStatus,
 )
 
@@ -82,13 +82,13 @@ class CatalogRepository:
             .eq("category.trang_thai", self.active_status)
         )
 
-    def apply_filters(self, query, filters: CatalogQuery):
+    def apply_filters(self, query, filters: CatalogQuery, category_ids: list[str] | None = None):
         if filters.q:
             # Escaped literal regex avoids LIKE's wildcard aliases %, _ and *.
             pattern = quoted(re.escape(filters.q))
             query = query.or_(f"ten_sp.imatch.{pattern},sku.imatch.{pattern}")
         if filters.category_id:
-            values = ",".join(quoted(value) for value in filters.category_id)
+            values = ",".join(quoted(value) for value in (category_ids if category_ids is not None else filters.category_id))
             query = query.filter("ma_loai_sp", "in", f"({values})")
         if filters.brand:
             query = query.eq("thuong_hieu", filters.brand)
@@ -114,8 +114,10 @@ class CatalogRepository:
         )
 
     def list_products(self, filters: CatalogQuery) -> ProductPage:
+        # Expand once per request, before filtering/counting/pagination (including retries).
+        category_ids = self.expand_categories(filters.category_id) if filters.category_id else None
         def product_query():
-            query = self.apply_filters(self.active_products(PRODUCT_COLUMNS, count="exact"), filters)
+            query = self.apply_filters(self.active_products(PRODUCT_COLUMNS, count="exact"), filters, category_ids)
             if filters.sort != CatalogSort.DEFAULT:
                 query = query.order("gia_ban_hien_tai", desc=filters.sort == CatalogSort.PRICE_DESC)
             return query.order("ma_sp")
@@ -147,7 +149,7 @@ class CatalogRepository:
                 raise
             # PostgREST may return 416 for offsets past the filtered result set.
             count_query = self.apply_filters(
-                self.active_products("ma_sp,category:LOAI_SP!inner(trang_thai)", count="exact", head=True), filters,
+                self.active_products("ma_sp,category:LOAI_SP!inner(trang_thai)", count="exact", head=True), filters, category_ids,
             )
             rows, total = [], count_query.execute().count
         if total is None:
@@ -164,16 +166,32 @@ class CatalogRepository:
         rows = self.active_products(PRODUCT_COLUMNS).eq("ma_sp", product_id).limit(1).execute().data
         return self.product_from_row(rows[0]) if rows else None
 
-    def list_categories(self) -> list[Category]:
+    def expand_categories(self, selected: list[str]) -> list[str]:
+        children: dict[str, list[str]] = {}
+        # Traverse through hidden parents too: status is independent per category.
+        # The product query still excludes products whose own category is inactive.
+        for category in self.list_categories(active_only=False):
+            if category.parent_id is not None:
+                children.setdefault(category.parent_id, []).append(category.id)
+        result = list(dict.fromkeys(selected))
+        visited = set(result)
+        # Iterative traversal also terminates on malformed legacy/cyclic data.
+        for parent in result:
+            for child in children.get(parent, []):
+                if child not in visited:
+                    visited.add(child)
+                    result.append(child)
+        return result
+
+    def list_categories(self, active_only: bool = True) -> list[CategoryNode]:
         items = []
         start = 0
         while True:
-            rows = (
-                self.client.table("LOAI_SP").select("ma_loai_sp,ten_loai_sp")
-                .eq("trang_thai", self.active_status).order("ma_loai_sp")
-                .range(start, start + BATCH_SIZE - 1).execute().data
-            )
-            items.extend(Category(id=row["ma_loai_sp"], name=row["ten_loai_sp"]) for row in rows)
+            query = self.client.table("LOAI_SP").select("ma_loai_sp,ten_loai_sp,ma_loai_cha")
+            if active_only:
+                query = query.eq("trang_thai", self.active_status)
+            rows = query.order("ma_loai_sp").range(start, start + BATCH_SIZE - 1).execute().data
+            items.extend(CategoryNode(id=row["ma_loai_sp"], name=row["ten_loai_sp"], parent_id=row.get("ma_loai_cha")) for row in rows)
             if len(rows) < BATCH_SIZE:
                 return items
             start += BATCH_SIZE

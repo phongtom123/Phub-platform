@@ -4,7 +4,8 @@
 
 `LiveHomeProducts` thay dữ liệu mẫu ở các khối sản phẩm bằng API catalog công
 khai. Các khối lấy sản phẩm đang bán và nhóm theo loại thật; nút "Xem tất cả"
-mở catalog tương ứng. Xem nhanh mở chi tiết bằng `ma_sp` thật, giá dùng tiền tệ
+mở catalog tương ứng. Bấm ảnh hoặc tên sản phẩm mở thẳng `/main/product/{ma_sp}`,
+không qua hộp xem nhanh; giá dùng tiền tệ
 API. Không giả định sản phẩm mới nhất, rating, tồn kho hoặc giảm giá.
 Banner và nội dung tĩnh giữ thiết kế hiện có. Xem
 [CATALOG-INTEGRATION.md](../../../CATALOG-INTEGRATION.md) để chạy/kiểm tra.

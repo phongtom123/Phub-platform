@@ -3,14 +3,14 @@
 import Image from "next/image";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { ProductCard } from "@/components/common/ProductCard";
+import { productHref } from "@/lib/catalog/types";
 import type { HomeCategory, HomeProduct } from "./homeData";
 import styles from "./Home.module.css";
 
-interface SelectionProps { onSelect: (product: HomeProduct) => void }
-function Card({ product, onSelect, compact = false }: SelectionProps & { product: HomeProduct; compact?: boolean }) {
-  return <ProductCard {...product} mobileImageSrc={undefined} uiLocale="vi" compactOnMobile={compact} href="#" className={styles.card} onSelect={() => onSelect(product)} />;
+function Card({ product, compact = false }: { product: HomeProduct; compact?: boolean }) {
+  return <ProductCard {...product} mobileImageSrc={undefined} uiLocale="vi" compactOnMobile={compact} href={productHref(product.id)} className={styles.card} />;
 }
-export function NewProducts({ products, onSelect, onViewAll, title = "Sản phẩm mới" }: SelectionProps & { products: HomeProduct[]; onViewAll: () => void; title?: string }) {
+export function NewProducts({ products, onViewAll, title = "Sản phẩm mới" }: { products: HomeProduct[]; onViewAll: () => void; title?: string }) {
   const track = useRef<HTMLDivElement>(null);
   function move(direction: number) {
     const element = track.current;
@@ -24,14 +24,14 @@ export function NewProducts({ products, onSelect, onViewAll, title = "Sản ph�
     <div className={styles.sectionHeading}><h2 id="new-products-heading">{title}</h2><button className={styles.textLink} onClick={onViewAll}>Xem tất cả</button></div>
     <div className={styles.carousel}>
       <div ref={track} className={styles.productTrack} tabIndex={0} aria-label="Sản phẩm mới — cuộn để xem thêm">
-        {products.map(product => <Card key={product.id} product={product} onSelect={onSelect} compact />)}
+        {products.map(product => <Card key={product.id} product={product} compact />)}
       </div>
       <button className={`${styles.arrow} ${styles.previous}`} onClick={() => move(-1)} aria-label="Sản phẩm trước">‹</button>
       <button className={`${styles.arrow} ${styles.next}`} onClick={() => move(1)} aria-label="Sản phẩm tiếp theo">›</button>
     </div>
   </section>;
 }
-export function ProductShelf({ category, onSelect, onViewAll }: SelectionProps & { category: HomeCategory; onViewAll: (title: string, products: HomeProduct[]) => void }) {
+export function ProductShelf({ category, onViewAll }: { category: HomeCategory; onViewAll: (title: string, products: HomeProduct[]) => void }) {
   const [active, setActive] = useState(0);
   const tabs = useRef<HTMLDivElement>(null);
   const group = category.groups[active];
@@ -58,7 +58,7 @@ export function ProductShelf({ category, onSelect, onViewAll }: SelectionProps &
         <button onClick={() => onViewAll(category.title, category.groups.flatMap(item => item.products))}>Xem tất cả sản phẩm</button>
       </div>
       <div className={styles.categoryProducts} tabIndex={0} aria-label={`${group.label} products`}>
-        {group.products.map(product => <Card key={product.id} product={product} onSelect={onSelect} />)}
+        {group.products.map(product => <Card key={product.id} product={product} />)}
       </div>
     </div>
   </section>;

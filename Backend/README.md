@@ -67,6 +67,8 @@ JWT secret local có thể khác Render. Không cần SQL migration cho thay đ�
 
 ## Chuẩn bị database
 
+Danh mục cha–con dùng `LOAI_SP.ma_loai_cha`: xem [migration, cách gán cha và hành vi menu](docs/category-hierarchy.md). Cần chạy migration này trước khi triển khai bản hỗ trợ danh mục con.
+
 Nguồn chuẩn là [schema.dbml](../database/schema.dbml), gồm 19 bảng, SKU, loại sản phẩm và tổng tiền giảm trên hóa đơn, không có bảng chi nhánh.
 
 Nếu Supabase **chưa có bảng/dữ liệu**, kiểm tra rồi chạy [001_initial_schema.sql](../database/migrations/001_initial_schema.sql) trong SQL Editor. Script có transaction, 32 khóa ngoại, check constraints, RLS và chặn truy cập bảng trực tiếp từ vai trò `anon`/`authenticated`.
