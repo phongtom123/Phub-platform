@@ -67,7 +67,9 @@ JWT secret local có thể khác Render. Không cần SQL migration cho thay đ�
 
 ## Chuẩn bị database
 
-Danh mục cha–con dùng `LOAI_SP.ma_loai_cha`: xem [migration, cách gán cha và hành vi menu](docs/category-hierarchy.md). Cần chạy migration này trước khi triển khai bản hỗ trợ danh mục con.
+Danh mục là danh sách phẳng: catalog trả `id/name` và lọc đúng các loại đã chọn.
+Không cần migration danh mục cha–con. Nếu database từng thêm cột cha thì bản này
+không đọc hoặc ghi cột đó; các danh mục và sản phẩm hiện có vẫn được giữ.
 
 Nguồn chuẩn là [schema.dbml](../database/schema.dbml), gồm 19 bảng, SKU, loại sản phẩm và tổng tiền giảm trên hóa đơn, không có bảng chi nhánh.
 

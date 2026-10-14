@@ -69,6 +69,23 @@ def test_warehouse_guard_requires_an_assigned_warehouse():
     assert client.get("/warehouse").status_code == 403
 
 
+@pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer forged"}, {"Authorization": "Basic invalid"}])
+def test_missing_or_malformed_session_is_rejected_before_database_config(monkeypatch, headers):
+    monkeypatch.delenv("JWT_SECRET", raising=False)
+    database_calls = []
+
+    def unavailable_database():
+        database_calls.append(True)
+        raise RuntimeError("Database configuration is unavailable")
+
+    app = FastAPI()
+    app.include_router(auth_router)
+    app.dependency_overrides[get_supabase] = unavailable_database
+    with TestClient(app) as client:
+        assert client.get("/api/auth/me", headers=headers).status_code == 401
+    assert database_calls == []
+
+
 @pytest.mark.parametrize("endpoint", ["login", "token"])
 def test_customer_auth_flows_through_the_shared_dependency(monkeypatch, endpoint):
     monkeypatch.setenv("JWT_SECRET", "test-only-" + "x" * 64)

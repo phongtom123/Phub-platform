@@ -56,6 +56,9 @@ chỉ phục vụ kiểm thử/tài liệu, không được dùng làm dữ li�
 
 ## Chuẩn bị
 
+Triển khai Render: xem [cấu hình hai service](RENDER.md) và [render.yaml](render.yaml).
+Danh mục dùng một cấp, không cần migration danh mục cha–con.
+
 - Node.js 20.9+ (khuyến nghị Node.js 22), npm, Python 3.11+.
 - Supabase Project URL và một **secret key mới chỉ dùng phía server**.
 - Tạo `Backend/.env` theo [mẫu](Backend/.env.example); cấu hình JWT secret ngẫu nhiên ít nhất 32 ký tự.

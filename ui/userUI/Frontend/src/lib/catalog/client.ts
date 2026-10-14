@@ -58,13 +58,13 @@ export async function getProducts(request: CatalogRequest, signal?: AbortSignal)
 
 export async function getCategories(signal?: AbortSignal): Promise<CatalogCategory[]> {
   const categories = await readJson(await fetch("/api/catalog/categories", { signal })) as {
-    items: { id: string; name: string; parent_id?: string | null }[];
+    items: { id: string; name: string }[];
   };
   if (!Array.isArray(categories?.items) || !categories.items.every(item => item && typeof item.id === "string"
-    && typeof item.name === "string" && (item.parent_id == null || typeof item.parent_id === "string"))) {
+    && typeof item.name === "string")) {
     throw new CatalogApiError("Không thể đọc danh mục sản phẩm.", 502);
   }
-  return categories.items.map(item => ({ id: item.id, label: item.name, parentId: item.parent_id ?? null }));
+  return categories.items.map(item => ({ id: item.id, label: item.name }));
 }
 
 export async function getMetadata(signal?: AbortSignal): Promise<CatalogMetadata> {

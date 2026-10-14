@@ -20,7 +20,7 @@ async function main() {
     let body;
     if (url.pathname === "/api/catalog/products") body = { items: [product], pagination: { page: 1, page_size: Number(url.searchParams.get("page_size") || 20), total: 1, total_pages: 1 } };
     else if (decodeURIComponent(url.pathname) === `/api/catalog/products/${product.id}`) body = product;
-    else if (url.pathname === "/api/catalog/categories") body = { items: [{ ...product.category, parent_id: null }] };
+    else if (url.pathname === "/api/catalog/categories") body = { items: [product.category] };
     else if (url.pathname === "/api/catalog/brands") body = { items: [{ name: "PHUB" }] };
     else { response.statusCode = 404; body = { error: { message: "Fixture not found" } }; }
     response.setHeader("Content-Type", "application/json");

@@ -997,7 +997,7 @@
         "properties": {
           "items": {
             "items": {
-              "$ref": "#/components/schemas/CategoryNode"
+              "$ref": "#/components/schemas/Category"
             },
             "title": "Items",
             "type": "array"
@@ -1007,36 +1007,6 @@
           "items"
         ],
         "title": "CategoryList",
-        "type": "object"
-      },
-      "CategoryNode": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "parent_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ma_loai_cha; null là danh mục gốc. Trạng thái mỗi loại độc lập; cha ẩn có thể không xuất hiện trong danh sách.",
-            "title": "Parent Id"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "CategoryNode",
         "type": "object"
       },
       "CheckoutLine": {
@@ -2467,27 +2437,11 @@
       "LOAI_SPCreate": {
         "additionalProperties": false,
         "example": {
-          "ma_loai_cha": null,
           "ma_loai_sp": "CPU",
           "ten_loai_sp": "Vi xử lý",
           "trang_thai": 1
         },
         "properties": {
-          "ma_loai_cha": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "ma_loai_cha",
-            "title": "Ma Loai Cha"
-          },
           "ma_loai_sp": {
             "description": "ma_loai_sp",
             "maxLength": 2000,
@@ -2555,23 +2509,11 @@
       "LOAI_SPRead": {
         "additionalProperties": false,
         "example": {
-          "ma_loai_cha": null,
           "ma_loai_sp": "CPU",
           "ten_loai_sp": "Vi xử lý",
           "trang_thai": 1
         },
         "properties": {
-          "ma_loai_cha": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ma_loai_cha"
-          },
           "ma_loai_sp": {
             "description": "ma_loai_sp",
             "type": "string"
@@ -2588,7 +2530,6 @@
         "required": [
           "ma_loai_sp",
           "ten_loai_sp",
-          "ma_loai_cha",
           "trang_thai"
         ],
         "title": "LOAI_SPRead",
@@ -2617,20 +2558,6 @@
         },
         "minProperties": 1,
         "properties": {
-          "ma_loai_cha": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ma_loai_cha",
-            "title": "Ma Loai Cha"
-          },
           "ten_loai_sp": {
             "description": "ten_loai_sp",
             "maxLength": 2000,
@@ -8737,12 +8664,12 @@
             }
           },
           {
-            "description": "Mã LOAI_SP; gồm loại đã chọn và các loại con đang hoạt động ở mọi cấp. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
+            "description": "Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
             "in": "query",
             "name": "category_id",
             "required": false,
             "schema": {
-              "description": "Mã LOAI_SP; gồm loại đã chọn và các loại con đang hoạt động ở mọi cấp. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
+              "description": "Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
               "items": {
                 "maxLength": 100,
                 "minLength": 1,
@@ -10407,7 +10334,7 @@
     },
     "/api/data/categories": {
       "get": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
+        "description": "Bảng `LOAI_SP`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục phẳng. Catalog trả id/name và chỉ lọc các mã loại đã chọn; không có danh mục cha hoặc con. Không cần migration danh mục cha–con.",
         "operationId": "get_categories",
         "parameters": [
           {
@@ -10479,7 +10406,6 @@
                 "example": {
                   "data": [
                     {
-                      "ma_loai_cha": null,
                       "ma_loai_sp": "CPU",
                       "ten_loai_sp": "Vi xử lý",
                       "trang_thai": 1
@@ -10590,7 +10516,7 @@
         "x-table": "LOAI_SP"
       },
       "patch": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
+        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục phẳng. Catalog trả id/name và chỉ lọc các mã loại đã chọn; không có danh mục cha hoặc con. Không cần migration danh mục cha–con.",
         "operationId": "patch_categories",
         "parameters": [
           {
@@ -10647,7 +10573,6 @@
                 "example": {
                   "data": [
                     {
-                      "ma_loai_cha": null,
                       "ma_loai_sp": "CPU",
                       "ten_loai_sp": "Vi xử lý",
                       "trang_thai": 1
@@ -10780,7 +10705,7 @@
         "x-table": "LOAI_SP"
       },
       "post": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nma_loai_cha=null là danh mục gốc; mã cha phải tồn tại trong LOAI_SP. Không được tự làm cha hoặc tạo vòng lặp. Catalog trả parent_id và lọc cha bao gồm các cấp con. Trạng thái độc lập: ẩn cha không tự ẩn con. Cần migration category_hierarchy trước khi dùng trường này.",
+        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục phẳng. Catalog trả id/name và chỉ lọc các mã loại đã chọn; không có danh mục cha hoặc con. Không cần migration danh mục cha–con.",
         "operationId": "post_categories",
         "parameters": [
           {
@@ -10802,7 +10727,6 @@
                 "illustration": {
                   "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
                   "value": {
-                    "ma_loai_cha": null,
                     "ma_loai_sp": "CPU",
                     "ten_loai_sp": "Vi xử lý",
                     "trang_thai": 1
@@ -10823,7 +10747,6 @@
                 "example": {
                   "data": [
                     {
-                      "ma_loai_cha": null,
                       "ma_loai_sp": "CPU",
                       "ten_loai_sp": "Vi xử lý",
                       "trang_thai": 1
