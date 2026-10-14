@@ -64,12 +64,7 @@ Table KHACH_HANG {
 Table LOAI_SP {
   ma_loai_sp varchar [pk]
   ten_loai_sp varchar [not null, unique]
-  ma_loai_cha varchar [note: 'NULL la danh muc goc; tham chieu LOAI_SP, khong duoc tao vong lap']
   trang_thai int [not null, default: 1]
-
-  indexes {
-    ma_loai_cha
-  }
 }
 
 Table SAN_PHAM {
@@ -367,7 +362,6 @@ Ref: NHAN_VIEN.ma_nhan_vien - TAI_KHOAN.ma_nhan_vien
 // San pham - Loai san pham - Ton kho
 
 Ref: SAN_PHAM.ma_loai_sp > LOAI_SP.ma_loai_sp
-Ref: LOAI_SP.ma_loai_cha > LOAI_SP.ma_loai_sp
 Ref: TON_KHO.ma_kho > KHO.ma_kho
 Ref: TON_KHO.sku > SAN_PHAM.sku
 

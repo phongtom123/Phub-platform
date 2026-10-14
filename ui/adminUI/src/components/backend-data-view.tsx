@@ -10,7 +10,6 @@ type Page = { data: Row[]; total: number; page: number; page_size: number; order
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
 
 const labels: Record<string, string> = {
-  ma_loai_cha: "Mã danh mục cha (để trống nếu là danh mục gốc)",
   ma_kho: "Mã kho", ten_kho: "Tên kho", dia_chi: "Địa chỉ", trang_thai: "Trạng thái",
   ma_sp: "Mã sản phẩm", sku: "SKU", ten_sp: "Tên sản phẩm", ma_loai_sp: "Mã loại sản phẩm", ten_loai_sp: "Tên loại sản phẩm",
   thuong_hieu: "Thương hiệu", gia_ban_hien_tai: "Giá bán", mo_ta: "Mô tả", thong_so_ky_thuat: "Thông số kỹ thuật",

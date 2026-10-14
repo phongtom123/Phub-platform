@@ -10,7 +10,7 @@ export interface ApiProduct {
   specifications: { label: string; value: string }[];
   specifications_text: string | null;
 }
-export interface CatalogCategory { id: string; label: string; parentId: string | null }
+export interface CatalogCategory { id: string; label: string }
 export interface CatalogMetadata {
   categories: CatalogCategory[];
   brands: { id: string; name: string }[];

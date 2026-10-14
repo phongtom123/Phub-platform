@@ -2,8 +2,8 @@
 
 > Cập nhật responsive: header hiện dùng một cây `AltHeader` cho desktop/mobile.
 > Mobile giữ nền trắng, logo/icon, giỏ hàng xem nhanh và menu tài khoản của
-> desktop; hamburger mở lại `MobileCategoryDrawer` hai cấp theo bản cũ,
-> còn desktop tiếp tục dùng `MegaMenu`.
+> desktop; hamburger mở `MobileCategoryDrawer` với danh mục một cấp từ API,
+> desktop hiển thị cùng danh sách loại và bấm để lọc sản phẩm.
 > `MobileHeader` và `Account1` bên dưới là bản Figma
 > tham khảo, không còn được render. Xem `../../../RESPONSIVE.md`.
 
@@ -13,7 +13,7 @@ Header hiện dùng bố cục và nội dung của `C:/xampp/htdocs/web2/user/c
 
 - `AltHeader.tsx`: header dùng chung, quản lý thanh thông tin, danh mục desktop, tìm kiếm, dropdown và drawer mobile (Figma `174:7227`).
 - `components/mobile/header/MobileHeader.tsx`: thanh công cụ mobile; trang danh mục dùng biến thể gọn một hàng theo Home Page 2.
-- `components/mobile/menu/Menu1.tsx`, `Menu2.tsx`, `MobileCategoryDrawer.tsx`: hai cấp danh mục trong cùng một drawer; dữ liệu tách ở `menuData.ts`.
+- `MobileCategoryDrawer.tsx`: danh sách phẳng từ API; `Menu1.tsx`, `Menu2.tsx` và `menuData.ts` chỉ là bản Figma cũ để tham khảo.
 - `HeaderPanels.tsx`: giờ mở cửa, menu khách và giỏ hàng rỗng.
 - `headerData.ts`: danh mục và nhãn tài khoản.
 - `common/SearchInput.tsx`, `Button.tsx`, `icon.tsx`: các thành phần dùng chung.
@@ -28,13 +28,16 @@ Logo dùng `public/images/1.png` đã có trong dự án, giống logo của fil
 - Ô tìm kiếm dùng opacity/scaleX trong 180ms khi mở; đóng tức thì.
 - Mũi tên giờ mở cửa và hamburger dùng transform trong 180ms.
 - Desktop hỗ trợ hover; bấm nút ghim dropdown mở. Bấm lại, Escape hoặc bấm ra ngoài để đóng.
-- Mobile dùng nút bấm; hamburger mở Menu 1, chọn danh mục mở Menu 2, chọn mục con điều hướng đến Home Page 2.
+- Mobile dùng nút bấm; hamburger mở danh sách loại, chọn một loại sẽ mở catalog theo mã loại.
 - `prefers-reduced-motion: reduce` tắt toàn bộ animation/transition của header.
 - Không thêm thư viện animation, không chạy vòng lặp JS, không dùng z-index cực lớn như bản PHP.
 
 ## Phạm vi hiện tại
 
 ### Mega menu mẫu
+
+Phần dưới chỉ ghi lại thiết kế ban đầu. Component `MegaMenu` đã được bỏ;
+giao diện đang chạy dùng danh mục phẳng từ API.
 
 Trên desktop, rê chuột hoặc bấm **Laptops** để xem 4 sản phẩm mẫu và 7 thương hiệu. Chọn **Everyday Use Notebooks → MSI Workstation Series → MSI WS Series** để xem menu 3 cột. Nút **Tất cả laptop** trở về bố cục 4 sản phẩm. Trên mobile, hamburger mở Menu 1 → Menu 2 và điều hướng đến Home Page 2.
 

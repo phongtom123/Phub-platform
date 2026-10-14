@@ -79,11 +79,11 @@ def password_version(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-def current_user(
-    request: Request, db=Depends(get_supabase),
+def session_claims(
+    request: Request,
     bearer: HTTPAuthorizationCredentials | None = Depends(bearer_auth),
     cookie: str | None = Depends(cookie_auth),
-) -> User:
+) -> dict:
     # Explicit Authorization always wins; malformed headers must not fall back to cookies.
     if "authorization" in request.headers:
         if bearer is None:
@@ -93,7 +93,11 @@ def current_user(
         token = cookie
     if not token:
         raise HTTPException(401, "Vui lòng đăng nhập.", headers={"WWW-Authenticate": "Bearer"})
-    claims = verify_access_token(token)
+    return verify_access_token(token)
+
+
+def current_user(claims: dict = Depends(session_claims), db=Depends(get_supabase)) -> User:
+    # Resolve/verify the session before initializing the database dependency.
     account_id = claims["sub"]
     rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", account_id).limit(1).execute().data
     if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
@@ -103,6 +107,9 @@ def current_user(
 
 def verify_access_token(token: str) -> dict:
     try:
+        # Reject malformed/unsupported tokens before reading server configuration.
+        if jwt.get_unverified_header(token).get("alg") != "HS256":
+            raise jwt.InvalidTokenError("Unsupported token algorithm")
         claims = jwt.decode(token, jwt_secret(), algorithms=["HS256"], issuer="phub-backend", audience="phub-ui",
                             options={"require": ["sub", "exp", "iat", "iss", "aud", "ver"]})
     except jwt.InvalidTokenError:
