@@ -78,6 +78,8 @@ async function main() {
     const inputs = page.locator(".live-form input");
     await inputs.nth(0).fill("SP2"); await inputs.nth(1).fill("Sản phẩm mới");
     await page.getByRole("button", { name: "Lưu dữ liệu", exact: true }).click();
+    await page.locator('[role="status"]').filter({ hasText: "Đã tạo sản phẩm." }).waitFor();
+    await page.getByRole("link", { name: "Xem chi tiết", exact: true }).click();
     await page.locator(".live-field").first().waitFor();
     assert.ok((await page.locator(".live-data").innerText()).includes("SP2"));
     await page.locator("aside").getByRole("button", { name: "TỔ CHỨC", exact: true }).click();
