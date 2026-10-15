@@ -31,6 +31,10 @@ Backend xử lý retry có giới hạn cho request đọc; xem [hướng dẫn]
 
 Breadcrumb các trang dữ liệu chỉ hiển thị một lần trên header, với link đến danh sách,
 chi tiết và chỉnh sửa. Dashboard không nhúng breadcrumb/link bảng liên quan của đơn hàng.
+Trang chi tiết bỏ tiêu đề module lặp (Sản phẩm, Kho, Tài khoản…), dùng một hàng
+**Quay lại — Chỉnh sửa**, Quay lại sát trái và Chỉnh sửa sát phải. Áp dụng cho các bảng dữ liệu và chi tiết tài khoản;
+bảng chỉ đọc chỉ có Quay lại, không hiện Chỉnh sửa khi đang tải/lỗi. Danh sách,
+form thêm/sửa và trang tài khoản của tôi vẫn giữ tiêu đề phù hợp.
 Trong chi tiết đơn hàng, nhóm thông tin liên quan mở các trang dòng hàng, hóa đơn,
 thanh toán và voucher với bộ lọc `order_id` chính xác ở backend. Cần deploy backend
 hỗ trợ bộ lọc này; UI báo lỗi rõ ràng nếu API đang chạy bản cũ, không hiện dữ liệu khác đơn.
@@ -140,6 +144,7 @@ $env:PHUB_PLAYWRIGHT_MODULE='C:/temp/phub-browser-tests/node_modules/playwright'
 $env:PHUB_ADMIN_TEST_URL='http://localhost:3000'
 node ui/adminUI/tests/session-navigation.e2e.cjs
 node ui/adminUI/tests/session-recovery.e2e.cjs
+node ui/adminUI/tests/page-actions.e2e.cjs
 ```
 
 Các lệnh trên chạy từ root repository; unit tests dùng TypeScript đã cài trong
@@ -289,6 +294,15 @@ nhập URL. Chỉ khi bấm **Lưu dữ liệu** mới upload qua
 Đã có URL thì không phải upload lại. Backend kiểm tra quyền/file thật và lưu vào
 Supabase Storage, sau đó form lưu URL vào sản phẩm. Không hiển thị thành công
 chỉ dựa vào preview local.
+
+Sau khi lưu thành công, form sản phẩm ở nguyên trang và áp dụng bản ghi do API
+trả về: chỉ cập nhật ảnh/giá trị đã thay đổi, không remount form, không gọi lại
+metadata, `/auth/me` hoặc GET sản phẩm. Có thông báo lưu thành công và link
+**Xem chi tiết** nếu muốn rời form. Tạo sản phẩm xong chỉ cập nhật URL hiện tại
+sang chỉnh sửa bằng History API; lưu tiếp dùng PATCH đúng mã vừa tạo, không POST
+thêm sản phẩm. Nút lưu khóa khi không có thay đổi. Rời form khi request đang chờ
+sẽ hủy phần xử lý UI của request đó để response cũ không ghi đè trang mới;
+không coi hủy request ở trình duyệt là rollback một thao tác server đã thực hiện.
 
 Lỗi upload giữ form và file đã chọn; lỗi ghi sản phẩm sau khi upload giữ URL để
 người dùng thử lưu lại. Không tự lặp POST. Gỡ ảnh chỉ gỡ liên kết khỏi sản phẩm,

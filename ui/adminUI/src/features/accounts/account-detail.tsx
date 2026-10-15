@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { adminFetch } from "@/src/lib/admin-fetch";
 import { accountApi, errorMessage, jsonRequest } from "./api";
-import { accountHref, roleLabels, statusLabels, type Account, type AccountStatus } from "./types";
+import { roleLabels, statusLabels, type Account, type AccountStatus } from "./types";
 
 export function AccountDetail({ account, onChange }: { account: Account; onChange: (account: Account) => void }) {
   const [busy, setBusy] = useState(false);
@@ -50,7 +50,7 @@ export function AccountDetail({ account, onChange }: { account: Account; onChang
   }
 
   return <>
-    <div className="live-tools"><Link className="live-primary" href={accountHref(account.ma_tk, true)}>Chỉnh sửa</Link>
+    <div className="live-tools">
       {!account.is_self && <>
         {account.trang_thai !== 1 && <button disabled={busy} onClick={() => changeStatus(1)}>Mở khóa / hiện lại</button>}
         {account.trang_thai !== 2 && <button disabled={busy} onClick={() => changeStatus(2)}>Tạm khóa</button>}

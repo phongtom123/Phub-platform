@@ -9,19 +9,24 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-    const errors = [], uploads = [], writes = [];
-    let uploadStatus = 201, failSave = false;
+    const errors = [], uploads = [], writes = [], writeMethods = [], writeKeys = [];
+    const reads = { documents: 0, rsc: 0, session: 0, metadata: 0, products: 0 };
+    let uploadStatus = 201, failSave = false, holdWrite = false, heldWrite;
     const record = { ma_sp: "SP1", ten_sp: "Sản phẩm test", duong_dan_anh: "https://media.example.test/old.png" };
     const column = (name, required, immutable = false) => ({ name, type: "varchar", required, immutable, generated: false, default: null, choices: null });
     const columns = [column("ma_sp", true, true), column("ten_sp", true), column("duong_dan_anh", false)];
     page.on("pageerror", error => errors.push(error.message));
+    page.on("request", request => {
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) reads.documents++;
+      if (new URL(request.url()).searchParams.has("_rsc")) reads.rsc++;
+    });
     await page.route("**/*", async route => {
       const request = route.request(), url = new URL(request.url());
       if (url.hostname === "media.example.test") return route.fulfill({ contentType: "image/png", body: png });
       if (url.origin !== new URL(base).origin) return route.abort();
       if (!url.pathname.startsWith("/api/")) return route.continue();
       const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
-      if (url.pathname.endsWith("/auth/me")) return respond({ account_id: "TK1", username: "admin", name: "Admin Test", role: "ADMIN" });
+      if (url.pathname.endsWith("/auth/me")) { reads.session++; return respond({ account_id: "TK1", username: "admin", name: "Admin Test", role: "ADMIN" }); }
       if (url.pathname.endsWith("/admin/media/images")) {
         assert.equal(request.method(), "POST");
         assert.equal(request.headers()["content-type"], "image/png");
@@ -29,13 +34,16 @@ async function main() {
         uploads.push(request.url());
         return uploadStatus === 201 ? respond({ url: savedUrl }, 201) : respond({ detail: "Storage tạm thời không khả dụng." }, uploadStatus);
       }
-      if (url.pathname.endsWith("/data/resources")) return respond([{ name: "products", title: "Sản phẩm", keys: ["ma_sp"], columns, writable: true }]);
+      if (url.pathname.endsWith("/data/resources")) { reads.metadata++; return respond([{ name: "products", title: "Sản phẩm", keys: ["ma_sp"], columns, writable: true }]); }
       if (url.pathname.endsWith("/data/products")) {
         if (request.method() !== "GET") {
           const body = request.postDataJSON(); writes.push(body);
+          writeMethods.push(request.method()); writeKeys.push(url.searchParams.get("key"));
+          if (holdWrite) { heldWrite = route; return; }
           if (failSave) return respond({ detail: "Lưu sản phẩm thất bại." }, 503);
           Object.assign(record, body);
-        }
+          if (body.ten_sp) record.ten_sp = body.ten_sp.trim();
+        } else reads.products++;
         return respond({ data: [record], total: 1, page: 1, page_size: 20 });
       }
       throw new Error("Unexpected API: " + request.url());
@@ -45,6 +53,25 @@ async function main() {
     const save = () => page.getByRole("button", { name: "Lưu dữ liệu", exact: true });
     const pick = () => fileInput().setInputFiles({ name: "test.png", mimeType: "image/png", buffer: png });
     const showEdit = async () => { await page.goto(edit); await save().waitFor(); };
+    async function saveAndStay(creating = false) {
+      const before = { ...reads };
+      const url = page.url();
+      const form = await page.locator("form.live-form").elementHandle();
+      const nameInput = await page.getByLabel(/^Tên sản phẩm/).elementHandle();
+      const editor = await page.locator(".image-editor").elementHandle();
+      await save().click();
+      await page.locator('[role="status"]').filter({ hasText: creating ? "Đã tạo sản phẩm." : "Đã lưu thay đổi." }).waitFor();
+      if (creating) await page.waitForURL(url => url.searchParams.get("edit") === "1" && !url.searchParams.has("new"));
+      else assert.equal(page.url(), url, "Editing must not navigate");
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      assert.deepEqual(reads, before, "Save must not reload document/RSC, session, metadata or product GETs");
+      for (const node of [form, nameInput, editor]) assert.equal(await node.evaluate(node => node.isConnected), true, "Keep existing form DOM mounted");
+      assert.equal(await save().isDisabled(), true, "Saved unchanged form cannot submit again");
+    }
+    async function viewSaved() {
+      await page.getByRole("link", { name: "Xem chi tiết", exact: true }).click();
+      await page.locator(".live-field").first().waitFor();
+    }
     async function drop(files) {
       await page.locator(".image-dropzone").evaluate((element, files) => {
         const transfer = new DataTransfer();
@@ -81,21 +108,42 @@ async function main() {
     const uploaded = uploads.length;
     assert.equal(await page.getByLabel("Hoặc nhập URL hình ảnh", { exact: true }).inputValue(), savedUrl);
     failSave = false;
-    await save().click(); await page.locator(".live-field").first().waitFor();
+    await saveAndStay();
     assert.equal(uploads.length, uploaded, "Retry product save reuses uploaded URL");
     assert.equal(record.duong_dan_anh, savedUrl);
+    await page.getByLabel(/^Tên sản phẩm/).fill("  Sản phẩm test  ");
+    await saveAndStay();
+    assert.equal(await page.getByLabel(/^Tên sản phẩm/).inputValue(), "Sản phẩm test", "Apply authoritative server values");
+    await viewSaved();
     await page.waitForFunction(() => document.querySelector(".product-image-card img")?.naturalWidth === 8);
 
     await showEdit();
     await page.getByRole("button", { name: "Gỡ ảnh khỏi sản phẩm", exact: true }).click();
-    await save().click(); await page.locator(".live-field").first().waitFor();
+    await saveAndStay(); await viewSaved();
     assert.equal(record.duong_dan_anh, null); assert.equal(uploads.length, uploaded);
     await page.getByText("Sản phẩm chưa có hình ảnh.", { exact: true }).waitFor();
     await showEdit();
     await page.getByLabel("Hoặc nhập URL hình ảnh", { exact: true }).fill("https://media.example.test/external.png");
-    await save().click(); await page.locator(".live-field").first().waitFor();
+    await saveAndStay(); await viewSaved();
     assert.equal(record.duong_dan_anh, "https://media.example.test/external.png");
     assert.equal(uploads.length, uploaded);
+
+    // Leaving the form during a write must not apply a late response to a new view.
+    await showEdit();
+    await page.getByLabel(/^Tên sản phẩm/).fill("Thay đổi đang chờ");
+    holdWrite = true;
+    await save().click();
+    for (let attempt = 0; !heldWrite && attempt < 100; attempt++) await new Promise(resolve => setTimeout(resolve, 20));
+    assert.ok(heldWrite);
+    await page.getByRole("navigation", { name: "Breadcrumb", exact: true }).getByRole("link", { name: "Sản phẩm", exact: true }).click();
+    await page.locator(".live-table").waitFor();
+    const listUrl = page.url();
+    await heldWrite.fulfill({ contentType: "application/json", body: JSON.stringify({ data: [record] }) }).catch(() => {});
+    holdWrite = false;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    assert.equal(page.url(), listUrl);
+    assert.equal(await page.locator(".live-table").count(), 1);
+    assert.equal(await page.locator('form.live-form [role="status"]').count(), 0);
 
     // The same uploader works on product creation and remains usable on mobile.
     await page.goto(base + "/data/products?new=1"); await save().waitFor();
@@ -105,9 +153,16 @@ async function main() {
     await page.waitForFunction(() => getComputedStyle(document.querySelector(".main")).paddingLeft === "0px");
     await page.screenshot({ path: require("node:path").join(require("node:os").tmpdir(), "phub-media-mobile.png"), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
-    await save().click(); await page.locator(".live-field").first().waitFor();
+    await saveAndStay(true);
     assert.equal(record.ma_sp, "SP2"); assert.equal(record.duong_dan_anh, savedUrl);
     assert.equal(uploads.length, uploaded + 1);
+    await page.getByLabel(/^Tên sản phẩm/).fill("  Sản phẩm mới  ");
+    await saveAndStay();
+    assert.equal(writeMethods.filter(method => method === "POST").length, 1, "Create once; subsequent saves PATCH the same product");
+    assert.equal(writeMethods.at(-1), "PATCH");
+    assert.deepEqual(JSON.parse(writeKeys.at(-1)), ["SP2"]);
+    assert.equal(await page.getByLabel(/^Tên sản phẩm/).inputValue(), "Sản phẩm mới");
+    await viewSaved();
     await page.waitForFunction(() => document.querySelector(".product-image-card img")?.naturalWidth === 8);
 
     // Detail BEFORE edit: resolve real shared public assets without a customer dev server.
@@ -164,7 +219,7 @@ async function main() {
     await page.getByText("Không tải được ảnh sản phẩm.", { exact: true }).waitFor();
     assert.equal(await page.locator(".product-image-card img, .product-image-card a").count(), 0);
     assert.deepEqual(errors, []);
-    console.log("PASS: upload forms + detail preview (Supabase URL, real shared relative asset, empty/broken/retry/unsafe URL, mobile); static asset route rejects traversal/non-image files; no live writes.");
+    console.log("PASS: inline image/product saves retain form DOM with zero document/RSC/session/metadata/product refetches; authoritative values; create once then PATCH; upload retry/validation/detail viewer/mobile regressions; no live writes.");
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

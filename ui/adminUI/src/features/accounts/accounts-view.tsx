@@ -56,8 +56,11 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
       {mode === "edit" && id && <><span>›</span><Link href={accountHref(id, true)} aria-current="page">Chỉnh sửa</Link></>}
       {mode === "self" && <><span>›</span><Link href="/account" aria-current="page">Tài khoản của tôi</Link></>}
     </nav>
-    {mode !== "list" && <button type="button" onClick={back}>← Quay lại</button>}
-    <h2>{mode === "self" ? "Tài khoản của tôi" : mode === "create" ? "Thêm tài khoản" : mode === "edit" ? "Chỉnh sửa tài khoản" : "Tài khoản"}</h2>
+    {mode !== "list" && <div className="live-page-actions">
+      <button type="button" onClick={back}>← Quay lại</button>
+      {mode === "detail" && account && !loading && !error && <Link className="live-primary" href={accountHref(account.ma_tk, true)}>Chỉnh sửa</Link>}
+    </div>}
+    {mode !== "detail" && <h2>{mode === "self" ? "Tài khoản của tôi" : mode === "create" ? "Thêm tài khoản" : mode === "edit" ? "Chỉnh sửa tài khoản" : "Tài khoản"}</h2>}
     {error && <p className="live-error" role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button> <Link href="/">Về tổng quan</Link></p>}
     {loading ? <p role="status">Đang tải tài khoản…</p> : mode === "create" ? <AccountForm /> : mode === "list" && result ? <>
       <form className="live-tools" onSubmit={submitSearch}>
