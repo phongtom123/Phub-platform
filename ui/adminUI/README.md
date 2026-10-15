@@ -11,8 +11,17 @@ Dashboard và danh sách dùng dữ liệu API; không có bản ghi mẫu thay 
 
 ## Chức năng giao diện
 
-Admin xác nhận `/auth/me` trước khi tải dashboard sau đăng nhập. HTTP 401/403
-đưa về đăng nhập; lỗi mạng/503 không xóa cookie hoặc coi phiên đã hết hạn.
+Admin xác nhận `/auth/me` khi mở ứng dụng/F5 và trước khi tải dashboard sau đăng nhập.
+`AuthProvider` ở root layout giữ thông tin phiên trong bộ nhớ khi chuyển trang;
+không lưu token hoặc tin quyền từ localStorage. Điều hướng nội bộ dùng `Link`/
+`router.push`, không tải lại document và không gọi `/auth/me` theo từng trang.
+Khi quay lại tab/cửa sổ và lần kiểm tra gần nhất đã quá 60 giây, Admin kiểm tra
+phiên ở nền; các sự kiện đồng thời dùng chung một request. Không polling định kỳ.
+Cập nhật hồ sơ và nút **Thử kết nối lại** cũng yêu cầu kiểm tra lại phiên.
+
+HTTP 401 từ API dữ liệu đưa về đăng nhập ngay; 403 của API dữ liệu chỉ báo thiếu
+quyền, không tự đăng xuất. Riêng `/auth/me` trả 401/403 thì phiên không hợp lệ.
+Lỗi mạng/503 không xóa cookie hoặc coi phiên đã hết hạn.
 Khi chưa xác nhận được phiên, màn hình chờ/báo lỗi không mở dashboard. Nếu phiên
 đã được xác nhận trước đó, giữ màn hình và báo lỗi kiểm tra lại; backend vẫn kiểm
 tra quyền trên từng request, không bỏ qua tài khoản bị khóa. Có nút **Thử kết nối lại**,
@@ -122,6 +131,25 @@ npm run start
 ```
 
 Sau đó truy cập `http://localhost:3000`.
+
+## Kiểm thử giữ phiên và điều hướng
+
+```powershell
+node --test ui/adminUI/tests/*.test.cjs ui/shared/tests/*.test.cjs
+$env:PHUB_PLAYWRIGHT_MODULE='C:/temp/phub-browser-tests/node_modules/playwright'
+$env:PHUB_ADMIN_TEST_URL='http://localhost:3000'
+node ui/adminUI/tests/session-navigation.e2e.cjs
+node ui/adminUI/tests/session-recovery.e2e.cjs
+```
+
+Các lệnh trên chạy từ root repository; unit tests dùng TypeScript đã cài trong
+adminUI. Browser tests chặn/mock các API, không dùng tài khoản hay ghi database thật.
+`session-navigation` đếm `/auth/me` và document load khi chuyển danh sách/chi tiết/
+chỉnh sửa/thêm mới/tài khoản/dashboard; kiểm tra focus quá hạn, gộp request,
+503/403/401 và phản hồi cũ không khôi phục phiên đã bị vô hiệu.
+`session-recovery` kiểm tra mở mới/F5, lỗi ban đầu, đăng nhập và retry không gửi
+lại thao tác POST. Backend vẫn xác thực/phân quyền mọi API được bảo vệ, không
+thay đổi kiểm soát truy cập để tối ưu UI.
 
 > Lưu ý: không cần deploy server để chạy và xem giao diện trên máy cá nhân.
 
@@ -251,3 +279,34 @@ sau khi push/merge; code local không tự cập nhật cloud.
 ## UI local → API Render
 
 Đặt `PHUB_API_BASE_URL=https://phub-api.onrender.com` trong `.env.local` rồi khởi động lại Next.js. Không cần secret Supabase trong UI. Xem yêu cầu Origin, cookie và phiên bản endpoint trong [README gốc](../../README.md).
+
+## Kéo thả/chọn ảnh sản phẩm
+
+Trang thêm/sửa sản phẩm (`/data/products?...`) dùng `ImageEditor` cho trường
+`duong_dan_anh`: kéo thả một file hoặc chọn JPG/PNG/WebP, xem trước, gỡ ảnh hay
+nhập URL. Chỉ khi bấm **Lưu dữ liệu** mới upload qua
+`/api/backend/admin/media/images`; gateway chuyển file nhị phân sang backend.
+Đã có URL thì không phải upload lại. Backend kiểm tra quyền/file thật và lưu vào
+Supabase Storage, sau đó form lưu URL vào sản phẩm. Không hiển thị thành công
+chỉ dựa vào preview local.
+
+Lỗi upload giữ form và file đã chọn; lỗi ghi sản phẩm sau khi upload giữ URL để
+người dùng thử lưu lại. Không tự lặp POST. Gỡ ảnh chỉ gỡ liên kết khỏi sản phẩm,
+không xóa file cũ trên bucket. Hiện schema chỉ có một ảnh cho mỗi sản phẩm.
+
+Backend trên `PHUB_API_BASE_URL` phải được deploy bản có API media; nếu chưa có,
+UI báo rõ cần deploy backend mới, không thay bằng ảnh/dữ liệu giả. Cấu hình bucket
+public và key server-only xem [Backend README](../../Backend/README.md#upload-ảnh-sản-phẩm-vào-supabase-storage).
+Browser test mock, không ghi Storage thật: `node ui/adminUI/tests/media-upload.e2e.cjs`
+(từ root, đặt biến môi trường Playwright như phần kiểm thử trên).
+
+Trang chi tiết sản phẩm (trước khi bấm **Chỉnh sửa**) có khung ảnh gọn 340 px bên
+trái, thông tin bên phải; mobile xếp dọc. Ảnh căn giữa, giữ tỷ lệ và không cắt.
+Nút **Xem ảnh gốc**/bấm ảnh mở dialog ngay trong trang, không mở tab hoặc đổi URL.
+Đóng bằng Esc/nút X/bấm backdrop; dialog giữ focus và trả focus khi đóng, khóa
+cuộn trang nền trong lúc mở. Có thông báo khi chưa có ảnh/tải lỗi và nút thử lại. URL ảnh
+Supabase dùng trực tiếp; ảnh cũ `/images/...` được Admin phục vụ từ thư mục public
+`ui/userUI/Frontend/public/images` qua route chỉ đọc, không cần chạy customer UI.
+Route chỉ cho phép file ảnh, chặn vượt thư mục và không đọc file ngoài public/images.
+Khi đóng gói Admin riêng/standalone, cần giữ thư mục assets này đúng vị trí tương
+đối hoặc chuyển các ảnh cũ lên Storage; không cần assets local cho URL Supabase.

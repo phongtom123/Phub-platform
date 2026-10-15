@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/src/lib/admin-fetch";
 import { accountApi, errorMessage, jsonRequest } from "./api";
 import { accountHref, roleLabels, statusLabels, type Account, type AccountStatus } from "./types";
 
@@ -22,7 +23,7 @@ export function AccountDetail({ account, onChange }: { account: Account; onChang
     if (!account.ma_nhan_vien) return;
     const controller = new AbortController();
     setWarehouseError("");
-    fetch(`/api/backend/data/warehouses?page_size=100&q=${encodeURIComponent(warehouseSearch)}`, { cache: "no-store", signal: controller.signal })
+    adminFetch(`/api/backend/data/warehouses?page_size=100&q=${encodeURIComponent(warehouseSearch)}`, { cache: "no-store", signal: controller.signal })
       .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Không tải được danh sách kho."); return body.data; })
       .then(data => { if (!controller.signal.aborted) setWarehouses(data); })
       .catch(error => { if (!controller.signal.aborted) setWarehouseError(errorMessage(error)); });

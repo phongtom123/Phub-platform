@@ -1,3 +1,5 @@
+import { adminFetch } from "../../lib/admin-fetch";
+
 export type OrderStat = { ma_donhang: string; trang_thai: string; kenh_ban: string; thoi_gian_dat: string };
 export type InventoryStat = { ma_kho: number; sku: string; so_luong_ton: number };
 export type WarehouseStat = { ma_kho: number; ten_kho: string };
@@ -11,7 +13,7 @@ const statuses: Record<string, string> = {
 };
 
 async function readPage<T>(resource: string, page: number, signal: AbortSignal, pageSize = 100): Promise<DataPage<T>> {
-  const response = await fetch(`/api/backend/data/${resource}?page=${page}&page_size=${pageSize}`, { signal, cache: "no-store" });
+  const response = await adminFetch(`/api/backend/data/${resource}?page=${page}&page_size=${pageSize}`, { signal, cache: "no-store" });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không tải được dữ liệu thống kê.");
   if (!body || !Array.isArray(body.data) || !Number.isSafeInteger(body.total) || body.total < 0 || body.page !== page || body.page_size !== pageSize) {

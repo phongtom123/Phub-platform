@@ -6,7 +6,14 @@ const vm = require("node:vm");
 const ts = require("typescript");
 
 function load(fetch = () => { throw new Error("No live requests allowed"); }) {
-  const sandbox = { exports: {}, fetch, Date, Intl };
+  const transport = { exports: {}, fetch, DOMException };
+  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/lib/admin-fetch.ts"), "utf8"), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+  }).outputText, transport);
+  const sandbox = { exports: {}, Date, Intl, require: name => {
+    assert.equal(name, "../../lib/admin-fetch");
+    return transport.exports;
+  } };
   const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/features/dashboard/dashboard-data.ts"), "utf8"), {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   }).outputText;
