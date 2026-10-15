@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/src/lib/admin-fetch";
 import { useRouter } from "next/navigation";
 import { accountApi, errorMessage, jsonRequest } from "./api";
 import { accountHref, roleLabels, type Account, type Role } from "./types";
@@ -33,7 +34,7 @@ export function AccountForm({ account }: { account?: Account }) {
       const rows: Warehouse[] = [];
       let page = 1;
       while (!controller.signal.aborted) {
-        const response = await fetch(`/api/backend/data/warehouses?page=${page}&page_size=100`, { cache: "no-store", signal: controller.signal });
+        const response = await adminFetch(`/api/backend/data/warehouses?page=${page}&page_size=100`, { cache: "no-store", signal: controller.signal });
         const result = await response.json();
         if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "Không tải được danh sách kho.");
         const data = result as WarehousePage;
