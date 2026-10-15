@@ -67,11 +67,24 @@ Table LOAI_SP {
   trang_thai int [not null, default: 1]
 }
 
+Table LOAI_SP_CON {
+  ma_loai_sp_con varchar [pk]
+  ten_loai_sp_con varchar [not null]
+  ma_loai_sp varchar [not null]
+  trang_thai int [not null, default: 1]
+
+  indexes {
+    (ma_loai_sp, ten_loai_sp_con) [unique]
+    (ma_loai_sp, ma_loai_sp_con) [unique]
+  }
+}
+
 Table SAN_PHAM {
   ma_sp varchar [pk]
   sku varchar [not null, unique, note: 'Ma SKU nghiep vu dung de tham chieu san pham']
   ten_sp varchar [not null]
   ma_loai_sp varchar [not null]
+  ma_loai_sp_con varchar [not null]
   thuong_hieu varchar
   gia_ban_hien_tai decimal(18,2) [not null]
   mo_ta text
@@ -362,6 +375,8 @@ Ref: NHAN_VIEN.ma_nhan_vien - TAI_KHOAN.ma_nhan_vien
 // San pham - Loai san pham - Ton kho
 
 Ref: SAN_PHAM.ma_loai_sp > LOAI_SP.ma_loai_sp
+Ref: LOAI_SP_CON.ma_loai_sp > LOAI_SP.ma_loai_sp
+Ref: SAN_PHAM.(ma_loai_sp, ma_loai_sp_con) > LOAI_SP_CON.(ma_loai_sp, ma_loai_sp_con)
 Ref: TON_KHO.ma_kho > KHO.ma_kho
 Ref: TON_KHO.sku > SAN_PHAM.sku
 

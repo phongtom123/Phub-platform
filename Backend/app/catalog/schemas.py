@@ -29,6 +29,11 @@ class StockStatus(str, Enum):
 class CatalogQuery(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    subcategory_id: list[Identifier] = Field(
+        default_factory=list, max_length=50,
+        description="Mã LOAI_SP_CON; lặp tham số để chọn nhiều danh mục con, kết hợp bằng OR.",
+    )
+
     q: str | None = Field(default=None, max_length=100, description="Tìm chuỗi trong tên hoặc SKU, không phân biệt hoa/thường; ký tự đặc biệt được tìm nguyên văn.")
     category_id: list[Identifier] = Field(default_factory=list, max_length=20, description="Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.")
     brand: str | None = Field(default=None, max_length=100, description="Giá trị thuong_hieu từ /api/catalog/brands; so khớp chính xác.")
@@ -47,7 +52,7 @@ class CatalogQuery(BaseModel):
             return clean_text(value) or None
         return value
 
-    @field_validator("category_id", mode="before")
+    @field_validator("category_id", "subcategory_id", mode="before")
     @classmethod
     def normalize_categories(cls, values):
         if isinstance(values, list):
@@ -61,9 +66,18 @@ class CatalogQuery(BaseModel):
         return self
 
 
+class Subcategory(BaseModel):
+    id: str
+    name: str
+
+
 class Category(BaseModel):
     id: str
     name: str
+
+
+class CategoryTree(Category):
+    children: list[Subcategory] = Field(default_factory=list)
 
 
 class Brand(BaseModel):
@@ -95,6 +109,7 @@ class CatalogProduct(BaseModel):
     sku: str
     name: str
     category: Category
+    subcategory: Subcategory
     brand: str | None
     price: Decimal = Field(ge=0, max_digits=18, decimal_places=2, description="Giá bán hiện tại; JSON trả chuỗi thập phân, ví dụ 15990000.00.")
     currency: str = Field(pattern=r"^[A-Z]{3}$", description="Mã tiền tệ; mặc định VND, có thể cấu hình CATALOG_CURRENCY.")
@@ -129,7 +144,7 @@ class ProductPage(BaseModel):
 
 
 class CategoryList(BaseModel):
-    items: list[Category]
+    items: list[CategoryTree]
 
 
 class BrandList(BaseModel):

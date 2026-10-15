@@ -36,6 +36,11 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   }
   const chips = [
     ...filters.categories.map(id => ({ key: id, label: metadata.data.categories.find(option => option.id === id)?.label ?? id, next: { ...filters, categories: filters.categories.filter(value => value !== id) } })),
+    ...filters.subcategories.map(id => ({
+      key: id,
+      label: metadata.data.categories.flatMap(option => option.children).find(option => option.id === id)?.label ?? id,
+      next: { ...filters, subcategories: filters.subcategories.filter(value => value !== id) },
+    })),
     ...(filters.brand ? [{ key: "brand", label: filters.brand, next: { ...filters, brand: "" } }] : []),
   ];
   return <div className={styles.catalog}>

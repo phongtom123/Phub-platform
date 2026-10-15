@@ -88,10 +88,12 @@ def test_order_filter_combines_with_primary_key(platform_client):
 
 def test_schema_all_tables_and_metadata(platform_client):
     client, _, _ = platform_client
-    assert len(schema()) == len(RESOURCES) == 19
+    assert len(schema()) == len(RESOURCES) == 20
     resources = client.get("/api/data/resources").json()
-    assert len(resources) == 19
-    assert sum(item["writable"] for item in resources) == 8
+    assert len(resources) == 20
+    assert sum(item["writable"] for item in resources) == 9
+    subcategories = next(item for item in resources if item["name"] == "subcategories")
+    assert subcategories["keys"] == ["ma_loai_sp_con"]
     accounts = next(item for item in resources if item["name"] == "accounts")
     assert "mat_khau_hash" not in json.dumps(accounts)
     assert accounts["create_schema"] is None

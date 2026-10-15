@@ -29,8 +29,57 @@
 .logo { display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 44px; min-height: 42px; }
 .logo img { height: 42px; width: auto; }
 .navigation { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; }
-.navigation > a { display: flex; align-items: center; min-height: 44px; color: #333; font-size: 14px; font-weight: 600; }
+.navigation > a, .categoryNav > a { display: flex; align-items: center; min-height: 44px; color: #333; font-size: 14px; font-weight: 600; }
 .navigation a:hover { color: var(--header-blue); }
+.categoryNav { position: static; }
+.categoryNav > a { padding-inline: 13px; border-radius: 999px; transition: color 150ms ease, background-color 150ms ease; }
+.categoryNav[data-active=true] > a { background: var(--header-blue); color: #fff; }
+.categoryNav[data-active=true] > a:hover { color: #fff; }
+.megaMenu {
+  position: absolute;
+  z-index: 45;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-areas: "categories products" "brands brands";
+  min-height: 410px;
+  overflow: hidden;
+  border: 1px solid #dfe3ea;
+  background: #fff;
+  box-shadow: 0 18px 42px #11182724;
+  animation: megaEnter 150ms ease-out both;
+}
+.megaMenu::before { content: ""; position: absolute; left: 0; right: 0; top: -20px; height: 20px; }
+.megaCategories { grid-area: categories; padding: 0; border-right: 1px solid #dfe3ea; background: #fbfcff; }
+.megaCategories a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; padding: 13px 24px; border-bottom: 1px solid #eef0f4; color: #191919; font-size: 13px; font-weight: 600; line-height: 1.4; }
+.megaCategories a:hover, .megaCategories a:focus-visible { background: #f1f4ff; color: var(--header-blue); }
+.megaCategories a span:last-child { color: #707784; font-size: 20px; font-weight: 400; }
+.megaCategories a[data-active=true] { background: #eaf0ff; color: var(--header-blue); box-shadow: inset 3px 0 0 var(--header-blue); }
+.megaProducts { grid-area: products; min-width: 0; padding: 20px 24px 24px; }
+.megaHeading { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 30px; margin-bottom: 10px; }
+.megaHeading strong { font-size: 15px; }
+.megaHeading a { color: var(--header-blue); font-size: 12px; font-weight: 600; }
+.megaHeading a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.megaProductGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); min-height: 294px; animation: productSwap 140ms ease-out both; }
+.megaProductCard { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; padding: 0 20px 10px; border-left: 1px solid #eef0f4; }
+.megaProductCard:first-child { border-left: 0; }
+.megaStock { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; color: #65a654; font-size: 10px; }
+.megaStock i { width: 8px; height: 8px; border: 2px solid #65a654; border-radius: 50%; }
+.megaProductImage { display: grid; place-items: center; align-self: stretch; height: 128px; margin: 2px 0 9px; }
+.megaProductImage img { width: 150px; height: 120px; object-fit: contain; transition: transform 180ms ease; }
+.megaProductImage:hover img { transform: scale(1.035); }
+.megaProductName { display: -webkit-box; width: 100%; min-height: 55px; overflow: hidden; color: #202020; font-size: 12px; font-weight: 500; line-height: 18px; overflow-wrap: anywhere; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.megaProductName:hover { color: var(--header-blue); }
+.megaPrice { margin-top: auto; padding-top: 7px; color: #111; font-size: 16px; }
+.megaStatus { display: flex; min-height: 260px; align-items: center; justify-content: center; flex-direction: column; gap: 12px; margin: 0; color: #687080; font-size: 13px; text-align: center; }
+.megaStatus button { border: 1px solid var(--header-blue); border-radius: 999px; padding: 8px 16px; background: #fff; color: var(--header-blue); font-size: 12px; font-weight: 600; }
+.megaBrands { grid-area: brands; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); min-height: 112px; border-top: 1px solid #dfe3ea; background: #fff; }
+.megaBrands a { display: flex; min-width: 0; align-items: center; justify-content: center; padding: 18px 16px; color: #59606c; }
+.megaBrands a:hover { background: #fafbfe; color: var(--header-blue); }
+.megaBrands img { max-width: 124px; width: 100%; height: 42px; object-fit: contain; filter: grayscale(1); opacity: .78; }
+.megaBrands span { overflow: hidden; font-size: 15px; font-weight: 700; letter-spacing: .02em; text-overflow: ellipsis; white-space: nowrap; }
 .navigation > button { min-height: 44px; border: 0; padding: 0; background: transparent; color: #333; font-size: 14px; font-weight: 600; white-space: nowrap; transition: color 150ms ease; }
 .navigation > button:hover { color: var(--header-blue); }
 .navigation > button[aria-expanded=true] { padding-inline: 16px; border-radius: 24px; background: var(--header-blue); color: #fff; }
@@ -102,13 +151,20 @@
 .notice button { width: 28px; height: 28px; flex-shrink: 0; font-size: 24px; }
 @keyframes panelEnter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes searchEnter { from { opacity: 0; transform: scaleX(.96); } to { opacity: 1; transform: scaleX(1); } }
+@keyframes megaEnter { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes productSwap { from { opacity: .35; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1399px) {
   .topInner, .mainBar { width: calc(100% - 40px); }
   .topInner { font-size: 11px; gap: 12px; }
   .topRight { gap: 10px; }
   .mainBar, .navigation { gap: 20px; }
+  .navigation { gap: 8px; }
   .actions { gap: 15px; }
+  .megaMenu { grid-template-columns: 230px minmax(0, 1fr); }
+  .megaProducts { padding-inline: 14px; }
+  .megaProductCard { padding-inline: 12px; }
+  .megaBrands span { font-size: 13px; }
 }
 @media (max-width: 1099px) {
   .showroom, .topRight { display: none; }

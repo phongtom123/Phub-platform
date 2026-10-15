@@ -16,7 +16,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** Flat category list in an accessible mobile drawer. */
+/** Parent/child category tree in an accessible mobile drawer. */
 export function MobileCategoryDrawer({ catalog, id, open, onClose }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const router = useRouter();
@@ -58,9 +58,11 @@ export function MobileCategoryDrawer({ catalog, id, open, onClose }: Props) {
       </div>
       <CatalogStatus loading={catalog.loading} error={catalog.error} retry={catalog.retry} />
       {!catalog.loading && !catalog.error && <nav className={styles.items} aria-label="Chọn danh mục">
-        {catalog.data.map(category => <button type="button" key={category.id} className={styles.item}
-          onClick={() => navigate(categoryHref(category.id))}
-        >{category.label}</button>)}
+        {catalog.data.map(category => <div key={category.id} className={styles.categoryGroup}>
+          <button type="button" className={styles.item} onClick={() => navigate(categoryHref(category.id))}>{category.label}</button>
+          {category.children.map(child => <button type="button" key={child.id} className={`${styles.item} ${styles.childItem}`}
+            onClick={() => navigate(categoryHref(category.id, child.id))}>{child.label}</button>)}
+        </div>)}
         <button type="button" className={styles.item} onClick={() => navigate("/main/product")}>Tất cả sản phẩm</button>
       </nav>}
     </div>

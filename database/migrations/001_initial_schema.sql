@@ -50,11 +50,21 @@ create table public."LOAI_SP" (
   "trang_thai" int not null default 1
 );
 
+create table public."LOAI_SP_CON" (
+  "ma_loai_sp_con" varchar primary key,
+  "ten_loai_sp_con" varchar not null,
+  "ma_loai_sp" varchar not null,
+  "trang_thai" int not null default 1,
+  unique ("ma_loai_sp", "ten_loai_sp_con"),
+  unique ("ma_loai_sp", "ma_loai_sp_con")
+);
+
 create table public."SAN_PHAM" (
   "ma_sp" varchar primary key,
   "sku" varchar not null unique,
   "ten_sp" varchar not null,
   "ma_loai_sp" varchar not null,
+  "ma_loai_sp_con" varchar not null,
   "thuong_hieu" varchar,
   "gia_ban_hien_tai" decimal(18,2) not null,
   "mo_ta" text,
@@ -241,6 +251,8 @@ alter table public."NHAN_VIEN" add constraint "fk_0_NHAN_VIEN" foreign key ("ma_
 alter table public."TAI_KHOAN" add constraint "fk_1_TAI_KHOAN" foreign key ("ma_kh") references public."KHACH_HANG" ("ma_kh");
 alter table public."TAI_KHOAN" add constraint "fk_2_TAI_KHOAN" foreign key ("ma_nhan_vien") references public."NHAN_VIEN" ("ma_nhan_vien");
 alter table public."SAN_PHAM" add constraint "fk_3_SAN_PHAM" foreign key ("ma_loai_sp") references public."LOAI_SP" ("ma_loai_sp");
+alter table public."LOAI_SP_CON" add constraint "LOAI_SP_CON_ma_loai_sp_fkey" foreign key ("ma_loai_sp") references public."LOAI_SP" ("ma_loai_sp");
+alter table public."SAN_PHAM" add constraint "SAN_PHAM_loai_sp_con_fkey" foreign key ("ma_loai_sp", "ma_loai_sp_con") references public."LOAI_SP_CON" ("ma_loai_sp", "ma_loai_sp_con");
 alter table public."TON_KHO" add constraint "fk_4_TON_KHO" foreign key ("ma_kho") references public."KHO" ("ma_kho");
 alter table public."TON_KHO" add constraint "fk_5_TON_KHO" foreign key ("sku") references public."SAN_PHAM" ("sku");
 alter table public."PHIEU_NHAP" add constraint "fk_6_PHIEU_NHAP" foreign key ("ma_ncc") references public."NHA_CUNG_CAP" ("ma_ncc");
@@ -271,6 +283,7 @@ alter table public."SU_DUNG_VOUCHER" add constraint "fk_30_SU_DUNG_VOUCHER" fore
 alter table public."SU_DUNG_VOUCHER" add constraint "fk_31_SU_DUNG_VOUCHER" foreign key ("ma_donhang") references public."DON_HANG" ("ma_donhang");
 create index "idx_ct_don_hang_order" on public."CT_DON_HANG" ("ma_donhang");
 create index "idx_ct_don_hang_sku" on public."CT_DON_HANG" ("sku");
+create index "SAN_PHAM_loai_sp_subcategory_idx" on public."SAN_PHAM" ("ma_loai_sp", "ma_loai_sp_con");
 
 -- This project uses FastAPI authorization, not direct browser table access.
 alter table public."KHO" enable row level security;
@@ -288,6 +301,9 @@ grant all on table public."KHACH_HANG" to service_role;
 alter table public."LOAI_SP" enable row level security;
 revoke all on table public."LOAI_SP" from anon, authenticated;
 grant all on table public."LOAI_SP" to service_role;
+alter table public."LOAI_SP_CON" enable row level security;
+revoke all on table public."LOAI_SP_CON" from anon, authenticated;
+grant all on table public."LOAI_SP_CON" to service_role;
 alter table public."SAN_PHAM" enable row level security;
 revoke all on table public."SAN_PHAM" from anon, authenticated;
 grant all on table public."SAN_PHAM" to service_role;

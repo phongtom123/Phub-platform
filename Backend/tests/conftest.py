@@ -19,13 +19,14 @@ def product_row():
         "don_vi": "Cai", "bao_hanh_thang": 24,
         "duong_dan_anh": "https://example.test/msi.jpg",
         "category": {"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop", "trang_thai": 1},
+        "subcategory": {"ma_loai_sp_con": "LAPTOP_GENERAL", "ten_loai_sp_con": "Laptop phổ thông", "trang_thai": 1},
         "gia_nhap": "secret internal price", "trang_thai": 1,
     }
 
 
 @pytest.fixture
 def catalog_client(product_row):
-    state = {"rows": [deepcopy(product_row)], "categories": [], "total": 1, "error": None, "handler": None}
+    state = {"rows": [deepcopy(product_row)], "categories": [], "subcategories": [], "total": 1, "error": None, "handler": None}
     requests = []
 
     def handle(request):
@@ -34,7 +35,12 @@ def catalog_client(product_row):
             raise state["error"]
         if state["handler"]:
             return state["handler"](request)
-        rows = state["categories"] if request.url.path.endswith("/LOAI_SP") else state["rows"]
+        if request.url.path.endswith("/LOAI_SP"):
+            rows = state["categories"]
+        elif request.url.path.endswith("/LOAI_SP_CON"):
+            rows = state["subcategories"]
+        else:
+            rows = state["rows"]
         headers = {"content-range": f"0-{max(0, len(rows) - 1)}/{state['total']}"}
         return httpx.Response(200, json=rows, headers=headers)
 

@@ -6,7 +6,8 @@ VALUES = {
     "ma_nhan_vien": "NV001", "ho_ten": "Nhân viên minh họa", "loai_nhan_vien": "ADMIN",
     "email": "example@example.com", "sdt": "0900000000", "luong": "15000000.00",
     "ma_tk": "TK001", "ten_tai_khoan": "example.admin", "ma_kh": "KH001", "ten_kh": "Khách hàng minh họa",
-    "ma_loai_sp": "CPU", "ten_loai_sp": "Vi xử lý", "ma_sp": "SP001", "sku": "INTEL-I5-14400F",
+    "ma_loai_sp": "CPU", "ten_loai_sp": "Vi xử lý", "ma_loai_sp_con": "CPU_DESKTOP",
+    "ten_loai_sp_con": "CPU máy bàn", "ma_sp": "SP001", "sku": "INTEL-I5-14400F",
     "ten_sp": "Intel Core i5-14400F", "thuong_hieu": "Intel", "gia_ban_hien_tai": "2500000.00",
     "mo_ta": "Nội dung minh họa", "thong_so_ky_thuat": "Socket: LGA1700", "don_vi": "Cai",
     "bao_hanh_thang": 36, "duong_dan_anh": "https://example.com/cpu.jpg",
@@ -64,7 +65,8 @@ def payload_example(name: str, patch: bool = False) -> dict:
     fields = payload_model(name, patch).model_fields
     if patch:
         preferred = {"warehouses": "ten_kho", "employees": "ho_ten", "accounts": "email", "customers": "ten_kh",
-                     "categories": "ten_loai_sp", "products": "duong_dan_anh", "suppliers": "ten_ncc",
+                     "categories": "ten_loai_sp", "subcategories": "ten_loai_sp_con",
+                     "products": "duong_dan_anh", "suppliers": "ten_ncc",
                      "promotions": "ten_chuong_trinh", "vouchers": "trang_thai"}
         field = preferred[name]
         return {field: "TAM_DUNG" if name == "vouchers" else row[field]}

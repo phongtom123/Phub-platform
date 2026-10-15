@@ -26,6 +26,7 @@ RESOURCES = {
     "accounts": Resource("TAI_KHOAN", "Tài khoản", ("ma_tk",)),
     "customers": Resource("KHACH_HANG", "Khách hàng", ("ma_kh",), True),
     "categories": Resource("LOAI_SP", "Loại sản phẩm", ("ma_loai_sp",), True, True),
+    "subcategories": Resource("LOAI_SP_CON", "Loại sản phẩm con", ("ma_loai_sp_con",), True, True),
     "products": Resource("SAN_PHAM", "Sản phẩm", ("ma_sp",), True, True),
     "inventory": Resource("TON_KHO", "Tồn kho", ("ma_kho", "sku"), warehouse=True),
     "suppliers": Resource("NHA_CUNG_CAP", "Nhà cung cấp", ("ma_ncc",), True, True),

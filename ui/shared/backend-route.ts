@@ -1,7 +1,7 @@
 /** Shared server-only gateway: browser -> Next.js -> Python. No Supabase key here. */
 type Context = { params: Promise<{ path: string[] }> };
 const resources = new Set([
-  "resources", "warehouses", "employees", "accounts", "customers", "categories", "products",
+  "resources", "warehouses", "employees", "accounts", "customers", "categories", "subcategories", "products",
   "inventory", "suppliers", "receipts", "receipt-lines", "transfers", "transfer-lines", "orders",
   "order-lines", "invoices", "payments", "promotions", "vouchers", "voucher-uses",
 ]);
