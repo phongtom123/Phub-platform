@@ -35,6 +35,7 @@ def filtered_catalog(catalog_client, product_row):
         if table == "SAN_PHAM":
             data = list(products)
             assert params["trang_thai"] == "eq.1" and params["category.trang_thai"] == "eq.1"
+            assert params["subcategory.trang_thai"] == "eq.1"
             if "gia_ban_hien_tai" in params:
                 # SDK merges gte/lte filters on the same column into repeated keys.
                 for condition in params.get_list("gia_ban_hien_tai"):

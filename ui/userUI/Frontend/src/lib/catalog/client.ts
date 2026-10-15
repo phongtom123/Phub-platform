@@ -23,6 +23,7 @@ export function validateProduct(value: unknown): ApiProduct {
   if (!product || typeof product.id !== "string" || typeof product.sku !== "string"
     || typeof product.name !== "string" || typeof product.category?.id !== "string"
     || typeof product.category?.name !== "string" || typeof product.price !== "string"
+    || typeof product.subcategory?.id !== "string" || typeof product.subcategory?.name !== "string"
     || !/^\d+(\.\d{1,2})?$/.test(product.price) || !Number.isFinite(Number(product.price))
     || !/^[A-Z]{3}$/.test(product.currency ?? "")
     || !(product.brand === null || typeof product.brand === "string")
@@ -39,6 +40,7 @@ export function queryFor(request: CatalogRequest): URLSearchParams {
   const params = new URLSearchParams();
   if (request.q.trim()) params.set("q", request.q.trim());
   request.filters.categories.forEach(id => params.append("category_id", id));
+  request.filters.subcategories.forEach(id => params.append("subcategory_id", id));
   if (request.filters.brand) params.set("brand", request.filters.brand);
   params.set("sort", request.sort === "position" ? "default" : request.sort);
   params.set("page", String(request.page));
@@ -58,13 +60,17 @@ export async function getProducts(request: CatalogRequest, signal?: AbortSignal)
 
 export async function getCategories(signal?: AbortSignal): Promise<CatalogCategory[]> {
   const categories = await readJson(await fetch("/api/catalog/categories", { signal })) as {
-    items: { id: string; name: string }[];
+    items: { id: string; name: string; children: { id: string; name: string }[] }[];
   };
   if (!Array.isArray(categories?.items) || !categories.items.every(item => item && typeof item.id === "string"
-    && typeof item.name === "string")) {
+    && typeof item.name === "string" && Array.isArray(item.children)
+    && item.children.every(child => child && typeof child.id === "string" && typeof child.name === "string"))) {
     throw new CatalogApiError("Không thể đọc danh mục sản phẩm.", 502);
   }
-  return categories.items.map(item => ({ id: item.id, label: item.name }));
+  return categories.items.map(item => ({
+    id: item.id, label: item.name,
+    children: item.children.map(child => ({ id: child.id, label: child.name })),
+  }));
 }
 
 export async function getMetadata(signal?: AbortSignal): Promise<CatalogMetadata> {

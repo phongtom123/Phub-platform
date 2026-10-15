@@ -8,16 +8,17 @@ from supabase import Client
 from .availability import available_skus, rows as all_rows
 
 from .schemas import (
-    Brand, CatalogProduct, CatalogQuery, CatalogSort, Category,
-    Pagination, ProductImage, ProductPage, Specification, ColorOption, StockStatus,
+    Brand, CatalogProduct, CatalogQuery, CatalogSort, Category, CategoryTree,
+    Pagination, ProductImage, ProductPage, Specification, ColorOption, StockStatus, Subcategory,
 )
 
 
 # Explicit public columns. Cast money to text before JSON to avoid float rounding.
 PRODUCT_COLUMNS = (
     "ma_sp,sku,ten_sp,thuong_hieu,gia_ban_hien_tai::text,mo_ta,"
-    "thong_so_ky_thuat,don_vi,bao_hanh_thang,duong_dan_anh,"
-    "category:LOAI_SP!inner(ma_loai_sp,ten_loai_sp,trang_thai)"
+    "thong_so_ky_thuat,don_vi,bao_hanh_thang,duong_dan_anh,ma_loai_sp_con,"
+    "category:LOAI_SP!inner(ma_loai_sp,ten_loai_sp,trang_thai),"
+    "subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(ma_loai_sp_con,ten_loai_sp_con,trang_thai)"
 )
 BATCH_SIZE = 500
 
@@ -80,6 +81,7 @@ class CatalogRepository:
             self.client.table("SAN_PHAM").select(columns, **options)
             .eq("trang_thai", self.active_status)
             .eq("category.trang_thai", self.active_status)
+            .eq("subcategory.trang_thai", self.active_status)
         )
 
     def apply_filters(self, query, filters: CatalogQuery):
@@ -87,9 +89,16 @@ class CatalogRepository:
             # Escaped literal regex avoids LIKE's wildcard aliases %, _ and *.
             pattern = quoted(re.escape(filters.q))
             query = query.or_(f"ten_sp.imatch.{pattern},sku.imatch.{pattern}")
-        if filters.category_id:
-            values = ",".join(quoted(value) for value in filters.category_id)
-            query = query.filter("ma_loai_sp", "in", f"({values})")
+        category_values = ",".join(quoted(value) for value in filters.category_id)
+        subcategory_values = ",".join(quoted(value) for value in filters.subcategory_id)
+        if category_values and subcategory_values:
+            query = query.or_(
+                f"ma_loai_sp.in.({category_values}),ma_loai_sp_con.in.({subcategory_values})"
+            )
+        elif category_values:
+            query = query.filter("ma_loai_sp", "in", f"({category_values})")
+        elif subcategory_values:
+            query = query.filter("ma_loai_sp_con", "in", f"({subcategory_values})")
         if filters.brand:
             query = query.eq("thuong_hieu", filters.brand)
         if filters.min_price is not None:
@@ -100,11 +109,13 @@ class CatalogRepository:
 
     def product_from_row(self, row: dict) -> CatalogProduct:
         category = row["category"]
+        subcategory = row["subcategory"]
         raw_specs = row.get("thong_so_ky_thuat")
         image = row.get("duong_dan_anh")
         return CatalogProduct(
             id=row["ma_sp"], sku=row["sku"], name=row["ten_sp"],
             category=Category(id=category["ma_loai_sp"], name=category["ten_loai_sp"]),
+            subcategory=Subcategory(id=subcategory["ma_loai_sp_con"], name=subcategory["ten_loai_sp_con"]),
             brand=row.get("thuong_hieu"), price=Decimal(str(row["gia_ban_hien_tai"])),
             currency=self.currency, description=row.get("mo_ta"), unit=row["don_vi"],
             warranty_months=row["bao_hanh_thang"],
@@ -147,7 +158,7 @@ class CatalogRepository:
                 raise
             # PostgREST may return 416 for offsets past the filtered result set.
             count_query = self.apply_filters(
-                self.active_products("ma_sp,category:LOAI_SP!inner(trang_thai)", count="exact", head=True), filters,
+                self.active_products("ma_sp,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)", count="exact", head=True), filters,
             )
             rows, total = [], count_query.execute().count
         if total is None:
@@ -164,16 +175,38 @@ class CatalogRepository:
         rows = self.active_products(PRODUCT_COLUMNS).eq("ma_sp", product_id).limit(1).execute().data
         return self.product_from_row(rows[0]) if rows else None
 
-    def list_categories(self) -> list[Category]:
-        items = []
+    def list_categories(self) -> list[CategoryTree]:
+        parents = []
         start = 0
         while True:
             query = self.client.table("LOAI_SP").select("ma_loai_sp,ten_loai_sp").eq("trang_thai", self.active_status)
             rows = query.order("ma_loai_sp").range(start, start + BATCH_SIZE - 1).execute().data
-            items.extend(Category(id=row["ma_loai_sp"], name=row["ten_loai_sp"]) for row in rows)
+            parents.extend(rows)
             if len(rows) < BATCH_SIZE:
-                return items
+                break
             start += BATCH_SIZE
+
+        children_by_parent: dict[str, list[Subcategory]] = {}
+        start = 0
+        while True:
+            rows = (
+                self.client.table("LOAI_SP_CON")
+                .select("ma_loai_sp_con,ten_loai_sp_con,ma_loai_sp")
+                .eq("trang_thai", self.active_status)
+                .order("ma_loai_sp").order("ten_loai_sp_con")
+                .range(start, start + BATCH_SIZE - 1).execute().data
+            )
+            for row in rows:
+                children_by_parent.setdefault(row["ma_loai_sp"], []).append(
+                    Subcategory(id=row["ma_loai_sp_con"], name=row["ten_loai_sp_con"])
+                )
+            if len(rows) < BATCH_SIZE:
+                break
+            start += BATCH_SIZE
+        return [CategoryTree(
+            id=row["ma_loai_sp"], name=row["ten_loai_sp"],
+            children=children_by_parent.get(row["ma_loai_sp"], []),
+        ) for row in parents]
 
     def list_brands(self) -> list[Brand]:
         # No brand table exists. Read all public brand strings, not just the first
@@ -182,7 +215,7 @@ class CatalogRepository:
         start = 0
         while True:
             rows = (
-                self.active_products("ma_sp,thuong_hieu,category:LOAI_SP!inner(trang_thai)")
+                self.active_products("ma_sp,thuong_hieu,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)")
                 .order("ma_sp").range(start, start + BATCH_SIZE - 1).execute().data
             )
             names.update(row["thuong_hieu"] for row in rows if row.get("thuong_hieu") and row["thuong_hieu"].strip())
@@ -193,7 +226,7 @@ class CatalogRepository:
     def list_colors(self) -> list[ColorOption]:
         names = {}
         unknown = False
-        for row in all_rows(lambda: self.active_products("ma_sp,thong_so_ky_thuat,category:LOAI_SP!inner(trang_thai)").order("ma_sp")):
+        for row in all_rows(lambda: self.active_products("ma_sp,thong_so_ky_thuat,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)").order("ma_sp")):
             color = product_color(row.get("thong_so_ky_thuat"))
             if color:
                 names.setdefault(color.casefold(), color)

@@ -77,7 +77,7 @@ TAGS = [
 ]
 RESOURCE_TAGS = {
     "warehouses": "Admin · Tổ chức", "employees": "Admin · Tổ chức", "accounts": "Admin · Tổ chức",
-    "customers": "Admin · Khách hàng", "categories": "Admin · Sản phẩm", "products": "Admin · Sản phẩm",
+    "customers": "Admin · Khách hàng", "categories": "Admin · Sản phẩm", "subcategories": "Admin · Sản phẩm", "products": "Admin · Sản phẩm",
     "promotions": "Admin · Khuyến mãi", "vouchers": "Admin · Khuyến mãi", "voucher-uses": "Admin · Khuyến mãi",
     "inventory": "Kho · Tồn kho", "suppliers": "Kho · Nhà cung cấp",
     "receipts": "Kho · Phiếu nhập", "receipt-lines": "Kho · Phiếu nhập",
@@ -86,7 +86,8 @@ RESOURCE_TAGS = {
     "invoices": "Bán hàng · Tài chính", "payments": "Bán hàng · Tài chính",
 }
 NOTES = {
-    "categories": "Danh mục phẳng. Catalog trả id/name và chỉ lọc các mã loại đã chọn; không có danh mục cha hoặc con. Không cần migration danh mục cha–con.",
+    "categories": "Danh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
+    "subcategories": "Danh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
     "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh sửa bằng URL duong_dan_anh; upload file chưa có API. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",

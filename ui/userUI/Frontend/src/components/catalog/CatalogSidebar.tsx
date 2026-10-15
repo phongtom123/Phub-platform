@@ -23,7 +23,12 @@ export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, act
       {metadata.loading && <p role="status">Đang tải bộ lọc…</p>}
       {metadata.error && <div role="alert"><p>{metadata.error}</p><Button onClick={metadata.retry}>Thử lại bộ lọc</Button></div>}
       <Accordion title="Danh mục" open className={styles.filterGroup}>
-        {metadata.data.categories.map(option => <FilterOption key={option.id} label={option.label} selected={draft.categories.includes(option.id)} onClick={() => onChange({ ...draft, categories: draft.categories.includes(option.id) ? draft.categories.filter(id => id !== option.id) : [...draft.categories, option.id] })} />)}
+        {metadata.data.categories.map(option => <div key={option.id} className={styles.categoryTree}>
+          <FilterOption label={option.label} selected={draft.categories.includes(option.id)} onClick={() => onChange({ ...draft, categories: draft.categories.includes(option.id) ? draft.categories.filter(id => id !== option.id) : [...draft.categories, option.id] })} />
+          <div className={styles.categoryChildren}>
+            {option.children.map(child => <FilterOption key={child.id} label={child.label} selected={draft.subcategories.includes(child.id)} onClick={() => onChange({ ...draft, subcategories: draft.subcategories.includes(child.id) ? draft.subcategories.filter(id => id !== child.id) : [...draft.subcategories, child.id] })} />)}
+          </div>
+        </div>)}
       </Accordion>
       {["Khoảng giá", "Màu sắc", "Tình trạng tồn kho"].map(title => <Accordion key={title} title={title} className={styles.filterGroup}><FilterOption label="Chưa khả dụng" disabled /></Accordion>)}
       <div className={styles.apply}><Button onClick={onApply} disabled={metadata.loading}>Áp dụng ({filterCount(draft)})</Button></div>

@@ -21,6 +21,9 @@
 .filterGroup > div { padding: 0 16px 12px; }
 .filterGroup button { font-size: 12px; line-height: 27px; gap: 8px; }
 .filterGroup button[aria-pressed=true] { color: #000; font-weight: 600; }
+.categoryTree + .categoryTree { margin-top: 5px; }
+.categoryChildren { padding-left: 16px; border-left: 1px solid #d9e1ee; }
+.categoryChildren button { color: #596579; }
 .colors { display: flex; gap: 4px; padding-block: 3px; }
 .stockCheck { display: flex; gap: 8px; align-items: center; font-size: 12px; }
 .stockCheck input { accent-color: var(--blue); }

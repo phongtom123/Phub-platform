@@ -4,13 +4,15 @@ import type { DetailProduct } from "@/data/product-details";
 export interface ApiProduct {
   id: string; sku: string; name: string;
   category: { id: string; name: string }; brand: string | null;
+  subcategory: { id: string; name: string };
   price: string; currency: string; description: string | null;
   unit: string; warranty_months: number;
   images: { url: string; alt: string }[];
   specifications: { label: string; value: string }[];
   specifications_text: string | null;
 }
-export interface CatalogCategory { id: string; label: string }
+export interface CatalogSubcategory { id: string; label: string }
+export interface CatalogCategory { id: string; label: string; children: CatalogSubcategory[] }
 export interface CatalogMetadata {
   categories: CatalogCategory[];
   brands: { id: string; name: string }[];
@@ -37,6 +39,7 @@ export function catalogProduct(product: ApiProduct): CatalogProduct {
   return {
     id: product.id, sku: product.sku, name: product.name,
     category: product.category.id, categoryName: product.category.name,
+    subcategory: product.subcategory.id, subcategoryName: product.subcategory.name,
     brand: product.brand ?? "", color: "", position: 0,
     amount: Number(product.price), currency: product.currency, locale: "vi-VN",
     imageSrc: safeImageUrl(product.images[0]?.url),
@@ -48,6 +51,7 @@ export function detailProduct(product: ApiProduct): DetailProduct {
   return {
     id: product.id, sku: product.sku, name: product.name,
     brand: product.brand ?? "", category: product.category.name, categoryId: product.category.id,
+    subcategory: product.subcategory.name, subcategoryId: product.subcategory.id,
     price: Number(product.price), currency: product.currency,
     imageSrc: safeImageUrl(product.images[0]?.url),
     images: product.images.map(image => ({ ...image, url: safeImageUrl(image.url) })),

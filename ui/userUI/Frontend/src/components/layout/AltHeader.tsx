@@ -10,6 +10,7 @@ import { useCategories } from "@/lib/catalog/useCategories";
 import { categoryHref } from "@/lib/catalog/categories";
 import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
+import { CatalogMegaMenu } from "./CatalogMegaMenu";
 import styles from "./Header.module.css";
 import { useRouter } from "next/navigation";
 import { AUTH_SESSION_EVENT, getSession, logoutSession, type SessionUser } from "../../../../../shared/auth-client";
@@ -23,16 +24,40 @@ export default function AltHeader() {
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const hoverRef = useRef<Dropdown | null>(null);
+  const categoryCloseTimerRef = useRef<number | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const catalog = useCategories();
   const [session, setSession] = useState<SessionUser | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
 
+  function cancelCategoryClose() {
+    if (categoryCloseTimerRef.current !== null) {
+      window.clearTimeout(categoryCloseTimerRef.current);
+      categoryCloseTimerRef.current = null;
+    }
+  }
+
+  function openCategory(categoryId: string) {
+    cancelCategoryClose();
+    setActiveCategoryId(categoryId);
+  }
+
+  function scheduleCategoryClose(categoryId: string) {
+    cancelCategoryClose();
+    categoryCloseTimerRef.current = window.setTimeout(() => {
+      setActiveCategoryId(current => current === categoryId ? null : current);
+      categoryCloseTimerRef.current = null;
+    }, 150);
+  }
+
   function close(restoreFocus = false) {
+    cancelCategoryClose();
     setPanel(null);
     setSearchOpen(false);
+    setActiveCategoryId(null);
     hoverRef.current = null;
     if (restoreFocus) triggerRef.current?.focus();
   }
@@ -42,6 +67,7 @@ export default function AltHeader() {
     const wasHover = hoverRef.current === next;
     hoverRef.current = null;
     setSearchOpen(false);
+    setActiveCategoryId(null);
     setPanel(current => (current === next && !wasHover ? null : next));
   }
 
@@ -80,20 +106,26 @@ export default function AltHeader() {
     };
   }, []);
 
+  useEffect(() => () => {
+    if (categoryCloseTimerRef.current !== null) window.clearTimeout(categoryCloseTimerRef.current);
+  }, []);
+
   useEffect(() => {
     function dismissOutside(event: Event) {
       if (!rootRef.current?.contains(event.target as Node)) {
         hoverRef.current = null;
         setPanel(null);
         setSearchOpen(false);
+        setActiveCategoryId(null);
       }
     }
     function escape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || (!panel && !searchOpen)) return;
+      if (event.key !== "Escape" || (!panel && !searchOpen && !activeCategoryId)) return;
       event.preventDefault();
       hoverRef.current = null;
       setPanel(null);
       setSearchOpen(false);
+      setActiveCategoryId(null);
       triggerRef.current?.focus();
     }
     document.addEventListener("pointerdown", dismissOutside);
@@ -104,7 +136,7 @@ export default function AltHeader() {
       document.removeEventListener("focusin", dismissOutside);
       document.removeEventListener("keydown", escape);
     };
-  }, [panel, searchOpen]);
+  }, [activeCategoryId, panel, searchOpen]);
 
   async function signOut() {
     try {
@@ -159,7 +191,17 @@ export default function AltHeader() {
           {catalog.loading && <span role="status">Đang tải danh mục…</span>}
           {catalog.error && <span role="alert">Không tải được danh mục. <button type="button" onClick={catalog.retry}>Thử lại</button></span>}
           {catalog.data.map(item => (
-            <Link key={item.id} href={categoryHref(item.id)} onClick={() => close()}>{item.label}</Link>
+            <div key={item.id} className={styles.categoryNav} data-active={activeCategoryId === item.id}
+              onMouseEnter={() => openCategory(item.id)}
+              onMouseLeave={() => scheduleCategoryClose(item.id)}
+              onFocusCapture={() => openCategory(item.id)}
+              onBlurCapture={event => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActiveCategoryId(null);
+              }}>
+              <Link href={categoryHref(item.id)} onClick={() => close()}
+                aria-haspopup="true" aria-expanded={activeCategoryId === item.id}>{item.label}</Link>
+              {activeCategoryId === item.id && <CatalogMegaMenu category={item} onNavigate={() => close()} onKeepOpen={cancelCategoryClose} />}
+            </div>
           ))}
           <Link href="/main/product" onClick={() => close()}>Tất Cả Sản Phẩm</Link>
         </nav>
@@ -186,6 +228,7 @@ export default function AltHeader() {
               triggerRef.current = event.currentTarget;
               hoverRef.current = null;
               setSearchOpen(!searchOpen);
+              setActiveCategoryId(null);
               setPanel(null);
             }}
           >

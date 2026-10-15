@@ -57,7 +57,9 @@ chỉ phục vụ kiểm thử/tài liệu, không được dùng làm dữ li�
 ## Chuẩn bị
 
 Triển khai Render: xem [cấu hình hai service](RENDER.md) và [render.yaml](render.yaml).
-Danh mục dùng một cấp, không cần migration danh mục cha–con.
+Danh mục catalog dùng hai cấp: `LOAI_SP` là danh mục cha, `LOAI_SP_CON` là danh mục con.
+Mỗi sản phẩm phải thuộc một danh mục con của đúng danh mục cha. Migration cho
+database hiện có nằm tại `Backend/migrations/20261015032210_add_product_subcategories.sql`.
 
 - Node.js 20.9+ (khuyến nghị Node.js 22), npm, Python 3.11+.
 - Supabase Project URL và một **secret key mới chỉ dùng phía server**.

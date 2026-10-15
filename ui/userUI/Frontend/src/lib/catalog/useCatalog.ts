@@ -56,7 +56,10 @@ export function useCatalog() {
   }, [mobile, router]);
   const view = params.get("view") === "list" && !mobile ? "list" : "grid";
   const sort: CatalogSort = params.get("sort") === "price-asc" ? "price-asc" : params.get("sort") === "price-desc" ? "price-desc" : "position";
-  const filters: CatalogFilters = { ...emptyFilters, categories: params.getAll("category_id"), brand: params.get("brand") || "" };
+  const filters: CatalogFilters = {
+    ...emptyFilters, categories: params.getAll("category_id"),
+    subcategories: params.getAll("subcategory_id"), brand: params.get("brand") || "",
+  };
   const request: CatalogRequest = {
     q: params.get("q") || "", filters, sort, view,
     page: integer(params.get("page"), 1, 2_147_483_647),
@@ -73,7 +76,10 @@ export function useCatalog() {
     // The query string is the stable dependency; ignore superseded responses.
     const query = new URLSearchParams(key);
     const snapshot: CatalogRequest = {
-      q: query.get("q") || "", filters: { ...emptyFilters, categories: query.getAll("category_id"), brand: query.get("brand") || "" },
+      q: query.get("q") || "", filters: {
+        ...emptyFilters, categories: query.getAll("category_id"),
+        subcategories: query.getAll("subcategory_id"), brand: query.get("brand") || "",
+      },
       sort: query.get("sort") === "default" ? "position" : query.get("sort") as CatalogSort,
       page: Number(query.get("page")), pageSize: Number(query.get("page_size")), view: "grid",
     };
