@@ -35,6 +35,27 @@ Trang chi tiết bỏ tiêu đề module lặp (Sản phẩm, Kho, Tài khoản�
 **Quay lại — Chỉnh sửa**, Quay lại sát trái và Chỉnh sửa sát phải. Áp dụng cho các bảng dữ liệu và chi tiết tài khoản;
 bảng chỉ đọc chỉ có Quay lại, không hiện Chỉnh sửa khi đang tải/lỗi. Danh sách,
 form thêm/sửa và trang tài khoản của tôi vẫn giữ tiêu đề phù hợp.
+Tài khoản chỉ dùng breadcrumb trên header, bao gồm mã tài khoản, trang thêm mới hoặc
+hồ sơ cá nhân; sửa trực tiếp trong bảng không có breadcrumb riêng. Không lặp
+breadcrumb xanh trong nội dung. Trang chi tiết gom các nút
+Tạm khóa, Ẩn tài khoản hoặc Mở khóa / hiện lại cùng nhóm bên phải với Chỉnh sửa.
+Trên màn hình hẹp nhóm nút tự xuống dòng để không tràn ngang; quyền tự khóa/ẩn
+tài khoản của chính mình và xác nhận trước khi đổi trạng thái vẫn giữ nguyên.
+Card thông tin tài khoản, phân quyền nhân viên và cấp lại mật khẩu dùng cùng lưới: 5 cột trên desktop
+lớn, 3 cột trên desktop nhỏ, 2 cột trên tablet và 1 cột trên điện thoại. Hai ô
+mật khẩu chiếm hai cột đầu, không kéo giãn hết card; giữ nền trắng, viền mảnh và bo góc.
+Mọi trang `/accounts/[id]` dùng cùng khung 3 card theo thứ tự: thông tin tài khoản,
+phân quyền nhân viên, cấp lại mật khẩu. Giữ cùng lưới thông tin, card và nhóm nút
+ở mọi tài khoản. Hai ô Tìm kho/Kho phụ trách chỉ hiện khi chọn vai trò Nhân viên kho
+trên tài khoản nhân viên khác có thể phân quyền; quản trị viên, khách hàng và tài
+khoản đang đăng nhập không hiện hai ô không áp dụng. Đổi lựa chọn vai trò cập nhật
+ẩn/hiện ngay, không cần lưu trước. Khách hàng vẫn có card phân quyền nhưng
+hiện vai trò Khách hàng và khóa form; không có thao tác nâng quyền khách hàng.
+Khi `is_self=true`, các form quản trị và nút khóa/ẩn vẫn hiện nhưng bị vô hiệu hóa
+(cả control và submit handler); có hướng dẫn đổi mật khẩu qua `/account`.
+Kho chỉ được chọn cho nhân viên kho. Không thay đổi endpoint hoặc quyền backend.
+Header thu gọn tìm kiếm/thông tin người dùng trên màn hình vừa để breadcrumb
+không bị che và vẫn bấm được khi chuyển tài khoản trên tablet.
 Trong chi tiết đơn hàng, nhóm thông tin liên quan mở các trang dòng hàng, hóa đơn,
 thanh toán và voucher với bộ lọc `order_id` chính xác ở backend. Cần deploy backend
 hỗ trợ bộ lọc này; UI báo lỗi rõ ràng nếu API đang chạy bản cũ, không hiện dữ liệu khác đơn.
@@ -145,6 +166,8 @@ $env:PHUB_ADMIN_TEST_URL='http://localhost:3000'
 node ui/adminUI/tests/session-navigation.e2e.cjs
 node ui/adminUI/tests/session-recovery.e2e.cjs
 node ui/adminUI/tests/page-actions.e2e.cjs
+node ui/adminUI/tests/account-detail-consistency.e2e.cjs
+node ui/adminUI/tests/account-inline-edit.e2e.cjs
 ```
 
 Các lệnh trên chạy từ root repository; unit tests dùng TypeScript đã cài trong
@@ -223,8 +246,27 @@ Ví dụ:
 
 ```text
 /accounts/TK001
-/accounts/TK001/edit
+/accounts?edit=TK001
 ```
+
+Riêng tài khoản không còn trang sửa riêng: nhấp đúp hàng (hoặc chọn hàng rồi
+nhấn F2/Enter) để hiện ô tên đăng nhập/email ngay trong bảng. Cột Thao tác mặc định
+chỉ có **Chi tiết**, không có nút **Sửa/Lưu/Hủy**, kể cả khi đang nhập.
+Bấm/chạm ra ngoài hàng hoặc nhấn Enter tự lưu bằng PATCH chỉ các trường đã đổi;
+không thay đổi gì thì đóng ô nhập mà không gửi API. Esc bỏ bản nháp. Chuyển giữa
+hai ô trong cùng hàng không tự lưu. Hiện trạng thái đang lưu và khóa ô nhập để
+không gửi trùng; không tự lặp PATCH. Lỗi kiểm tra dữ liệu/API giữ nguyên ô nhập
+và bản nháp để sửa rồi bấm ra ngoài hoặc Enter để thử lại. Link chi tiết chờ lưu
+thành công rồi mới điều hướng; nếu lỗi thì giữ nguyên trang để không mất bản nháp.
+Lưu thành công chỉ thay hàng bằng dữ liệu API trả về,
+không điều hướng, refresh trang hoặc tải lại danh sách. Lỗi giữ nguyên bản nháp
+để sửa/thử lại; không tự gửi lại. Chỉ một hàng được sửa mỗi lần; khóa tìm/lọc/
+phân trang cho đến khi tự lưu thành công hoặc Esc để tránh mất dữ liệu đang nhập.
+Chi tiết vẫn mở trang chi tiết như trước, cùng các chức năng trạng thái/phân quyền/
+cấp lại mật khẩu. Nút Chỉnh sửa ở chi tiết mở hàng tương ứng trong bảng. Link cũ
+`/accounts/[id]/edit` và `/data/accounts?...&edit=1` chuyển sang editor trong bảng.
+Không sửa mã/chủ tài khoản, vai trò hoặc trạng thái qua PATCH thông tin. Sửa tài
+khoản của mình vẫn cập nhật phiên/header bằng sự kiện hồ sơ như trước.
 
 ## Các lệnh thường dùng
 

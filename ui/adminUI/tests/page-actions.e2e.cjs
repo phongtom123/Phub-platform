@@ -46,6 +46,7 @@ async function main() {
       if (url.pathname.endsWith("/auth/me")) return respond({ account_id: "TK1", username: "admin.test", role: "ADMIN", name: "Admin Test" });
       if (url.pathname.endsWith("/data/resources")) return respond(resources);
       if (url.pathname === "/api/backend/admin/accounts/TK1") return respond(account);
+      if (url.pathname === "/api/backend/admin/accounts") return respond({ data: [account], total: 1, page: 1, page_size: 20 });
       const meta = resources.find(item => url.pathname === "/api/backend/data/" + item.name);
       assert.ok(meta, "Unexpected API: " + url.pathname);
       const row = Object.fromEntries(meta.keys.map(key => [key, "TEST-1"]));
@@ -65,7 +66,11 @@ async function main() {
         const backBox = await actions.getByRole("button", { name: "← Quay lại", exact: true }).boundingBox();
         const editBox = await edit.boundingBox();
         const actionsBox = await actions.boundingBox();
-        assert.ok(Math.abs(backBox.y - editBox.y) < 1, "Back and edit must share the same row");
+        const group = actions.locator(".live-page-actions-group");
+        const groupBox = await group.count() ? await group.boundingBox() : editBox;
+        if (backBox.width + groupBox.width + 12 <= actionsBox.width + 1) {
+          assert.ok(Math.abs(backBox.y - editBox.y) < 1, "Back and edit must share the same row when the action group fits");
+        } else assert.ok(backBox.y < editBox.y, "Narrow screens wrap the complete action group below back");
         assert.ok(Math.abs(backBox.x - actionsBox.x) < 1, "Back must align with the left edge");
         assert.ok(Math.abs(editBox.x + editBox.width - actionsBox.x - actionsBox.width) < 1, "Edit must align with the right edge");
       }
@@ -76,7 +81,9 @@ async function main() {
     }
     await page.goto(base + "/accounts/TK1"); await assertActions(true);
     await page.locator(".live-page-actions").getByRole("link", { name: "Chỉnh sửa", exact: true }).click();
-    await page.getByRole("heading", { name: "Chỉnh sửa tài khoản", exact: true }).waitFor();
+    await page.getByLabel("Tên đăng nhập TK1", { exact: true }).waitFor();
+    assert.equal(new URL(page.url()).pathname, "/accounts");
+    await page.getByLabel("Tên đăng nhập TK1", { exact: true }).press("Escape");
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(base + "/accounts/TK1"); await assertActions(true);

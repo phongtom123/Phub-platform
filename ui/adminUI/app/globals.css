@@ -2,11 +2,18 @@
 .live-data .live-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
 .live-data .live-section-heading h2 { margin-bottom: 0; }
 .live-data .live-page-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.live-data .live-page-actions-group { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-left: auto; max-width: 100%; }
 .live-data .live-related { margin-top: 24px; }
 .live-data .live-related h3 { font-size: 18px; }
 .live-data .live-related a { display: inline-flex; padding: 10px 16px; border: 1px solid #dce1db; border-radius: 8px; background: white; color: #181818; text-decoration: none; }
 .live-data .live-related a:hover { background: #edf8e9; border-color: #14a800; }
-.topbar .crumb { min-width: 0; flex-wrap: wrap; }
+.topbar .crumb { min-width: 0; flex: 1; flex-wrap: wrap; }
+.topbar .top-actions { flex-shrink: 0; }
+@media (max-width: 1200px) {
+  .topbar .top-actions > label,
+  .topbar .user-copy,
+  .topbar .user > svg { display: none; }
+}
 :root {
   --green: #14a800;
   --darkgreen: #108a00;
