@@ -11,10 +11,10 @@ type Warehouse = { ma_kho: number; ten_kho: string; trang_thai: number };
 type WarehousePage = { data: Warehouse[]; total: number; page: number; page_size: number };
 const accountPrefixes: Record<Role, string> = { ADMIN: "AD", THU_KHO: "KHO", KHACH_HANG: "KH" };
 
-export function AccountForm({ account }: { account?: Account }) {
+export function AccountForm() {
   const router = useRouter();
-  const [username, setUsername] = useState(account?.ten_tai_khoan ?? "");
-  const [email, setEmail] = useState(account?.email ?? "");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [name, setName] = useState("");
@@ -27,7 +27,7 @@ export function AccountForm({ account }: { account?: Account }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (account || role !== "THU_KHO") return;
+    if (role !== "THU_KHO") return;
     const controller = new AbortController();
     setLoading(true); setWarehouseError(""); setWarehouses([]);
     (async () => {
@@ -47,19 +47,18 @@ export function AccountForm({ account }: { account?: Account }) {
       .catch(error => { if (!controller.signal.aborted) setWarehouseError(errorMessage(error)); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [account, role]);
+  }, [role]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
-    if (!account && (!name.trim() || !role || (role === "THU_KHO" && !warehouse) || password !== confirmation)) {
+    if (!name.trim() || !role || (role === "THU_KHO" && !warehouse) || password !== confirmation) {
       setError(password !== confirmation ? "Hai mật khẩu không khớp." : "Nhập họ tên, chọn loại tài khoản và kho nếu là nhân viên kho."); return;
     }
     setSaving(true);
     try {
-      const body = account ? { ten_tai_khoan: username.trim(), email: email.trim() || null }
-        : { ten_tai_khoan: username.trim(), email: email.trim() || null, password,
+      const body = { ten_tai_khoan: username.trim(), email: email.trim() || null, password,
             new_owner: { ho_ten: name.trim(), role, ma_kho: role === "THU_KHO" ? Number(warehouse) : null } };
-      const saved = await accountApi<Account>(account ? `accounts/${encodeURIComponent(account.ma_tk)}` : "accounts", jsonRequest(account ? "PATCH" : "POST", body));
+      const saved = await accountApi<Account>("accounts", jsonRequest("POST", body));
       setPassword(""); setConfirmation("");
       if (saved.is_self) window.dispatchEvent(new Event("phub-account-updated"));
       router.push(accountHref(saved.ma_tk)); router.refresh();
@@ -68,10 +67,10 @@ export function AccountForm({ account }: { account?: Account }) {
   }
 
   return <form className="live-form" onSubmit={save}>
-    {!account && <p className="account-help account-wide">Mã tài khoản được tạo tự động khi lưu{role ? `, dạng ${accountPrefixes[role]}000001` : " theo loại tài khoản"}. Không cần nhập mã.</p>}
+    <p className="account-help account-wide">Mã tài khoản được tạo tự động khi lưu{role ? `, dạng ${accountPrefixes[role]}000001` : " theo loại tài khoản"}. Không cần nhập mã.</p>
     <label>Tên đăng nhập *<input required minLength={3} maxLength={80} pattern="[A-Za-z0-9_.-]+" autoComplete="off" value={username} onChange={e => setUsername(e.target.value)} /><small>3–80 ký tự chữ, số, dấu chấm, gạch dưới hoặc gạch ngang.</small></label>
     <label>Email<input type="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /><small>Có thể dùng email này để đăng nhập.</small></label>
-    {account ? <div className="live-field"><strong>Chủ tài khoản</strong>{account.ho_ten} · {account.ma_nhan_vien ?? account.ma_kh}<p className="account-help">Không chuyển tài khoản sang một người khác.</p></div> : <>
+    <>
       <label>Họ tên *<input required maxLength={200} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></label>
       <label>Loại tài khoản *<select required value={role} onChange={e => {
         setRole(e.target.value as Role | ""); setWarehouse(""); setWarehouseError(""); setLoading(false);
@@ -85,8 +84,8 @@ export function AccountForm({ account }: { account?: Account }) {
       <p className="account-help account-wide">Hệ thống tạo mới nhân viên hoặc khách hàng cùng tài khoản. Không cần chọn người có sẵn.</p>
       <label>Mật khẩu *<input type="password" required minLength={10} maxLength={128} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></label>
       <label>Nhập lại mật khẩu *<input type="password" required minLength={10} maxLength={128} autoComplete="new-password" value={confirmation} onChange={e => setConfirmation(e.target.value)} /></label>
-    </>}
+    </>
     {error && <p className="live-error account-wide" role="alert">{error}</p>}
-    <div className="live-form-actions"><button className="live-primary" disabled={saving || loading}>{saving ? "Đang lưu…" : account ? "Lưu thay đổi" : "Tạo tài khoản"}</button><Link href={account ? accountHref(account.ma_tk) : "/accounts"}>Hủy</Link></div>
+    <div className="live-form-actions"><button className="live-primary" disabled={saving || loading}>{saving ? "Đang lưu…" : "Tạo tài khoản"}</button><Link href="/accounts">Hủy</Link></div>
   </form>;
 }

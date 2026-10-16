@@ -85,6 +85,7 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
       />
       <div className="main">
         <AdminHeader
+          accountsPage={accountsPage}
           dataResource={accountsPage || activeModule === "accounts" ? undefined : dataResource ?? moduleResources[activeModule]}
           activeModule={activeModule}
           title={moduleNames[activeModule]}
