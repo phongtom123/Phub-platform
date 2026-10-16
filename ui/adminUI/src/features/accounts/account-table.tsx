@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, ty
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { accountApi, errorMessage, jsonRequest } from "./api";
-import { accountHref, roleLabels, statusLabels, type Account } from "./types";
+import { accountHref, roleLabels, statusLabels, type Account, type AccountStatus } from "./types";
 
 type Editor = { id: string; username: string; email: string; focus: "username" | "email" };
 type Props = {
@@ -19,9 +19,12 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
   const router = useRouter();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [saving, setSaving] = useState(false);
+  const [statusSaving, setStatusSaving] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<{ id: string; message: string } | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const controller = useRef<AbortController | null>(null);
+  const statusController = useRef<AbortController | null>(null);
   const pendingSave = useRef<Promise<boolean> | null>(null);
   const outsideAttempt = useRef<Promise<boolean> | null>(null);
   const mounted = useRef(true);
@@ -35,22 +38,22 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; controller.current?.abort(); onEditingChange(false); };
+    return () => { mounted.current = false; controller.current?.abort(); statusController.current?.abort(); onEditingChange(false); };
   }, [onEditingChange]);
-  useEffect(() => { onEditingChange(editor !== null); }, [editor !== null, onEditingChange]);
+  useEffect(() => { onEditingChange(editor !== null || statusSaving !== null); }, [editor !== null, statusSaving !== null, onEditingChange]);
   useEffect(() => {
     if (editor) (editor.focus === "email" ? emailInput : usernameInput).current?.focus();
   }, [editor?.id, editor?.focus]);
   useEffect(() => {
-    if (!requestedEdit || editor) return;
+    if (!requestedEdit || editor || statusController.current) return;
     const row = rows.find(item => item.ma_tk === requestedEdit);
     if (!row) return;
     setEditor({ id: row.ma_tk, username: row.ten_tai_khoan, email: row.email ?? "", focus: "username" });
     setError(""); setNotice(""); onRequestedEditHandled();
-  }, [requestedEdit, rows, editor, onRequestedEditHandled]);
+  }, [requestedEdit, rows, editor, statusSaving, onRequestedEditHandled]);
 
   function edit(row: Account, focus: Editor["focus"] = "username") {
-    if (saving || (editor && editor.id !== row.ma_tk)) return;
+    if (saving || statusController.current || (editor && editor.id !== row.ma_tk)) return;
     if (editor) { (focus === "email" ? emailInput : usernameInput).current?.focus(); return; }
     setEditor({ id: row.ma_tk, username: row.ten_tai_khoan, email: row.email ?? "", focus });
     outsideAttempt.current = null; setError(""); setNotice("");
@@ -74,6 +77,20 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
   }
   function change(field: "username" | "email", value: string) {
     setEditor(current => current && ({ ...current, [field]: value })); setError("");
+  }
+  async function changeStatus(row: Account, value: number) {
+    if (row.is_self || editor || controller.current || statusController.current || ![0, 1, 2].includes(value) || value === row.trang_thai) return;
+    const status = value as AccountStatus;
+    if (status !== 1 && !window.confirm(`Chuyển tài khoản ${row.ten_tai_khoan} sang "${statusLabels[status]}"?`)) return;
+    const request = new AbortController();
+    statusController.current = request; setStatusSaving(row.ma_tk); setStatusError(null); setNotice("");
+    try {
+      const saved = await accountApi<Account>(`accounts/${encodeURIComponent(row.ma_tk)}/status`, { ...jsonRequest("POST", { trang_thai: status }), signal: request.signal });
+      if (request.signal.aborted) return;
+      if (saved.ma_tk !== row.ma_tk || ![0, 1, 2].includes(saved.trang_thai)) throw new Error("API chưa trả về đúng trạng thái tài khoản đã lưu.");
+      onSaved(saved); setNotice(`Đã cập nhật trạng thái tài khoản ${saved.ma_tk}: ${statusLabels[saved.trang_thai]}.`);
+    } catch (error) { if (!request.signal.aborted) setStatusError({ id: row.ma_tk, message: errorMessage(error) }); }
+    finally { if (!request.signal.aborted) { statusController.current = null; setStatusSaving(null); } }
   }
   const save = useCallback((restoreFocus = false): Promise<boolean> => {
     if (pendingSave.current) return pendingSave.current;
@@ -144,7 +161,7 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
   }, [editor?.id, save, router]);
 
   return <>
-    <p className="account-help" id={hintId}>Nhấp đúp vào một hàng để đổi tên đăng nhập và email. Bấm ra ngoài hàng hoặc nhấn Enter để tự lưu; Esc để bỏ thay đổi. Vai trò và trạng thái được quản lý trong Chi tiết.</p>
+    <p className="account-help" id={hintId}>Nhấp đúp vào một hàng để đổi tên đăng nhập và email. Bấm ra ngoài hàng hoặc nhấn Enter để tự lưu; Esc để bỏ thay đổi. Chọn trạng thái trong dropdown để cập nhật; phân quyền được quản lý trong Chi tiết.</p>
     {error && <p className="live-error" id={errorId} role="alert">{error}</p>}
     {notice && <p className="live-note" role="status">{notice}</p>}
     <div className="live-table account-inline-table"><table aria-describedby={hintId}>
@@ -158,7 +175,16 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
           <td>{row.ho_ten}{!row.owner_active && <small className="account-inactive">Hồ sơ ngừng hoạt động</small>}</td>
           <td className="account-editable-cell" data-field="email">{editing ? <input ref={emailInput} type="email" aria-label={`Email ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} maxLength={254} disabled={saving} value={editor.email} onChange={event => change("email", event.target.value)} /> : row.email ?? "—"}</td>
           <td>{roleLabels[row.role]}{row.ma_kho !== null && <small className="account-inactive">Kho {row.ma_kho}</small>}</td>
-          <td><span className={`account-status status-${row.trang_thai}`}>{statusLabels[row.trang_thai]}</span></td>
+          <td><select className={`account-status-select status-${row.trang_thai}`} aria-label={`Trạng thái tài khoản ${row.ma_tk}`}
+            disabled={row.is_self || editor !== null || statusSaving !== null}
+            title={row.is_self ? "Không thể khóa hoặc ẩn tài khoản đang đăng nhập." : undefined}
+            aria-invalid={statusError?.id === row.ma_tk} aria-describedby={statusError?.id === row.ma_tk ? `${formId}-status-${row.ma_tk}` : undefined}
+            value={row.trang_thai} onChange={event => { const value = Number(event.currentTarget.value); event.currentTarget.value = String(row.trang_thai); void changeStatus(row, value); }}>
+            {([1, 2, 0] as AccountStatus[]).map(status => <option key={status} value={status}>{statusLabels[status]}</option>)}
+          </select>
+            {statusSaving === row.ma_tk && <small className="account-status-message" role="status">Đang lưu trạng thái…</small>}
+            {statusError?.id === row.ma_tk && <small className="account-status-message account-status-error" id={`${formId}-status-${row.ma_tk}`} role="alert">{statusError.message}</small>}
+          </td>
           <td><div className="account-row-actions"><Link href={accountHref(row.ma_tk)}>Chi tiết</Link>{editing && saving && <span role="status">Đang lưu…</span>}</div></td>
         </tr>;
       })}</tbody>

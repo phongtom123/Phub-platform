@@ -168,6 +168,7 @@ node ui/adminUI/tests/session-recovery.e2e.cjs
 node ui/adminUI/tests/page-actions.e2e.cjs
 node ui/adminUI/tests/account-detail-consistency.e2e.cjs
 node ui/adminUI/tests/account-inline-edit.e2e.cjs
+node ui/adminUI/tests/account-status.e2e.cjs
 ```
 
 Các lệnh trên chạy từ root repository; unit tests dùng TypeScript đã cài trong
@@ -265,7 +266,14 @@ phân trang cho đến khi tự lưu thành công hoặc Esc để tránh mất 
 Chi tiết vẫn mở trang chi tiết như trước, cùng các chức năng trạng thái/phân quyền/
 cấp lại mật khẩu. Nút Chỉnh sửa ở chi tiết mở hàng tương ứng trong bảng. Link cũ
 `/accounts/[id]/edit` và `/data/accounts?...&edit=1` chuyển sang editor trong bảng.
-Không sửa mã/chủ tài khoản, vai trò hoặc trạng thái qua PATCH thông tin. Sửa tài
+Không sửa mã/chủ tài khoản, vai trò hoặc trạng thái qua PATCH thông tin. Cột trạng
+thái có dropdown Hoạt động/Tạm khóa/Đã ẩn, lưu ngay qua POST `/admin/accounts/{id}/status`
+khi chọn; khóa/ẩn cần xác nhận, mở lại không cần xác nhận. Không cho tự khóa/ẩn:
+dropdown của tài khoản đang đăng nhập bị khóa, backend vẫn kiểm tra độc lập.
+Chỉ áp dụng response thành công vào đúng hàng, không tải lại danh sách; lỗi giữ
+trạng thái cũ và báo tại ô. Trong khi sửa tên/email, dropdown trạng thái bị khóa;
+trong khi lưu trạng thái, khóa dropdown/tìm/lọc/phân trang và không mở editor mới
+để tránh ghi đè dữ liệu hoặc gửi trùng. Không tự retry POST. Sửa tài
 khoản của mình vẫn cập nhật phiên/header bằng sự kiện hồ sơ như trước.
 
 ## Các lệnh thường dùng
