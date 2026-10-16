@@ -14,6 +14,10 @@
 .accounts-page .account-inline-table tr:focus-visible { outline: 2px solid #14a800; outline-offset: -2px; }
 .accounts-page .account-inactive { display: block; margin-top: 5px; font-size: 14px; color: #61705e; }
 .accounts-page .account-status { display: inline-flex; border-radius: 20px; padding: 5px 12px; font-size: 15px; }
+.accounts-page .account-status-select { min-width: 142px; border-color: transparent; border-radius: 20px; padding: 6px 10px; font-size: 15px; cursor: pointer; }
+.accounts-page .account-status-select:disabled { opacity: .65; cursor: not-allowed; }
+.accounts-page .account-status-message { display: block; margin-top: 6px; font-size: 13px; white-space: normal; }
+.accounts-page .account-status-error { color: #a62020; }
 .accounts-page .status-1 { background: #edf9e9; color: #126d04; }
 .accounts-page .status-2 { background: #fff2dd; color: #825100; }
 .accounts-page .status-0 { background: #ededed; color: #444; }
