@@ -20,7 +20,7 @@ Header hiện dùng bố cục và nội dung của `C:/xampp/htdocs/web2/user/c
 - `common/SearchInput.tsx`, `Button.tsx`, `icon.tsx`: các thành phần dùng chung.
 - `Header.module.css`: CSS được giới hạn trong header, không ảnh hưởng footer.
 
-Logo dùng `public/images/1.png` đã có trong dự án, giống logo của file PHP. Các icon SVG dùng lại từ bộ header hiện có; avatar khách không dùng ảnh người mẫu.
+Logo dùng `media/products/1.png` trong Supabase Storage, giống logo của file PHP. Các icon SVG dùng lại từ bộ header hiện có; avatar khách không dùng ảnh người mẫu. Xem `MEDIA_STORAGE.md` để biết ánh xạ URL.
 
 ## Animation và tương tác
 

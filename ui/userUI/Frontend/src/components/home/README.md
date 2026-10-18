@@ -27,7 +27,7 @@ Desktop spacing follows the supplied Home screenshot, including the large whites
 
 ## Assets
 
-All assets are served locally from `public/images/home`; no runtime third-party image requests.
+All images are served from `media/products/home` in Supabase Storage; see `MEDIA_STORAGE.md`.
 
 - `banner-msi.png`, `banner-asus.png` and `category-*.png`: copied from the user's existing `C:/xampp/htdocs/web2/asset/public/uploads/images` (`Group 56.png`, `Group 57.png`, `image 30.png`, `image 30 (1).png`, `image 30 (2).png`, `image 30 (3).png`). Promotional wording/dates are baked into these demo images, not a current offer.
 - Custom PC / laptop / desktop SVG images and Zip logo: public Tech Store design reference at https://tech-store-ruby.vercel.app/. Original asset paths are recorded below. These SVGs contain raster product artwork; no website code was imported.
