@@ -1,5 +1,6 @@
 import type { CatalogProduct, CatalogFilters, CatalogSort } from "@/components/catalog/catalogData";
 import type { DetailProduct } from "@/data/product-details";
+import { resolveProductMediaUrl } from "@/lib/media";
 
 export interface ApiProduct {
   id: string; sku: string; name: string;
@@ -30,8 +31,8 @@ export function safeImageUrl(value: string | undefined): string {
   if (!value?.trim()) return placeholderImage;
   const source = value.trim();
   if (/^https?:\/\//i.test(source)) return source;
-  if (source.startsWith("/") && !source.startsWith("//")) return source;
-  if (!source.includes(":") && !source.startsWith("//")) return `/${source}`;
+  if (source.startsWith("/") && !source.startsWith("//")) return resolveProductMediaUrl(source);
+  if (!source.includes(":") && !source.startsWith("//")) return resolveProductMediaUrl(`/${source}`);
   return placeholderImage;
 }
 

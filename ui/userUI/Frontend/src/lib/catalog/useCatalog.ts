@@ -32,6 +32,8 @@ export function useCatalogMetadata() {
   return { ...state, retry: () => { setState(current => ({ ...current, loading: true, error: null })); setAttempt(current => current + 1); } };
 }
 
+export type CatalogMetadataController = ReturnType<typeof useCatalogMetadata>;
+
 function integer(value: string | null, fallback: number, max: number) {
   return value && /^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= max ? Number(value) : fallback;
 }

@@ -10,9 +10,9 @@ import { useCategories } from "@/lib/catalog/useCategories";
 import { categoryHref } from "@/lib/catalog/categories";
 import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
-import { CatalogMegaMenu } from "./CatalogMegaMenu";
+import { CatalogMegaMenu, warmAllCatalogMegaMenus, warmCatalogMegaMenu } from "./CatalogMegaMenu";
 import styles from "./Header.module.css";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AUTH_SESSION_EVENT, getSession, logoutSession, type SessionUser } from "../../../../../shared/auth-client";
 
 type Dropdown = "shop" | "account" | "cart";
@@ -20,6 +20,7 @@ type Panel = Dropdown | "mobile" | "notice" | null;
 
 export default function AltHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -109,6 +110,46 @@ export default function AltHeader() {
   useEffect(() => () => {
     if (categoryCloseTimerRef.current !== null) window.clearTimeout(categoryCloseTimerRef.current);
   }, []);
+
+  useEffect(() => {
+    if ((pathname !== "/" && pathname !== "/main/landing") || catalog.loading || !catalog.data.length) return;
+    let cancelled = false;
+    let idleId: number | null = null;
+    let gapTimer: number | null = null;
+
+    async function warmInOrder() {
+      try { await warmAllCatalogMegaMenus(catalog.data); }
+      catch { return; }
+      const targets = [
+        ...catalog.data.map(category => ({ categoryId: category.id, subcategoryId: undefined })),
+        ...catalog.data.flatMap(category => category.children.map(child => ({
+          categoryId: category.id, subcategoryId: child.id,
+        }))),
+      ];
+      for (const target of targets) {
+        if (cancelled) return;
+        try { await warmCatalogMegaMenu(target.categoryId, target.subcategoryId); }
+        catch { /* Hover keeps the normal retry UI available. */ }
+        if (cancelled) return;
+        await new Promise<void>(resolve => { gapTimer = window.setTimeout(resolve, 250); });
+      }
+    }
+
+    const delayTimer = window.setTimeout(() => {
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(() => { void warmInOrder(); }, { timeout: 2_000 });
+      } else {
+        void warmInOrder();
+      }
+    }, 1_500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(delayTimer);
+      if (gapTimer !== null) window.clearTimeout(gapTimer);
+      if (idleId !== null) window.cancelIdleCallback(idleId);
+    };
+  }, [catalog.data, catalog.loading, pathname]);
 
   useEffect(() => {
     function dismissOutside(event: Event) {

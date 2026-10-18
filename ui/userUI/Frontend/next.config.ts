@@ -8,6 +8,16 @@ const rootMediaAssets = ["favicon.ico", "file.svg", "globe.svg", "next.svg", "ve
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["169.254.83.107"],
+  images: {
+    minimumCacheTTL: 86_400,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "btfhahnjydaiivvcqnna.supabase.co",
+        pathname: "/storage/v1/object/public/media/products/**",
+      },
+    ],
+  },
   // Include ui/shared, while each application keeps its own Next.js version.
   turbopack: { root: path.resolve(__dirname, "../..") },
   async rewrites() {
