@@ -8,7 +8,7 @@ import type { HomeCategory, HomeProduct } from "./homeData";
 import styles from "./Home.module.css";
 
 function Card({ product, compact = false }: { product: HomeProduct; compact?: boolean }) {
-  return <ProductCard {...product} mobileImageSrc={undefined} uiLocale="vi" compactOnMobile={compact} href={productHref(product.id)} className={styles.card} />;
+  return <ProductCard {...product} mobileImageSrc={undefined} imageLoading="eager" uiLocale="vi" compactOnMobile={compact} href={productHref(product.id)} className={styles.card} />;
 }
 export function NewProducts({ products, onViewAll, title = "Sản phẩm mới" }: { products: HomeProduct[]; onViewAll: () => void; title?: string }) {
   const track = useRef<HTMLDivElement>(null);
@@ -53,7 +53,7 @@ export function ProductShelf({ category, onViewAll }: { category: HomeCategory; 
     </div>}
     <div id={`${category.id}-panel`} className={styles.categoryRow} role={hasTabs ? "tabpanel" : undefined} aria-labelledby={hasTabs ? `${category.id}-tab-${active}` : undefined} tabIndex={hasTabs ? 0 : undefined}>
       <div className={styles.categoryBanner}>
-        <picture><Image src={`/images/home/${category.image}`} alt="" fill unoptimized /></picture>
+        <picture><Image src={`/images/home/${category.image}`} alt="" fill loading="eager" /></picture>
         <h2>{category.title}</h2>
         <button onClick={() => onViewAll(category.title, category.groups.flatMap(item => item.products))}>Xem tất cả sản phẩm</button>
       </div>

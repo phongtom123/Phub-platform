@@ -6,7 +6,7 @@ import { emptyFilters } from "@/components/catalog/catalogData";
 import { CatalogStatus } from "@/components/catalog/CatalogStatus";
 import { getProducts } from "@/lib/catalog/client";
 import { catalogProduct } from "@/lib/catalog/types";
-import { useCatalogMetadata } from "@/lib/catalog/useCatalog";
+import type { CatalogMetadataController } from "@/lib/catalog/useCatalog";
 import { NewProducts, ProductShelf } from "./ProductShelf";
 import type { HomeCategory, HomeProduct } from "./homeData";
 
@@ -41,8 +41,7 @@ export function HomeFeaturedProducts() {
   return <NewProducts products={data.products} onViewAll={() => router.push("/main/product")} title="Sản phẩm đang bán" />;
 }
 
-export function HomeCategoryProducts() {
-  const metadata = useCatalogMetadata();
+export function HomeCategoryProducts({ metadata }: { metadata: CatalogMetadataController }) {
   if (metadata.loading || metadata.error) return <CatalogStatus loading={metadata.loading} error={metadata.error} retry={metadata.retry} />;
   return <>{metadata.data.categories.map(category => <CategoryShelf key={category.id} category={category} />)}</>;
 }

@@ -1,9 +1,8 @@
 "use client";
-import { useCatalogMetadata } from "@/lib/catalog/useCatalog";
+import type { CatalogMetadataController } from "@/lib/catalog/useCatalog";
 import { CatalogStatus } from "@/components/catalog/CatalogStatus";
 import Link from "next/link";
-export function BrandSection() {
-  const metadata = useCatalogMetadata();
+export function BrandSection({ metadata }: { metadata: CatalogMetadataController }) {
   if (metadata.loading || metadata.error) return <CatalogStatus loading={metadata.loading} error={metadata.error} retry={metadata.retry} />;
   if (!metadata.data.brands.length) return null;
   return <section aria-label="Thương hiệu sản phẩm"><h2>Thương hiệu</h2><div style={{ display: "flex", gap: 16, flexWrap: "wrap", padding: "16px 0" }}>
