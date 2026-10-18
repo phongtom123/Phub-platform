@@ -10,18 +10,51 @@ import type { CatalogMetadataController } from "@/lib/catalog/useCatalog";
 import { NewProducts, ProductShelf } from "./ProductShelf";
 import type { HomeCategory, HomeProduct } from "./homeData";
 
+const homeProductCache = new Map<string, HomeProduct[]>();
+
+function reconcileProducts(previous: HomeProduct[] | undefined, products: HomeProduct[]) {
+  if (!previous) return products;
+  const previousById = new Map(previous.map(product => [product.id, product]));
+  const reconciled = products.map(product => {
+    const oldProduct = previousById.get(product.id);
+    return oldProduct && JSON.stringify(oldProduct) === JSON.stringify(product) ? oldProduct : product;
+  });
+  return reconciled.length === previous.length
+    && reconciled.every((product, index) => product === previous[index]) ? previous : reconciled;
+}
+
 function useHomeProducts(categoryId = "", pageSize = 8) {
-  const [state, setState] = useState<{ key: string; products: HomeProduct[]; error: string | null }>({ key: "", products: [], error: null });
-  const [attempt, setAttempt] = useState(0);
   const key = categoryId + ":" + pageSize;
+  const [state, setState] = useState<{ key: string; products: HomeProduct[] | null; error: string | null }>(
+    () => ({ key, products: homeProductCache.get(key) ?? null, error: null }),
+  );
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     getProducts({ q: "", filters: { ...emptyFilters, categories: categoryId ? [categoryId] : [] }, sort: "position", page: 1, pageSize, view: "grid" }, controller.signal)
-      .then(result => { if (!controller.signal.aborted) setState({ key, products: result.items.map(catalogProduct), error: null }); })
-      .catch(error => { if (!controller.signal.aborted) setState({ key, products: [], error: error instanceof Error ? error.message : "Không thể tải sản phẩm." }); });
+      .then(result => {
+        if (controller.signal.aborted) return;
+        const products = reconcileProducts(homeProductCache.get(key), result.items.map(catalogProduct));
+        homeProductCache.set(key, products);
+        setState(current => current.key === key && current.products === products && !current.error
+          ? current : { key, products, error: null });
+      })
+      .catch(error => {
+        if (controller.signal.aborted) return;
+        const cached = homeProductCache.get(key);
+        if (cached) setState({ key, products: cached, error: null });
+        else setState({ key, products: null, error: error instanceof Error ? error.message : "Không thể tải sản phẩm." });
+      });
     return () => controller.abort();
   }, [categoryId, pageSize, key, attempt]);
-  return { ...state, loading: state.key !== key, retry: () => { setState(current => ({ ...current, key: "" })); setAttempt(value => value + 1); } };
+  const currentState = state.key === key ? state : null;
+  const products = currentState?.products ?? homeProductCache.get(key) ?? null;
+  return {
+    products: products ?? [],
+    error: products ? null : currentState?.error ?? null,
+    loading: !products && !currentState?.error,
+    retry: () => { setState(current => ({ ...current, error: null })); setAttempt(value => value + 1); },
+  };
 }
 
 function CategoryShelf({ category }: { category: { id: string; label: string } }) {
