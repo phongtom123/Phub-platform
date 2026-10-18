@@ -392,3 +392,40 @@ roles. Customer checkout/payment adapt the same verified `current_user` identity
 through `require_customer`; missing sessions return 401 and wrong roles return
 403 before customer data is queried. SQL migration files are included for team
 review; no live database migration or real payment was run when integrating this branch.
+
+## Upload ảnh sản phẩm vào Supabase Storage
+
+- API: `POST /api/admin/media/images` (ADMIN, cookie/Bearer hợp lệ và `Origin`
+  nằm trong `FRONTEND_ORIGINS`). Body là bytes của file với Content-Type
+  `image/jpeg`, `image/png` hoặc `image/webp`, không phải JSON/multipart.
+- Giới hạn đầu vào 5 MiB, ảnh tĩnh tối đa 4096 × 4096 pixel. Pillow kiểm tra và
+  giải mã nội dung thật, từ chối file giả/hỏng hoặc MIME không khớp, xử lý hướng
+  EXIF rồi chuẩn hóa WebP và bỏ metadata. File đầu ra cũng giới hạn 5 MiB.
+- File ghi vào `media/products/<uuid>.webp`, không ghi đè file cũ. Response 201
+  chứa `bucket`, `path`, `url`, `content_type`, `size`, `width`, `height`.
+  UI dùng `url` để POST/PATCH `duong_dan_anh` ở API sản phẩm.
+
+Thiết lập trước khi dùng thật:
+
+1. Cài requirements backend mới (có Pillow); deploy backend trước hoặc cùng Admin.
+2. Trong Supabase Dashboard → Storage, kiểm tra bucket `media` dùng cho ảnh
+   sản phẩm công khai. Đặt `SUPABASE_MEDIA_BUCKET=media` (mặc định cũng là `media`).
+   Bucket cần public để URL ảnh không hết hạn; nếu chỉ cho phép một số MIME,
+   danh sách phải có `image/webp`. Giới hạn bucket phải đủ cho ảnh đầu ra, tối đa 5 MiB.
+3. Không chuyển public một bucket đang chứa tài liệu riêng tư; chọn bucket mới
+   phù hợp và cấu hình lại biến môi trường. API chỉ kiểm tra, không tạo/sửa quyền bucket.
+4. `SUPABASE_URL` và secret có quyền Storage chỉ nằm ở backend. Không cấp quyền
+   ghi public/anonymous cho bucket. Next gateway chuyển bytes và cookie, không có key Supabase.
+5. Test với tài khoản admin và một sản phẩm test trên staging: chọn ảnh, lưu,
+   tải lại bản ghi và mở URL ảnh; kiểm tra lỗi quyền và dung lượng. Không dùng test
+   tự động để ghi dữ liệu production.
+
+Upload và ghi sản phẩm là hai thao tác độc lập. Nếu ghi sản phẩm lỗi, UI giữ URL
+đã upload để thử lại, không upload lại tự động. Hủy trước khi lưu không upload.
+Gỡ/thay ảnh chỉ đổi URL ở sản phẩm; không xóa file Storage cũ vì có thể còn nơi
+khác sử dụng. File upload thành công nhưng chưa được gắn vào sản phẩm có thể
+cần dọn theo quy trình lưu trữ riêng; chưa có tác vụ tự động dọn/xóa trong đợt này.
+
+Tham khảo: [Supabase Upload](https://supabase.com/docs/reference/python/storage-from-upload),
+[public/private buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals).
+Kiểm thử offline: `python -m pytest tests/test_media.py -q` từ thư mục Backend.

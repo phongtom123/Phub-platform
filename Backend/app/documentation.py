@@ -66,6 +66,7 @@ TAGS = [
     {"name": "Admin · Tổ chức", "description": "Kho, nhân viên, tài khoản. Mật khẩu chỉ có trong request, không có trong response."},
     {"name": "Admin · Khách hàng", "description": "ADMIN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình."},
     {"name": "Admin · Sản phẩm", "description": "Loại sản phẩm và sản phẩm PC/linh kiện. SKU không đổi sau khi tạo."},
+    {"name": "Admin · Hình ảnh", "description": "ADMIN upload ảnh sản phẩm vào bucket media; giới hạn 5 MB, ảnh tĩnh JPG/PNG/WebP. Không sửa quyền public hoặc xóa file cũ tự động."},
     {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Áp voucher cho đơn chưa có API ghi."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
     {"name": "Kho · Nhà cung cấp", "description": "ADMIN và THU_KHO tạo/sửa nhà cung cấp."},
@@ -90,7 +91,7 @@ NOTES = {
     "subcategories": "Danh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
     "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
-    "products": "Ảnh sửa bằng URL duong_dan_anh; upload file chưa có API. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
+    "products": "Ảnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
     "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
     "vouchers": "ma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
 }

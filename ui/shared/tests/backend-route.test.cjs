@@ -15,6 +15,38 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("media upload forwards binary bytes, content type and only the session cookie", async () => {
+  const bytes = Uint8Array.from([137, 80, 78, 71, 0, 255, 128, 1]);
+  const proxy = gateway(async (url, options) => {
+    assert.equal(url.pathname, "/api/admin/media/images");
+    assert.equal(options.headers.get("Content-Type"), "image/png");
+    assert.equal(options.headers.get("Origin"), "http://localhost:3000");
+    assert.equal(options.headers.get("Cookie"), "phub_session=test");
+    assert.equal(options.headers.get("Authorization"), null);
+    assert.deepEqual(Buffer.from(options.body), Buffer.from(bytes));
+    return Response.json({ url: "https://example.test/image.webp" }, { status: 201 });
+  });
+  const response = await proxy(new Request("http://localhost:3000/api/backend/admin/media/images", {
+    method: "POST", headers: { "Content-Type": "image/png", Origin: "http://localhost:3000", Cookie: "other=secret; phub_session=test" }, body: bytes,
+  }), ["admin", "media", "images"]);
+  assert.equal(response.status, 201);
+});
+
+test("media rejects unsupported types, excessive bodies and arbitrary methods/paths before forwarding", async () => {
+  let calls = 0;
+  const proxy = gateway(async () => { calls++; return Response.json({}); });
+  for (const type of ["application/json", "image/svg+xml", "text/html", "multipart/form-data"]) {
+    const request = new Request("http://localhost/upload", { method: "POST", headers: { "Content-Type": type }, body: "fake" });
+    assert.equal((await proxy(request, ["admin", "media", "images"])).status, 415);
+  }
+  const oversized = new Request("http://localhost/upload", { method: "POST", headers: { "Content-Type": "image/png" }, body: new Uint8Array(5 * 1024 * 1024 + 1) });
+  assert.equal((await proxy(oversized, ["admin", "media", "images"])).status, 413);
+  for (const [method, parts] of [["GET", ["admin", "media", "images"]], ["DELETE", ["admin", "media", "images"]], ["POST", ["admin", "media", "images", "extra"]]]) {
+    assert.equal((await proxy(new Request("http://localhost/upload", { method }), parts)).status, 404);
+  }
+  assert.equal(calls, 0);
+});
+
 test("allowlist rejects traversal and arbitrary backend endpoints", async () => {
   let called = false;
   const proxy = gateway(() => { called = true; });

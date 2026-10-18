@@ -1,5 +1,6 @@
 import AdminApp from "@/src/components/admin/admin-app";
 import { redirect } from "next/navigation";
+import { accountHref } from "@/src/features/accounts/types";
 
 export default async function DataPage({ params, searchParams }: { params: Promise<{ resource: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { resource } = await params;
@@ -9,7 +10,7 @@ export default async function DataPage({ params, searchParams }: { params: Promi
     if (typeof query.key === "string") {
       try {
         const keys = JSON.parse(query.key);
-        if (Array.isArray(keys) && keys.length === 1 && typeof keys[0] === "string") target = `/accounts/${encodeURIComponent(keys[0])}${query.edit === "1" ? "/edit" : ""}`;
+        if (Array.isArray(keys) && keys.length === 1 && typeof keys[0] === "string") target = accountHref(keys[0], query.edit === "1");
       } catch { /* Invalid legacy key returns to the account list. */ }
     }
     redirect(target);

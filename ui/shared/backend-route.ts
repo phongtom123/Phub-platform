@@ -1,5 +1,29 @@
 /** Shared server-only gateway: browser -> Next.js -> Python. No Supabase key here. */
 type Context = { params: Promise<{ path: string[] }> };
+const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+async function boundedImageBody(request: Request, limit: number): Promise<ArrayBuffer | null> {
+  const length = request.headers.get("content-length");
+  if (length && /^\d+$/.test(length) && Number(length) > limit) return null;
+  const reader = request.body?.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  if (reader) {
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        size += value.byteLength;
+        if (size > limit) { await reader.cancel(); return null; }
+        chunks.push(value);
+      }
+    } finally { reader.releaseLock(); }
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return bytes.buffer;
+}
 const resources = new Set([
   "resources", "warehouses", "employees", "accounts", "customers", "categories", "subcategories", "products",
   "inventory", "suppliers", "receipts", "receipt-lines", "transfers", "transfer-lines", "orders",
@@ -8,6 +32,7 @@ const resources = new Set([
 
 function validAdminPath(path: string[], method: string): boolean {
   if (path[0] !== "admin") return false;
+  if (path.length === 3 && path[1] === "media" && path[2] === "images") return method === "POST";
   if (path.length === 2) {
     return (path[1] === "accounts" && ["GET", "POST"].includes(method)) ||
       (path[1] === "account-owners" && method === "GET") ||
@@ -67,13 +92,18 @@ export async function proxyBackend(request: Request, context: Context): Promise<
     const origin = request.headers.get("origin");
     if (origin) headers.set("Origin", origin); // Python validates CSRF origins, not the caller's supplied role.
     const write = request.method !== "GET" && request.method !== "HEAD";
-    const body = write ? await request.text() : undefined;
-    if (body && new TextEncoder().encode(body).length > 1_048_576) {
+    const imageUpload = path.length === 3 && path.join("/") === "admin/media/images";
+    const contentType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
+    if (imageUpload && !imageTypes.has(contentType)) {
+      return Response.json({ detail: "Chỉ hỗ trợ JPG, PNG hoặc WebP." }, { status: 415 });
+    }
+    const body = imageUpload ? await boundedImageBody(request, 5 * 1024 * 1024) : write ? await request.text() : undefined;
+    if (body === null || (typeof body === "string" && new TextEncoder().encode(body).length > 1_048_576)) {
       return Response.json({ detail: "Dữ liệu quá lớn." }, { status: 413 });
     }
-    if (write) headers.set("Content-Type", "application/json");
+    if (write) headers.set("Content-Type", imageUpload ? contentType : "application/json");
     const upstream = await fetch(url, {
-      method: request.method, headers, body, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000),
+      method: request.method, headers, body, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(imageUpload ? 30_000 : 15_000),
     });
     const outputHeaders = new Headers({ "Cache-Control": "no-store" });
     if (upstream.headers.get("content-type")) outputHeaders.set("Content-Type", upstream.headers.get("content-type")!);

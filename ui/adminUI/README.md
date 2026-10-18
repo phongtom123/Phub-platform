@@ -11,8 +11,17 @@ Dashboard và danh sách dùng dữ liệu API; không có bản ghi mẫu thay 
 
 ## Chức năng giao diện
 
-Admin xác nhận `/auth/me` trước khi tải dashboard sau đăng nhập. HTTP 401/403
-đưa về đăng nhập; lỗi mạng/503 không xóa cookie hoặc coi phiên đã hết hạn.
+Admin xác nhận `/auth/me` khi mở ứng dụng/F5 và trước khi tải dashboard sau đăng nhập.
+`AuthProvider` ở root layout giữ thông tin phiên trong bộ nhớ khi chuyển trang;
+không lưu token hoặc tin quyền từ localStorage. Điều hướng nội bộ dùng `Link`/
+`router.push`, không tải lại document và không gọi `/auth/me` theo từng trang.
+Khi quay lại tab/cửa sổ và lần kiểm tra gần nhất đã quá 60 giây, Admin kiểm tra
+phiên ở nền; các sự kiện đồng thời dùng chung một request. Không polling định kỳ.
+Cập nhật hồ sơ và nút **Thử kết nối lại** cũng yêu cầu kiểm tra lại phiên.
+
+HTTP 401 từ API dữ liệu đưa về đăng nhập ngay; 403 của API dữ liệu chỉ báo thiếu
+quyền, không tự đăng xuất. Riêng `/auth/me` trả 401/403 thì phiên không hợp lệ.
+Lỗi mạng/503 không xóa cookie hoặc coi phiên đã hết hạn.
 Khi chưa xác nhận được phiên, màn hình chờ/báo lỗi không mở dashboard. Nếu phiên
 đã được xác nhận trước đó, giữ màn hình và báo lỗi kiểm tra lại; backend vẫn kiểm
 tra quyền trên từng request, không bỏ qua tài khoản bị khóa. Có nút **Thử kết nối lại**,
@@ -22,6 +31,31 @@ Backend xử lý retry có giới hạn cho request đọc; xem [hướng dẫn]
 
 Breadcrumb các trang dữ liệu chỉ hiển thị một lần trên header, với link đến danh sách,
 chi tiết và chỉnh sửa. Dashboard không nhúng breadcrumb/link bảng liên quan của đơn hàng.
+Trang chi tiết bỏ tiêu đề module lặp (Sản phẩm, Kho, Tài khoản…), dùng một hàng
+**Quay lại — Chỉnh sửa**, Quay lại sát trái và Chỉnh sửa sát phải. Áp dụng cho các bảng dữ liệu và chi tiết tài khoản;
+bảng chỉ đọc chỉ có Quay lại, không hiện Chỉnh sửa khi đang tải/lỗi. Danh sách,
+form thêm/sửa và trang tài khoản của tôi vẫn giữ tiêu đề phù hợp.
+Tài khoản chỉ dùng breadcrumb trên header, bao gồm mã tài khoản, trang thêm mới hoặc
+hồ sơ cá nhân; sửa trực tiếp trong bảng không có breadcrumb riêng. Không lặp
+breadcrumb xanh trong nội dung. Trang chi tiết gom các nút
+Tạm khóa, Ẩn tài khoản hoặc Mở khóa / hiện lại cùng nhóm bên phải với Chỉnh sửa.
+Trên màn hình hẹp nhóm nút tự xuống dòng để không tràn ngang; quyền tự khóa/ẩn
+tài khoản của chính mình và xác nhận trước khi đổi trạng thái vẫn giữ nguyên.
+Card thông tin tài khoản, phân quyền nhân viên và cấp lại mật khẩu dùng cùng lưới: 5 cột trên desktop
+lớn, 3 cột trên desktop nhỏ, 2 cột trên tablet và 1 cột trên điện thoại. Hai ô
+mật khẩu chiếm hai cột đầu, không kéo giãn hết card; giữ nền trắng, viền mảnh và bo góc.
+Mọi trang `/accounts/[id]` dùng cùng khung 3 card theo thứ tự: thông tin tài khoản,
+phân quyền nhân viên, cấp lại mật khẩu. Giữ cùng lưới thông tin, card và nhóm nút
+ở mọi tài khoản. Hai ô Tìm kho/Kho phụ trách chỉ hiện khi chọn vai trò Nhân viên kho
+trên tài khoản nhân viên khác có thể phân quyền; quản trị viên, khách hàng và tài
+khoản đang đăng nhập không hiện hai ô không áp dụng. Đổi lựa chọn vai trò cập nhật
+ẩn/hiện ngay, không cần lưu trước. Khách hàng vẫn có card phân quyền nhưng
+hiện vai trò Khách hàng và khóa form; không có thao tác nâng quyền khách hàng.
+Khi `is_self=true`, các form quản trị và nút khóa/ẩn vẫn hiện nhưng bị vô hiệu hóa
+(cả control và submit handler); có hướng dẫn đổi mật khẩu qua `/account`.
+Kho chỉ được chọn cho nhân viên kho. Không thay đổi endpoint hoặc quyền backend.
+Header thu gọn tìm kiếm/thông tin người dùng trên màn hình vừa để breadcrumb
+không bị che và vẫn bấm được khi chuyển tài khoản trên tablet.
 Trong chi tiết đơn hàng, nhóm thông tin liên quan mở các trang dòng hàng, hóa đơn,
 thanh toán và voucher với bộ lọc `order_id` chính xác ở backend. Cần deploy backend
 hỗ trợ bộ lọc này; UI báo lỗi rõ ràng nếu API đang chạy bản cũ, không hiện dữ liệu khác đơn.
@@ -123,6 +157,29 @@ npm run start
 
 Sau đó truy cập `http://localhost:3000`.
 
+## Kiểm thử giữ phiên và điều hướng
+
+```powershell
+node --test ui/adminUI/tests/*.test.cjs ui/shared/tests/*.test.cjs
+$env:PHUB_PLAYWRIGHT_MODULE='C:/temp/phub-browser-tests/node_modules/playwright'
+$env:PHUB_ADMIN_TEST_URL='http://localhost:3000'
+node ui/adminUI/tests/session-navigation.e2e.cjs
+node ui/adminUI/tests/session-recovery.e2e.cjs
+node ui/adminUI/tests/page-actions.e2e.cjs
+node ui/adminUI/tests/account-detail-consistency.e2e.cjs
+node ui/adminUI/tests/account-inline-edit.e2e.cjs
+node ui/adminUI/tests/account-status.e2e.cjs
+```
+
+Các lệnh trên chạy từ root repository; unit tests dùng TypeScript đã cài trong
+adminUI. Browser tests chặn/mock các API, không dùng tài khoản hay ghi database thật.
+`session-navigation` đếm `/auth/me` và document load khi chuyển danh sách/chi tiết/
+chỉnh sửa/thêm mới/tài khoản/dashboard; kiểm tra focus quá hạn, gộp request,
+503/403/401 và phản hồi cũ không khôi phục phiên đã bị vô hiệu.
+`session-recovery` kiểm tra mở mới/F5, lỗi ban đầu, đăng nhập và retry không gửi
+lại thao tác POST. Backend vẫn xác thực/phân quyền mọi API được bảo vệ, không
+thay đổi kiểm soát truy cập để tối ưu UI.
+
 > Lưu ý: không cần deploy server để chạy và xem giao diện trên máy cá nhân.
 
 ## Cấu trúc source code
@@ -190,8 +247,34 @@ Ví dụ:
 
 ```text
 /accounts/TK001
-/accounts/TK001/edit
+/accounts?edit=TK001
 ```
+
+Riêng tài khoản không còn trang sửa riêng: nhấp đúp hàng (hoặc chọn hàng rồi
+nhấn F2/Enter) để hiện ô tên đăng nhập/email ngay trong bảng. Cột Thao tác mặc định
+chỉ có **Chi tiết**, không có nút **Sửa/Lưu/Hủy**, kể cả khi đang nhập.
+Bấm/chạm ra ngoài hàng hoặc nhấn Enter tự lưu bằng PATCH chỉ các trường đã đổi;
+không thay đổi gì thì đóng ô nhập mà không gửi API. Esc bỏ bản nháp. Chuyển giữa
+hai ô trong cùng hàng không tự lưu. Hiện trạng thái đang lưu và khóa ô nhập để
+không gửi trùng; không tự lặp PATCH. Lỗi kiểm tra dữ liệu/API giữ nguyên ô nhập
+và bản nháp để sửa rồi bấm ra ngoài hoặc Enter để thử lại. Link chi tiết chờ lưu
+thành công rồi mới điều hướng; nếu lỗi thì giữ nguyên trang để không mất bản nháp.
+Lưu thành công chỉ thay hàng bằng dữ liệu API trả về,
+không điều hướng, refresh trang hoặc tải lại danh sách. Lỗi giữ nguyên bản nháp
+để sửa/thử lại; không tự gửi lại. Chỉ một hàng được sửa mỗi lần; khóa tìm/lọc/
+phân trang cho đến khi tự lưu thành công hoặc Esc để tránh mất dữ liệu đang nhập.
+Chi tiết vẫn mở trang chi tiết như trước, cùng các chức năng trạng thái/phân quyền/
+cấp lại mật khẩu. Nút Chỉnh sửa ở chi tiết mở hàng tương ứng trong bảng. Link cũ
+`/accounts/[id]/edit` và `/data/accounts?...&edit=1` chuyển sang editor trong bảng.
+Không sửa mã/chủ tài khoản, vai trò hoặc trạng thái qua PATCH thông tin. Cột trạng
+thái có dropdown Hoạt động/Tạm khóa/Đã ẩn, lưu ngay qua POST `/admin/accounts/{id}/status`
+khi chọn; khóa/ẩn cần xác nhận, mở lại không cần xác nhận. Không cho tự khóa/ẩn:
+dropdown của tài khoản đang đăng nhập bị khóa, backend vẫn kiểm tra độc lập.
+Chỉ áp dụng response thành công vào đúng hàng, không tải lại danh sách; lỗi giữ
+trạng thái cũ và báo tại ô. Trong khi sửa tên/email, dropdown trạng thái bị khóa;
+trong khi lưu trạng thái, khóa dropdown/tìm/lọc/phân trang và không mở editor mới
+để tránh ghi đè dữ liệu hoặc gửi trùng. Không tự retry POST. Sửa tài
+khoản của mình vẫn cập nhật phiên/header bằng sự kiện hồ sơ như trước.
 
 ## Các lệnh thường dùng
 
@@ -251,3 +334,43 @@ sau khi push/merge; code local không tự cập nhật cloud.
 ## UI local → API Render
 
 Đặt `PHUB_API_BASE_URL=https://phub-api.onrender.com` trong `.env.local` rồi khởi động lại Next.js. Không cần secret Supabase trong UI. Xem yêu cầu Origin, cookie và phiên bản endpoint trong [README gốc](../../README.md).
+
+## Kéo thả/chọn ảnh sản phẩm
+
+Trang thêm/sửa sản phẩm (`/data/products?...`) dùng `ImageEditor` cho trường
+`duong_dan_anh`: kéo thả một file hoặc chọn JPG/PNG/WebP, xem trước, gỡ ảnh hay
+nhập URL. Chỉ khi bấm **Lưu dữ liệu** mới upload qua
+`/api/backend/admin/media/images`; gateway chuyển file nhị phân sang backend.
+Đã có URL thì không phải upload lại. Backend kiểm tra quyền/file thật và lưu vào
+Supabase Storage, sau đó form lưu URL vào sản phẩm. Không hiển thị thành công
+chỉ dựa vào preview local.
+
+Sau khi lưu thành công, form sản phẩm ở nguyên trang và áp dụng bản ghi do API
+trả về: chỉ cập nhật ảnh/giá trị đã thay đổi, không remount form, không gọi lại
+metadata, `/auth/me` hoặc GET sản phẩm. Có thông báo lưu thành công và link
+**Xem chi tiết** nếu muốn rời form. Tạo sản phẩm xong chỉ cập nhật URL hiện tại
+sang chỉnh sửa bằng History API; lưu tiếp dùng PATCH đúng mã vừa tạo, không POST
+thêm sản phẩm. Nút lưu khóa khi không có thay đổi. Rời form khi request đang chờ
+sẽ hủy phần xử lý UI của request đó để response cũ không ghi đè trang mới;
+không coi hủy request ở trình duyệt là rollback một thao tác server đã thực hiện.
+
+Lỗi upload giữ form và file đã chọn; lỗi ghi sản phẩm sau khi upload giữ URL để
+người dùng thử lưu lại. Không tự lặp POST. Gỡ ảnh chỉ gỡ liên kết khỏi sản phẩm,
+không xóa file cũ trên bucket. Hiện schema chỉ có một ảnh cho mỗi sản phẩm.
+
+Backend trên `PHUB_API_BASE_URL` phải được deploy bản có API media; nếu chưa có,
+UI báo rõ cần deploy backend mới, không thay bằng ảnh/dữ liệu giả. Cấu hình bucket
+public và key server-only xem [Backend README](../../Backend/README.md#upload-ảnh-sản-phẩm-vào-supabase-storage).
+Browser test mock, không ghi Storage thật: `node ui/adminUI/tests/media-upload.e2e.cjs`
+(từ root, đặt biến môi trường Playwright như phần kiểm thử trên).
+
+Trang chi tiết sản phẩm (trước khi bấm **Chỉnh sửa**) có khung ảnh gọn 340 px bên
+trái, thông tin bên phải; mobile xếp dọc. Ảnh căn giữa, giữ tỷ lệ và không cắt.
+Nút **Xem ảnh gốc**/bấm ảnh mở dialog ngay trong trang, không mở tab hoặc đổi URL.
+Đóng bằng Esc/nút X/bấm backdrop; dialog giữ focus và trả focus khi đóng, khóa
+cuộn trang nền trong lúc mở. Có thông báo khi chưa có ảnh/tải lỗi và nút thử lại. URL ảnh
+Supabase dùng trực tiếp; ảnh cũ `/images/...` được Admin phục vụ từ thư mục public
+`ui/userUI/Frontend/public/images` qua route chỉ đọc, không cần chạy customer UI.
+Route chỉ cho phép file ảnh, chặn vượt thư mục và không đọc file ngoài public/images.
+Khi đóng gói Admin riêng/standalone, cần giữ thư mục assets này đúng vị trí tương
+đối hoặc chuyển các ảnh cũ lên Storage; không cần assets local cho URL Supabase.
