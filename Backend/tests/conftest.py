@@ -6,8 +6,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.catalog.repository import CatalogRepository
-from app.catalog.router import get_repository, router
+from app.repositories.catalog import CatalogRepository
+from app.dependencies.catalog import get_repository
+from app.api.catalog import router
 
 
 @pytest.fixture

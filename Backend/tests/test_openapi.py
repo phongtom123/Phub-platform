@@ -1,4 +1,3 @@
-"""Documentation must describe actual URLs, payload models, permissions and errors."""
 import json
 from pathlib import Path
 
@@ -7,12 +6,13 @@ from fastapi.testclient import TestClient
 from openapi_spec_validator import validate
 from jsonschema import Draft202012Validator
 
-from app.api_examples import key_example, payload_example, row_example
-from app.auth import User, current_user
+from app.api.examples import key_example, payload_example, row_example
+from app.models.user import User
+from app.dependencies.auth import current_user
 from app.main import app
-from app.resources import RESOURCES, SYSTEM_FIELDS, payload_model
-from app.supabase import get_supabase
-from app.tables import validate_combined
+from app.models.resources import RESOURCES, SYSTEM_FIELDS, payload_model
+from app.config.database import get_supabase
+from app.controllers.tables import validate_combined
 
 
 @pytest.fixture(scope="module")
@@ -195,7 +195,7 @@ def test_versioned_snapshot_has_no_drift_or_real_secrets(spec):
 def test_swagger_origins_remain_explicit(monkeypatch):
     from fastapi import HTTPException
     from starlette.requests import Request
-    from app.auth import check_origin
+    from app.dependencies.origin import check_origin
     monkeypatch.delenv("FRONTEND_ORIGINS", raising=False)
     for origin in ["http://localhost:8000", "http://127.0.0.1:8000"]:
         check_origin(Request({"type": "http", "headers": [(b"origin", origin.encode())]}))

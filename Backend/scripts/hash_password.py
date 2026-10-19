@@ -1,8 +1,3 @@
-"""Create an Argon2 hash for the first account, without showing its password.
-
-Run from Backend: .venv\Scripts\python.exe scripts/hash_password.py
-Copy only the resulting hash to TAI_KHOAN.mat_khau_hash via Supabase Table Editor.
-"""
 from getpass import getpass
 
 from pwdlib import PasswordHash

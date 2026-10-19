@@ -1,21 +1,14 @@
-"""Script to seed 20 realistic sample products and inventory into Supabase.
-Run from Phub-platform/Backend:
-    .\.venv\Scripts\python.exe scripts/seed_sample_products.py
-"""
-
 import json
 import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Add Backend root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.supabase import supabase
+from app.config.database import supabase
 
 PRODUCTS = [
-    # --- 1. Điện thoại (SEED_L001) ---
     {
         "ma_sp": "SP_IPHONE15PM",
         "sku": "APL-IP15PM-256",
@@ -123,7 +116,6 @@ PRODUCTS = [
         "trang_thai": 1,
     },
 
-    # --- 2. Máy tính xách tay (SEED_L002) ---
     {
         "ma_sp": "SP_MACBOOKAIRM3",
         "sku": "APL-MBA13-M3-16",
@@ -251,7 +243,6 @@ PRODUCTS = [
         "trang_thai": 1,
     },
 
-    # --- 3. Màn hình (SEED_L003) ---
     {
         "ma_sp": "SP_MSIG271",
         "sku": "MSI-OPTIX-G271",
@@ -337,7 +328,6 @@ PRODUCTS = [
         "trang_thai": 1,
     },
 
-    # --- 4. Phụ kiện & Thiết bị ngoại vi (SEED_L004) ---
     {
         "ma_sp": "SP_LOGITECHMXM3S",
         "sku": "LOG-MXM3S-GRAP",
@@ -442,20 +432,18 @@ PRODUCTS = [
 
 WAREHOUSES = [-900001, -900002, -900003]
 INVENTORY_PER_WAREHOUSE = {
-    -900001: 50,  # Kho trung tâm
-    -900002: 30,  # Kho chi nhánh A
-    -900003: 20,  # Kho chi nhánh B
+    -900001: 50,
+    -900002: 30,
+    -900003: 20,
 }
 
 
 def main():
     print(f"Bắt đầu thêm {len(PRODUCTS)} sản phẩm vào bảng SAN_PHAM...")
     
-    # 1. Upsert SAN_PHAM
     res_sp = supabase.table("SAN_PHAM").upsert(PRODUCTS, on_conflict="ma_sp").execute()
     print(f"-> Đã thêm/cập nhật thành công {len(res_sp.data)} sản phẩm vào SAN_PHAM!")
 
-    # 2. Tạo bản ghi TON_KHO
     now_iso = datetime.now(timezone.utc).isoformat()
     inventory_rows = []
     for p in PRODUCTS:

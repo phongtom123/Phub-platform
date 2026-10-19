@@ -1,4 +1,3 @@
-"""API security/contract tests use real PostgREST query builders, no live secrets."""
 import json
 from datetime import datetime, timedelta, timezone
 
@@ -8,10 +7,12 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.auth import User, current_user, login_attempts, passwords
+from app.models.user import User
+from app.dependencies.auth import current_user
+from app.services.auth import login_attempts, passwords
 from app.main import app
-from app.resources import RESOURCES, payload_model, public_columns, schema
-from app.supabase import get_supabase
+from app.models.resources import RESOURCES, payload_model, public_columns, schema
+from app.config.database import get_supabase
 
 ADMIN = User("TK1", "admin", "ADMIN", "Quản trị", employee_id="NV1")
 WAREHOUSE = User("TK2", "kho", "THU_KHO", "Thủ kho", employee_id="NV2", warehouse_id=7)
@@ -58,7 +59,7 @@ def test_order_relation_filter_is_exact_and_preserves_scope(platform_client, nam
     params = requests[-1].url.params
     assert params["ma_donhang"] == "eq." + order_id
     assert params["offset"] == "2" and params["limit"] == "2"
-    assert "or" in params  # Search is additional, not the parent filter.
+    assert "or" in params
     if actor == CUSTOMER:
         assert params["ma_kh" if name == "orders" else "scope.ma_kh"] == "eq.KH3"
     assert response.json()["total"] == 3
@@ -345,7 +346,6 @@ def test_expired_token(platform_client):
 def test_login_rate_limit(platform_client):
     client, state, _ = platform_client
     configure_login(state)
-    # Exhaust the per-IP window without spending time on repeated Argon2 work.
     import time
     login_attempts["testclient"] = (time.monotonic(), 20)
     assert client.post("/api/auth/login", json={"username": "admin", "password": "wrong"}, headers=ORIGIN).status_code == 429
@@ -381,7 +381,6 @@ def test_bearer_token_flow_and_live_account_checks(platform_client):
     assert client.get("/api/auth/me", headers=headers).json()["role"] == "ADMIN"
     assert client.get("/api/data/resources", headers=headers).status_code == 200
     assert client.get("/api/auth/me").status_code == 401
-    # Header wins even if the browser has an expired/malformed cookie.
     client.cookies.set("phub_session", "invalid-cookie")
     assert client.get("/api/auth/me", headers=headers).status_code == 200
     client.cookies.clear()
@@ -475,6 +474,5 @@ def test_token_origin_policy_and_cookie_csrf_stay_explicit(platform_client):
     assert client.post("/api/auth/logout", headers=headers).status_code == 403
     assert client.post("/api/data/warehouses", json={"ten_kho": "Test", "dia_chi": "Test"}, headers=headers).status_code == 403
     app.dependency_overrides.pop(current_user)
-    # Cookie logout doesn't revoke independently held Bearer tokens.
     assert client.post("/api/auth/logout", headers=ORIGIN).status_code == 204
     assert client.get("/api/auth/me", headers=headers).status_code == 200

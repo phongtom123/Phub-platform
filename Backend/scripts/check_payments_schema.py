@@ -1,19 +1,13 @@
-"""Opt-in read-only schema/query check. Run from Backend; no real customer data.
-
-Uses GET/HEAD only, with fresh synthetic IDs. No auth override on the application,
-no account login, no writes, no printing credentials, records or transaction IDs.
-"""
-
 import sys
 from pathlib import Path
 from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.payments.auth import CurrentCustomer
-from app.payments.errors import PaymentError
-from app.payments.repository import PaymentRepository
-from app.supabase import supabase
+from app.models.customer import CurrentCustomer
+from app.middleware.payment_errors import PaymentError
+from app.repositories.payments import PaymentRepository
+from app.config.database import supabase
 
 
 def check():
@@ -59,6 +53,5 @@ if __name__ == "__main__":
     try:
         check()
     except Exception as exc:
-        # Never echo raw transport/SQL messages, which may include private fields.
         print("Payment schema check failed:", type(exc).__name__)
         raise SystemExit(1)

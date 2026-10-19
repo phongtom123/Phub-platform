@@ -9,11 +9,13 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from app.orders.repository import OrderRepository
-from app.orders.router import get_repository, router
-from app.orders.schemas import CreateOrder
-from app.orders.settings import OrderSettings
-from app.payments.auth import CurrentCustomer, require_customer
+from app.repositories.orders import OrderRepository
+from app.dependencies.orders import get_repository
+from app.api.orders import router
+from app.schemas.orders import CreateOrder
+from app.config.orders import OrderSettings
+from app.models.customer import CurrentCustomer
+from app.dependencies.customer import require_customer
 
 
 @pytest.fixture
@@ -217,7 +219,7 @@ def test_approved_defaults_and_explicit_bad_configuration_fail_closed(monkeypatc
 
 @pytest.mark.parametrize("field,value", [("ORDER_TAX_RATE", "NaN"), ("ORDER_TAX_RATE", "8"), ("ORDER_TAX_APPLICATION", "order"), ("ORDER_STOCK_POLICY", "deduct_now"), ("CATALOG_CURRENCY", "VNDx"), ("CATALOG_ACTIVE_STATUS", "x")])
 def test_unsupported_policy_is_rejected(monkeypatch, field, value):
-    from app.orders.errors import OrderError
+    from app.middleware.order_errors import OrderError
     monkeypatch.setenv(field, value)
     with pytest.raises(OrderError): OrderSettings.from_env()
 

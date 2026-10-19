@@ -3,8 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 
-from app.health import router
-from app.runtime import frontend_origins
+from app.api.health import router
+from app.config.runtime import frontend_origins
 
 
 def test_existing_localhost_default_is_preserved(monkeypatch):

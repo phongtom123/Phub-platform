@@ -11,7 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest.exceptions import APIError
 
-from app.catalog.repository import specifications_from_text
+from app.repositories.catalog import specifications_from_text
 
 
 def test_public_list_contract_and_database_visibility_filters(catalog_client):
@@ -370,7 +370,7 @@ def test_existing_products_endpoint_keeps_original_contract(monkeypatch, fails):
                 raise RuntimeError("legacy failure")
             return SimpleNamespace(data=[{"ma_sp": "legacy-product"}])
 
-    from app.supabase import get_supabase
+    from app.config.database import get_supabase
     spec = importlib.util.spec_from_file_location("app._catalog_regression_main", Path(__file__).parents[1] / "app/main.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

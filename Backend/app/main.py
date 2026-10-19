@@ -1,21 +1,20 @@
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from .catalog.router import router as catalog_router
-from .auth import router as auth_router
-from .tables import router as tables_router
-from .runtime import frontend_origins
-from .orders.router import router as orders_router
-from .payments.router import router as payments_router
-from .commerce.router import router as commerce_router
-from .health import router as health_router
-from .admin_accounts.router import router as admin_accounts_router
-from .media import router as media_router
-from .errors import register_errors
-from .supabase import close_supabase, get_supabase
-from .resources import public_columns
-from .documentation import DESCRIPTION, TAGS, install_openapi
+from fastapi import FastAPI
+from app.api.catalog import router as catalog_router
+from app.api.legacy import router as legacy_router
+from app.api.auth import router as auth_router
+from app.api.tables import router as tables_router
+from app.middleware.cors import register_cors
+from app.api.orders import router as orders_router
+from app.api.payments import router as payments_router
+from app.api.commerce import router as commerce_router
+from app.api.health import router as health_router
+from app.api.admin_accounts import router as admin_accounts_router
+from app.api.media import router as media_router
+from app.middleware.errors import register_errors
+from app.config.database import close_supabase
+from app.api.documentation import DESCRIPTION, TAGS, install_openapi
 
 
 @asynccontextmanager
@@ -40,13 +39,7 @@ app = FastAPI(
                            "displayRequestDuration": True, "withCredentials": True, "persistAuthorization": False},
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=frontend_origins(),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+register_cors(app)
 
 app.include_router(catalog_router)
 app.include_router(auth_router)
@@ -57,16 +50,8 @@ app.include_router(commerce_router)
 app.include_router(health_router)
 app.include_router(admin_accounts_router)
 app.include_router(media_router)
+app.include_router(legacy_router)
 register_errors(app)
-
-
-
-@app.get("/api/products", deprecated=True, tags=["Public Catalog"])
-def legacy_products(db=Depends(get_supabase)):
-    """Keep the old array endpoint, with public fields and active records only."""
-    columns = [c["name"] + ("::text" if c["type"].startswith("decimal") else "") for c in public_columns("products")]
-    result = db.table("SAN_PHAM").select(",".join(columns) + ",category:LOAI_SP!inner(trang_thai)").eq("trang_thai", 1).eq("category.trang_thai", 1).order("ma_sp").limit(20).execute()
-    return [{key: value for key, value in row.items() if key != "category"} for row in result.data]
 
 
 install_openapi(app)

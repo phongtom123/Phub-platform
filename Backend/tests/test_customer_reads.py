@@ -4,9 +4,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
-from app.commerce.repository import CommerceRepository
-from app.commerce.router import router, get_repository
-from app.payments.auth import CurrentCustomer, require_customer
+from app.repositories.commerce import CommerceRepository
+from app.api.commerce import router
+from app.dependencies.commerce import get_repository
+from app.models.customer import CurrentCustomer
+from app.dependencies.customer import require_customer
 
 
 @pytest.fixture

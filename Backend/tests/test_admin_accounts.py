@@ -1,4 +1,3 @@
-"""Account API contracts with real PostgREST builders and an offline HTTP store."""
 import json
 import time
 from copy import deepcopy
@@ -8,9 +7,11 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.auth import User, current_user, login_attempts, passwords
+from app.models.user import User
+from app.dependencies.auth import current_user
+from app.services.auth import login_attempts, passwords
 from app.main import app
-from app.supabase import get_supabase
+from app.config.database import get_supabase
 
 ORIGIN = {"Origin": "http://localhost:3000"}
 ADMIN = User("TK1", "Admin.One", "ADMIN", "Admin", employee_id="NV1")
