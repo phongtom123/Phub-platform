@@ -68,7 +68,7 @@ export function AdminHeader({
 
   return (
     <header className="topbar">
-      <button className="hamb" onClick={onToggleSidebar}>
+      <button className="hamb" aria-label="Đóng mở thanh điều hướng" onClick={onToggleSidebar}>
         <Menu />
       </button>
       {accountsPage ? <AccountBreadcrumb {...accountsPage} /> : dataResource ? <DataBreadcrumb resource={dataResource} /> : <nav className="crumb" aria-label="Breadcrumb">

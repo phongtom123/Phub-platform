@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminFetch } from "@/src/lib/admin-fetch";
+import { adminFetch, invalidateAdminCache } from "@/src/lib/admin-fetch";
 import { dataHref, orderChildren } from "@/src/lib/data-navigation";
 import { ImageEditor } from "@/src/features/forms/image-editor";
 import { uploadProductImage } from "@/src/lib/media-upload";
 import { ProductImagePreview } from "@/src/features/forms/product-image-preview";
+import { InlineDataTable } from "@/src/features/tables/inline-data-table";
+import { dataRowKey, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
 
-type Row = Record<string, string | number | null>;
-type Column = { name: string; type: string; required: boolean; generated: boolean; default: string | number | null; immutable: boolean; choices: string[] | null; system?: boolean };
+type Row = DataRow;
+type Column = DataColumn;
 type Resource = { name: string; title: string; keys: string[]; columns: Column[]; writable: boolean };
 type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string };
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
@@ -28,6 +30,7 @@ const labels: Record<string, string> = {
   ma_voucher: "Mã voucher", ma_code: "Mã giảm giá", loai_giam: "Loại giảm", gia_tri_giam: "Giá trị giảm",
   giam_toi_da: "Giảm tối đa", gia_tri_don_toi_thieu: "Giá trị đơn tối thiểu", gioi_han_tong_luot: "Tổng lượt tối đa", gioi_han_moi_khach: "Lượt mỗi khách",
   tong_tien_giam: "Tổng tiền giảm", tong_tien_sau_thue: "Tổng sau thuế", so_tien: "Số tiền",
+  dia_chi_chi_tiet_md: "Địa chỉ mặc định", tinh_thanh_md: "Tỉnh / thành phố", xa_phuong_md: "Xã / phường",
 };
 const label = (name: string) => labels[name] ?? name.replaceAll("_", " ");
 
@@ -56,11 +59,18 @@ export default function BackendDataView({ resource, embedded = false }: { resour
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [version, setVersion] = useState(0);
+  const refresh = () => { invalidateAdminCache(); setVersion(value => value + 1); };
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [notice, setNotice] = useState("");
+  const [inlineEditing, setInlineEditing] = useState(false);
+  const inlineEnabled = ["customers", "warehouses"].includes(resource) && Boolean(meta?.writable);
+  const savedInline = useCallback((row: Row) => {
+    setResult(current => current && ({ ...current, data: current.data.map(item =>
+      dataRowKey(item, meta?.keys ?? []) === dataRowKey(row, meta?.keys ?? []) ? row : item) }));
+  }, [meta?.keys]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const saveController = useRef<AbortController | null>(null);
@@ -174,11 +184,9 @@ export default function BackendDataView({ resource, embedded = false }: { resour
       <button type="button" onClick={() => window.history.length > 1 ? router.back() : router.push(href())}>← Quay lại</button>
       {detailMode && !loading && !error && meta?.writable && result?.data[0] && <Link className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</Link>}
     </div>}
-    {!detailMode && <div className="live-section-heading"><h2>{embedded ? "Danh sách đơn hàng" : meta?.title ?? "Đang tải…"}</h2>{embedded && <Link href={dataHref("orders")}>Xem tất cả đơn hàng →</Link>}</div>}
-    {view.orderId && <p className="account-help">Chỉ hiển thị dữ liệu của đơn hàng <Link href={dataHref("orders", { key: JSON.stringify([view.orderId]) })}>{view.orderId}</Link>.</p>}
-    {error && <p className="live-error" role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button></p>}
+    {!detailMode && <div className={embedded ? "live-section-heading" : "admin-sr-only"}><h2>{embedded ? "Danh sách đơn hàng" : meta?.title ?? "Đang tải…"}</h2>{embedded && <Link href={dataHref("orders")}>Xem tất cả đơn hàng →</Link>}</div>}
+    {error && <p className="live-error" role="alert">{error} <button onClick={refresh}>Thử lại</button></p>}
     {loading ? <p role="status">Đang tải dữ liệu…</p> : meta && !error && <>
-      {!meta.writable && <p className="live-note">Chế độ chỉ xem dữ liệu thật. Thao tác ghi chứng từ/tồn kho/tài chính cần API nghiệp vụ theo transaction, chưa triển khai trong đợt này.</p>}
       {((view.create || view.edit) && meta.writable) ? <form className="live-form" onSubmit={save}>
         {saveError && <p className="live-error image-save-error" role="alert">{saveError}</p>}
         <fieldset disabled={saving} className="live-form-fields">
@@ -188,7 +196,6 @@ export default function BackendDataView({ resource, embedded = false }: { resour
           {column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice}>{choice}</option>)}</select>
           : column.type === "text" ? <textarea rows={4} required={column.required} value={values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />
           : <input required={column.required} type={column.type === "int" ? "number" : column.type === "datetime" ? "datetime-local" : column.name === "duong_dan_anh" ? "url" : "text"} step={column.type === "int" ? "1" : undefined} value={column.type === "datetime" && values[column.name] ? new Date(values[column.name]).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />}
-          <small>{column.name}{column.name.startsWith("ma_") ? " · dùng mã tồn tại ở bảng liên quan nếu là khóa ngoại" : ""}</small>
         </label>)}
         {resource === "accounts" && <label>{view.create ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu giữ nguyên)"}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} required={view.create} value={values.password ?? ""} onChange={e => change("password", e.target.value)} /></label>}
         </fieldset>
@@ -210,11 +217,12 @@ export default function BackendDataView({ resource, embedded = false }: { resour
         </nav>}
         {!["orders", "invoices"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], promotions: ["vouchers"], vouchers: ["voucher-uses"], categories: ["subcategories", "products"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={dataHref(item.name)}>{item.title}</Link>)}</nav>}
       </> : <>
-        <form className="live-tools" onSubmit={e => { e.preventDefault(); setSearch(query); setPage(1); }}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={() => setVersion(v => v + 1)}>Làm mới</button>{meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
-        <div className="live-table"><table><thead><tr>{meta.columns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{meta.columns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <Link href={href(row)}>{String(row[column.name] ?? "—")}</Link> : String(row[column.name] ?? "—")}</td>)}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</div>
-        <div className="live-tools"><span>{result?.total ?? 0} kết quả · Trang {page}</span><button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={page * 20 >= (result?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Sau</button></div>
+        <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
+        {inlineEnabled ? <InlineDataTable resource={resource} rows={result?.data ?? []} columns={meta.columns} keys={meta.keys}
+          label={label} href={href} onSaved={savedInline} onEditingChange={setInlineEditing} />
+        : <div className="live-table"><table><thead><tr>{meta.columns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{meta.columns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <Link href={href(row)}>{String(row[column.name] ?? "—")}</Link> : String(row[column.name] ?? "—")}</td>)}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</div>}
+        <div className="live-tools"><span>{result?.total ?? 0} kết quả · Trang {page}</span><button disabled={inlineEditing || page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={inlineEditing || page * 20 >= (result?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Sau</button></div>
       </>}
-      <p className="live-note">Nguồn: API Python / Supabase · Không sử dụng dữ liệu mẫu thay thế khi lỗi kết nối.</p>
     </>}
   </section>;
 }

@@ -9,6 +9,7 @@ import { AccountDetail } from "./account-detail";
 import { AccountProfile } from "./account-profile";
 import { AccountTable } from "./account-table";
 import { roleLabels, statusLabels, type Account, type AccountPage, type AccountView } from "./types";
+import { invalidateAdminCache } from "@/src/lib/admin-fetch";
 
 export default function AccountsView({ mode = "list", id }: AccountView) {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [version, setVersion] = useState(0);
+  const refresh = () => { invalidateAdminCache(); setVersion(value => value + 1); };
   const [loading, setLoading] = useState(mode !== "create");
   const [error, setError] = useState("");
   const effectiveSearch = requestedEdit ?? search;
@@ -63,15 +65,15 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
     {mode !== "list" && (mode !== "detail" || loading || error || !account) && <div className="live-page-actions">
       <button type="button" onClick={back}>← Quay lại</button>
     </div>}
-    {mode !== "detail" && <h2>{mode === "self" ? "Tài khoản của tôi" : mode === "create" ? "Thêm tài khoản" : "Tài khoản"}</h2>}
-    {error && <p className="live-error" role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button> <Link href="/">Về tổng quan</Link></p>}
+    {mode !== "detail" && <h2 className={mode === "list" ? "admin-sr-only" : undefined}>{mode === "self" ? "Tài khoản của tôi" : mode === "create" ? "Thêm tài khoản" : "Tài khoản"}</h2>}
+    {error && <p className="live-error" role="alert">{error} <button onClick={refresh}>Thử lại</button> <Link href="/">Về tổng quan</Link></p>}
     {loading ? <p role="status">Đang tải tài khoản…</p> : mode === "create" ? <AccountForm /> : mode === "list" && result ? <>
       <form className="live-tools" onSubmit={submitSearch}>
         <fieldset className="live-form-fields" disabled={inlineEditing}>
         <input className="live-search" aria-label="Tìm tài khoản" placeholder="Tìm mã tài khoản, tên đăng nhập hoặc email…" value={query} onChange={e => setQuery(e.target.value)} />
         <select aria-label="Vai trò" value={role} onChange={e => { setRole(e.target.value); setPage(1); }}><option value="">Tất cả vai trò</option>{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <select aria-label="Trạng thái" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}><option value="">Tất cả trạng thái</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-        <button>Tìm kiếm</button><button type="button" onClick={() => setVersion(v => v + 1)}>Làm mới</button>
+        <button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button>
         </fieldset><Link className="live-primary" href="/accounts/new">+ Thêm tài khoản</Link>
       </form>
       <AccountTable rows={result.data} requestedEdit={requestedEdit} onRequestedEditHandled={handledRequestedEdit} onEditingChange={setInlineEditing}

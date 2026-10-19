@@ -3,19 +3,14 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import { Logo } from "@/src/components/admin/ui";
-import { loginSession, type UserRole } from "../../../../shared/auth-client";
+import { loginSession, type SessionUser, type UserRole } from "../../../../shared/auth-client";
 
 export type StaffRole = Extract<UserRole, "ADMIN" | "THU_KHO">;
-
-type LoginResult = {
-  role: StaffRole;
-  username: string;
-};
 
 export function LoginView({
   onLogin,
 }: {
-  onLogin: (result: LoginResult) => void;
+  onLogin: (result: SessionUser) => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,7 +34,7 @@ export function LoginView({
         window.location.assign(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
         return;
       }
-      onLogin({ role: result.role, username: result.username });
+      onLogin(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không kết nối được backend.");
     } finally { setLoading(false); }

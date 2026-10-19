@@ -95,11 +95,13 @@ async function main() {
           await roles.selectOption("THU_KHO");
           await area.locator("#account-warehouse-query").waitFor();
           await area.locator(".account-role-card select").last().selectOption("7");
+          // Each matrix case tests a new query; repeated queries may be cached.
+          const searchTerm = `Kho test ${width} ${account.ma_tk}`;
           const searchResponse = page.waitForResponse(response => {
             const url = new URL(response.url());
-            return url.pathname === "/api/backend/data/warehouses" && url.searchParams.get("q") === "Kho test";
+            return url.pathname === "/api/backend/data/warehouses" && url.searchParams.get("q") === searchTerm;
           });
-          await area.getByLabel("Tìm kho", { exact: true }).fill("Kho test");
+          await area.getByLabel("Tìm kho", { exact: true }).fill(searchTerm);
           await area.getByRole("button", { name: "Tìm kho", exact: true }).click();
           await searchResponse;
           await roles.selectOption("ADMIN");

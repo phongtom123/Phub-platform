@@ -48,7 +48,7 @@ async function main() {
     const row = id => area.locator(`tr[data-account-id="${id}"]`);
     const username = id => area.getByLabel(`Tên đăng nhập ${id}`, { exact: true });
     const email = id => area.getByLabel(`Email ${id}`, { exact: true });
-    const outside = () => area.getByRole("heading", { name: "Tài khoản", exact: true }).click();
+    const outside = () => area.locator("thead th").last().click();
     async function open(id, field = "username") {
       await row(id).locator(`[data-field="${field}"]`).dblclick();
       await username(id).waitFor();
@@ -159,7 +159,7 @@ async function main() {
     await page.screenshot({ path: require("node:path").join(require("node:os").tmpdir(), "phub-account-autosave-mobile.png"), fullPage: true });
     const touchBaseline = { ...reads };
     const touchStable = await row("AD000002").elementHandle();
-    await area.getByRole("heading", { name: "Tài khoản", exact: true }).tap();
+    await area.locator("thead th").last().tap();
     await saved("KH000003", touchBaseline, touchStable);
     await page.setViewportSize({ width: 1440, height: 960 });
     await open("AD000002", "email");

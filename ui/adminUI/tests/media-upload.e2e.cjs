@@ -24,6 +24,8 @@ async function main() {
       const request = route.request(), url = new URL(request.url());
       if (url.hostname === "media.example.test") return route.fulfill({ contentType: "image/png", body: png });
       if (url.origin !== new URL(base).origin) return route.abort();
+      if (url.pathname.startsWith("/images/")) return url.pathname.includes("not-a-real")
+        ? route.fulfill({ status: 404, body: "" }) : route.fulfill({ contentType: "image/png", body: png });
       if (!url.pathname.startsWith("/api/")) return route.continue();
       const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
       if (url.pathname.endsWith("/auth/me")) { reads.session++; return respond({ account_id: "TK1", username: "admin", name: "Admin Test", role: "ADMIN" }); }
@@ -165,7 +167,7 @@ async function main() {
     await viewSaved();
     await page.waitForFunction(() => document.querySelector(".product-image-card img")?.naturalWidth === 8);
 
-    // Detail BEFORE edit: resolve real shared public assets without a customer dev server.
+    // Legacy image UI uses HTTP fixtures; proxy/security are tested offline separately.
     const detail = base + "/data/products?key=%5B%22SP2%22%5D";
     record.duong_dan_anh = "/images/figma-mobile/catalog-product-01.png";
     await page.goto(detail);
@@ -206,14 +208,29 @@ async function main() {
     await page.screenshot({ path: require("node:path").join(require("node:os").tmpdir(), "phub-product-image-viewer.png") });
     await page.mouse.click(2, 2); await dialog.waitFor({ state: "hidden" });
     await page.waitForFunction(() => document.body.style.overflow !== "hidden");
-    assert.equal((await page.request.get(base + "/images/figma-mobile/catalog-product-01.png")).status(), 200);
-    assert.equal((await page.request.get(base + "/images/figma-mobile/%2e%2e%2fpackage.json")).status(), 404);
-    assert.equal((await page.request.get(base + "/images/package.json")).status(), 404);
-    record.duong_dan_anh = "/images/not-a-real-image.png";
+    record.duong_dan_anh = "/images/not-a-real-image.png?token=do-not-log#private";
+    const diagnostic = () => page.waitForEvent("console", {
+      predicate: message => message.type() === "warning" && message.text().startsWith("[PHUB:image]"),
+    });
+    const firstFailure = diagnostic();
     await page.goto(detail);
     await page.getByText("Không tải được ảnh sản phẩm.", { exact: true }).waitFor();
+    const details = await (await firstFailure).args()[1].jsonValue();
+    assert.equal(details.stage, "preview"); assert.equal(details.url, "/images/not-a-real-image.png");
+    assert.doesNotMatch(JSON.stringify(details), /do-not-log|private/);
+    const retryFailure = diagnostic();
     await page.getByRole("button", { name: "Thử tải lại ảnh", exact: true }).click();
     await page.getByText("Không tải được ảnh sản phẩm.", { exact: true }).waitFor();
+    assert.equal((await (await retryFailure).args()[1].jsonValue()).stage, "preview");
+    const editorFailure = diagnostic();
+    await page.goto(edit.replace("SP1", "SP2"));
+    await page.getByText("Không tải được ảnh xem trước.", { exact: true }).waitFor();
+    assert.equal((await (await editorFailure).args()[1].jsonValue()).stage, "editor");
+    // Changing URL after an error recovers the preview without a document reload.
+    const beforeRecovery = { ...reads };
+    await page.getByLabel("Hoặc nhập URL hình ảnh", { exact: true }).fill("/images/figma-mobile/catalog-product-01.png");
+    await page.waitForFunction(() => document.querySelector(".image-preview img")?.naturalWidth === 8);
+    assert.deepEqual(reads, beforeRecovery);
     record.duong_dan_anh = "javascript:alert(1)";
     await page.goto(detail);
     await page.getByText("Không tải được ảnh sản phẩm.", { exact: true }).waitFor();

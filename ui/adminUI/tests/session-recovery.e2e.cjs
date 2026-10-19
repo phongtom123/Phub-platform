@@ -10,7 +10,7 @@ async function main() {
     await context.addCookies([{ name: "phub_session", value: "test-only-session", url: base, httpOnly: true }]);
     const page = await context.newPage();
     const errors = [], calls = [];
-    let sessionStatus = 503, holdSession = false, heldRoute, writes = 0;
+    let sessionStatus = 503, loginStatus = 200, writes = 0;
     page.on("pageerror", error => errors.push(error.message));
     const respond = (route, body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
     const sessionBody = () => sessionStatus === 200
@@ -22,13 +22,14 @@ async function main() {
       if (!url.pathname.startsWith("/api/")) return route.continue();
       calls.push({ path: url.pathname, method: request.method() });
       if (url.pathname === "/api/backend/auth/me") {
-        if (holdSession) { heldRoute = route; return; }
         return respond(route, sessionBody(), sessionStatus);
       }
       if (request.method() !== "GET") {
         writes++;
         assert.equal(url.pathname, "/api/backend/auth/login");
-        return respond(route, { account_id: "TK-TEST", role: "ADMIN", username: "test.admin", name: "Admin Test" });
+        return respond(route, loginStatus === 200
+          ? { account_id: "TK-TEST", role: "ADMIN", username: "test.admin", name: "Admin Test" }
+          : { detail: "Sai thông tin đăng nhập." }, loginStatus);
       }
       if (url.pathname === "/api/backend/data/resources") return respond(route, []);
       return respond(route, { data: [], total: 0, page: Number(url.searchParams.get("page") || 1), page_size: Number(url.searchParams.get("page_size") || 20) });
@@ -60,27 +61,24 @@ async function main() {
     await page.locator('input[name="username"]').waitFor();
     assert.equal(await page.locator(".dashboard-chart-card").count(), 0);
 
-    // Dashboard waits for /me after login; a failed GET never replays the POST.
+    // Failed login cannot grant access; successful login is already authoritative.
     calls.length = 0;
-    holdSession = true;
     sessionStatus = 503;
+    loginStatus = 401;
     await page.locator('input[name="username"]').fill("test.admin");
     await page.locator('input[name="password"]').fill("test-only-password");
     await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
-    await page.getByText("Đang kiểm tra phiên đăng nhập…", { exact: true }).waitFor();
+    await page.locator(".login-error").waitFor();
+    assert.equal(writes, 1);
     assert.equal(await page.locator(".dashboard-chart-card").count(), 0);
     assert.equal(calls.filter(call => call.path.startsWith("/api/backend/data/")).length, 0);
-    for (let attempt = 0; !heldRoute && attempt < 50; attempt++) await new Promise(resolve => setTimeout(resolve, 20));
-    assert.ok(heldRoute);
-    await respond(heldRoute, sessionBody(), sessionStatus);
-    holdSession = false;
-    await page.getByRole("button", { name: "Thử kết nối lại", exact: true }).waitFor();
-    assert.equal(writes, 1);
-    assert.equal(await page.locator('input[name="username"]').count(), 0);
-    sessionStatus = 200;
-    await page.getByRole("button", { name: "Thử kết nối lại", exact: true }).click();
+    loginStatus = 200;
+    await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
     await page.getByRole("heading", { name: "Thống kê hoạt động" }).waitFor();
-    assert.equal(writes, 1);
+    assert.equal(await page.locator(".dashboard-chart-card").count(), 4);
+    assert.equal(await page.locator(".session-gate").count(), 0);
+    assert.equal(calls.filter(call => call.path === "/api/backend/auth/me").length, 0, "No duplicate /me after successful login");
+    assert.equal(writes, 2, "Each deliberate login attempt sends exactly one POST");
 
     // New page must validate again; no cached role can bypass a failed /me.
     sessionStatus = 503;
@@ -90,9 +88,9 @@ async function main() {
     sessionStatus = 403;
     await page.getByRole("button", { name: "Thử kết nối lại", exact: true }).click();
     await page.locator('input[name="username"]').waitFor();
-    assert.equal(writes, 1);
+    assert.equal(writes, 2);
     assert.deepEqual(errors, []);
-    console.log("PASS: 503 preserves session, 401/403 require login, dashboard waits for /me, login never replayed; no live DB writes.");
+    console.log("PASS: 503 preserves session, 401/403 require login, failed login blocks data, successful login mounts dashboard without another /me, F5 still verifies; no live DB writes.");
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

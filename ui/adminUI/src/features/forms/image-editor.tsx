@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { ImageIcon, Trash2, Upload } from "lucide-react";
+import { logLocalImageFailure } from "@/src/lib/local-diagnostics";
 
 type Props = {
   inputId: string; value: string; file: File | null;
@@ -15,6 +16,8 @@ export function ImageEditor({ inputId, value, file, onChange, onFileChange, disa
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [failedSource, setFailedSource] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     if (!file) { setPreview(""); return; }
     const url = URL.createObjectURL(file); setPreview(url);
@@ -52,13 +55,16 @@ export function ImageEditor({ inputId, value, file, onChange, onFileChange, disa
         onKeyDown={event => { if (!disabled && ["Enter", " "].includes(event.key)) { event.preventDefault(); input.current?.click(); } }}
         onDragOver={event => { event.preventDefault(); if (!disabled) setDragging(true); }}
         onDragLeave={() => setDragging(false)} onDrop={drop}>
-        {safeSource ? <img src={safeSource} alt="Xem trước ảnh sản phẩm" /> : <div><ImageIcon /><b>Kéo thả ảnh vào đây</b><span>Hoặc nhấn để chọn ảnh từ máy</span></div>}
+        {safeSource && failedSource !== safeSource ? <img key={`${safeSource}:${attempt}`} src={safeSource} alt="Xem trước ảnh sản phẩm" onError={() => {
+          setFailedSource(safeSource); logLocalImageFailure(safeSource, "editor");
+        }} /> : <div><ImageIcon /><b>{safeSource ? "Không tải được ảnh xem trước." : "Kéo thả ảnh vào đây"}</b><span>Nhấn để chọn ảnh khác từ máy</span></div>}
       </div>
       <div className="image-controls">
         <div>
           <input ref={input} id={inputId} className="image-file-input" type="file" accept="image/jpeg,image/png,image/webp" disabled={disabled}
             aria-label="Chọn file ảnh sản phẩm" onChange={event => { select(event.target.files); event.target.value = ""; }} />
           <button type="button" className="image-upload-button" disabled={disabled} onClick={() => input.current?.click()}><Upload /> Chọn hình ảnh</button>
+          {safeSource && failedSource === safeSource && <button type="button" disabled={disabled} onClick={() => { setFailedSource(null); setAttempt(value => value + 1); }}>Thử tải lại ảnh</button>}
           {file && <p role="status">Đã chọn: {file.name} · Chưa tải lên</p>}
           <p>JPG, PNG, WebP tĩnh · tối đa 5 MB, 4096 × 4096 pixel. Backend chuẩn hóa thành WebP.</p>
         </div>
