@@ -161,7 +161,7 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
   }, [editor?.id, save, router]);
 
   return <>
-    <p className="account-help" id={hintId}>Nhấp đúp vào một hàng để đổi tên đăng nhập và email. Bấm ra ngoài hàng hoặc nhấn Enter để tự lưu; Esc để bỏ thay đổi. Chọn trạng thái trong dropdown để cập nhật; phân quyền được quản lý trong Chi tiết.</p>
+    <p className="admin-sr-only" id={hintId}>Nhấp đúp vào một hàng để đổi tên đăng nhập và email. Bấm ra ngoài hàng hoặc nhấn Enter để tự lưu; Esc để bỏ thay đổi. Chọn trạng thái trong dropdown để cập nhật; phân quyền được quản lý trong Chi tiết.</p>
     {error && <p className="live-error" id={errorId} role="alert">{error}</p>}
     {notice && <p className="live-note" role="status">{notice}</p>}
     <div className="live-table account-inline-table"><table aria-describedby={hintId}>
@@ -189,7 +189,6 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
         </tr>;
       })}</tbody>
     </table>{!rows.length && <p className="live-note">Không có tài khoản phù hợp.</p>}</div>
-    {editor && <p className="account-help">Bấm ra ngoài hàng để lưu trước khi tìm kiếm, lọc hay chuyển trang danh sách.</p>}
     {requestedEdit && !rows.some(row => row.ma_tk === requestedEdit) && <p className="live-note">Không tìm thấy tài khoản {requestedEdit} trong kết quả để chỉnh sửa. <button type="button" onClick={onRequestedEditHandled}>Bỏ yêu cầu sửa</button></p>}
   </>;
 }

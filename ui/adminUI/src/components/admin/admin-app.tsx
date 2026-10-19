@@ -28,26 +28,17 @@ type DrawerState = {
 export default function AdminApp({ dataResource, accountsPage }: { dataResource?: string; accountsPage?: AccountView } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user: sessionUser, checking: checkingSession, error: sessionError, checkSession, logout: endSession } = useAdminAuth();
+  const { user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
   const activeModule = accountsPage ? "accounts" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString());
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [drawer, setDrawer] = useState<DrawerState>(null);
 
-  // Login still verifies the new cookie before mounting protected data views.
-  const login = () => { void checkSession(true); };
   const retrySession = () => { void checkSession(); };
-  if (sessionUser === undefined || (sessionUser && sessionUser.role !== "ADMIN")) return (
-    <main className="session-gate" aria-busy={checkingSession}>
-      <h1>PHUB Admin</h1>
-      {checkingSession ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : <>
-        <p role="alert">{sessionError}</p>
-        <button type="button" className="btn primary" onClick={retrySession}>Thử kết nối lại</button>
-      </>}
-    </main>
-  );
+  // The root provider owns the only initial verification gate across all pages.
+  if (sessionUser === undefined || (sessionUser && sessionUser.role !== "ADMIN")) return null;
 
-  if (!sessionUser) return <LoginView onLogin={login} />;
+  if (!sessionUser) return <LoginView onLogin={acceptLogin} />;
 
   const navigate = (moduleKey: ModuleKey) => {
     router.push(getModuleHref(moduleKey));

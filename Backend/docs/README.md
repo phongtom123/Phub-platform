@@ -16,13 +16,25 @@ cd Backend
 
 Nếu chưa có `.venv`/database/tài khoản, làm theo [Backend/README.md](../README.md) trước.
 
-| Trang | URL |
-| --- | --- |
-| Swagger, đọc và thử API | http://localhost:8000/docs |
-| ReDoc, đọc tài liệu | http://localhost:8000/redoc |
-| Đặc tả OpenAPI đang chạy | http://localhost:8000/openapi.json |
+| Trang | Local | Render |
+| --- | --- | --- |
+| Swagger, đọc và thử API | [Swagger local](http://localhost:8000/docs) | [Swagger trên Render](https://phub-api.onrender.com/docs) |
+| ReDoc, đọc tài liệu | [ReDoc local](http://localhost:8000/redoc) | [ReDoc trên Render](https://phub-api.onrender.com/redoc) |
+| Đặc tả OpenAPI đang chạy | [OpenAPI local](http://localhost:8000/openapi.json) | [OpenAPI trên Render](https://phub-api.onrender.com/openapi.json) |
+| Kiểm tra tiến trình API | [Health local](http://localhost:8000/api/health) | [Health trên Render](https://phub-api.onrender.com/api/health) |
 
 Các trang tài liệu mở được kể cả khi chưa cấu hình Supabase; gọi API dữ liệu có thể trả 503 cho đến khi cấu hình xong. Swagger/ReDoc mặc định tải giao diện từ CDN, cần internet để hiển thị đầy đủ.
+
+### Sử dụng bản deploy trên Render
+
+- Base URL backend: `https://phub-api.onrender.com`; các endpoint vẫn có prefix `/api`, ví dụ [danh mục công khai](https://phub-api.onrender.com/api/catalog/categories).
+- Website khách hàng: [PHUB trên Render](https://phub-platform.onrender.com). Swagger/ReDoc nằm ở service **phub-api**, không phải service website.
+- Mở Swagger Render để thử API trên backend Render; không cần chạy backend local. Trong Postman, đổi base URL từ `http://localhost:8000` thành `https://phub-api.onrender.com`.
+- Để đăng nhập hoặc thử các API ghi từ Swagger Render, thêm origin `https://phub-api.onrender.com` vào `FRONTEND_ORIGINS` của backend, giữ lại các origin UI đang dùng rồi restart/redeploy service. Browser tự gửi Origin; không thể sửa bằng ô nhập header trong Swagger.
+- Cookie local và cookie Render là các phiên riêng; đăng nhập hoặc lấy Bearer token trên môi trường muốn kiểm thử. Request tạo/sửa từ Swagger Render ghi vào database mà backend Render đang cấu hình, không phải dữ liệu mô phỏng.
+- Tài liệu online phản ánh phiên bản backend đã deploy, có thể khác snapshot local nếu chưa deploy mã mới. Health 200 chỉ xác nhận tiến trình chạy, không xác nhận database hoặc đăng nhập hoạt động.
+
+URL service được đối chiếu với [cấu hình Render](../../render.yaml); xem [hướng dẫn deploy](../../RENDER.md) khi cần cập nhật service hoặc biến môi trường.
 
 ## Nhóm API
 

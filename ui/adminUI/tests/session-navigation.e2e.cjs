@@ -99,15 +99,26 @@ async function main() {
     assert.equal(documentLoads, 1, "No full-page reload for internal navigation/save");
     assert.equal(await page.evaluate(() => window.documentMarker), "same-document");
 
-    // Returning to a fresh tab does not revalidate. Stale focus events share one request.
+    // Focus/visibility never revalidate, even after a long absence.
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
     assert.equal(meCount(), initialChecks);
-    hold = true; heldRoute = undefined;
     await page.evaluate(() => {
-      window.testTimeOffset += 61_000;
+      window.testTimeOffset += 24 * 60 * 60_000;
       window.dispatchEvent(new Event("focus"));
       document.dispatchEvent(new Event("visibilitychange"));
       window.dispatchEvent(new Event("focus"));
+    });
+    // A data read gives any wrongly triggered /me time to reach the mocked server.
+    const refreshed = page.waitForResponse(response => new URL(response.url()).pathname === "/api/backend/data/products");
+    await page.getByRole("button", { name: "Làm mới", exact: true }).click();
+    await refreshed;
+    assert.equal(meCount(), initialChecks, "Returning to a tab must not issue /me");
+    assert.equal(await page.locator(".session-gate").count(), 0);
+    // Only an explicit profile update revalidates, sharing one in-flight request.
+    hold = true; heldRoute = undefined;
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("phub-account-updated"));
+      window.dispatchEvent(new Event("phub-account-updated"));
     });
     await waitForHeld();
     assert.equal(meCount(), initialChecks + 1);
@@ -137,6 +148,12 @@ async function main() {
     await respond(heldRoute, user).catch(() => {}); hold = false;
     assert.equal(await page.locator(".shell").count(), 0);
     assert.equal(meCount(), checksBefore401);
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+      window.dispatchEvent(new Event("phub-account-updated"));
+    });
+    assert.equal(meCount(), checksBefore401, "Signed-out sessions must not be resurrected by UI events");
     // Explicit reload re-verifies; successful logout drops the shared UI state.
     dataStatus = 200;
     await page.reload(); await table().waitFor();
@@ -148,7 +165,7 @@ async function main() {
     assert.equal(meCount(), checksBeforeLogout, "Logout must not immediately re-open the old session");
     assert.equal(calls.filter(call => call.path === "/api/backend/auth/logout").length, 1);
     assert.deepEqual(errors, []);
-    console.log(`PASS: ${initialChecks} initial /me; none on internal navigation; 1 document load; query/create/save/breadcrumb/sidebar work; stale-focus dedup; 503/403 preserved; 401 invalidates; stale /me cannot restore access.`);
+    console.log(`PASS: ${initialChecks} initial /me; none on navigation/focus/visibility after 24h; 1 document load; profile refresh dedup; 503/403 preserved; 401 invalidates; stale /me cannot restore access.`);
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

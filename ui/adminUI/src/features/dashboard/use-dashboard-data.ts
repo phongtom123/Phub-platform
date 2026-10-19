@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { inventoryByWarehouse, readAllRows, readCount, vietnamDay, type ChartValue, type InventoryStat, type OrderStat, type WarehouseStat } from "./dashboard-data";
+import { invalidateAdminCache } from "@/src/lib/admin-fetch";
 
 type Load<T> = { loading: boolean; data: T | null; error: string };
 const pending = <T,>(): Load<T> => ({ loading: true, data: null, error: "" });
@@ -40,5 +41,5 @@ export function useDashboardData() {
     });
     return () => controller.abort();
   }, [version]);
-  return { counts, countErrors, orders, inventory, today, refresh: () => setVersion(value => value + 1) };
+  return { counts, countErrors, orders, inventory, today, refresh: () => { invalidateAdminCache(); setVersion(value => value + 1); } };
 }

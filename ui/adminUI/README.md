@@ -11,13 +11,14 @@ Dashboard và danh sách dùng dữ liệu API; không có bản ghi mẫu thay 
 
 ## Chức năng giao diện
 
-Admin xác nhận `/auth/me` khi mở ứng dụng/F5 và trước khi tải dashboard sau đăng nhập.
+Admin xác nhận `/auth/me` một lần khi mở ứng dụng/F5. Đăng nhập thành công dùng
+ngay danh tính do backend trả về từ `/auth/login`, không gọi thêm `/auth/me`.
 `AuthProvider` ở root layout giữ thông tin phiên trong bộ nhớ khi chuyển trang;
 không lưu token hoặc tin quyền từ localStorage. Điều hướng nội bộ dùng `Link`/
 `router.push`, không tải lại document và không gọi `/auth/me` theo từng trang.
-Khi quay lại tab/cửa sổ và lần kiểm tra gần nhất đã quá 60 giây, Admin kiểm tra
-phiên ở nền; các sự kiện đồng thời dùng chung một request. Không polling định kỳ.
-Cập nhật hồ sơ và nút **Thử kết nối lại** cũng yêu cầu kiểm tra lại phiên.
+Không kiểm tra lại khi focus/quay lại tab/cửa sổ, chuyển trang hoặc bằng timer.
+Chỉ cập nhật hồ sơ tài khoản đang đăng nhập và nút **Thử kết nối lại** mới yêu cầu
+kiểm tra thêm; các yêu cầu đồng thời dùng chung một request và không chặn UI đã xác thực.
 
 HTTP 401 từ API dữ liệu đưa về đăng nhập ngay; 403 của API dữ liệu chỉ báo thiếu
 quyền, không tự đăng xuất. Riêng `/auth/me` trả 401/403 thì phiên không hợp lệ.
@@ -28,6 +29,42 @@ tra quyền trên từng request, không bỏ qua tài khoản bị khóa. Có n
 không có timer reload, tự gửi lại login hay thao tác ghi dữ liệu.
 Số tổng sản phẩm/khách hàng chỉ lấy một dòng và `total`, không tải 100 dòng bỏ đi.
 Backend xử lý retry có giới hạn cho request đọc; xem [hướng dẫn](../../Backend/README.md#xử-lý-kết-nối-lỗi-tạm-thời-503).
+
+### Cache dữ liệu khi chuyển trang
+
+`adminFetch` giữ response GET JSON thành công trong bộ nhớ riêng của tab: dữ liệu
+danh sách/chi tiết/tài khoản/thống kê và metadata cấu trúc bảng tối đa **10 phút**
+(cấu hình tạm để demo, `READ_CACHE_TTL_MS` trong `src/lib/admin-fetch.ts`).
+Các trang dùng chung cache; quay lại danh sách/chi tiết đã mở trong TTL
+không cần gọi API. Search, page, key bản ghi, bộ lọc và `order_id` có cache key
+riêng; các request trùng đang chờ dùng chung một lần gọi mạng. Hủy một reader
+không hủy request của reader khác; hủy hết thì dừng request. Có giới hạn LRU
+80 mục, 8 MiB tổng và tối đa 2 MiB mỗi response.
+
+Nút **Làm mới**, **Thử lại**, **Làm mới thống kê** xóa cache để đọc server ngay.
+POST/PATCH/PUT/DELETE (gồm upload) không được cache/retry; xóa cache trước và sau
+thao tác, kể cả lỗi/timeout vì server có thể đã ghi. UI vẫn áp dụng response đã
+lưu vào đúng hàng/form, không refetch ngay; lần mở trang tiếp theo lấy bản mới.
+Read bắt đầu trước khi xóa cache không được đưa dữ liệu cũ trở lại cache.
+
+Cache mất khi F5/đóng tab, đăng nhập/đăng xuất/đổi danh tính hoặc API trả 401;
+không lưu localStorage/IndexedDB, không chia sẻ cache server giữa người dùng,
+không cache `/auth/*`, `/admin/me`, lỗi HTTP/JSON, response đặt cookie hoặc
+request có header/credential riêng. Backend và gateway vẫn dùng HTTP `no-store`;
+đây là cache trong bộ nhớ ứng dụng, không phải cookie/token hay quyền offline.
+Khi hết TTL phải gọi API lại, không dùng bản hết hạn để che lỗi kết nối.
+
+Thay đổi từ người dùng/hệ thống khác có thể hiển thị chậm tối đa TTL; bấm
+**Làm mới** để xem ngay. Lần đầu mở hoặc Render đang khởi động vẫn cần chờ mạng.
+Cache không giữ server free luôn thức và không bỏ qua xác thực lần mở/F5 hay
+kiểm tra quyền/quy tắc dữ liệu khi backend thực hiện thao tác ghi.
+
+Nội dung dùng toàn bộ chiều rộng còn lại bên cạnh sidebar, kể cả khi thu gọn trên
+màn hình rộng; không giữ giới hạn 1600 px gây khoảng trắng. Mobile vẫn dùng bảng
+cuộn ngang trong khung, không đẩy tràn toàn trang. Tiêu đề danh sách trùng với
+breadcrumb được ẩn thị giác nhưng giữ cho trình đọc màn hình. Bỏ các thông báo
+kỹ thuật nguồn API/Supabase/chế độ chỉ đọc và tên cột database dưới ô nhập;
+vẫn giữ lỗi, trạng thái lưu, dữ liệu rỗng và cảnh báo tác động của thao tác.
 
 Breadcrumb các trang dữ liệu chỉ hiển thị một lần trên header, với link đến danh sách,
 chi tiết và chỉnh sửa. Dashboard không nhúng breadcrumb/link bảng liên quan của đơn hàng.
@@ -169,16 +206,37 @@ node ui/adminUI/tests/page-actions.e2e.cjs
 node ui/adminUI/tests/account-detail-consistency.e2e.cjs
 node ui/adminUI/tests/account-inline-edit.e2e.cjs
 node ui/adminUI/tests/account-status.e2e.cjs
+node ui/adminUI/tests/inline-data-table.e2e.cjs
+node ui/adminUI/tests/admin-cache.e2e.cjs
 ```
 
 Các lệnh trên chạy từ root repository; unit tests dùng TypeScript đã cài trong
 adminUI. Browser tests chặn/mock các API, không dùng tài khoản hay ghi database thật.
 `session-navigation` đếm `/auth/me` và document load khi chuyển danh sách/chi tiết/
-chỉnh sửa/thêm mới/tài khoản/dashboard; kiểm tra focus quá hạn, gộp request,
+chỉnh sửa/thêm mới/tài khoản/dashboard; kiểm tra focus/visibility sau 24 giờ không
+gọi thêm `/auth/me`, cập nhật hồ sơ gộp request,
 503/403/401 và phản hồi cũ không khôi phục phiên đã bị vô hiệu.
-`session-recovery` kiểm tra mở mới/F5, lỗi ban đầu, đăng nhập và retry không gửi
-lại thao tác POST. Backend vẫn xác thực/phân quyền mọi API được bảo vệ, không
+`session-recovery` kiểm tra mở mới/F5, lỗi ban đầu, đăng nhập sai không mở dữ liệu,
+đăng nhập đúng không gọi thêm `/auth/me`, và retry không gửi lại thao tác POST.
+Backend vẫn xác thực/phân quyền mọi API được bảo vệ, không
 thay đổi kiểm soát truy cập để tối ưu UI.
+
+### Sửa trực tiếp bảng Khách hàng và Kho
+
+Nhấp đúp ô/hàng (hoặc focus hàng rồi F2/Enter) để nhập các trường được phép sửa.
+Bấm ra ngoài hàng hoặc Enter để tự lưu; Escape hủy. Không có nút Sửa/Lưu/Hủy
+trong bảng; link **Chi tiết** và form thêm mới/chi tiết hiện có vẫn giữ nguyên.
+Kho có dropdown trạng thái 1 Hoạt động / 2 Tạm ngưng / 0 Đã ẩn; xác nhận trước
+khi tạm ngưng/ẩn. Khách hàng không có cột trạng thái trong schema nên không tạo
+dropdown giả. Chức năng chỉ bật nếu metadata API cho phép ghi.
+
+PATCH `/api/data/customers` hoặc `/api/data/warehouses` gửi `key` JSON với đúng
+kiểu (mã kho là số, gồm cả số âm hợp lệ), chỉ gửi trường đổi và không gửi khóa
+chính/generated/immutable/system. Số điện thoại giữ chuỗi, trường tùy chọn trống
+lưu null. Cập nhật đúng hàng bằng response; không gọi lại danh sách/metadata/phiên,
+không tải lại trang. Lỗi giữ bản nháp/trạng thái cũ để người dùng thử lại; không
+tự retry thao tác ghi. Chặn thao tác trùng khi đang lưu; link Chi tiết chờ tự lưu
+thành công. Mọi API vẫn kiểm tra quyền tại backend, không cần migration.
 
 > Lưu ý: không cần deploy server để chạy và xem giao diện trên máy cá nhân.
 
@@ -369,8 +427,28 @@ trái, thông tin bên phải; mobile xếp dọc. Ảnh căn giữa, giữ tỷ
 Nút **Xem ảnh gốc**/bấm ảnh mở dialog ngay trong trang, không mở tab hoặc đổi URL.
 Đóng bằng Esc/nút X/bấm backdrop; dialog giữ focus và trả focus khi đóng, khóa
 cuộn trang nền trong lúc mở. Có thông báo khi chưa có ảnh/tải lỗi và nút thử lại. URL ảnh
-Supabase dùng trực tiếp; ảnh cũ `/images/...` được Admin phục vụ từ thư mục public
-`ui/userUI/Frontend/public/images` qua route chỉ đọc, không cần chạy customer UI.
-Route chỉ cho phép file ảnh, chặn vượt thư mục và không đọc file ngoài public/images.
-Khi đóng gói Admin riêng/standalone, cần giữ thư mục assets này đúng vị trí tương
-đối hoặc chuyển các ảnh cũ lên Storage; không cần assets local cho URL Supabase.
+Supabase dùng trực tiếp; ảnh cũ `/images/...` được route chỉ đọc của Admin ánh xạ
+sang `https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/...`.
+Không cần thư mục ảnh local hoặc chạy customer UI. Route chỉ tải ảnh từ prefix
+cố định này, chặn traversal/redirect, không chuyển query/cookie/token, giới hạn
+10 MiB và timeout 15 giây. Không sửa URL trong database hay upload lại ảnh.
+
+### Log lỗi ảnh khi chạy local
+
+Chạy `npm run dev`; không cần bật thêm biến môi trường. Lọc `[PHUB:image]`:
+
+- Terminal chạy Admin: `stage: proxy`, URL ảnh trên Storage, HTTP `status` và
+  `reason` như `upstream-404`, `upstream-400`, `upstream-timeout`,
+  `invalid-content-type` hoặc `image-too-large`.
+- F12 → Console: `stage: preview` (chi tiết), `editor` (thêm/sửa) hoặc `viewer`
+  (ảnh gốc), kèm URL đã bỏ query/fragment/thông tin đăng nhập. Blob preview chỉ
+  ghi `[local-file-preview]`. Trình duyệt không cung cấp HTTP status cho `img.onerror`;
+  xem thêm tab Network hoặc log terminal để biết mã lỗi thật.
+- Network → request `/images/...` → Response Headers: `X-Phub-Media-Error` cho
+  biết lỗi proxy; lỗi không bị cache. 404 là file không tồn tại, 502 là lỗi
+  phản hồi/kết nối Storage, 504 là timeout. `reason` giữ mã upstream khi có.
+
+Không ghi cookie, token, API key, request/response body hoặc nội dung exception.
+Log chẩn đoán riêng này tắt trong production. Không tự retry ảnh; dùng nút
+**Thử tải lại ảnh** hoặc chọn URL/file khác, không tải lại toàn bộ trang.
+Kiểm thử route/log offline: `node --test ui/adminUI/tests/image-proxy.test.cjs`.
