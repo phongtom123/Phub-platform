@@ -6,13 +6,13 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.models.user import User
-from app.dependencies.auth import current_user, require_admin, require_customer_user, require_warehouse
-from app.services.auth import login_attempts, passwords, registration_attempts
-from app.api.auth import router as auth_router
-from app.models.customer import CurrentCustomer
-from app.dependencies.customer import require_customer
-from app.config.database import get_supabase
+from phub_api.models.user import User
+from phub_api.dependencies.auth import current_user, require_admin, require_customer_user, require_warehouse
+from phub_api.services.auth import login_attempts, passwords, registration_attempts
+from phub_api.api.auth import router as auth_router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.config.database import get_supabase
 
 
 def build_client(actor: User) -> TestClient:

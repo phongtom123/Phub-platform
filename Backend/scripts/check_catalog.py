@@ -8,8 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.config.database import supabase
+from phub_api.main import app
+from phub_api.config.database import supabase
 
 
 def check():

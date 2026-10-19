@@ -6,14 +6,14 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.config.database_transport import DatabaseTransport, READ_FAILURES
-from app.middleware.errors import register_errors
+from phub_api.config.database_transport import DatabaseTransport, READ_FAILURES
+from phub_api.middleware.errors import register_errors
 
 
 @pytest.fixture(autouse=True)
 def no_sleep(monkeypatch):
-    monkeypatch.setattr("app.config.database_transport.time.sleep", lambda _: None)
-    monkeypatch.setattr("app.config.database_transport.random.uniform", lambda *_: 0)
+    monkeypatch.setattr("phub_api.config.database_transport.time.sleep", lambda _: None)
+    monkeypatch.setattr("phub_api.config.database_transport.random.uniform", lambda *_: 0)
 
 
 @pytest.mark.parametrize("error", READ_FAILURES)
@@ -106,7 +106,7 @@ def test_attempts_are_bounded_and_logs_never_include_credentials(caplog):
 def test_budget_stops_retries_and_preserves_error_type(monkeypatch):
     clock = [0.0]
     calls = []
-    monkeypatch.setattr("app.config.database_transport.time.monotonic", lambda: clock[0])
+    monkeypatch.setattr("phub_api.config.database_transport.time.monotonic", lambda: clock[0])
 
     def handle(request):
         calls.append(request)
@@ -204,7 +204,7 @@ def test_final_connection_error_is_safe_diagnostic_503(caplog):
 
 
 def test_supabase_factory_uses_shared_pool_and_shuts_down(monkeypatch):
-    from app.config import database as module
+    from phub_api.config import database as module
 
     module.close_supabase()
     monkeypatch.setenv("SUPABASE_URL", "https://db.test")
@@ -224,8 +224,8 @@ def test_supabase_factory_uses_shared_pool_and_shuts_down(monkeypatch):
 
 
 def test_health_and_docs_do_not_open_database_with_missing_credentials(monkeypatch):
-    from app.main import app
-    from app.config import database as module
+    from phub_api.main import app
+    from phub_api.config import database as module
 
     module.close_supabase()
     monkeypatch.delenv("SUPABASE_SECRET_KEY", raising=False)

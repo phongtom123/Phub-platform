@@ -7,12 +7,12 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.models.user import User
-from app.dependencies.auth import current_user
-from app.services.auth import login_attempts, passwords
-from app.main import app
-from app.models.resources import RESOURCES, payload_model, public_columns, schema
-from app.config.database import get_supabase
+from phub_api.models.user import User
+from phub_api.dependencies.auth import current_user
+from phub_api.services.auth import login_attempts, passwords
+from phub_api.main import app
+from phub_api.models.resources import RESOURCES, payload_model, public_columns, schema
+from phub_api.config.database import get_supabase
 
 ADMIN = User("TK1", "admin", "ADMIN", "Quản trị", employee_id="NV1")
 WAREHOUSE = User("TK2", "kho", "THU_KHO", "Thủ kho", employee_id="NV2", warehouse_id=7)

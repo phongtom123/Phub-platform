@@ -10,8 +10,8 @@ cách chạy UI và kiểm thử ở [SHOPPING-INTEGRATION.md](../../../ui/userU
 ## Trạng thái và phần cần nhóm phối hợp
 
 Code API, proxy và UI đã có. **Chưa áp dụng migration lên Supabase chung.**
-Tất cả API có dữ liệu khách dùng `app/dependencies/customer.py::require_customer`, được
-chuyển từ phiên JWT/cookie chung trong `app/services/auth.py`. Backend kiểm tra lại trạng
+Tất cả API có dữ liệu khách dùng `phub_api/dependencies/customer.py::require_customer`, được
+chuyển từ phiên JWT/cookie chung trong `phub_api/services/auth.py`. Backend kiểm tra lại trạng
 thái tài khoản, role và liên kết khách từ database ở mỗi request. Catalog vẫn
 công khai; không nhận `ma_kh`, bearer hoặc header danh tính do frontend tự khai báo.
 
@@ -52,7 +52,7 @@ vẫn hợp lệ ở API cũ; checkout mới nhận một dòng cho mỗi SKU.
 đăng nhập. List/detail lọc quyền sở hữu trong chính RPC. Đơn không tồn tại,
 thuộc khách khác hoặc không có chủ đều trả cùng 404 `ORDER_NOT_FOUND`.
 List nhận `page=1..1000000`, `page_size=1..100` và từ chối query khác.
-Khi RPC đọc chưa có, `app/repositories/commerce_reads.py` đọc bảng hiện có và lặp kiểm tra quyền sở hữu
+Khi RPC đọc chưa có, `phub_api/repositories/commerce_reads.py` đọc bảng hiện có và lặp kiểm tra quyền sở hữu
 trên dòng đơn. Chỉ fallback cho lỗi thiếu hàm, không bỏ qua lỗi quyền/schema khác.
 Đọc hóa đơn không cần RPC. Tạo đơn vẫn cần RPC transaction; chưa chạy migration
 theo lựa chọn 07/10. UI thử đầy đủ ở [PAYMENT-UI-REVIEW.md](../../../PAYMENT-UI-REVIEW.md).
@@ -153,10 +153,10 @@ Không trả/log SQL exception, thông tin người nhận, token hoặc dữ li
 
 | File | Trách nhiệm |
 | --- | --- |
-| `app/schemas/commerce.py` | Validation và kiểm tra số tiền của quote/receipt, model hồ sơ/đơn |
-| `app/services/checkout.py` | Tham số transaction từ cấu hình và khách tin cậy |
-| `app/repositories/commerce.py` | Hồ sơ allowlist, RPC quote/tạo/đọc đơn, lỗi allowlist |
-| `app/api/commerce.py`, `app/middleware/commerce_errors.py` | Routes, Swagger, chuẩn hóa lỗi và no-store trong module |
+| `phub_api/schemas/commerce.py` | Validation và kiểm tra số tiền của quote/receipt, model hồ sơ/đơn |
+| `phub_api/services/checkout.py` | Tham số transaction từ cấu hình và khách tin cậy |
+| `phub_api/repositories/commerce.py` | Hồ sơ allowlist, RPC quote/tạo/đọc đơn, lỗi allowlist |
+| `phub_api/api/commerce.py`, `phub_api/middleware/commerce_errors.py` | Routes, Swagger, chuẩn hóa lỗi và no-store trong module |
 | `../../migrations/20261006_customer_checkout.sql` | RPC service-role-only, ownership/idempotency/voucher/stock/snapshot |
 | `../../tests/test_commerce.py` | 56 kiểm thử hợp đồng, quyền sở hữu, validation, lỗi và Swagger |
 | `../../scripts/check_checkout_database.mjs` | 26 kiểm tra PostgreSQL thật riêng, có hai kết nối cạnh tranh |

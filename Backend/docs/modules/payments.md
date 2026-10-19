@@ -13,8 +13,8 @@ giao dịch, hóa đơn, tài khoản, UI đăng nhập, UI admin hay phần kho
 
 ## Xác thực khách hàng dùng chung
 
-Điểm nối nằm ở `app/dependencies/customer.py`. `require_customer()` phụ thuộc vào
-guard khách hàng trong `app/services/auth.py`, nên dùng cùng cơ chế với admin và thủ kho:
+Điểm nối nằm ở `phub_api/dependencies/customer.py`. `require_customer()` phụ thuộc vào
+guard khách hàng trong `phub_api/services/auth.py`, nên dùng cùng cơ chế với admin và thủ kho:
 
 - JWT chỉ nằm trong cookie HttpOnly `phub_session`; UI không đọc hoặc lưu token.
 - Backend xác minh chữ ký, issuer, audience, hạn dùng và phiên bản mật khẩu.
@@ -132,11 +132,11 @@ Cả thành công và lỗi có `Cache-Control: no-store`.
 
 | File | Trách nhiệm |
 | --- | --- |
-| `app/dependencies/customer.py` | Adapter từ phiên JWT/cookie chung sang model khách đã được xác minh |
-| `app/schemas/payments.py` | Validation mã đơn/query và các trường công khai |
-| `app/repositories/payments.py` | Truy vấn chỉ đọc, kiểm tra sở hữu, Decimal, ánh xạ trạng thái/phương thức và phân trang |
+| `phub_api/dependencies/customer.py` | Adapter từ phiên JWT/cookie chung sang model khách đã được xác minh |
+| `phub_api/schemas/payments.py` | Validation mã đơn/query và các trường công khai |
+| `phub_api/repositories/payments.py` | Truy vấn chỉ đọc, kiểm tra sở hữu, Decimal, ánh xạ trạng thái/phương thức và phân trang |
 | `errors.py` | Lỗi riêng cho module, che nội dung nhạy cảm, no-store |
-| `app/api/payments.py` | Hai endpoint và Swagger nhóm Customer Payments |
+| `phub_api/api/payments.py` | Hai endpoint và Swagger nhóm Customer Payments |
 | `../../tests/test_payments.py` | Kiểm thử API, điểm nối xác thực, sở hữu, lỗi, trạng thái, phân trang và dữ liệu không được lộ |
 | `../../scripts/check_payments_schema.py` | Kiểm tra Supabase chỉ đọc với ID giả ngẫu nhiên, không đọc giao dịch thật |
 

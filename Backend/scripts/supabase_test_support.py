@@ -8,22 +8,22 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from app.repositories.catalog import CatalogRepository
-from app.dependencies.catalog import get_repository as catalog_repository
-from app.api.catalog import router as catalog_router
-from app.repositories.commerce import CommerceRepository
-from app.dependencies.commerce import get_repository as commerce_repository
-from app.api.commerce import router as commerce_router
-from app.api.health import router as health_router
-from app.repositories.orders import OrderRepository
-from app.dependencies.orders import get_repository as order_repository
-from app.api.orders import router as order_router
-from app.models.customer import CurrentCustomer
-from app.dependencies.customer import require_customer
-from app.middleware.payment_errors import PaymentError
-from app.repositories.payments import PaymentRepository
-from app.dependencies.payments import get_repository as payment_repository
-from app.api.payments import router as payment_router
+from phub_api.repositories.catalog import CatalogRepository
+from phub_api.dependencies.catalog import get_repository as catalog_repository
+from phub_api.api.catalog import router as catalog_router
+from phub_api.repositories.commerce import CommerceRepository
+from phub_api.dependencies.commerce import get_repository as commerce_repository
+from phub_api.api.commerce import router as commerce_router
+from phub_api.api.health import router as health_router
+from phub_api.repositories.orders import OrderRepository
+from phub_api.dependencies.orders import get_repository as order_repository
+from phub_api.api.orders import router as order_router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.dependencies.payments import get_repository as payment_repository
+from phub_api.api.payments import router as payment_router
 
 COOKIE = "phub-supabase-test-session"
 SESSION_SECONDS = 3600

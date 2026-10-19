@@ -9,11 +9,11 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from app.repositories.commerce import CommerceRepository
-from app.dependencies.commerce import get_repository
-from app.api.commerce import router
-from app.models.customer import CurrentCustomer
-from app.dependencies.customer import require_customer
+from phub_api.repositories.commerce import CommerceRepository
+from phub_api.dependencies.commerce import get_repository
+from phub_api.api.commerce import router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
 
 
 @pytest.fixture

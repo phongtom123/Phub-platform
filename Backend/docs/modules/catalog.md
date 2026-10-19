@@ -3,8 +3,8 @@
 > Tài liệu module trong cấu trúc MVC.
 
 API dùng chung cho UI khách hàng desktop/mobile. Phần này chỉ bổ sung code trong
-ba lớp `app/schemas/catalog.py`, `app/repositories/catalog.py`, `app/api/catalog.py`,
-đăng ký router ở `app/main.py`, kiểm thử và tài liệu. Không đổi
+ba lớp `phub_api/schemas/catalog.py`, `phub_api/repositories/catalog.py`, `phub_api/api/catalog.py`,
+đăng ký router ở `phub_api/main.py`, kiểm thử và tài liệu. Không đổi
 `/api/products`, Supabase client dùng chung, CORS, UI admin/kho hoặc cấu trúc DB.
 Catalog không cần migration SQL; dùng các bảng Supabase sẵn có của nhóm.
 Tổng quan cả catalog và đặt đơn ở [Backend/README.md](../../README.md).
@@ -14,7 +14,7 @@ Tổng quan cả catalog và đặt đơn ở [Backend/README.md](../../README.m
 Từ thư mục `Backend`, dùng môi trường ảo và `.env` sẵn có của nhóm:
 
 ```powershell
-.venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000
+.venv/Scripts/python.exe -m uvicorn phub_api.main:app --reload --port 8000
 ```
 
 - Swagger: `http://localhost:8000/docs`, nhóm **Public Catalog**.

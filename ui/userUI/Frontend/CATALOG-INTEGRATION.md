@@ -35,7 +35,7 @@ Terminal 1 — backend:
 
 ```powershell
 cd .\Backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+.\.venv\Scripts\python.exe -m uvicorn phub_api.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Terminal 2 — frontend trên máy Windows hiện tại (SWC native bị chặn):
@@ -91,7 +91,7 @@ Máy không gặp giới hạn này dùng các lệnh dev/build thông thường
   `python -m venv .venv`, rồi
   `.\.venv\Scripts\python.exe -m pip install -r requirements.txt`.
 - `No module named uvicorn`: cài requirements bằng Python trong `.venv` với
-  lệnh trên. `Could not import module app.main`: kiểm tra terminal đang ở `Backend`.
+  lệnh trên. `Could not import module phub_api.main`: kiểm tra terminal đang ở `Backend`.
 - `Resolve-Path` không tìm thấy thư mục WASM: từ `ui/userUI/Frontend`, chạy lệnh
   cài `@next/swc-wasm-nodejs` ở phần trên rồi đặt lại biến trong terminal đó.
 - `EADDRINUSE` hoặc backend báo cổng đã được sử dụng: mở URL để kiểm tra dịch vụ

@@ -29,7 +29,7 @@ Sinh JWT secret bằng lệnh sau, rồi lưu giá trị vào `.env`, không g�
 
 ```powershell
 .venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(48))"
-.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn phub_api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 - Swagger: http://localhost:8000/docs
@@ -185,7 +185,7 @@ Middleware được đăng ký tại `main.py`; CORS nằm trong `middleware/cor
 xác thực/phân quyền dùng `Depends()` trong `dependencies/auth.py`.
 
 ```text
-app/
+phub_api/
   __init__.py
   main.py          # Khởi tạo FastAPI và đăng ký router/middleware
   api/             # Khai báo endpoint và tài liệu OpenAPI
@@ -263,10 +263,10 @@ Lọc/sắp tại database trước phân trang; sản phẩm và loại phải 
 trạng thái 1. Chi tiết dùng `ma_sp`, trả ảnh/mô tả/thông số/đơn vị/bảo hành.
 Tiền là chuỗi; không giả tồn kho/rating/giảm giá. Kết quả rỗng không fallback fixtures.
 
-`app/schemas/catalog.py` chứa validation/model công khai,
-`app/repositories/catalog.py` truy vấn/ánh xạ ảnh và thông số,
-`app/controllers/catalog.py` xử lý request,
-`app/api/catalog.py` khai báo routes/Swagger, và `app/middleware/catalog_errors.py` chứa lỗi riêng module.
+`phub_api/schemas/catalog.py` chứa validation/model công khai,
+`phub_api/repositories/catalog.py` truy vấn/ánh xạ ảnh và thông số,
+`phub_api/controllers/catalog.py` xử lý request,
+`phub_api/api/catalog.py` khai báo routes/Swagger, và `phub_api/middleware/catalog_errors.py` chứa lỗi riêng module.
 UI nối proxy GET, home, search header, catalog grid/list, filter, preview/detail
 desktop/mobile; query trong URL, loading/error/retry/not-found và ảnh placeholder.
 Tài liệu: [catalog README](docs/modules/catalog.md),
@@ -286,9 +286,9 @@ Transaction khóa sản phẩm/tồn, kiểm tra giá và lượng khả dụng,
 Cùng khách/key/body trả receipt cũ 200; đơn mới 201; khác body/khách trả 409.
 Timeout cần retry cùng key/body. Không tự tạo hóa đơn hoặc thanh toán.
 
-`app/schemas/orders.py` chứa request/receipt; `app/config/orders.py`
-chứa quy tắc đã xác nhận; `app/repositories/orders.py` xử lý transaction/lỗi allowlist;
-`app/api/orders.py` và `app/middleware/order_errors.py` xử lý HTTP/Swagger/lỗi.
+`phub_api/schemas/orders.py` chứa request/receipt; `phub_api/config/orders.py`
+chứa quy tắc đã xác nhận; `phub_api/repositories/orders.py` xử lý transaction/lỗi allowlist;
+`phub_api/api/orders.py` và `phub_api/middleware/order_errors.py` xử lý HTTP/Swagger/lỗi.
 Migration 04/10 tạo schema key riêng và RPC v1; migration 06/10 bổ sung v2 hiện dùng.
 Tài liệu file/request/triển khai: [orders README](docs/modules/orders.md).
 
@@ -305,8 +305,8 @@ toán/tham chiếu/payload nhạy cảm. Thành công/lỗi đều `no-store`.
 không phải đã thanh toán; một khoản thu hoặc hoàn tiền không xác nhận toàn đơn
 đã tất toán. UI có trạng thái/lịch sử trên chi tiết đơn và nút cập nhật.
 
-`app/dependencies/customer.py::require_customer` dùng trực tiếp danh tính từ
-`app/services/auth.py`: JWT trong cookie HttpOnly được kiểm tra chữ ký/hết hạn, sau đó
+`phub_api/dependencies/customer.py::require_customer` dùng trực tiếp danh tính từ
+`phub_api/services/auth.py`: JWT trong cookie HttpOnly được kiểm tra chữ ký/hết hạn, sau đó
 tài khoản, trạng thái, role và liên kết `TAI_KHOAN.ma_kh` được tải lại từ database.
 Không tin bearer chưa xác minh, `X-Customer-Id` hoặc mã khách do client tự khai báo.
 Tài liệu file/handoff: [payments README](docs/modules/payments.md).
@@ -361,7 +361,7 @@ và hướng dẫn test cả luồng: [SHOPPING-INTEGRATION.md](../ui/userUI/Fro
 Từ Backend, terminal riêng:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001
+.\.venv\Scripts\python.exe -m uvicorn phub_api.main:app --host 127.0.0.1 --port 8001
 ```
 
 Swagger `http://127.0.0.1:8001/docs`, OpenAPI `/openapi.json`; có cả bốn nhóm.

@@ -28,7 +28,7 @@ pip install -r Backend/requirements.txt -c Backend/constraints-render.txt && pyt
 API Start Command:
 
 ```sh
-cd Backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+cd Backend && python -m uvicorn phub_api.main:app --host 0.0.0.0 --port $PORT
 ```
 
 Website Build Command:

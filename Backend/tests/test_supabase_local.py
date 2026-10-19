@@ -5,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.models.user import User
-from app.dependencies.customer import require_customer
+from phub_api.models.user import User
+from phub_api.dependencies.customer import require_customer
 from scripts.supabase_test_support import COOKIE, create_test_app, local_settings
 
 

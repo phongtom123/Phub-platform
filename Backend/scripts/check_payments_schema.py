@@ -4,10 +4,10 @@ from uuid import uuid4
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.models.customer import CurrentCustomer
-from app.middleware.payment_errors import PaymentError
-from app.repositories.payments import PaymentRepository
-from app.config.database import supabase
+from phub_api.models.customer import CurrentCustomer
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.config.database import supabase
 
 
 def check():

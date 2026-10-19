@@ -4,7 +4,7 @@ from decimal import Decimal
 import httpx
 import pytest
 
-from app.repositories.catalog import product_color
+from phub_api.repositories.catalog import product_color
 
 
 @pytest.fixture
@@ -119,6 +119,6 @@ def test_combined_color_price_stock_and_empty_page_preserve_total(filtered_catal
 
 def test_color_scan_does_not_stop_at_first_supabase_page(filtered_catalog, monkeypatch):
     web, _, _, _ = filtered_catalog
-    monkeypatch.setattr("app.repositories.catalog_availability.BATCH_SIZE", 2)
+    monkeypatch.setattr("phub_api.repositories.catalog_availability.BATCH_SIZE", 2)
     body = web.get("/api/catalog/products?color=Đen&page_size=100").json()
     assert [product["id"] for product in body["items"]] == ["P1", "P2", "P5"]

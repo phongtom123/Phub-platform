@@ -9,12 +9,12 @@ from fastapi.testclient import TestClient
 from PIL import Image
 from storage3.exceptions import StorageApiError
 
-from app.models.user import User
-from app.dependencies.auth import current_user
-from app.middleware.errors import register_errors
-from app.services.media import MAX_BYTES, store_image
-from app.api.media import router
-from app.config.database import get_supabase
+from phub_api.models.user import User
+from phub_api.dependencies.auth import current_user
+from phub_api.middleware.errors import register_errors
+from phub_api.services.media import MAX_BYTES, store_image
+from phub_api.api.media import router
+from phub_api.config.database import get_supabase
 
 ORIGIN = {"Origin": "http://localhost:3000"}
 
@@ -107,7 +107,7 @@ def test_invalid_uploads_never_reach_storage(media_client, content, mime, status
 
 def test_chunked_body_size_and_dimensions(media_client, monkeypatch):
     client, state, _ = media_client
-    import app.services.media as media
+    import phub_api.services.media as media
     monkeypatch.setattr(media, "MAX_BYTES", 64)
     assert client.post("/api/admin/media/images", content=iter([b"a" * 40, b"b" * 40]), headers={**ORIGIN, "Content-Type": "image/png"}).status_code == 413
     monkeypatch.setattr(media, "MAX_BYTES", MAX_BYTES)

@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.main import app
+from phub_api.main import app
 
 SNAPSHOT = Path(__file__).resolve().parents[1] / "docs" / "openapi.json"
 

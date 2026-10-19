@@ -3,8 +3,8 @@
 > Tài liệu module trong cấu trúc MVC.
 
 Nguồn dữ liệu: `TAI_KHOAN`, `NHAN_VIEN`, `KHACH_HANG`, `KHO` theo
-[DBML](../../../database/schema.dbml). `app/api/admin_accounts.py` định nghĩa HTTP,
-`app/schemas/admin_accounts.py` validate payload/response; `app/services/admin_accounts.py`
+[DBML](../../../database/schema.dbml). `phub_api/api/admin_accounts.py` định nghĩa HTTP,
+`phub_api/schemas/admin_accounts.py` validate payload/response; `phub_api/services/admin_accounts.py`
 xử lý quy tắc và PostgREST.
 Không có tài khoản demo, migration hoặc seed tự chạy.
 

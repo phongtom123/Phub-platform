@@ -12,12 +12,12 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from app.models.customer import CurrentCustomer
-from app.dependencies.customer import require_customer
-from app.middleware.payment_errors import PaymentError
-from app.repositories.payments import PaymentRepository
-from app.dependencies.payments import get_repository
-from app.api.payments import router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.dependencies.payments import get_repository
+from phub_api.api.payments import router
 
 
 ORDER_ID = "ORDER-A"
@@ -358,13 +358,13 @@ def test_payment_request_foreign_order_and_invalid_idempotency_are_blocked(payme
 
 
 def test_main_registers_payments_without_requiring_auth_at_startup(monkeypatch):
-    stub = ModuleType("app.config.database")
+    stub = ModuleType("phub_api.config.database")
     stub.supabase = SimpleNamespace()
     stub.get_supabase = lambda: stub.supabase
     stub.close_supabase = lambda: None
-    monkeypatch.setitem(sys.modules, "app.config.database", stub)
-    location = Path(__file__).resolve().parents[1] / "app" / "main.py"
-    spec = importlib.util.spec_from_file_location("app.payment_main_check", location)
+    monkeypatch.setitem(sys.modules, "phub_api.config.database", stub)
+    location = Path(__file__).resolve().parents[1] / "phub_api" / "main.py"
+    spec = importlib.util.spec_from_file_location("phub_api.payment_main_check", location)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     with TestClient(module.app) as client:

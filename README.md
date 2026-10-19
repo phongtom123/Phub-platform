@@ -14,15 +14,17 @@ Phub-platform/
 │   ├── schema.dbml                  # 19 bảng, không có chi nhánh
 │   └── migrations/001_initial_schema.sql
 ├── Backend/
-│   ├── app/
-│   │   ├── main.py                  # App, CORS, health, routers
-│   │   ├── config.py / supabase.py   # Cấu hình server và client database
-│   │   ├── auth.py                  # Đăng nhập/cookie, role, scope
-│   │   ├── admin_accounts/          # Quản lý tài khoản admin và tự đổi mật khẩu
-│   │   ├── resources.py             # Allowlist bảng và validation models
-│   │   ├── tables.py                # Table APIs
-│   │   ├── errors.py                # Phản hồi lỗi an toàn
-│   │   └── catalog/                 # Catalog công khai
+│   ├── phub_api/
+│   │   ├── main.py
+│   │   ├── api/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── dependencies/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   ├── schemas/
+│   │   └── services/
 │   ├── scripts/hash_password.py     # Tạo hash tài khoản đầu tiên
 │   ├── tests/
 │   ├── .env.example
@@ -48,7 +50,7 @@ Phub-platform/
 Các UI giữ dependencies riêng để tránh xung đột Next.js/React. Không chạy `npm install` tại root.
 
 Phần tài khoản admin đã nối API/Supabase, không dùng dữ liệu mẫu. Hướng dẫn
-và hợp đồng: [Admin UI](ui/adminUI/README.md), [API tài khoản](Backend/app/admin_accounts/README.md).
+và hợp đồng: [Admin UI](ui/adminUI/README.md), [API tài khoản](Backend/docs/modules/admin-accounts.md).
 Không còn bản ghi/số liệu mẫu trong UI. Màn hình đã tích hợp lấy dữ liệu qua API;
 chức năng chưa có API hiển thị trạng thái chưa khả dụng. Điều này không đồng nghĩa
 toàn bộ nghiệp vụ quản trị đã hoàn thành. Fixtures trong tests và ví dụ Swagger
@@ -106,7 +108,7 @@ Các lệnh dưới đây bắt đầu từ thư mục repository. Dùng `npm.cm
 cd Backend
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn phub_api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 **Terminal 2 — Admin**
