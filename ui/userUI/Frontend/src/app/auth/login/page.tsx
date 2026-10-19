@@ -1,14 +1,30 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { loginSession } from "../../../../../../shared/auth-client";
+import { getSession, loginSession } from "../../../../../../shared/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getSession(controller.signal)
+      .then(() => {
+        if (!controller.signal.aborted) {
+          router.replace("/");
+          router.refresh();
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCheckingSession(false);
+      });
+    return () => controller.abort();
+  }, [router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,11 +37,19 @@ export default function LoginPage() {
       );
       if (account.role === "ADMIN") { window.location.assign(process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000"); return; }
       if (account.role === "THU_KHO") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
-      router.push("/main/landing");
+      router.replace("/");
       router.refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Không kết nối được backend."); }
     finally { setLoading(false); }
   };
+
+  if (checkingSession) {
+    return (
+      <section className="grid min-h-[68vh] place-items-center px-6" aria-live="polite" aria-busy="true">
+        <p className="text-sm text-zinc-500" role="status">Đang kiểm tra phiên đăng nhập…</p>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto grid min-h-[68vh] w-full max-w-6xl items-center gap-12 px-6 py-14 lg:grid-cols-[1fr_460px]">

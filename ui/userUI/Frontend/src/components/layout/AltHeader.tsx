@@ -208,7 +208,7 @@ export default function AltHeader() {
 
       <div className={styles.mainBar}>
         <Link href="/" className={styles.logo} aria-label="Tech Store — Trang chủ" onClick={() => close()}>
-          <Image src="/images/1.png" alt="" width={34} height={41} priority />
+          <Image src="/images/1.png" alt="" width={34} height={41} preload />
         </Link>
         <IconButton
           className={styles.mobileToggle}
@@ -244,7 +244,7 @@ export default function AltHeader() {
               {activeCategoryId === item.id && <CatalogMegaMenu category={item} onNavigate={() => close()} onKeepOpen={cancelCategoryClose} />}
             </div>
           ))}
-          <Link href="/main/product" onClick={() => close()}>Tất Cả Sản Phẩm</Link>
+          <Link className={styles.dealsLink} href="/main/product" onClick={() => close()}>Tất Cả Sản Phẩm</Link>
         </nav>
 
         {searchOpen && (

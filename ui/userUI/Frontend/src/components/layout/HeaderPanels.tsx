@@ -1,11 +1,35 @@
 import Link from "next/link";
 import { Button } from "@/components/common/Button";
 import type { SessionUser } from "../../../../../shared/auth-client";
-import { guestAccountItems } from "./headerData";
+import { guestAccountItems, storeInfo } from "./headerData";
 import styles from "./Header.module.css";
 
 export function ShopInfo() {
-  return <div className={styles.shopInfo}><p>Thông tin liên hệ và giờ mở cửa chưa được cấu hình.</p></div>;
+  return <div className={styles.shopInfo}>
+    <section className={styles.shopRow} aria-label="Opening hours">
+      <svg className={styles.shopInfoIcon} viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="12" />
+        <path d="M16 9v8h7" />
+      </svg>
+      <div className={styles.shopHours}>
+        <p>We are open:</p>
+        <dl>
+          {storeInfo.hours.map(item => <div key={item.days}><dt>{item.days}:</dt><dd>{item.time}</dd></div>)}
+        </dl>
+      </div>
+    </section>
+    <section className={styles.shopRow} aria-label="Store address">
+      <svg className={styles.shopInfoIcon} viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 29S6 20.7 6 12.8a10 10 0 0 1 20 0C26 20.7 16 29 16 29Z" />
+        <circle cx="16" cy="13" r="3.5" />
+      </svg>
+      <address>Address: {storeInfo.address}</address>
+    </section>
+    <address className={styles.shopContact}>
+      <p>Phones: <a href={storeInfo.phoneHref}>{storeInfo.phone}</a></p>
+      <p>E-mail: <a href={`mailto:${storeInfo.email}`}>{storeInfo.email}</a></p>
+    </address>
+  </div>;
 }
 
 export function AccountMenu({
