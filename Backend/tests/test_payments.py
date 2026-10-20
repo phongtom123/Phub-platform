@@ -16,8 +16,9 @@ from phub_api.models.customer import CurrentCustomer
 from phub_api.dependencies.customer import require_customer
 from phub_api.middleware.payment_errors import PaymentError
 from phub_api.repositories.payments import PaymentRepository
+from phub_api.services.payments import PaymentService
 from phub_api.dependencies.payments import get_repository
-from phub_api.api.payments import router
+from phub_api.controllers.payments import router
 
 
 ORDER_ID = "ORDER-A"
@@ -251,7 +252,7 @@ def test_equality_identifiers_are_encoded_as_single_query_values(payments_client
     customer = CurrentCustomer(customer_id=customer_id)
     state["orders"] = [{"ma_donhang": order_id, "ma_kh": customer_id}]
     state["rows"] = []
-    result = repository.overview(order_id, customer)
+    result = PaymentService(repository).overview(order_id, customer)
     assert result.latest_transaction is None
     for request in requests:
         assert request.url.params["ma_donhang"] == "eq." + order_id
@@ -261,10 +262,10 @@ def test_equality_identifiers_are_encoded_as_single_query_values(payments_client
     assert "or" not in requests[-1].url.params
 
 
-def test_repository_rejects_unverified_customer_dict_before_reading(payments_client):
+def test_service_rejects_unverified_customer_dict_before_reading(payments_client):
     _, _, requests, repository, _ = payments_client
     with pytest.raises(PaymentError) as error:
-        repository.overview(ORDER_ID, {"customer_id": CUSTOMER_ID})
+        PaymentService(repository).overview(ORDER_ID, {"customer_id": CUSTOMER_ID})
     assert error.value.code == "AUTH_INTEGRATION_REQUIRED" and requests == []
 
 

@@ -1,5 +1,5 @@
-import os
 from urllib.parse import urlsplit
+import os
 
 
 def frontend_origins() -> list[str]:

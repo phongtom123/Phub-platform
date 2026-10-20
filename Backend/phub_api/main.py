@@ -1,20 +1,20 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from phub_api.api.catalog import router as catalog_router
-from phub_api.api.legacy import router as legacy_router
-from phub_api.api.auth import router as auth_router
-from phub_api.api.tables import router as tables_router
+from phub_api.controllers.catalog import router as catalog_router
+from phub_api.controllers.legacy import router as legacy_router
+from phub_api.controllers.auth import router as auth_router
+from phub_api.controllers.tables import router as tables_router
 from phub_api.middleware.cors import register_cors
-from phub_api.api.orders import router as orders_router
-from phub_api.api.payments import router as payments_router
-from phub_api.api.commerce import router as commerce_router
-from phub_api.api.health import router as health_router
-from phub_api.api.admin_accounts import router as admin_accounts_router
-from phub_api.api.media import router as media_router
+from phub_api.controllers.orders import router as orders_router
+from phub_api.controllers.payments import router as payments_router
+from phub_api.controllers.commerce import router as commerce_router
+from phub_api.controllers.health import router as health_router
+from phub_api.controllers.admin_accounts import router as admin_accounts_router
+from phub_api.controllers.media import router as media_router
 from phub_api.middleware.errors import register_errors
 from phub_api.config.database import close_supabase
-from phub_api.api.documentation import DESCRIPTION, TAGS, install_openapi
+from phub_api.config.openapi import DESCRIPTION, TAGS, install_openapi
 
 
 @asynccontextmanager

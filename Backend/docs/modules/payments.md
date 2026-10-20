@@ -1,6 +1,6 @@
 # API thanh toán của khách hàng
 
-> Tài liệu module trong cấu trúc MVC.
+> Tài liệu module theo kiến trúc Controller → Service → Repository.
 
 Cập nhật UI thử nghiệm 07/10: thêm điểm nối `POST /api/orders/{id}/payment-request`
 nhận phương thức và UUID v4. Production chưa thực thi, trả 503 sau kiểm tra quyền
@@ -134,9 +134,10 @@ Cả thành công và lỗi có `Cache-Control: no-store`.
 | --- | --- |
 | `phub_api/dependencies/customer.py` | Adapter từ phiên JWT/cookie chung sang model khách đã được xác minh |
 | `phub_api/schemas/payments.py` | Validation mã đơn/query và các trường công khai |
-| `phub_api/repositories/payments.py` | Truy vấn chỉ đọc, kiểm tra sở hữu, Decimal, ánh xạ trạng thái/phương thức và phân trang |
+| `phub_api/repositories/payments.py` | Truy vấn chỉ đọc, filter ownership và phân trang |
+| `phub_api/services/payments.py` | Kiểm tra sở hữu, Decimal, ánh xạ trạng thái/phương thức và điều phối provider |
 | `errors.py` | Lỗi riêng cho module, che nội dung nhạy cảm, no-store |
-| `phub_api/api/payments.py` | Hai endpoint và Swagger nhóm Customer Payments |
+| `phub_api/controllers/payments.py` | Endpoint và Swagger nhóm Customer Payments |
 | `../../tests/test_payments.py` | Kiểm thử API, điểm nối xác thực, sở hữu, lỗi, trạng thái, phân trang và dữ liệu không được lộ |
 | `../../scripts/check_payments_schema.py` | Kiểm tra Supabase chỉ đọc với ID giả ngẫu nhiên, không đọc giao dịch thật |
 

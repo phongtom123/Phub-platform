@@ -7,18 +7,11 @@ from postgrest.exceptions import APIError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
+from phub_api.models.errors import CatalogError
 from phub_api.schemas.catalog import ErrorBody, ErrorDetail, ErrorResponse
 
 
 logger = logging.getLogger(__name__)
-
-
-class CatalogError(Exception):
-    def __init__(self, status_code: int, code: str, message: str):
-        super().__init__(message)
-        self.status_code = status_code
-        self.code = code
-        self.message = message
 
 
 def error_response(status_code, code, message, details=None):

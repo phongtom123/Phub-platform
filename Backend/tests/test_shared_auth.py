@@ -9,7 +9,7 @@ from postgrest import SyncPostgrestClient
 from phub_api.models.user import User
 from phub_api.dependencies.auth import current_user, require_admin, require_customer_user, require_warehouse
 from phub_api.services.auth import login_attempts, passwords, registration_attempts
-from phub_api.api.auth import router as auth_router
+from phub_api.controllers.auth import router as auth_router
 from phub_api.models.customer import CurrentCustomer
 from phub_api.dependencies.customer import require_customer
 from phub_api.config.database import get_supabase

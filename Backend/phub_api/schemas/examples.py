@@ -1,3 +1,4 @@
+"""OpenAPI examples only; never used as application data."""
 from phub_api.models.resources import RESOURCES, public_columns
 
 VALUES = {
@@ -59,7 +60,7 @@ def row_example(name: str) -> dict:
 
 
 def payload_example(name: str, patch: bool = False) -> dict:
-    from phub_api.models.resources import payload_model
+    from phub_api.schemas.resources import payload_model
     row = row_example(name)
     fields = payload_model(name, patch).model_fields
     if patch:

@@ -11,7 +11,8 @@ from phub_api.models.user import User
 from phub_api.dependencies.auth import current_user
 from phub_api.services.auth import login_attempts, passwords
 from phub_api.main import app
-from phub_api.models.resources import RESOURCES, payload_model, public_columns, schema
+from phub_api.models.resources import RESOURCES, public_columns, schema
+from phub_api.schemas.resources import payload_model
 from phub_api.config.database import get_supabase
 
 ADMIN = User("TK1", "admin", "ADMIN", "Quản trị", employee_id="NV1")

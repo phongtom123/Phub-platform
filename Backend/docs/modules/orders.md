@@ -1,6 +1,6 @@
 # Customer Orders API
 
-> Tài liệu module trong cấu trúc MVC.
+> Tài liệu module theo kiến trúc Controller → Service → Repository.
 
 `POST /api/orders` tạo đơn `ONLINE/MOI` thuộc khách đã xác minh, chưa thanh toán. Module
 không thay catalog, UI admin/kho, phiếu xuất, hóa đơn hoặc các handler chung.

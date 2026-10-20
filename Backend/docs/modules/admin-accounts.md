@@ -1,11 +1,11 @@
 # API quản lý tài khoản ADMIN
 
-> Tài liệu module trong cấu trúc MVC.
+> Tài liệu module theo kiến trúc Controller → Service → Repository.
 
 Nguồn dữ liệu: `TAI_KHOAN`, `NHAN_VIEN`, `KHACH_HANG`, `KHO` theo
-[DBML](../../../database/schema.dbml). `phub_api/api/admin_accounts.py` định nghĩa HTTP,
+[DBML](../../../database/schema.dbml). `phub_api/controllers/admin_accounts.py` định nghĩa HTTP,
 `phub_api/schemas/admin_accounts.py` validate payload/response; `phub_api/services/admin_accounts.py`
-xử lý quy tắc và PostgREST.
+xử lý nghiệp vụ; `phub_api/repositories/admin_accounts.py` thực hiện PostgREST/RPC.
 Không có tài khoản demo, migration hoặc seed tự chạy.
 
 ## Endpoint

@@ -13,7 +13,8 @@ from phub_api.models.user import User
 from phub_api.dependencies.auth import current_user
 from phub_api.middleware.errors import register_errors
 from phub_api.services.media import MAX_BYTES, store_image
-from phub_api.api.media import router
+from phub_api.repositories.media import MediaRepository
+from phub_api.controllers.media import router
 from phub_api.config.database import get_supabase
 
 ORIGIN = {"Origin": "http://localhost:3000"}
@@ -161,6 +162,6 @@ def test_real_storage_sdk_contract_with_mock_http(monkeypatch):
         return httpx.Response(200, json={"Key": request.url.path.removeprefix("/storage/v1/object/")})
     with httpx.Client(transport=httpx.MockTransport(handle)) as http:
         storage = SyncStorageClient("https://example.supabase.co/storage/v1/", {}, http_client=http)
-        result = store_image(image_bytes(), "image/png", SimpleNamespace(storage=storage))
+        result = store_image(image_bytes(), "image/png", MediaRepository(SimpleNamespace(storage=storage)))
     assert result.url == "https://example.supabase.co/storage/v1/object/public/media/" + result.path
     assert len(calls) == 2

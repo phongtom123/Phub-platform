@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from phub_api.schemas.catalog import clean_text
+from phub_api.models.text import clean_text
 
 
 class CurrentCustomer(BaseModel):

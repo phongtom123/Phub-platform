@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 import os
 import re
 
-from phub_api.middleware.order_errors import OrderError
+from phub_api.models.errors import OrderError
 
 
 @dataclass(frozen=True)

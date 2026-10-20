@@ -179,7 +179,9 @@ Không thực hiện nhiều `.insert/.update` liên tiếp qua HTTP rồi coi �
 
 ## Cấu trúc
 
-Luồng xử lý: `api → controllers → services/repositories → database`.
+Luồng xử lý: **`controllers → services → repositories → database`**.
+Hướng dẫn chi tiết, ví dụ tạo tài khoản và quy tắc thêm chức năng:
+[ARCHITECTURE.md](ARCHITECTURE.md).
 `models` chứa đối tượng nội bộ; `schemas` định nghĩa dữ liệu nhận/trả qua API.
 Middleware được đăng ký tại `main.py`; CORS nằm trong `middleware/cors.py`,
 xác thực/phân quyền dùng `Depends()` trong `dependencies/auth.py`.
@@ -188,19 +190,23 @@ xác thực/phân quyền dùng `Depends()` trong `dependencies/auth.py`.
 phub_api/
   __init__.py
   main.py          # Khởi tạo FastAPI và đăng ký router/middleware
-  api/             # Khai báo endpoint và tài liệu OpenAPI
-  config/          # Biến môi trường, cấu hình và Supabase client
-  controllers/     # Nhận request, gọi service/repository, trả response
+  config/          # Settings, Supabase pool/transport và OpenAPI
+  controllers/     # Khai báo endpoint + nhận request, gọi service, trả response
   dependencies/    # Guard xác thực/phân quyền và factory dependency
   middleware/      # CORS, exception handler và chuẩn hóa lỗi
-  models/          # Danh tính nghiệp vụ và metadata bảng dữ liệu
+  models/          # Danh tính, lỗi nghiệp vụ và metadata bảng
   repositories/    # Truy vấn và thao tác dữ liệu
-  schemas/         # Pydantic request/response và validation
+  schemas/         # Pydantic request/response, model động, ví dụ OpenAPI
   services/        # Quy tắc nghiệp vụ, token, upload và checkout
 docs/modules/       # Hợp đồng và ghi chú theo từng module
 scripts/            # Công cụ kiểm tra và hỗ trợ vận hành
 tests/              # Offline HTTP/PostgREST mocks
 ```
+
+Không còn package `api/` trung gian. Controller không import repository/Supabase;
+service không nhận Request/Response hoặc truy vấn DB; repository không gọi ngược
+service. Các factory trong `dependencies/` ghép lớp và giữ khả năng override
+trong test. `tests/test_architecture.py` kiểm tra các ranh giới này tự động.
 
 
 ---
@@ -264,9 +270,10 @@ trạng thái 1. Chi tiết dùng `ma_sp`, trả ảnh/mô tả/thông số/đơ
 Tiền là chuỗi; không giả tồn kho/rating/giảm giá. Kết quả rỗng không fallback fixtures.
 
 `phub_api/schemas/catalog.py` chứa validation/model công khai,
-`phub_api/repositories/catalog.py` truy vấn/ánh xạ ảnh và thông số,
+`phub_api/repositories/catalog.py` truy vấn dữ liệu; `phub_api/services/catalog.py`
+ánh xạ ảnh/thông số, lọc màu/tồn khả dụng và dựng kết quả,
 `phub_api/controllers/catalog.py` xử lý request,
-`phub_api/api/catalog.py` khai báo routes/Swagger, và `phub_api/middleware/catalog_errors.py` chứa lỗi riêng module.
+controller này cũng khai báo routes/Swagger; `phub_api/middleware/catalog_errors.py` chuẩn hóa lỗi riêng module.
 UI nối proxy GET, home, search header, catalog grid/list, filter, preview/detail
 desktop/mobile; query trong URL, loading/error/retry/not-found và ảnh placeholder.
 Tài liệu: [catalog README](docs/modules/catalog.md),
@@ -287,8 +294,9 @@ Cùng khách/key/body trả receipt cũ 200; đơn mới 201; khác body/khách 
 Timeout cần retry cùng key/body. Không tự tạo hóa đơn hoặc thanh toán.
 
 `phub_api/schemas/orders.py` chứa request/receipt; `phub_api/config/orders.py`
-chứa quy tắc đã xác nhận; `phub_api/repositories/orders.py` xử lý transaction/lỗi allowlist;
-`phub_api/api/orders.py` và `phub_api/middleware/order_errors.py` xử lý HTTP/Swagger/lỗi.
+chứa quy tắc đã xác nhận; `phub_api/services/orders.py` điều phối use case/lỗi allowlist;
+`phub_api/repositories/orders.py` gọi transaction RPC; `phub_api/controllers/orders.py`
+và `phub_api/middleware/order_errors.py` xử lý HTTP/Swagger/lỗi.
 Migration 04/10 tạo schema key riêng và RPC v1; migration 06/10 bổ sung v2 hiện dùng.
 Tài liệu file/request/triển khai: [orders README](docs/modules/orders.md).
 

@@ -7,16 +7,11 @@ from postgrest.exceptions import APIError
 from starlette.exceptions import HTTPException
 
 from phub_api.middleware.catalog_errors import error_response
+from phub_api.models.errors import PaymentError
 from phub_api.schemas.catalog import ErrorDetail
 
 
 logger = logging.getLogger(__name__)
-
-
-class PaymentError(Exception):
-    def __init__(self, status_code, code, message):
-        super().__init__(message)
-        self.status_code, self.code, self.message = status_code, code, message
 
 
 class PaymentRoute(APIRoute):

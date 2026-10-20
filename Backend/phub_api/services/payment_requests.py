@@ -1,4 +1,4 @@
-from phub_api.middleware.payment_errors import PaymentError
+from phub_api.models.errors import PaymentError
 
 
 class UnconnectedPaymentRequests:

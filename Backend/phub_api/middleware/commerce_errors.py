@@ -7,9 +7,9 @@ from postgrest.exceptions import APIError
 from starlette.exceptions import HTTPException
 
 from phub_api.middleware.catalog_errors import error_response
-from phub_api.schemas.catalog import ErrorDetail
 from phub_api.middleware.order_errors import OrderError
 from phub_api.middleware.payment_errors import PaymentError
+from phub_api.schemas.catalog import ErrorDetail
 
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,15 @@ from postgrest import SyncPostgrestClient
 
 from phub_api.repositories.catalog import CatalogRepository
 from phub_api.dependencies.catalog import get_repository
-from phub_api.api.catalog import router
+from phub_api.controllers.catalog import router
+
+
+@pytest.fixture(autouse=True)
+def forbid_live_http(monkeypatch):
+    """Offline tests must use MockTransport, never credentials from a developer .env."""
+    def blocked(*args, **kwargs):
+        raise AssertionError("Live HTTP is forbidden in offline tests; override the database dependency or use MockTransport.")
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", blocked)
 
 
 @pytest.fixture

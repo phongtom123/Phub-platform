@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 
-from phub_api.api.health import router
+from phub_api.controllers.health import router
 from phub_api.config.runtime import frontend_origins
 
 
