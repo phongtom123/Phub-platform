@@ -1,4 +1,3 @@
-"""Test local identity isolation with fake transport; never write the real DB."""
 import json
 
 import httpx
@@ -6,8 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.auth import User
-from app.payments.auth import require_customer
+from phub_api.models.user import User
+from phub_api.dependencies.customer import require_customer
 from scripts.supabase_test_support import COOKIE, create_test_app, local_settings
 
 

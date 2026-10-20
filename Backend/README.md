@@ -29,7 +29,7 @@ Sinh JWT secret bằng lệnh sau, rồi lưu giá trị vào `.env`, không g�
 
 ```powershell
 .venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(48))"
-.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn phub_api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 - Swagger: http://localhost:8000/docs
@@ -122,7 +122,7 @@ tạo/chi tiết/sửa, ẩn–khóa–mở lại, đổi quyền nhân viên, c
 tài khoản đang đăng nhập. UI riêng ở `/accounts`, `/accounts/new`,
 `/accounts/{id}`, `/accounts/{id}/edit`, `/account`.
 
-Xem [hợp đồng API và cách kiểm thử](app/admin_accounts/README.md). Không cần đổi
+Xem [hợp đồng API và cách kiểm thử](docs/modules/admin-accounts.md). Không cần đổi
 schema bảng cho module này nếu database đã khớp DBML và có các FK/unique/check hiện có.
 Form tạo mới cần cài sequence và hàm RPC bằng `migrations/20261010_admin_account_creation.sql`:
 tạo người mới và tài khoản trong một transaction, không chọn hồ sơ cũ, không để lại
@@ -179,19 +179,27 @@ Không thực hiện nhiều `.insert/.update` liên tiếp qua HTTP rồi coi �
 
 ## Cấu trúc
 
+Luồng xử lý: `api → controllers → services/repositories → database`.
+`models` chứa đối tượng nội bộ; `schemas` định nghĩa dữ liệu nhận/trả qua API.
+Middleware được đăng ký tại `main.py`; CORS nằm trong `middleware/cors.py`,
+xác thực/phân quyền dùng `Depends()` trong `dependencies/auth.py`.
+
 ```text
-app/
-  main.py        # CORS, routers, health, compatibility endpoint
-  config.py      # Server environment configuration
-  supabase.py    # Lazy client, injectable trong tests
-  auth.py        # Hash, session cookie, current user, role
-  admin_accounts/ # Schemas, service, router quản lý tài khoản ADMIN
-  resources.py   # Allowlist 19 bảng và model từ DBML
-  tables.py      # Scope dữ liệu, đọc + CRUD dữ liệu nền
-  errors.py      # Lỗi an toàn, không trả chi tiết DB/secret
-  catalog/       # Catalog công khai có sẵn
-scripts/hash_password.py
-tests/           # Offline HTTP/PostgREST mocks, không cần khóa thật
+phub_api/
+  __init__.py
+  main.py          # Khởi tạo FastAPI và đăng ký router/middleware
+  api/             # Khai báo endpoint và tài liệu OpenAPI
+  config/          # Biến môi trường, cấu hình và Supabase client
+  controllers/     # Nhận request, gọi service/repository, trả response
+  dependencies/    # Guard xác thực/phân quyền và factory dependency
+  middleware/      # CORS, exception handler và chuẩn hóa lỗi
+  models/          # Danh tính nghiệp vụ và metadata bảng dữ liệu
+  repositories/    # Truy vấn và thao tác dữ liệu
+  schemas/         # Pydantic request/response và validation
+  services/        # Quy tắc nghiệp vụ, token, upload và checkout
+docs/modules/       # Hợp đồng và ghi chú theo từng module
+scripts/            # Công cụ kiểm tra và hỗ trợ vận hành
+tests/              # Offline HTTP/PostgREST mocks
 ```
 
 
@@ -255,11 +263,13 @@ Lọc/sắp tại database trước phân trang; sản phẩm và loại phải 
 trạng thái 1. Chi tiết dùng `ma_sp`, trả ảnh/mô tả/thông số/đơn vị/bảo hành.
 Tiền là chuỗi; không giả tồn kho/rating/giảm giá. Kết quả rỗng không fallback fixtures.
 
-`app/catalog/schemas.py` validation/model công khai, `repository.py` truy vấn/ánh
-xạ ảnh và thông số, `router.py` routes/Swagger, `errors.py` lỗi riêng module.
+`phub_api/schemas/catalog.py` chứa validation/model công khai,
+`phub_api/repositories/catalog.py` truy vấn/ánh xạ ảnh và thông số,
+`phub_api/controllers/catalog.py` xử lý request,
+`phub_api/api/catalog.py` khai báo routes/Swagger, và `phub_api/middleware/catalog_errors.py` chứa lỗi riêng module.
 UI nối proxy GET, home, search header, catalog grid/list, filter, preview/detail
 desktop/mobile; query trong URL, loading/error/retry/not-found và ảnh placeholder.
-Tài liệu: [catalog README](app/catalog/README.md),
+Tài liệu: [catalog README](docs/modules/catalog.md),
 [CATALOG-INTEGRATION.md](../ui/userUI/Frontend/CATALOG-INTEGRATION.md).
 
 ## Mục tiêu 2 — Đặt đơn
@@ -276,16 +286,17 @@ Transaction khóa sản phẩm/tồn, kiểm tra giá và lượng khả dụng,
 Cùng khách/key/body trả receipt cũ 200; đơn mới 201; khác body/khách trả 409.
 Timeout cần retry cùng key/body. Không tự tạo hóa đơn hoặc thanh toán.
 
-`app/orders/schemas.py` request/receipt; `settings.py` quy tắc đã xác nhận;
-`repository.py` transaction/lỗi allowlist; `router.py`, `errors.py` HTTP/Swagger/lỗi.
+`phub_api/schemas/orders.py` chứa request/receipt; `phub_api/config/orders.py`
+chứa quy tắc đã xác nhận; `phub_api/repositories/orders.py` xử lý transaction/lỗi allowlist;
+`phub_api/api/orders.py` và `phub_api/middleware/order_errors.py` xử lý HTTP/Swagger/lỗi.
 Migration 04/10 tạo schema key riêng và RPC v1; migration 06/10 bổ sung v2 hiện dùng.
-Tài liệu file/request/triển khai: [orders README](app/orders/README.md).
+Tài liệu file/request/triển khai: [orders README](docs/modules/orders.md).
 
 ## Mục tiêu 3 — Thanh toán và lịch sử giao dịch
 
 Swagger **Customer Payments**: `GET /api/orders/{order_id}/payments` giao dịch
 mới nhất, `GET /api/orders/{order_id}/transactions` lịch sử phân trang mới trước.
-`app/payments` chỉ đọc `DON_HANG`, `THANH_TOAN`, không cần migration payment.
+Lớp payment chỉ đọc `DON_HANG`, `THANH_TOAN`, không cần migration payment.
 Kiểm tra chủ đơn rồi lọc lại quyền sở hữu ở truy vấn giao dịch. Đơn không tồn tại,
 khách khác hoặc `ma_kh=NULL` cùng 404. Tiền là chuỗi Decimal; không trả mã thanh
 toán/tham chiếu/payload nhạy cảm. Thành công/lỗi đều `no-store`.
@@ -294,11 +305,11 @@ toán/tham chiếu/payload nhạy cảm. Thành công/lỗi đều `no-store`.
 không phải đã thanh toán; một khoản thu hoặc hoàn tiền không xác nhận toàn đơn
 đã tất toán. UI có trạng thái/lịch sử trên chi tiết đơn và nút cập nhật.
 
-`app/payments/auth.py::require_customer` nay dùng trực tiếp danh tính từ
-`app/auth.py`: JWT trong cookie HttpOnly được kiểm tra chữ ký/hết hạn, sau đó
+`phub_api/dependencies/customer.py::require_customer` dùng trực tiếp danh tính từ
+`phub_api/services/auth.py`: JWT trong cookie HttpOnly được kiểm tra chữ ký/hết hạn, sau đó
 tài khoản, trạng thái, role và liên kết `TAI_KHOAN.ma_kh` được tải lại từ database.
 Không tin bearer chưa xác minh, `X-Customer-Id` hoặc mã khách do client tự khai báo.
-Tài liệu file/handoff: [payments README](app/payments/README.md).
+Tài liệu file/handoff: [payments README](docs/modules/payments.md).
 
 ## Mục tiêu 4 — Luồng mua hàng khách hàng
 
@@ -313,7 +324,7 @@ Swagger **Customer Shopping**:
 | `GET /api/customer/orders` | Lịch sử đơn có phân trang |
 | `GET /api/customer/orders/{order_id}` | Chi tiết và snapshot của đơn thuộc khách |
 
-`app/commerce` dùng cùng dependency khách cho mọi route. Quote chọn một kho đủ
+Các controller/view commerce dùng cùng dependency khách cho mọi route. Quote chọn một kho đủ
 hàng mỗi SKU; checkout mới nhận một dòng mỗi SKU. Voucher phải hoạt động, đúng
 hạn, đạt tối thiểu và còn lượt toàn hệ thống/mỗi khách. Tạo đơn kiểm tra lại,
 khóa quota, ghi usage voucher cùng đơn/key. Phân bổ giảm giá tới từng dòng và
@@ -325,7 +336,7 @@ cart chỉnh/xóa số lượng, checkout nhập người nhận và xác nhận
 hồi giữ UUID/body để retry sau reload. Hồ sơ/đơn/payment dùng dữ liệu đã xác minh;
 chi tiết lấy snapshot lúc bán. Không sửa đăng ký/đăng nhập, thu thập thẻ/CVV hay
 dùng phí/voucher mẫu. Tài liệu hợp đồng/file/migration:
-[commerce README](app/commerce/README.md). File map frontend, lưu trữ, auth handoff
+[commerce README](docs/modules/commerce.md). File map frontend, lưu trữ, auth handoff
 và hướng dẫn test cả luồng: [SHOPPING-INTEGRATION.md](../ui/userUI/Frontend/SHOPPING-INTEGRATION.md).
 
 ## Nghiệp vụ đã xác nhận
@@ -350,7 +361,7 @@ và hướng dẫn test cả luồng: [SHOPPING-INTEGRATION.md](../ui/userUI/Fro
 Từ Backend, terminal riêng:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001
+.\.venv\Scripts\python.exe -m uvicorn phub_api.main:app --host 127.0.0.1 --port 8001
 ```
 
 Swagger `http://127.0.0.1:8001/docs`, OpenAPI `/openapi.json`; có cả bốn nhóm.

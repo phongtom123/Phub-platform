@@ -11,7 +11,7 @@ Từ thư mục repository:
 ```powershell
 cd Backend
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn phub_api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Nếu chưa có `.venv`/database/tài khoản, làm theo [Backend/README.md](../README.md) trước.
@@ -47,7 +47,7 @@ URL service được đối chiếu với [cấu hình Render](../../render.yaml
 Có **49 đường dẫn, 70 thao tác**, gồm 19 GET bảng, 16 POST/PATCH trên 8 bảng dữ liệu nền, 11 thao tác tài khoản admin và các module xác thực/catalog/mua hàng. Đây là đặc tả chức năng **đã có code**, không phải xác nhận database thật đã chạy.
 
 Quản lý tài khoản dùng nhóm **Admin · Tài khoản**, prefix `/api/admin`.
-Xem [hợp đồng và các quy tắc tài khoản](../app/admin_accounts/README.md).
+Xem [hợp đồng và các quy tắc tài khoản](modules/admin-accounts.md).
 `GET /api/data/accounts` vẫn đọc được; tạo/sửa qua API bảng chung bị chặn.
 
 UI vẫn gọi các URL cũ `/api/data/products`, `/api/data/orders`, ... Backend vẫn dùng router `/api/data/{resource}`. Swagger tách thành từng đường dẫn cụ thể để payload và quyền không bị trộn lẫn. Các bảng chỉ đọc không hiện POST/PATCH. Không có DELETE hoặc checkout/webhook giả.
@@ -175,10 +175,10 @@ Snapshot kiểm tra drift theo nội dung JSON, không theo thứ tự/format. E
 ## Cấu trúc phần đặc tả
 
 ```text
-app/api_contracts.py       # Response/error/metadata contracts
-app/api_examples.py        # Dữ liệu giả minh họa
-app/documentation.py       # Metadata, tag, cookie auth, bảng cụ thể trong OpenAPI
-app/resources.py           # Payload model dùng chung với validation runtime
+phub_api/schemas/api_contracts.py  # Response/error/metadata contracts
+phub_api/api/examples.py   # Dữ liệu giả minh họa
+phub_api/api/documentation.py  # Metadata, tag, cookie auth, bảng cụ thể trong OpenAPI
+phub_api/models/resources.py    # Payload model dùng chung với validation runtime
 scripts/export_openapi.py  # Xuất và kiểm tra snapshot
 docs/openapi.json          # Snapshot cho Git/công cụ API
 tests/test_openapi.py      # Validator OAS 3.1, ref, mẫu, quyền, URL, drift

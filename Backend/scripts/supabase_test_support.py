@@ -1,4 +1,3 @@
-"""Local test identity over the real repositories; never imported by app.main."""
 import html
 import os
 import secrets
@@ -9,24 +8,28 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
-from app.catalog.repository import CatalogRepository
-from app.catalog.router import get_repository as catalog_repository, router as catalog_router
-from app.commerce.repository import CommerceRepository
-from app.commerce.router import get_repository as commerce_repository, router as commerce_router
-from app.health import router as health_router
-from app.orders.repository import OrderRepository
-from app.orders.router import get_repository as order_repository, router as order_router
-from app.payments.auth import CurrentCustomer, require_customer
-from app.payments.errors import PaymentError
-from app.payments.repository import PaymentRepository
-from app.payments.router import get_repository as payment_repository, router as payment_router
+from phub_api.repositories.catalog import CatalogRepository
+from phub_api.dependencies.catalog import get_repository as catalog_repository
+from phub_api.api.catalog import router as catalog_router
+from phub_api.repositories.commerce import CommerceRepository
+from phub_api.dependencies.commerce import get_repository as commerce_repository
+from phub_api.api.commerce import router as commerce_router
+from phub_api.api.health import router as health_router
+from phub_api.repositories.orders import OrderRepository
+from phub_api.dependencies.orders import get_repository as order_repository
+from phub_api.api.orders import router as order_router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.dependencies.payments import get_repository as payment_repository
+from phub_api.api.payments import router as payment_router
 
 COOKIE = "phub-supabase-test-session"
 SESSION_SECONDS = 3600
 
 
 def local_settings():
-    # Guard BEFORE loading credentials or making a database request.
     if os.getenv("PHUB_SUPABASE_TEST_MODE") != "local-only" or any(
         os.getenv(key) for key in ("RENDER", "RENDER_SERVICE_ID", "RENDER_EXTERNAL_URL")
     ):
@@ -64,8 +67,6 @@ def create_test_app(client):
     sessions = {}
 
     def identity(request: Request):
-        # Only this explicitly guarded loopback app supports automatic identity.
-        # app.main never imports it; no client-provided customer ID is trusted.
         if automatic_customer:
             return customer
         token = request.cookies.get(COOKIE, "")
@@ -94,8 +95,6 @@ def create_test_app(client):
                 or request.url.hostname not in {"127.0.0.1", "localhost", "::1"}
                 or request.headers.get("sec-fetch-site") == "cross-site"):
             return deny(403, "ACCESS_DENIED", "Phiên test Supabase chỉ chạy trên localhost.")
-        # Browser API writes are proxied by Next with cookies, but without Origin.
-        # Also prevent direct cross-origin API writes reaching this local server.
         if (request.method not in {"GET", "HEAD", "OPTIONS"}
                 and request.headers.get("origin")
                 and request.headers["origin"] not in {str(request.base_url).rstrip("/"), ui}):

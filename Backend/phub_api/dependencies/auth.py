@@ -1,0 +1,55 @@
+from fastapi import Depends, HTTPException, Request
+from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBearer
+
+from phub_api.config.database import get_supabase
+from phub_api.config.settings import COOKIE_NAME
+from phub_api.models.user import User
+from phub_api.services.auth import identity, password_version, verify_access_token
+
+bearer_auth = HTTPBearer(
+    scheme_name="BearerAuth", bearerFormat="JWT", auto_error=False,
+    description="Lấy access_token từ POST /api/auth/token. Chỉ dán token, không thêm tiền tố Bearer; không dùng Supabase key.",
+)
+cookie_auth = APIKeyCookie(name=COOKIE_NAME, scheme_name="SessionCookie", auto_error=False)
+
+
+def session_claims(
+    request: Request,
+    bearer: HTTPAuthorizationCredentials | None = Depends(bearer_auth),
+    cookie: str | None = Depends(cookie_auth),
+) -> dict:
+    if "authorization" in request.headers:
+        if bearer is None:
+            raise HTTPException(401, "Authorization phải có dạng Bearer <token>.", headers={"WWW-Authenticate": "Bearer"})
+        token = bearer.credentials
+    else:
+        token = cookie
+    if not token:
+        raise HTTPException(401, "Vui lòng đăng nhập.", headers={"WWW-Authenticate": "Bearer"})
+    return verify_access_token(token)
+
+
+def current_user(claims: dict = Depends(session_claims), db=Depends(get_supabase)) -> User:
+    account_id = claims["sub"]
+    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", account_id).limit(1).execute().data
+    if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
+        raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.", headers={"WWW-Authenticate": "Bearer"})
+    return identity(rows[0], db)
+
+
+def require_admin(user: User = Depends(current_user)) -> User:
+    if user.role != "ADMIN":
+        raise HTTPException(403, "Chỉ quản trị viên được truy cập chức năng này.")
+    return user
+
+
+def require_warehouse(user: User = Depends(current_user)) -> User:
+    if user.role != "THU_KHO" or user.warehouse_id is None:
+        raise HTTPException(403, "Chỉ thủ kho đã được phân kho mới được truy cập chức năng này.")
+    return user
+
+
+def require_customer_user(user: User = Depends(current_user)) -> User:
+    if user.role != "KHACH_HANG" or not user.customer_id:
+        raise HTTPException(403, "Chỉ khách hàng được truy cập chức năng này.")
+    return user

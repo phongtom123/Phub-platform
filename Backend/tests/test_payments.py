@@ -12,10 +12,12 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from app.payments.auth import CurrentCustomer, require_customer
-from app.payments.errors import PaymentError
-from app.payments.repository import PaymentRepository
-from app.payments.router import get_repository, router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.dependencies.payments import get_repository
+from phub_api.api.payments import router
 
 
 ORDER_ID = "ORDER-A"
@@ -29,7 +31,6 @@ def payments_client():
         "so_tien": "100000.10", "loai_giao_dich": "THU", "phuong_thuc": "CHUYEN_KHOAN",
         "trang_thai": "CHO_XU_LY", "thoi_gian": "2026-10-06T10:00:00",
         "owned_order": {"ma_donhang": ORDER_ID, "ma_kh": CUSTOMER_ID},
-        # Inject extra internal data to ensure it cannot accidentally be returned.
         "ma_thanh_toan": "PRIVATE-PAYMENT", "ma_giao_dich": "PRIVATE-PROVIDER",
         "token": "PRIVATE-TOKEN", "bank_account": "PRIVATE-BANK", "payload": {"secret": "PRIVATE-PAYLOAD"},
     }
@@ -118,7 +119,7 @@ def test_paginated_history_filters_owner_and_counts_all_types(payments_client):
     assert params["offset"] == "10" and params["limit"] == "10"
     assert params["owned_order.ma_kh"] == 'eq.CUSTOMER-A'
     assert "count=exact" in requests[-1].headers["prefer"]
-    assert "loai_giao_dich" not in params  # includes both collections and refunds
+    assert "loai_giao_dich" not in params
 
 
 @pytest.mark.parametrize("endpoint", ["payments", "transactions"])
@@ -357,13 +358,13 @@ def test_payment_request_foreign_order_and_invalid_idempotency_are_blocked(payme
 
 
 def test_main_registers_payments_without_requiring_auth_at_startup(monkeypatch):
-    stub = ModuleType("app.supabase")
+    stub = ModuleType("phub_api.config.database")
     stub.supabase = SimpleNamespace()
     stub.get_supabase = lambda: stub.supabase
     stub.close_supabase = lambda: None
-    monkeypatch.setitem(sys.modules, "app.supabase", stub)
-    location = Path(__file__).resolve().parents[1] / "app" / "main.py"
-    spec = importlib.util.spec_from_file_location("app.payment_main_check", location)
+    monkeypatch.setitem(sys.modules, "phub_api.config.database", stub)
+    location = Path(__file__).resolve().parents[1] / "phub_api" / "main.py"
+    spec = importlib.util.spec_from_file_location("phub_api.payment_main_check", location)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     with TestClient(module.app) as client:

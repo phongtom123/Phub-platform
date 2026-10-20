@@ -1,4 +1,3 @@
-"""Upload tests are offline: no credentials, live buckets, or real database writes."""
 from io import BytesIO
 from types import SimpleNamespace
 import re
@@ -10,10 +9,12 @@ from fastapi.testclient import TestClient
 from PIL import Image
 from storage3.exceptions import StorageApiError
 
-from app.auth import User, current_user
-from app.errors import register_errors
-from app.media import MAX_BYTES, router, store_image
-from app.supabase import get_supabase
+from phub_api.models.user import User
+from phub_api.dependencies.auth import current_user
+from phub_api.middleware.errors import register_errors
+from phub_api.services.media import MAX_BYTES, store_image
+from phub_api.api.media import router
+from phub_api.config.database import get_supabase
 
 ORIGIN = {"Origin": "http://localhost:3000"}
 
@@ -106,7 +107,7 @@ def test_invalid_uploads_never_reach_storage(media_client, content, mime, status
 
 def test_chunked_body_size_and_dimensions(media_client, monkeypatch):
     client, state, _ = media_client
-    import app.media as media
+    import phub_api.services.media as media
     monkeypatch.setattr(media, "MAX_BYTES", 64)
     assert client.post("/api/admin/media/images", content=iter([b"a" * 40, b"b" * 40]), headers={**ORIGIN, "Content-Type": "image/png"}).status_code == 413
     monkeypatch.setattr(media, "MAX_BYTES", MAX_BYTES)
@@ -119,7 +120,7 @@ def test_corrupt_png_checksum_is_validation_error_not_server_error(media_client)
     client, state, _ = media_client
     data = bytearray(image_bytes())
     start = data.index(b"IDAT")
-    data[start + 4] ^= 1  # Preserve PNG headers but corrupt a real image chunk.
+    data[start + 4] ^= 1
     response = client.post("/api/admin/media/images", content=bytes(data), headers={**ORIGIN, "Content-Type": "image/png"})
     assert response.status_code == 422
     assert not state["uploads"]
