@@ -88,6 +88,11 @@ class LoginBody(BaseModel):
                           json_schema_extra={"writeOnly": True, "format": "password"})
 
 
+class PasswordChangeBody(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128, json_schema_extra={"writeOnly": True, "format": "password"})
+    new_password: str = Field(min_length=10, max_length=128, json_schema_extra={"writeOnly": True, "format": "password"})
+
+
 def throttle(request: Request) -> None:
     # Local-development protection. Use a shared Redis limiter before multi-worker deployment.
     host = request.client.host if request.client else "unknown"
@@ -133,6 +138,28 @@ def login(body: LoginBody, request: Request, response: Response, db=Depends(get_
 @router.get("/me", summary="Lấy tài khoản, role và kho được phân công", response_model=SessionUser, responses=READ_ERRORS)
 def me(response: Response, user: User = Depends(current_user)):
     response.headers["Cache-Control"] = "no-store"
+    return asdict(user)
+
+
+@router.post("/me/password", summary="Đổi mật khẩu tài khoản nhân viên đang đăng nhập",
+             response_model=SessionUser,
+             responses={**WRITE_ERRORS, 429: error_response(429, "Quá nhiều lần thử mật khẩu; thử lại sau một phút.")})
+def change_my_password(body: PasswordChangeBody, request: Request, response: Response,
+                       user: User = Depends(current_user), db=Depends(get_supabase)):
+    check_origin(request)
+    throttle(request)
+    rows = db.table("TAI_KHOAN").select("mat_khau_hash").eq("ma_tk", user.account_id).limit(1).execute().data
+    try:
+        valid = bool(rows) and passwords.verify(body.current_password, rows[0]["mat_khau_hash"])
+    except (ValueError, TypeError, UnknownHashError):
+        valid = False
+    if not valid:
+        raise HTTPException(422, "Mật khẩu hiện tại không đúng.")
+    old_hash = rows[0]["mat_khau_hash"]
+    updated = db.table("TAI_KHOAN").update({"mat_khau_hash": passwords.hash(body.new_password)}).eq("ma_tk", user.account_id).eq("mat_khau_hash", old_hash).execute().data
+    if not updated:
+        raise HTTPException(409, "Tài khoản đã thay đổi. Tải lại và thử lại.")
+    logout(request, response)
     return asdict(user)
 
 

@@ -53,7 +53,7 @@ export async function proxyBackend(request: Request, context: Context): Promise<
   const valid = validAdminPath(path, request.method) || validWarehousePath(path, request.method) || (path.length === 2 && (
     (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) ||
     (path[0] === "data" && resources.has(path[1]))
-  ));
+  )) || (path.length === 3 && path[0] === "auth" && path[1] === "me" && path[2] === "password" && request.method === "POST");
   if (!valid) return Response.json({ detail: "Endpoint không tồn tại." }, { status: 404 });
   try {
     const base = new URL(process.env.PHUB_API_BASE_URL || "http://127.0.0.1:8000");
