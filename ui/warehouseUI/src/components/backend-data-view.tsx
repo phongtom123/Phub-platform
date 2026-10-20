@@ -108,6 +108,22 @@ export default function BackendDataView({ resource }: { resource: string }) {
     finally { setSaving(false); }
   }
 
+  async function workflow(action: "confirm" | "cancel" | "dispatch" | "receive") {
+    if (!view.key) return;
+    let id: number;
+    try { id = Number(JSON.parse(view.key)[0]); } catch { setError("Mã phiếu không hợp lệ."); return; }
+    if (!Number.isInteger(id)) { setError("Mã phiếu không hợp lệ."); return; }
+    const group = resource === "receipts" ? "receipts" : "transfers";
+    setSaving(true); setError("");
+    try {
+      const response = await fetch(`/api/backend/warehouse/${group}/${id}/${action}`, { method: "POST", cache: "no-store" });
+      const body = response.status === 204 ? null : await response.json();
+      if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không thể cập nhật trạng thái phiếu.");
+      setVersion(value => value + 1);
+    } catch (err) { setError(err instanceof Error ? err.message : "Không thể cập nhật trạng thái phiếu."); }
+    finally { setSaving(false); }
+  }
+
   return <section className="live-data">
     <nav aria-label="Breadcrumb" className="live-tools"><a href="/">Tổng quan</a><span>›</span><a href={"/data/" + resource}>{meta?.title ?? resource}</a>{view.key && <><span>›</span><a href={"/data/" + resource + "?key=" + encodeURIComponent(view.key)}>Chi tiết</a></>}{(view.edit || view.create) && <span>› {view.create ? "Thêm mới" : "Chỉnh sửa"}</span>}</nav>
     {(view.key || view.create) && <button type="button" onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/data/" + resource)}>← Quay lại</button>}
@@ -126,7 +142,10 @@ export default function BackendDataView({ resource }: { resource: string }) {
         {resource === "accounts" && <label>{view.create ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu giữ nguyên)"}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} required={view.create} value={values.password ?? ""} onChange={e => change("password", e.target.value)} /></label>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving}>{saving ? "Đang lưu…" : "Lưu dữ liệu"}</button><a href={view.key ? "/data/" + resource + "?key=" + encodeURIComponent(view.key) : "/data/" + resource}>Hủy</a></div>
       </form> : view.key && result?.data[0] ? <>
-        <div className="live-tools">{meta.writable && <a className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</a>}</div>
+        <div className="live-tools">{meta.writable && <a className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</a>}
+          {resource === "receipts" && <><button className="live-primary" disabled={saving} onClick={() => void workflow("confirm")}>Xác nhận nhập</button><button disabled={saving} onClick={() => void workflow("cancel")}>Hủy phiếu</button></>}
+          {resource === "transfers" && <><button className="live-primary" disabled={saving} onClick={() => void workflow("dispatch")}>Giao chuyển</button><button className="live-primary" disabled={saving} onClick={() => void workflow("receive")}>Nhận chuyển</button><button disabled={saving} onClick={() => void workflow("cancel")}>Hủy phiếu</button></>}
+        </div>
         <div className="live-form">{meta.columns.map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{String(result.data[0][column.name] ?? "—")}{column.name === "duong_dan_anh" && /^https?:\/\//.test(String(result.data[0][column.name] ?? "")) && <img src={String(result.data[0][column.name])} alt="Ảnh sản phẩm" />}</div>)}</div>
       </> : <>
         <form className="live-tools" onSubmit={e => { e.preventDefault(); setSearch(query); setPage(1); }}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={() => setVersion(v => v + 1)}>Làm mới</button>{meta.writable && <a className="live-primary" href={"/data/" + resource + "?new=1"}>+ Thêm {meta.title.toLowerCase()}</a>}</form>
