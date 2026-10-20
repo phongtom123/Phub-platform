@@ -4,22 +4,47 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
-import { createOrder, getQuote } from "@/lib/shopping/client";
+import { createOrder, getQuote, saveProfile } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
 import type { Quote, OrderRequest, Receipt } from "@/lib/shopping/types";
 import styles from "./checkout.module.css";
+
+export interface DeliveryAddress {
+  id: string;
+  name: string;
+  phone: string;
+  address_line: string;
+  ward: string;
+  province: string;
+  note?: string;
+}
+
+const ADDRESSES_STORAGE_KEY = "phub_user_delivery_addresses_v1";
 
 export function CheckoutProcess({ confirmation = false }: { confirmation?: boolean }) {
   const router = useRouter();
   const shop = useShopping();
 
-  // Form states
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
-  const [addressLine, setAddressLine] = useState("");
-  const [province, setProvince] = useState("");
-  const [ward, setWard] = useState("");
-  const [note, setNote] = useState("");
+  // Address states
+  const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showAddressList, setShowAddressList] = useState(false);
+
+  // View mode: "order" (Trang đặt hàng) or "shipping_form" (Trang thông tin giao hàng)
+  const [viewMode, setViewMode] = useState<"order" | "shipping_form">("shipping_form");
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+
+  // Shipping Form fields
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formAddress, setFormAddress] = useState("");
+  const [formWard, setFormWard] = useState("");
+  const [formProvince, setFormProvince] = useState("");
+  const [formNote, setFormNote] = useState("");
+  const [formError, setFormError] = useState("");
+
+  // Order & Payment states
+  const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer">("cod");
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
@@ -31,18 +56,54 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
   const [submitError, setSubmitError] = useState("");
   const [orderReceipt, setOrderReceipt] = useState<Receipt | null>(null);
 
-  // Auto-fill recipient information from customer profile if available
+  // 1. Load addresses from localStorage and customer profile
   useEffect(() => {
-    if (shop.customer) {
-      if (shop.customer.name && !recipientName) setRecipientName(shop.customer.name);
-      if (shop.customer.phone && !recipientPhone) setRecipientPhone(shop.customer.phone);
-      if (shop.customer.address_line && !addressLine) setAddressLine(shop.customer.address_line);
-      if (shop.customer.province && !province) setProvince(shop.customer.province);
-      if (shop.customer.ward && !ward) setWard(shop.customer.ward);
+    let saved: DeliveryAddress[] = [];
+    try {
+      const stored = localStorage.getItem(ADDRESSES_STORAGE_KEY);
+      if (stored) saved = JSON.parse(stored);
+    } catch {
+      saved = [];
+    }
+
+    // If no saved address in localStorage but shop.customer has info, add customer profile address
+    if (saved.length === 0 && shop.customer) {
+      if (shop.customer.name && (shop.customer.phone || shop.customer.address_line)) {
+        const defaultAddr: DeliveryAddress = {
+          id: "addr_profile_" + (shop.customer.customer_id || "default"),
+          name: shop.customer.name || "",
+          phone: shop.customer.phone || "",
+          address_line: shop.customer.address_line || "",
+          ward: shop.customer.ward || "",
+          province: shop.customer.province || "",
+        };
+        saved = [defaultAddr];
+      }
+    }
+
+    setAddresses(saved);
+    if (saved.length > 0) {
+      setSelectedAddressId(saved[0].id);
+      setViewMode("order"); // Đã có thông tin giao hàng -> mở thẳng trang Đặt hàng
+    } else {
+      setViewMode("shipping_form"); // Chưa có thông tin giao hàng -> mở form Thông tin giao hàng
     }
   }, [shop.customer]);
 
-  // Fetch quote whenever selected lines or applied voucher changes
+  // Persist addresses to localStorage
+  const saveAddressesToStorage = (updated: DeliveryAddress[]) => {
+    setAddresses(updated);
+    try {
+      localStorage.setItem(ADDRESSES_STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  };
+
+  // Currently selected address
+  const currentAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0] || null;
+
+  // 2. Fetch quote whenever selected lines or applied voucher changes
   useEffect(() => {
     if (shop.selectedLines.length === 0) {
       setQuote(null);
@@ -80,6 +141,102 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
     return () => controller.abort();
   }, [shop.selectedLines, appliedVoucher]);
 
+  // Handle open shipping form for Add New
+  const handleOpenAddAddress = () => {
+    setEditingAddressId(null);
+    setFormName(shop.customer?.name || "");
+    setFormPhone(shop.customer?.phone || "");
+    setFormAddress("");
+    setFormWard("");
+    setFormProvince("");
+    setFormNote("");
+    setFormError("");
+    setViewMode("shipping_form");
+  };
+
+  // Handle open shipping form for Edit Existing
+  const handleOpenEditAddress = (addr: DeliveryAddress) => {
+    setEditingAddressId(addr.id);
+    setFormName(addr.name);
+    setFormPhone(addr.phone);
+    setFormAddress(addr.address_line);
+    setFormWard(addr.ward);
+    setFormProvince(addr.province);
+    setFormNote(addr.note || "");
+    setFormError("");
+    setViewMode("shipping_form");
+  };
+
+  // Handle Delete Address
+  const handleDeleteAddress = (idToDelete: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = addresses.filter((a) => a.id !== idToDelete);
+    saveAddressesToStorage(next);
+    if (selectedAddressId === idToDelete) {
+      setSelectedAddressId(next.length > 0 ? next[0].id : null);
+    }
+    if (next.length === 0) {
+      handleOpenAddAddress();
+    }
+  };
+
+  // 3. Handle Submit "Xác nhận" trên form Thông tin giao hàng
+  const handleConfirmShippingForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+
+    if (!formName.trim()) {
+      setFormError("Vui lòng nhập họ và tên người nhận.");
+      return;
+    }
+    if (!formPhone.trim()) {
+      setFormError("Vui lòng nhập số điện thoại người nhận.");
+      return;
+    }
+    if (!formAddress.trim()) {
+      setFormError("Vui lòng nhập địa chỉ chi tiết nhận hàng.");
+      return;
+    }
+
+    const addrId = editingAddressId || "addr_" + Date.now();
+    const newAddress: DeliveryAddress = {
+      id: addrId,
+      name: formName.trim(),
+      phone: formPhone.trim(),
+      address_line: formAddress.trim(),
+      ward: formWard.trim() || "Chưa chọn",
+      province: formProvince.trim() || "Chưa chọn",
+      note: formNote.trim() || undefined,
+    };
+
+    let nextAddresses: DeliveryAddress[];
+    if (editingAddressId) {
+      nextAddresses = addresses.map((a) => (a.id === editingAddressId ? newAddress : a));
+    } else {
+      nextAddresses = [newAddress, ...addresses];
+    }
+
+    saveAddressesToStorage(nextAddresses);
+    setSelectedAddressId(addrId);
+
+    // Save profile to backend in background if customer is logged in
+    if (shop.customer) {
+      saveProfile({
+        name: newAddress.name,
+        phone: newAddress.phone,
+        address_line: newAddress.address_line,
+        ward: newAddress.ward,
+        province: newAddress.province,
+      }).catch(() => {
+        // ignore background error
+      });
+    }
+
+    // Chuyển sang trang đặt hàng ngay lập tức
+    setShowAddressList(false);
+    setViewMode("order");
+  };
+
   const handleApplyVoucher = (e: React.FormEvent) => {
     e.preventDefault();
     const code = voucherCode.trim().toUpperCase();
@@ -93,18 +250,11 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
     setAppliedVoucher(null);
   };
 
-  const handlePlaceOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!recipientName.trim()) {
-      setSubmitError("Vui lòng nhập họ và tên người nhận.");
-      return;
-    }
-    if (!recipientPhone.trim()) {
-      setSubmitError("Vui lòng nhập số điện thoại người nhận.");
-      return;
-    }
-    if (!addressLine.trim()) {
-      setSubmitError("Vui lòng nhập địa chỉ nhận hàng.");
+  // 4. Handle "Đặt hàng" tại trang Đặt hàng
+  const handlePlaceOrder = async () => {
+    if (!currentAddress) {
+      setSubmitError("Vui lòng nhập và chọn thông tin giao hàng trước khi đặt hàng.");
+      setViewMode("shipping_form");
       return;
     }
     if (!quote || quote.items.length === 0) {
@@ -117,13 +267,13 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
     const orderBody: OrderRequest = {
       recipient: {
-        name: recipientName.trim(),
-        phone: recipientPhone.trim(),
-        address_line: addressLine.trim(),
-        province: province.trim() || "Chưa chọn",
-        ward: ward.trim() || "Chưa chọn",
+        name: currentAddress.name,
+        phone: currentAddress.phone,
+        address_line: currentAddress.address_line,
+        province: currentAddress.province,
+        ward: currentAddress.ward,
       },
-      note: note.trim() || null,
+      note: currentAddress.note || null,
       voucher_code: appliedVoucher,
       expected_discount: quote.discount_total,
       expected_total: quote.total,
@@ -165,7 +315,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               🎉 Đặt đơn hàng thành công!
             </h1>
             <p style={{ fontSize: 16, margin: "0 0 8px" }}>
-              Mã đơn hàng của bạn: <strong>{orderReceipt.id}</strong>
+              Mã đơn hàng: <strong>{orderReceipt.id}</strong>
             </p>
             <p style={{ color: "#555", fontSize: 14, margin: "0 0 20px" }}>
               Tổng tiền thanh toán: <strong>{money(orderReceipt.total, orderReceipt.currency)}</strong>
@@ -230,7 +380,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
             <span>›</span>
             <Link href="/cart">Giỏ hàng</Link>
             <span>›</span>
-            <Link href="/checkout">Thanh toán</Link>
+            <Link href="/checkout">Đặt hàng</Link>
           </nav>
           <div style={{ padding: "60px 20px", textAlign: "center" }}>
             <h2>Chưa có sản phẩm nào được chọn</h2>
@@ -258,6 +408,159 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
     );
   }
 
+  // ==========================================
+  // GIAO DIỆN 1: FORM "THÔNG TIN GIAO HÀNG"
+  // (Không có phương thức thanh toán, không có cột bên phải, tiêu đề "Thông tin giao hàng", nút "Xác nhận")
+  // ==========================================
+  if (viewMode === "shipping_form") {
+    return (
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <nav className={styles.breadcrumb}>
+            <Link href="/">Trang chủ</Link>
+            <span>›</span>
+            <Link href="/cart">Giỏ hàng</Link>
+            <span>›</span>
+            <strong>Thông tin giao hàng</strong>
+          </nav>
+
+          <div className={styles.headingRow} style={{ minHeight: "auto", paddingBottom: 20 }}>
+            <h1>Thông tin giao hàng</h1>
+            {shop.authStatus === "guest" && (
+              <Link href="/auth/login?redirect=/checkout" className={styles.signIn}>
+                Đăng nhập tài khoản
+              </Link>
+            )}
+          </div>
+
+          <div className={styles.singleFormContainer}>
+            {formError && (
+              <div
+                style={{
+                  padding: "12px 18px",
+                  background: "#ffebee",
+                  color: "#c62828",
+                  borderRadius: 6,
+                  marginBottom: 20,
+                  fontSize: 14,
+                }}
+              >
+                ⚠️ {formError}
+              </div>
+            )}
+
+            <form className={styles.form} onSubmit={handleConfirmShippingForm}>
+              <h2>{editingAddressId ? "Chỉnh sửa thông tin giao hàng" : "Nhập thông tin giao hàng"}</h2>
+
+              <label style={{ width: "100%" }}>
+                Họ và tên người nhận <em>*</em>
+                <input
+                  type="text"
+                  required
+                  maxLength={100}
+                  placeholder="Ví dụ: Nguyễn Văn A"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
+              </label>
+
+              <label style={{ width: "100%" }}>
+                Số điện thoại liên hệ <em>*</em>
+                <input
+                  type="tel"
+                  required
+                  maxLength={20}
+                  placeholder="Ví dụ: 0912345678"
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(e.target.value)}
+                />
+              </label>
+
+              <label style={{ width: "100%" }}>
+                Địa chỉ chi tiết (Số nhà, tên đường) <em>*</em>
+                <input
+                  type="text"
+                  required
+                  maxLength={200}
+                  placeholder="Ví dụ: 123 Đường Nguyễn Trãi"
+                  value={formAddress}
+                  onChange={(e) => setFormAddress(e.target.value)}
+                />
+              </label>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <label style={{ width: "100%" }}>
+                  Phường / Xã
+                  <input
+                    type="text"
+                    maxLength={100}
+                    placeholder="Ví dụ: Phường 2"
+                    value={formWard}
+                    onChange={(e) => setFormWard(e.target.value)}
+                  />
+                </label>
+                <label style={{ width: "100%" }}>
+                  Tỉnh / Thành phố
+                  <input
+                    type="text"
+                    maxLength={100}
+                    placeholder="Ví dụ: TP. Hồ Chí Minh"
+                    value={formProvince}
+                    onChange={(e) => setFormProvince(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              <label style={{ width: "100%" }}>
+                Ghi chú giao hàng (nếu có)
+                <input
+                  type="text"
+                  maxLength={250}
+                  placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi đến..."
+                  value={formNote}
+                  onChange={(e) => setFormNote(e.target.value)}
+                />
+              </label>
+
+              <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+                <button
+                  type="submit"
+                  className={styles.placeOrder}
+                  style={{ width: 180, fontSize: 15 }}
+                >
+                  Xác nhận
+                </button>
+
+                {addresses.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("order")}
+                    style={{
+                      height: 46,
+                      padding: "0 22px",
+                      background: "#fff",
+                      border: "1px solid #ccc",
+                      borderRadius: 24,
+                      fontSize: 14,
+                      color: "#555",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Hủy / Quay lại
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ==========================================
+  // GIAO DIỆN 2: TRANG "ĐẶT HÀNG"
+  // (Chọn phương thức thanh toán, chọn/sửa/xóa/thêm địa chỉ giao hàng, tóm tắt đơn hàng bên phải)
+  // ==========================================
   return (
     <main className={styles.page}>
       <div className={styles.container}>
@@ -266,11 +569,11 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
           <span>›</span>
           <Link href="/cart">Giỏ hàng</Link>
           <span>›</span>
-          <Link href="/checkout">Thanh toán</Link>
+          <strong>Đặt hàng</strong>
         </nav>
 
         <div className={styles.headingRow}>
-          <h1>Thanh toán & Đặt hàng</h1>
+          <h1>Đặt hàng</h1>
           {shop.authStatus === "guest" && (
             <Link href="/auth/login?redirect=/checkout" className={styles.signIn}>
               Đăng nhập tài khoản
@@ -295,106 +598,177 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
         <div className={styles.layout}>
           <div className={styles.checkoutMain}>
-            <form className={styles.form} onSubmit={handlePlaceOrder}>
-              <h2>1. Thông tin giao hàng</h2>
-
-              <label>
-                Họ và tên người nhận <em>*</em>
-                <input
-                  type="text"
-                  required
-                  maxLength={100}
-                  placeholder="Ví dụ: Nguyễn Văn A"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Số điện thoại liên hệ <em>*</em>
-                <input
-                  type="tel"
-                  required
-                  maxLength={20}
-                  placeholder="Ví dụ: 0912345678"
-                  value={recipientPhone}
-                  onChange={(e) => setRecipientPhone(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Địa chỉ chi tiết (Số nhà, đường) <em>*</em>
-                <input
-                  type="text"
-                  required
-                  maxLength={200}
-                  placeholder="Ví dụ: 123 Đường Nguyễn Trãi"
-                  value={addressLine}
-                  onChange={(e) => setAddressLine(e.target.value)}
-                />
-              </label>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, maxWidth: 520 }}>
-                <label style={{ width: "100%" }}>
-                  Phường / Xã
-                  <input
-                    type="text"
-                    maxLength={100}
-                    placeholder="Ví dụ: Phường 2"
-                    value={ward}
-                    onChange={(e) => setWard(e.target.value)}
-                  />
-                </label>
-                <label style={{ width: "100%" }}>
-                  Tỉnh / Thành phố
-                  <input
-                    type="text"
-                    maxLength={100}
-                    placeholder="Ví dụ: TP. Hồ Chí Minh"
-                    value={province}
-                    onChange={(e) => setProvince(e.target.value)}
-                  />
-                </label>
-              </div>
-
-              <label>
-                Ghi chú đơn hàng (nếu có)
-                <input
-                  type="text"
-                  maxLength={250}
-                  placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi đến..."
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-              </label>
-
-              <div className={styles.shippingMethods}>
-                <fieldset>
-                  <legend>2. Phương thức thanh toán</legend>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0" }}>
-                    <input type="radio" name="payment_method" defaultChecked />
-                    <span>Thanh toán khi nhận hàng (COD)</span>
-                  </label>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0" }}>
-                    <input type="radio" name="payment_method" />
-                    <span>Chuyển khoản ngân hàng (Qua mã QR / Tài khoản)</span>
-                  </label>
-                </fieldset>
-              </div>
-
-              <div style={{ marginTop: 24 }}>
+            {/* 1. KHỐI THÔNG TIN GIAO HÀNG */}
+            <div className={styles.addressBox}>
+              <div className={styles.addressBoxHeader}>
+                <h3>📍 Thông tin nhận hàng</h3>
                 <button
-                  type="submit"
-                  className={styles.placeOrder}
-                  disabled={submitting || quoteLoading || !quote}
-                  style={{ width: "100%", maxWidth: 300, fontSize: 16 }}
+                  type="button"
+                  className={styles.changeAddressBtn}
+                  onClick={() => setShowAddressList(!showAddressList)}
                 >
-                  {submitting ? "Đang xử lý đặt hàng..." : "Xác nhận đặt hàng"}
+                  {showAddressList ? "Đóng danh sách" : "Thay đổi thông tin giao hàng"}
                 </button>
               </div>
-            </form>
+
+              {currentAddress ? (
+                <div className={styles.addressDetails}>
+                  <div>
+                    <strong>{currentAddress.name}</strong> — <span>{currentAddress.phone}</span>
+                  </div>
+                  <div style={{ color: "#555", marginTop: 4 }}>
+                    {[currentAddress.address_line, currentAddress.ward, currentAddress.province]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                  {currentAddress.note && (
+                    <div style={{ color: "#777", fontSize: 13, marginTop: 4 }}>
+                      Ghi chú: {currentAddress.note}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ color: "#c62828", fontSize: 14 }}>
+                  Chưa có thông tin nhận hàng. Vui lòng thêm thông tin để tiếp tục.
+                </div>
+              )}
+
+              {/* Danh sách địa chỉ mở rộng (có nút radio tròn bên trái, nút sửa, xóa, thêm) */}
+              {showAddressList && (
+                <div className={styles.addressList}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#444", margin: "4px 0 8px" }}>
+                    Chọn một địa chỉ nhận hàng:
+                  </p>
+
+                  {addresses.map((addr) => {
+                    const isSelected = addr.id === selectedAddressId;
+                    return (
+                      <div
+                        key={addr.id}
+                        className={`${styles.addressOption} ${
+                          isSelected ? styles.addressOptionSelected : ""
+                        }`}
+                        onClick={() => setSelectedAddressId(addr.id)}
+                      >
+                        <input
+                          type="radio"
+                          name="selected_delivery_address"
+                          className={styles.radioCircle}
+                          checked={isSelected}
+                          onChange={() => setSelectedAddressId(addr.id)}
+                        />
+                        <div className={styles.addressOptionContent}>
+                          <div style={{ fontWeight: 600 }}>
+                            {addr.name} — <span style={{ fontWeight: 400 }}>{addr.phone}</span>
+                          </div>
+                          <div style={{ color: "#555" }}>
+                            {[addr.address_line, addr.ward, addr.province].filter(Boolean).join(", ")}
+                          </div>
+                        </div>
+                        <div className={styles.addressActions}>
+                          <button
+                            type="button"
+                            className={styles.actionBtnText}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditAddress(addr);
+                            }}
+                          >
+                            Chỉnh sửa
+                          </button>
+                          {addresses.length > 1 && (
+                            <button
+                              type="button"
+                              className={`${styles.actionBtnText} ${styles.deleteBtnText}`}
+                              onClick={(e) => handleDeleteAddress(addr.id, e)}
+                            >
+                              Xóa
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    className={styles.addNewAddressBtn}
+                    onClick={handleOpenAddAddress}
+                  >
+                    + Thêm thông tin giao hàng mới
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 2. KHỐI PHƯƠNG THỨC THANH TOÁN */}
+            <div className={styles.shippingMethods} style={{ borderTop: 0, marginTop: 0 }}>
+              <fieldset>
+                <legend style={{ fontSize: 16, marginBottom: 12 }}>💳 Phương thức thanh toán</legend>
+
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 14px",
+                    border: "1px solid #cdd5f0",
+                    borderRadius: 6,
+                    marginBottom: 10,
+                    cursor: "pointer",
+                    background: paymentMethod === "cod" ? "#f3f6ff" : "#fff",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="payment_choice"
+                    className={styles.radioCircle}
+                    checked={paymentMethod === "cod"}
+                    onChange={() => setPaymentMethod("cod")}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>
+                      Thanh toán khi nhận hàng (COD)
+                    </div>
+                    <div style={{ fontSize: 12, color: "#666" }}>
+                      Thanh toán bằng tiền mặt khi shipper giao hàng đến nơi.
+                    </div>
+                  </div>
+                </label>
+
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 14px",
+                    border: "1px solid #cdd5f0",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    background: paymentMethod === "bank_transfer" ? "#f3f6ff" : "#fff",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="payment_choice"
+                    className={styles.radioCircle}
+                    checked={paymentMethod === "bank_transfer"}
+                    onChange={() => setPaymentMethod("bank_transfer")}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>
+                      Chuyển khoản ngân hàng (Qua mã QR / Tài khoản)
+                    </div>
+                    <div style={{ fontSize: 12, color: "#666" }}>
+                      Chuyển khoản qua tài khoản ngân hàng hoặc quét mã QR sau khi đặt đơn.
+                    </div>
+                  </div>
+                </label>
+              </fieldset>
+            </div>
           </div>
 
+          {/* 3. CỘT PHẢI: ĐƠN HÀNG CỦA BẠN & NÚT ĐẶT HÀNG */}
           <aside className={styles.summary}>
             <h2>Đơn hàng của bạn</h2>
             <div className={styles.summaryHead}>
@@ -517,6 +891,19 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                   </p>
                 </>
               ) : null}
+            </div>
+
+            {/* Nút đặt hàng */}
+            <div style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                className={styles.placeOrder}
+                disabled={submitting || quoteLoading || !quote || !currentAddress}
+                onClick={handlePlaceOrder}
+                style={{ width: "100%", fontSize: 16, height: 48 }}
+              >
+                {submitting ? "Đang xử lý đặt hàng..." : "Đặt hàng"}
+              </button>
             </div>
           </aside>
         </div>
