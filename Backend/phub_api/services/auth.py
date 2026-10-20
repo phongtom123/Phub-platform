@@ -1,20 +1,20 @@
-import hashlib
-import os
-import time
 from datetime import datetime, timedelta, timezone
 from threading import Lock
 from uuid import uuid4
-from postgrest.exceptions import APIError
+import hashlib
+import time
 
-import jwt
-from fastapi import HTTPException, Request, Response
+from fastapi import HTTPException
+from postgrest.exceptions import APIError
 from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
-from pwdlib.exceptions import UnknownHashError
+import jwt
 
-from phub_api.config.settings import COOKIE_NAME, TOKEN_TTL_SECONDS, jwt_secret
+from phub_api.config.settings import TOKEN_TTL_SECONDS, jwt_secret
 from phub_api.models.user import User
+from phub_api.repositories.auth import AuthRepository
 from phub_api.schemas.auth import LoginBody, RegisterBody
 
 passwords = PasswordHash((Argon2Hasher(), BcryptHasher()))
@@ -24,14 +24,14 @@ registration_attempts: dict[str, tuple[float, int]] = {}
 attempt_lock = Lock()
 
 
-def identity(account: dict, db) -> User:
+def identity(account: dict, repository: AuthRepository) -> User:
     if account.get("trang_thai") != 1:
         raise HTTPException(401, "Tài khoản không hoạt động.")
     employee, customer = account.get("ma_nhan_vien"), account.get("ma_kh")
     if bool(employee) == bool(customer):
         raise HTTPException(403, "Tài khoản chưa được gán đúng người dùng.")
     if employee:
-        rows = db.table("NHAN_VIEN").select("ma_nhan_vien,ho_ten,loai_nhan_vien,ma_kho,trang_thai").eq("ma_nhan_vien", employee).limit(1).execute().data
+        rows = repository.employee(employee)
         if not rows or rows[0]["trang_thai"] != 1:
             raise HTTPException(403, "Nhân viên không hoạt động.")
         profile = rows[0]
@@ -39,7 +39,7 @@ def identity(account: dict, db) -> User:
         if role not in {"ADMIN", "THU_KHO"} or (role == "THU_KHO" and profile["ma_kho"] is None):
             raise HTTPException(403, "Chưa được phân quyền hoặc phân kho.")
         return User(account["ma_tk"], account["ten_tai_khoan"], role, profile["ho_ten"], employee_id=employee, warehouse_id=profile["ma_kho"])
-    rows = db.table("KHACH_HANG").select("ma_kh,ten_kh").eq("ma_kh", customer).limit(1).execute().data
+    rows = repository.customer(customer)
     if not rows:
         raise HTTPException(403, "Không tìm thấy khách hàng.")
     return User(account["ma_tk"], account["ten_tai_khoan"], "KHACH_HANG", rows[0]["ten_kh"], customer_id=customer)
@@ -63,8 +63,7 @@ def verify_access_token(token: str) -> dict:
     return claims
 
 
-def throttle(request: Request, attempts: dict[str, tuple[float, int]] = login_attempts, limit: int = 20) -> None:
-    host = request.client.host if request.client else "unknown"
+def throttle(host: str, attempts: dict[str, tuple[float, int]] = login_attempts, limit: int = 20) -> None:
     now = time.monotonic()
     with attempt_lock:
         expired = [key for key, (start, _) in attempts.items() if now - start >= 60]
@@ -83,21 +82,14 @@ def create_access_token(user: User, password_hash: str) -> str:
                        jwt_secret(), algorithm="HS256")
 
 
-def issue_session(response: Response, user: User, password_hash: str) -> None:
-    token = create_access_token(user, password_hash)
-    response.set_cookie(COOKIE_NAME, token, httponly=True, secure=os.getenv("COOKIE_SECURE", "false").lower() == "true",
-                        samesite="lax", max_age=TOKEN_TTL_SECONDS, path="/")
-    response.headers["Cache-Control"] = "no-store"
-
-
-def authenticate_credentials(body: LoginBody, request: Request, db) -> tuple[User, str]:
-    throttle(request)
+def authenticate_credentials(body: LoginBody, host: str, repository: AuthRepository) -> tuple[User, str]:
+    throttle(host)
     jwt_secret()
     username = body.username.strip()
     column = "email" if "@" in username else "ten_tai_khoan"
     if column == "email":
         username = username.lower()
-    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq(column, username).limit(1).execute().data
+    rows = repository.login_account(column, username)
     account = rows[0] if rows else None
     try:
         valid = passwords.verify(body.password, account["mat_khau_hash"] if account else dummy_hash)
@@ -105,23 +97,23 @@ def authenticate_credentials(body: LoginBody, request: Request, db) -> tuple[Use
         valid = False
     if not account or not valid:
         raise HTTPException(401, "Tài khoản hoặc mật khẩu không đúng.")
-    user = identity(account, db)
+    user = identity(account, repository)
     return user, account["mat_khau_hash"]
 
 
-def register_customer(body: RegisterBody, db) -> tuple[User, str]:
+def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[User, str]:
     jwt_secret()
     password_hash = passwords.hash(body.password)
     customer_id = "KH_" + uuid4().hex
     try:
-        result = db.rpc("customer_register_v1", {
+        result = repository.register_customer({
             "p_username": body.username,
             "p_email": body.email,
             "p_password_hash": password_hash,
             "p_customer_id": customer_id,
             "p_name": body.name,
             "p_phone": body.phone,
-        }).execute().data
+        })
     except APIError as exc:
         code = str(exc.code)
         if code == "PGRST202":
@@ -138,3 +130,20 @@ def register_customer(body: RegisterBody, db) -> tuple[User, str]:
         name=result["name"], customer_id=result["customer_id"],
     )
     return user, password_hash
+
+
+class AuthService:
+    def __init__(self, repository: AuthRepository):
+        self.repository = repository
+
+    def authenticate(self, body: LoginBody, host: str):
+        return authenticate_credentials(body, host, self.repository)
+
+    def register(self, body: RegisterBody):
+        return register_customer(body, self.repository)
+
+    def current_user(self, claims: dict) -> User:
+        rows = self.repository.account(claims["sub"])
+        if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
+            raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.", headers={"WWW-Authenticate": "Bearer"})
+        return identity(rows[0], self.repository)

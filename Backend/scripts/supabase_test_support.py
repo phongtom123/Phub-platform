@@ -10,20 +10,20 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from phub_api.repositories.catalog import CatalogRepository
 from phub_api.dependencies.catalog import get_repository as catalog_repository
-from phub_api.api.catalog import router as catalog_router
+from phub_api.controllers.catalog import router as catalog_router
 from phub_api.repositories.commerce import CommerceRepository
 from phub_api.dependencies.commerce import get_repository as commerce_repository
-from phub_api.api.commerce import router as commerce_router
-from phub_api.api.health import router as health_router
+from phub_api.controllers.commerce import router as commerce_router
+from phub_api.controllers.health import router as health_router
 from phub_api.repositories.orders import OrderRepository
 from phub_api.dependencies.orders import get_repository as order_repository
-from phub_api.api.orders import router as order_router
+from phub_api.controllers.orders import router as order_router
 from phub_api.models.customer import CurrentCustomer
 from phub_api.dependencies.customer import require_customer
 from phub_api.middleware.payment_errors import PaymentError
 from phub_api.repositories.payments import PaymentRepository
 from phub_api.dependencies.payments import get_repository as payment_repository
-from phub_api.api.payments import router as payment_router
+from phub_api.controllers.payments import router as payment_router
 
 COOKIE = "phub-supabase-test-session"
 SESSION_SECONDS = 3600

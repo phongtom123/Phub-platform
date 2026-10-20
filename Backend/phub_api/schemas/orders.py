@@ -2,7 +2,15 @@ from decimal import Decimal
 from typing import Annotated, Literal
 import re
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_serializer, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictInt,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from phub_api.schemas.catalog import clean_text
 

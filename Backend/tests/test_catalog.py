@@ -11,7 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest.exceptions import APIError
 
-from phub_api.repositories.catalog import specifications_from_text
+from phub_api.services.catalog import specifications_from_text
+from phub_api.services.catalog import CatalogService
 
 
 def test_public_list_contract_and_database_visibility_filters(catalog_client):
@@ -252,7 +253,7 @@ def test_categories_and_children_read_all_database_pages(catalog_client):
             ]
         return httpx.Response(200, json=rows)
     state["handler"] = handle
-    categories = repository.list_categories()
+    categories = CatalogService(repository).list_categories()
     assert len(categories) == 501
     assert categories[-1].id == "LATE" and len(requests) == 3
 

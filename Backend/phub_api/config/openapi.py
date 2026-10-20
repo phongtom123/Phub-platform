@@ -4,10 +4,11 @@ import json
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
-from phub_api.schemas.api_contracts import ORIGIN_DOCUMENTATION
-from phub_api.api.examples import SESSION_EXAMPLE, key_example, payload_example, row_example
 from phub_api.config.settings import COOKIE_NAME
-from phub_api.models.resources import CUSTOMER_READ, ENUMS, RESOURCES, SYSTEM_FIELDS, payload_model, public_columns
+from phub_api.models.resources import CUSTOMER_READ, ENUMS, RESOURCES, SYSTEM_FIELDS, public_columns
+from phub_api.schemas.api_contracts import ORIGIN_DOCUMENTATION
+from phub_api.schemas.examples import SESSION_EXAMPLE, key_example, payload_example, row_example
+from phub_api.schemas.resources import payload_model
 
 DESCRIPTION = """
 ## Nơi quản lý đặc tả PHUB API

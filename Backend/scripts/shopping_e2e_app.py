@@ -11,18 +11,18 @@ from postgrest import SyncPostgrestClient
 
 from phub_api.repositories.catalog import CatalogRepository
 from phub_api.dependencies.catalog import get_repository as catalog_repository
-from phub_api.api.catalog import router as catalog_router
+from phub_api.controllers.catalog import router as catalog_router
 from phub_api.repositories.commerce import CommerceRepository
 from phub_api.dependencies.commerce import get_repository as commerce_repository
-from phub_api.api.commerce import router as commerce_router
+from phub_api.controllers.commerce import router as commerce_router
 from phub_api.models.customer import CurrentCustomer
 from phub_api.dependencies.customer import require_customer
 from phub_api.repositories.payments import PaymentRepository
-from phub_api.repositories.payments import public_transaction
+from phub_api.services.payments import public_transaction
 from phub_api.middleware.payment_errors import PaymentError
 from phub_api.dependencies.payments import get_payment_requests
 from phub_api.dependencies.payments import get_repository as payment_repository
-from phub_api.api.payments import router as payment_router
+from phub_api.controllers.payments import router as payment_router
 
 CONTROL_KEY = os.getenv("PHUB_E2E_CONTROL_KEY", "")
 if os.getenv("PHUB_E2E_MODE") != "isolated-fixtures" or len(CONTROL_KEY) < 32:

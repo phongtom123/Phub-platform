@@ -4,7 +4,8 @@ from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBea
 from phub_api.config.database import get_supabase
 from phub_api.config.settings import COOKIE_NAME
 from phub_api.models.user import User
-from phub_api.services.auth import identity, password_version, verify_access_token
+from phub_api.repositories.auth import AuthRepository
+from phub_api.services.auth import AuthService, verify_access_token
 
 bearer_auth = HTTPBearer(
     scheme_name="BearerAuth", bearerFormat="JWT", auto_error=False,
@@ -29,12 +30,12 @@ def session_claims(
     return verify_access_token(token)
 
 
-def current_user(claims: dict = Depends(session_claims), db=Depends(get_supabase)) -> User:
-    account_id = claims["sub"]
-    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", account_id).limit(1).execute().data
-    if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
-        raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.", headers={"WWW-Authenticate": "Bearer"})
-    return identity(rows[0], db)
+def get_auth_service(db=Depends(get_supabase)) -> AuthService:
+    return AuthService(AuthRepository(db))
+
+
+def current_user(claims: dict = Depends(session_claims), service: AuthService = Depends(get_auth_service)) -> User:
+    return service.current_user(claims)
 
 
 def require_admin(user: User = Depends(current_user)) -> User:

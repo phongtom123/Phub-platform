@@ -1,5 +1,3 @@
-import json
-import re
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -7,30 +5,29 @@ from postgrest.exceptions import APIError
 from pwdlib.exceptions import UnknownHashError
 
 from phub_api.models.user import User
+from phub_api.repositories.admin_accounts import ACCOUNT_COLUMNS, AccountsRepository
+from phub_api.schemas.admin_accounts import (
+    AccountCreate,
+    AccountRead,
+    AccountUpdate,
+    NewAccountCreate,
+    RoleUpdate,
+)
 from phub_api.services.auth import passwords
-from phub_api.schemas.admin_accounts import AccountCreate, AccountRead, AccountUpdate, NewAccountCreate, RoleUpdate
-
-ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,email,ma_nhan_vien,ma_kh,trang_thai"
-EMPLOYEE_COLUMNS = "ma_nhan_vien,ho_ten,loai_nhan_vien,ma_kho,trang_thai"
 
 
-def literal_search(query: str, fields: tuple[str, ...]) -> str:
-    value = json.dumps(re.escape(query.strip()), ensure_ascii=False)
-    return ",".join(f"{field}.imatch.{value}" for field in fields)
-
-
-class Accounts:
-    def __init__(self, db, actor: User):
-        self.db, self.actor = db, actor
+class AccountsService:
+    def __init__(self, repository: AccountsRepository, actor: User):
+        self.repository, self.actor = repository, actor
 
     def employee(self, employee_id: str) -> dict:
-        rows = self.db.table("NHAN_VIEN").select(EMPLOYEE_COLUMNS).eq("ma_nhan_vien", employee_id).limit(1).execute().data
+        rows = self.repository.employee(employee_id)
         if not rows:
             raise HTTPException(422, "Nhân viên không tồn tại.")
         return rows[0]
 
     def account(self, account_id: str) -> dict:
-        rows = self.db.table("TAI_KHOAN").select(ACCOUNT_COLUMNS).eq("ma_tk", account_id).limit(1).execute().data
+        rows = self.repository.account(account_id)
         if not rows:
             raise HTTPException(404, "Không tìm thấy tài khoản.")
         return rows[0]
@@ -42,7 +39,7 @@ class Accounts:
             active = profile["trang_thai"] == 1
         else:
             if customer is None:
-                rows = self.db.table("KHACH_HANG").select("ma_kh,ten_kh").eq("ma_kh", row["ma_kh"]).limit(1).execute().data
+                rows = self.repository.customer(row["ma_kh"])
                 if not rows:
                     raise HTTPException(422, "Hồ sơ khách hàng không tồn tại.")
                 customer = rows[0]
@@ -55,32 +52,14 @@ class Accounts:
         return self.public(self.account(account_id))
 
     def page(self, page: int, page_size: int, q: str, status: int | None, role: str | None):
-        employee_join = "!inner" if role in {"ADMIN", "THU_KHO"} else ""
-        projection = ACCOUNT_COLUMNS + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh)"
-        query = self.db.table("TAI_KHOAN").select(projection, count="exact")
-        if q.strip():
-            query = query.or_(literal_search(q, ("ma_tk", "ten_tai_khoan", "email")))
-        if status is not None:
-            query = query.eq("trang_thai", status)
-        if role == "KHACH_HANG":
-            query = query.not_.is_("ma_kh", "null")
-        elif role:
-            query = query.eq("employee.loai_nhan_vien", role)
-        result = query.order("ma_tk").range((page - 1) * page_size, page * page_size - 1).execute()
+        result = self.repository.page(page, page_size, q, status, role)
         return {"data": [self.public(row, row.get("employee"), row.get("customer")) for row in result.data],
                 "total": result.count or 0, "page": page, "page_size": page_size}
 
     def owners(self, kind: str, page: int, page_size: int, q: str):
         employee = kind == "employees"
-        table = "NHAN_VIEN" if employee else "KHACH_HANG"
         key, name = ("ma_nhan_vien", "ho_ten") if employee else ("ma_kh", "ten_kh")
-        columns = EMPLOYEE_COLUMNS if employee else "ma_kh,ten_kh"
-        query = self.db.table(table).select(columns + ",account:TAI_KHOAN(ma_tk)", count="exact")
-        if employee:
-            query = query.eq("trang_thai", 1)
-        if q.strip():
-            query = query.or_(literal_search(q, (key, name)))
-        result = query.order(key).range((page - 1) * page_size, page * page_size - 1).execute()
+        result = self.repository.owners(kind, page, page_size, q)
         return {"data": [{"id": row[key], "name": row[name], "role": row["loai_nhan_vien"] if employee else "KHACH_HANG",
                           "ma_kho": row.get("ma_kho"), "has_account": bool(row.get("account"))} for row in result.data],
                 "total": result.count or 0, "page": page, "page_size": page_size}
@@ -95,15 +74,15 @@ class Accounts:
             if (profile["loai_nhan_vien"] == "ADMIN") != (profile.get("ma_kho") is None):
                 raise HTTPException(422, "Phân công kho của nhân viên chưa hợp lệ.")
             if profile["loai_nhan_vien"] == "THU_KHO":
-                warehouses = self.db.table("KHO").select("ma_kho,trang_thai").eq("ma_kho", profile["ma_kho"]).limit(1).execute().data
+                warehouses = self.repository.warehouse(profile["ma_kho"])
                 if not warehouses or warehouses[0]["trang_thai"] != 1:
                     raise HTTPException(422, "Kho được phân công không hoạt động.")
-        elif not self.db.table("KHACH_HANG").select("ma_kh").eq("ma_kh", owner).limit(1).execute().data:
+        elif not self.repository.customer(owner):
             raise HTTPException(422, "Khách hàng không tồn tại.")
-        if self.db.table("TAI_KHOAN").select("ma_tk").eq(field, owner).limit(1).execute().data:
+        if self.repository.owner_has_account(field, owner):
             raise HTTPException(409, "Người này đã có tài khoản. Mỗi người chỉ được có một tài khoản.")
         values = body.model_dump(exclude={"password"}) | {"mat_khau_hash": passwords.hash(body.password), "trang_thai": 1}
-        result = self.db.table("TAI_KHOAN").insert(values).execute().data
+        result = self.repository.insert(values)
         if not result:
             raise RuntimeError("Account insert returned no rows")
         return self.detail(body.ma_tk)
@@ -112,7 +91,7 @@ class Accounts:
         owner = body.new_owner
         owner_id = ("KH_" if owner.role == "KHACH_HANG" else "NV_") + uuid4().hex
         try:
-            result = self.db.rpc("admin_create_account_v1", {
+            result = self.repository.create_new({
                 "p_actor_account_id": self.actor.account_id,
                 "p_username": body.ten_tai_khoan,
                 "p_email": body.email,
@@ -121,18 +100,18 @@ class Accounts:
                 "p_name": owner.ho_ten,
                 "p_role": owner.role,
                 "p_warehouse_id": owner.ma_kho,
-            }).execute()
+            })
         except APIError as exc:
             if str(exc.code) == "PGRST202":
                 raise HTTPException(503, "Chưa cài chức năng tạo tài khoản mới trong database. Cần chạy migration 20261010_admin_account_creation.sql.") from None
             if str(exc.code) == "42501":
                 raise HTTPException(403, "Phiên quản trị không còn hợp lệ hoặc API chưa được cấp quyền gọi chức năng tạo tài khoản.") from None
             raise
-        return AccountRead.model_validate(result.data)
+        return AccountRead.model_validate(result)
 
     def update(self, account_id: str, body: AccountUpdate):
         self.account(account_id)
-        rows = self.db.table("TAI_KHOAN").update(body.model_dump(exclude_unset=True)).eq("ma_tk", account_id).execute().data
+        rows = self.repository.update(account_id, body.model_dump(exclude_unset=True))
         if not rows:
             raise HTTPException(404, "Không tìm thấy tài khoản.")
         return self.detail(account_id)
@@ -141,7 +120,7 @@ class Accounts:
         self.account(account_id)
         if account_id == self.actor.account_id and value != 1:
             raise HTTPException(409, "Không được khóa hoặc ẩn tài khoản đang đăng nhập.")
-        self.db.table("TAI_KHOAN").update({"trang_thai": value}).eq("ma_tk", account_id).execute()
+        self.repository.update(account_id, {"trang_thai": value})
         return self.detail(account_id)
 
     def role(self, account_id: str, body: RoleUpdate):
@@ -154,10 +133,10 @@ class Accounts:
         if account_id == self.actor.account_id and body.role != "ADMIN":
             raise HTTPException(409, "Không được hạ quyền tài khoản đang đăng nhập.")
         if body.ma_kho is not None:
-            rows = self.db.table("KHO").select("ma_kho,trang_thai").eq("ma_kho", body.ma_kho).limit(1).execute().data
+            rows = self.repository.warehouse(body.ma_kho)
             if not rows or rows[0]["trang_thai"] != 1:
                 raise HTTPException(422, "Kho không tồn tại hoặc đã ngừng hoạt động.")
-        rows = self.db.table("NHAN_VIEN").update({"loai_nhan_vien": body.role, "ma_kho": body.ma_kho}).eq("ma_nhan_vien", account["ma_nhan_vien"]).execute().data
+        rows = self.repository.update_employee(account["ma_nhan_vien"], {"loai_nhan_vien": body.role, "ma_kho": body.ma_kho})
         if not rows:
             raise HTTPException(404, "Không tìm thấy nhân viên.")
         return self.detail(account_id)
@@ -167,16 +146,17 @@ class Accounts:
         own = account_id == self.actor.account_id
         if own and current_password is None:
             raise HTTPException(409, "Đổi mật khẩu của bạn trong mục Tài khoản của tôi và xác nhận mật khẩu hiện tại.")
-        query = self.db.table("TAI_KHOAN").update({"mat_khau_hash": passwords.hash(password)}).eq("ma_tk", account_id)
+        new_hash = passwords.hash(password)
+        expected_hash = None
         if own:
-            rows = self.db.table("TAI_KHOAN").select("mat_khau_hash").eq("ma_tk", account_id).limit(1).execute().data
+            rows = self.repository.password_hash(account_id)
             try:
                 valid = bool(rows) and passwords.verify(current_password, rows[0]["mat_khau_hash"])
             except (ValueError, TypeError, UnknownHashError):
                 valid = False
             if not valid:
                 raise HTTPException(422, "Mật khẩu hiện tại không đúng.")
-            query = query.eq("mat_khau_hash", rows[0]["mat_khau_hash"])
-        if not query.execute().data:
+            expected_hash = rows[0]["mat_khau_hash"]
+        if not self.repository.set_password(account_id, new_hash, expected_hash):
             raise HTTPException(409, "Tài khoản đã thay đổi. Tải lại và thử lại.")
         return self.detail(account_id)

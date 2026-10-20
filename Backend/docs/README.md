@@ -176,8 +176,8 @@ Snapshot kiểm tra drift theo nội dung JSON, không theo thứ tự/format. E
 
 ```text
 phub_api/schemas/api_contracts.py  # Response/error/metadata contracts
-phub_api/api/examples.py   # Dữ liệu giả minh họa
-phub_api/api/documentation.py  # Metadata, tag, cookie auth, bảng cụ thể trong OpenAPI
+phub_api/schemas/examples.py   # Dữ liệu giả minh họa
+phub_api/config/openapi.py     # Metadata, tag, cookie auth, bảng cụ thể trong OpenAPI
 phub_api/models/resources.py    # Payload model dùng chung với validation runtime
 scripts/export_openapi.py  # Xuất và kiểm tra snapshot
 docs/openapi.json          # Snapshot cho Git/công cụ API

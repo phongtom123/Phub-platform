@@ -1,9 +1,10 @@
 # API catalog công khai
 
-> Tài liệu module trong cấu trúc MVC.
+> Tài liệu module theo kiến trúc Controller → Service → Repository.
 
 API dùng chung cho UI khách hàng desktop/mobile. Phần này chỉ bổ sung code trong
-ba lớp `phub_api/schemas/catalog.py`, `phub_api/repositories/catalog.py`, `phub_api/api/catalog.py`,
+các file `phub_api/controllers/catalog.py`, `phub_api/services/catalog.py`,
+`phub_api/repositories/catalog.py` và `phub_api/schemas/catalog.py`,
 đăng ký router ở `phub_api/main.py`, kiểm thử và tài liệu. Không đổi
 `/api/products`, Supabase client dùng chung, CORS, UI admin/kho hoặc cấu trúc DB.
 Catalog không cần migration SQL; dùng các bảng Supabase sẵn có của nhóm.

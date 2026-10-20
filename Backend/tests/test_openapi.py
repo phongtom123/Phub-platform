@@ -6,13 +6,14 @@ from fastapi.testclient import TestClient
 from openapi_spec_validator import validate
 from jsonschema import Draft202012Validator
 
-from phub_api.api.examples import key_example, payload_example, row_example
+from phub_api.schemas.examples import key_example, payload_example, row_example
 from phub_api.models.user import User
 from phub_api.dependencies.auth import current_user
 from phub_api.main import app
-from phub_api.models.resources import RESOURCES, SYSTEM_FIELDS, payload_model
+from phub_api.models.resources import RESOURCES, SYSTEM_FIELDS
+from phub_api.schemas.resources import payload_model
 from phub_api.config.database import get_supabase
-from phub_api.controllers.tables import validate_combined
+from phub_api.services.tables import validate_combined
 
 
 @pytest.fixture(scope="module")

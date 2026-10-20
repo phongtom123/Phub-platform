@@ -4,12 +4,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
-
-def clean_text(value: str) -> str:
-    value = value.strip()
-    if any(ord(char) < 32 or ord(char) == 127 for char in value):
-        raise ValueError("Không được chứa ký tự điều khiển.")
-    return value
+from phub_api.models.text import clean_text
 
 
 Identifier = Annotated[str, Field(min_length=1, max_length=100)]

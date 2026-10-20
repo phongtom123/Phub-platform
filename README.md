@@ -16,15 +16,14 @@ Phub-platform/
 ├── Backend/
 │   ├── phub_api/
 │   │   ├── main.py
-│   │   ├── api/
 │   │   ├── config/
-│   │   ├── controllers/
+│   │   ├── controllers/             # Endpoint + HTTP handler
 │   │   ├── dependencies/
 │   │   ├── middleware/
 │   │   ├── models/
-│   │   ├── repositories/
+│   │   ├── repositories/            # PostgREST, Storage và SQL RPC
 │   │   ├── schemas/
-│   │   └── services/
+│   │   └── services/                # Quy tắc nghiệp vụ
 │   ├── scripts/hash_password.py     # Tạo hash tài khoản đầu tiên
 │   ├── tests/
 │   ├── .env.example
@@ -48,6 +47,11 @@ Phub-platform/
 ```
 
 Các UI giữ dependencies riêng để tránh xung đột Next.js/React. Không chạy `npm install` tại root.
+
+Backend thống nhất **Controller → Service → Repository → Supabase**. Endpoint
+và handler nằm cùng controller; service không truy vấn database trực tiếp.
+Xem [kiến trúc và quy tắc phát triển](Backend/ARCHITECTURE.md). Refactor giữ
+nguyên API/OpenAPI, entrypoint và UI; không yêu cầu migration DB mới.
 
 Phần tài khoản admin đã nối API/Supabase, không dùng dữ liệu mẫu. Hướng dẫn
 và hợp đồng: [Admin UI](ui/adminUI/README.md), [API tài khoản](Backend/docs/modules/admin-accounts.md).

@@ -1,13 +1,14 @@
 from io import BytesIO
+from uuid import uuid4
 import logging
 import os
-from uuid import uuid4
 import warnings
 
-from fastapi import HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
+from fastapi import HTTPException
 from storage3.utils import StorageException
 
+from phub_api.repositories.media import MediaRepository
 from phub_api.schemas.media import UploadedImage
 
 logger = logging.getLogger(__name__)
@@ -40,23 +41,26 @@ def normalize_image(data: bytes, content_type: str) -> tuple[bytes, int, int]:
         raise HTTPException(422, "File ảnh bị hỏng hoặc không phải hình ảnh hợp lệ.") from None
 
 
-def store_image(data: bytes, content_type: str, db) -> UploadedImage:
+def store_image(data: bytes, content_type: str, repository: MediaRepository) -> UploadedImage:
     encoded, width, height = normalize_image(data, content_type)
     bucket = os.getenv("SUPABASE_MEDIA_BUCKET", "media").strip()
     if not bucket:
         raise HTTPException(503, "Chưa cấu hình bucket hình ảnh.")
     try:
-        info = db.storage.get_bucket(bucket)
-        if not info.public:
+        if not repository.is_public(bucket):
             raise HTTPException(503, "Bucket hình ảnh phải là public để hiển thị ảnh sản phẩm. Kiểm tra cấu hình Storage.")
-        files = db.storage.from_(bucket)
         path = f"products/{uuid4().hex}.webp"
-        files.upload(path=path, file=encoded, file_options={
-            "content-type": "image/webp", "cache-control": "31536000", "upsert": "false",
-        })
-        url = files.get_public_url(path)
+        url = repository.upload(bucket, path, encoded)
     except StorageException as exc:
         logger.warning("Media storage failed error_type=%s", type(exc).__name__)
         raise HTTPException(503, "Không tải được ảnh lên Storage. Kiểm tra bucket media, quyền và cấu hình Supabase.") from None
     return UploadedImage(bucket=bucket, path=path, url=url, content_type="image/webp",
                          size=len(encoded), width=width, height=height)
+
+
+class MediaService:
+    def __init__(self, repository: MediaRepository):
+        self.repository = repository
+
+    def store_image(self, data: bytes, content_type: str) -> UploadedImage:
+        return store_image(data, content_type, self.repository)

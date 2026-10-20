@@ -10,8 +10,9 @@ from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
 from phub_api.repositories.orders import OrderRepository
-from phub_api.dependencies.orders import get_repository
-from phub_api.api.orders import router
+from phub_api.services.orders import OrderService
+from phub_api.dependencies.orders import get_repository, get_service
+from phub_api.controllers.orders import router
 from phub_api.schemas.orders import CreateOrder
 from phub_api.config.orders import OrderSettings
 from phub_api.models.customer import CurrentCustomer
@@ -46,13 +47,15 @@ def orders_client(order_body):
         return httpx.Response(200, json=state["result"])
 
     with httpx.Client(transport=httpx.MockTransport(handle)) as transport:
-        repository = OrderRepository(SyncPostgrestClient("https://orders.test/rest/v1", http_client=transport), OrderSettings("reserve_on_order", "exclusive", Decimal("10"), "VND", 1))
+        repository = OrderRepository(SyncPostgrestClient("https://orders.test/rest/v1", http_client=transport))
+        service = OrderService(repository, OrderSettings("reserve_on_order", "exclusive", Decimal("10"), "VND", 1))
         app = FastAPI()
         app.include_router(router)
         app.dependency_overrides[get_repository] = lambda: repository
+        app.dependency_overrides[get_service] = lambda: service
         app.dependency_overrides[require_customer] = lambda: CurrentCustomer(customer_id="KH-ORDERS")
         with TestClient(app) as client:
-            yield client, state, requests, repository
+            yield client, state, requests, service
 
 
 def post(client, body, key=None):
@@ -209,8 +212,8 @@ def test_approved_defaults_and_explicit_bad_configuration_fail_closed(monkeypatc
         monkeypatch.delenv(name, raising=False)
     settings = OrderSettings.from_env()
     assert settings.tax_rate == 10 and settings.tax_application == "invoice"
-    client, _, requests, repository = orders_client
-    repository.settings = None
+    client, _, requests, service = orders_client
+    service.settings = None
     monkeypatch.setenv("ORDER_PRICE_TAX_MODE", "inclusive")
     response = post(client, order_body)
     assert response.status_code == 503 and response.json()["error"]["code"] == "ORDER_CONFIGURATION_REQUIRED"

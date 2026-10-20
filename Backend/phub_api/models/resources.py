@@ -1,13 +1,9 @@
-import re
 from dataclasses import dataclass
-from datetime import datetime
-from decimal import Decimal
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
-
-from pydantic import ConfigDict, Field, create_model
+import re
 
 CUSTOMER_READ = {"customers", "orders", "order-lines", "invoices", "payments", "voucher-uses"}
 
@@ -76,34 +72,5 @@ def public_columns(name: str) -> list[dict[str, Any]]:
     return [column for column in schema()[RESOURCES[name].table] if column["name"] != "mat_khau_hash"]
 
 
-@lru_cache
-def payload_model(name: str, patch: bool):
-    resource = RESOURCES[name]
-    fields = {}
-    for column in public_columns(name):
-        key, kind = column["name"], column["type"]
-        if key in SYSTEM_FIELDS.get(name, set()):
-            continue
-        if column["generated"] or (patch and key in resource.keys) or (patch and name == "products" and key == "sku"):
-            continue
-        annotation = int if kind == "int" else datetime if kind == "datetime" else Decimal if kind.startswith("decimal") else str
-        constraints = {}
-        if annotation is str:
-            constraints = {"min_length": 1, "max_length": 20000 if kind == "text" else 2000}
-        if annotation is Decimal:
-            constraints = {"ge": 0, "max_digits": 18, "decimal_places": 2}
-        if key == "bao_hanh_thang":
-            constraints = {"ge": 0}
-        if annotation is int and key.startswith("gioi_han"):
-            constraints = {"gt": 0}
-        if not column["required"]:
-            annotation = annotation | None
-        default = None if patch or not column["required"] else column["default"] if column["default"] is not None else ...
-        fields[key] = (annotation, Field(default=default, **constraints))
-    if name == "accounts":
-        fields["password"] = (str, Field(default=None if patch else ..., min_length=10, max_length=128,
-                                        description="Mật khẩu mới; server hash trước khi lưu. Khi PATCH, bỏ trường nếu không đổi mật khẩu.",
-                                        json_schema_extra={"writeOnly": True, "format": "password"}))
-    return create_model(f"{resource.table}{'Update' if patch else 'Create'}", __config__=ConfigDict(extra="forbid"), **fields)
 
 CUSTOMER_CHILDREN = {"order-lines", "invoices", "payments", "voucher-uses"}

@@ -1,3 +1,4 @@
+"""Reusable OpenAPI response descriptions."""
 from phub_api.schemas.catalog import ErrorResponse
 
 

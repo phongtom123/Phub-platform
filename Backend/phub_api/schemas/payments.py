@@ -1,4 +1,3 @@
-from phub_api.schemas.orders import InputModel
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal
@@ -6,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_serializer
 
 from phub_api.schemas.catalog import Pagination, clean_text
+from phub_api.schemas.orders import InputModel
 
 
 OrderId = Annotated[str, BeforeValidator(clean_text), Field(min_length=1, max_length=100)]

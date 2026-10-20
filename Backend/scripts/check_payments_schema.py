@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from phub_api.models.customer import CurrentCustomer
 from phub_api.middleware.payment_errors import PaymentError
 from phub_api.repositories.payments import PaymentRepository
+from phub_api.services.payments import PaymentService
 from phub_api.config.database import supabase
 
 
@@ -34,7 +35,7 @@ def check():
     order_id = "READ_ONLY_SCHEMA_CHECK_" + suffix
     customer = CurrentCustomer(customer_id="READ_ONLY_SCHEMA_CHECK_" + suffix)
     try:
-        repository.overview(order_id, customer)
+        PaymentService(repository).overview(order_id, customer)
     except PaymentError as exc:
         assert exc.status_code == 404 and exc.code == "ORDER_NOT_FOUND"
     else:
