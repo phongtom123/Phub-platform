@@ -17,6 +17,7 @@ const labels: Record<string, string> = {
   ma_nhan_vien: "Mã nhân viên", ho_ten: "Họ tên", loai_nhan_vien: "Vai trò", luong: "Lương", sdt: "Số điện thoại",
   ma_ncc: "Mã nhà cung cấp", ten_ncc: "Tên nhà cung cấp", ma_donhang: "Mã đơn hàng", kenh_ban: "Kênh bán",
   so_luong_ton: "Số lượng tồn", ma_phieu_nhap: "Mã phiếu nhập", ma_phieu_code: "Mã phiếu", ma_phieu_chuyen: "Mã chuyển kho",
+  ma_lich_su: "Mã lịch sử", loai_giao_dich: "Loại giao dịch", so_luong_thay_doi: "Số lượng thay đổi", so_luong_truoc: "Tồn trước", so_luong_sau: "Tồn sau", ma_tham_chieu: "Mã tham chiếu", nguoi_thuc_hien: "Người thực hiện", tao_luc: "Thời gian",
   ma_ctkm: "Mã chương trình", ten_chuong_trinh: "Tên chương trình", ngay_bat_dau: "Ngày bắt đầu", ngay_ket_thuc: "Ngày kết thúc",
   ma_voucher: "Mã voucher", ma_code: "Mã giảm giá", loai_giam: "Loại giảm", gia_tri_giam: "Giá trị giảm",
   giam_toi_da: "Giảm tối đa", gia_tri_don_toi_thieu: "Giá trị đơn tối thiểu", gioi_han_tong_luot: "Tổng lượt tối đa", gioi_han_moi_khach: "Lượt mỗi khách",

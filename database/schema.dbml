@@ -98,6 +98,20 @@ Table TON_KHO {
   }
 }
 
+Table LICH_SU_TON_KHO {
+  ma_lich_su int [pk, increment]
+  ma_kho int [not null]
+  sku varchar [not null]
+  loai_giao_dich varchar [not null]
+  so_luong_thay_doi int [not null]
+  so_luong_truoc int [not null]
+  so_luong_sau int [not null]
+  ma_tham_chieu varchar
+  nguoi_thuc_hien varchar
+  tao_luc datetime [not null]
+  ghi_chu text
+}
+
 // ======================================
 // 4. NHA CUNG CAP - NHAP HANG
 // ======================================
