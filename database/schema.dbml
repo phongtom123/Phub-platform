@@ -112,6 +112,26 @@ Table LICH_SU_TON_KHO {
   ghi_chu text
 }
 
+Table PHIEU_KIEM_KE {
+  ma_phieu_kiem int [pk, increment]
+  ma_phieu_code varchar [not null]
+  ma_kho int [not null]
+  ngay_tao datetime [not null]
+  trang_thai varchar [not null]
+  nguoi_tao varchar [not null]
+  nguoi_duyet varchar
+  ngay_duyet datetime
+  ghi_chu text
+}
+
+Table CT_KIEM_KE {
+  ma_phieu_kiem int [pk]
+  sku varchar [pk]
+  so_luong_he_thong int [not null]
+  so_luong_thuc_te int [not null]
+  chenh_lech int [not null]
+}
+
 // ======================================
 // 4. NHA CUNG CAP - NHAP HANG
 // ======================================

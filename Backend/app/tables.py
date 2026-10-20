@@ -60,6 +60,8 @@ def selected_columns(name: str, user: User) -> str:
         parts.append("scope:PHIEU_NHAP!inner(ma_kho)")
     if user.role == "THU_KHO" and name == "transfer-lines":
         parts.append("scope:PHIEU_CHUYEN_KHO!inner(ma_kho_xuat,ma_kho_nhan)")
+    if user.role == "THU_KHO" and name == "stocktake-lines":
+        parts.append("scope:PHIEU_KIEM_KE!inner(ma_kho)")
     return ",".join(parts)
 
 
@@ -68,7 +70,7 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
     if user.role == "KHACH_HANG":
         query = query.eq("scope.ma_kh" if name in CUSTOMER_CHILDREN else "ma_kh", user.customer_id)
     if user.role == "THU_KHO":
-        if name in {"warehouses", "inventory", "receipts", "stock-history"}:
+        if name in {"warehouses", "inventory", "receipts", "stock-history", "stocktakes"}:
             query = query.eq("ma_kho", user.warehouse_id)
         elif name == "receipt-lines":
             query = query.eq("scope.ma_kho", user.warehouse_id)
@@ -77,6 +79,8 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
             if name == "transfers" and search:
                 clause = f"and(or({clause}),or({search}))"
             query = query.or_(clause, reference_table="scope") if name == "transfer-lines" else query.or_(clause)
+        elif name == "stocktake-lines":
+            query = query.eq("scope.ma_kho", user.warehouse_id)
     # Exactly one top-level OR parameter. Never merge permission and text OR
     # with duplicate query parameters (PostgREST versions may interpret them differently).
     if search and not (user.role == "THU_KHO" and name == "transfers"):

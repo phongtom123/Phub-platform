@@ -8,6 +8,7 @@ export type ModuleKey =
   | "inventory"
   | "receipts"
   | "transfers"
+  | "stocktakes"
   | "suppliers"
   | "branches"
   | "employees"

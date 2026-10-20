@@ -19,6 +19,8 @@ const labels: Record<string, string> = {
   ma_ncc: "Mã nhà cung cấp", ten_ncc: "Tên nhà cung cấp", ma_donhang: "Mã đơn hàng", kenh_ban: "Kênh bán",
   so_luong_ton: "Số lượng tồn", ma_phieu_nhap: "Mã phiếu nhập", ma_phieu_code: "Mã phiếu", ma_phieu_chuyen: "Mã chuyển kho",
   ma_ctkm: "Mã chương trình", ten_chuong_trinh: "Tên chương trình", ngay_bat_dau: "Ngày bắt đầu", ngay_ket_thuc: "Ngày kết thúc",
+  ma_phieu_kiem: "Mã phiên kiểm kê", ngay_tao: "Ngày tạo", nguoi_tao: "Người tạo", nguoi_duyet: "Người duyệt", ngay_duyet: "Ngày duyệt",
+  so_luong_he_thong: "Tồn hệ thống", so_luong_thuc_te: "Tồn thực tế", chenh_lech: "Chênh lệch",
   ma_voucher: "Mã voucher", ma_code: "Mã giảm giá", loai_giam: "Loại giảm", gia_tri_giam: "Giá trị giảm",
   giam_toi_da: "Giảm tối đa", gia_tri_don_toi_thieu: "Giá trị đơn tối thiểu", gioi_han_tong_luot: "Tổng lượt tối đa", gioi_han_moi_khach: "Lượt mỗi khách",
   tong_tien_giam: "Tổng tiền giảm", tong_tien_sau_thue: "Tổng sau thuế", so_tien: "Số tiền",
@@ -121,6 +123,17 @@ export default function BackendDataView({ resource, embedded = false }: { resour
     finally { setSaving(false); }
   }
 
+  async function approveStocktake() {
+    const row = result?.data[0];
+    if (resource !== "stocktakes" || !row?.ma_phieu_kiem) return;
+    setSaving(true); setError("");
+    try {
+      await api(`warehouse/stocktakes/${row.ma_phieu_kiem}/approve`, { method: "POST" });
+      setVersion(value => value + 1);
+    } catch (err) { setError(err instanceof Error ? err.message : "Không thể duyệt phiên kiểm kê."); }
+    finally { setSaving(false); }
+  }
+
   return <section className="live-data">
     {(view.key || view.create || view.orderId) && <button type="button" onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign(href())}>← Quay lại</button>}
     <div className="live-section-heading"><h2>{embedded ? "Danh sách đơn hàng" : meta?.title ?? "Đang tải…"}</h2>{embedded && <a href={dataHref("orders")}>Xem tất cả đơn hàng →</a>}</div>
@@ -138,7 +151,7 @@ export default function BackendDataView({ resource, embedded = false }: { resour
         {resource === "accounts" && <label>{view.create ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu giữ nguyên)"}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} required={view.create} value={values.password ?? ""} onChange={e => change("password", e.target.value)} /></label>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving}>{saving ? "Đang lưu…" : "Lưu dữ liệu"}</button><a href={dataHref(resource, { key: view.key, orderId: view.orderId })}>Hủy</a></div>
       </form> : view.key && result?.data[0] ? <>
-        <div className="live-tools">{meta.writable && <a className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</a>}</div>
+        <div className="live-tools">{meta.writable && <a className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</a>}{resource === "stocktakes" && result.data[0].trang_thai === "CHO_DUYET" && <button className="live-primary" disabled={saving} onClick={() => void approveStocktake()}>Duyệt và cập nhật tồn</button>}</div>
         <div className="live-form">{meta.columns.map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{String(result.data[0][column.name] ?? "—")}{column.name === "duong_dan_anh" && /^https?:\/\//.test(String(result.data[0][column.name] ?? "")) && <img src={String(result.data[0][column.name])} alt="Ảnh sản phẩm" />}</div>)}</div>
         {resource === "orders" && typeof result.data[0].ma_donhang === "string" && <section className="live-related">
           <h3>Thông tin liên quan đến đơn hàng</h3>

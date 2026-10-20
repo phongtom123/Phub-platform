@@ -29,6 +29,8 @@ RESOURCES = {
     "products": Resource("SAN_PHAM", "Sản phẩm", ("ma_sp",), True, True),
     "inventory": Resource("TON_KHO", "Tồn kho", ("ma_kho", "sku"), warehouse=True),
     "stock-history": Resource("LICH_SU_TON_KHO", "Lịch sử tồn kho", ("ma_lich_su",), warehouse=True),
+    "stocktakes": Resource("PHIEU_KIEM_KE", "Phiên kiểm kê", ("ma_phieu_kiem",), warehouse=True),
+    "stocktake-lines": Resource("CT_KIEM_KE", "Chi tiết kiểm kê", ("ma_phieu_kiem", "sku"), warehouse=True),
     "suppliers": Resource("NHA_CUNG_CAP", "Nhà cung cấp", ("ma_ncc",), True, True),
     "receipts": Resource("PHIEU_NHAP", "Phiếu nhập", ("ma_phieu_nhap",), warehouse=True),
     "receipt-lines": Resource("CT_PHIEU_NHAP", "Chi tiết phiếu nhập", ("ma_phieu_nhap", "sku"), warehouse=True),

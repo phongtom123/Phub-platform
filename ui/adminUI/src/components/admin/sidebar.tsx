@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Building2,
+  ClipboardCheck,
   ChevronDown,
   CreditCard,
   FileInput,
@@ -48,6 +49,7 @@ const navigation = [
       ["inventory", "Tồn kho", Warehouse],
       ["receipts", "Phiếu nhập", FileInput],
       ["transfers", "Chuyển kho", Waypoints],
+      ["stocktakes", "Kiểm kê", ClipboardCheck],
       ["suppliers", "Nhà cung cấp", Truck],
     ],
   },

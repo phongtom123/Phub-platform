@@ -2,7 +2,7 @@
 type Context = { params: Promise<{ path: string[] }> };
 const resources = new Set([
   "resources", "warehouses", "employees", "accounts", "customers", "categories", "products",
-  "inventory", "stock-history", "suppliers", "receipts", "receipt-lines", "transfers", "transfer-lines", "orders",
+  "inventory", "stock-history", "stocktakes", "stocktake-lines", "suppliers", "receipts", "receipt-lines", "transfers", "transfer-lines", "orders",
   "order-lines", "invoices", "payments", "promotions", "vouchers", "voucher-uses",
 ]);
 
