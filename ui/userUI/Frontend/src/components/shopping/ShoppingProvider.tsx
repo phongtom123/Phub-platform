@@ -37,6 +37,7 @@ interface ShoppingState {
   clear: () => void;
   select: (sku: string, selected: boolean) => void;
   selectAll: () => void;
+  deselectAll: () => void;
   completeOrder: (
     items: { sku: string; quantity: number }[],
     customerId: string,
@@ -311,6 +312,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     linesRef.current.map(line => line.sku === sku ? { ...line, selected } : line),
   );
   const selectAll = () => persist(linesRef.current.map(line => ({ ...line, selected: true })));
+  const deselectAll = () => persist(linesRef.current.map(line => ({ ...line, selected: false })));
   const completeOrder = (
     items: { sku: string; quantity: number }[],
     customerId: string,
@@ -342,6 +344,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         clear,
         select,
         selectAll,
+        deselectAll,
         completeOrder,
         refreshCart,
         setNotice,

@@ -23,6 +23,17 @@ export function ShoppingCart() {
     0
   );
 
+  const isAllSelected =
+    shop.lines.length > 0 && shop.selectedLines.length === shop.lines.length;
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      shop.deselectAll();
+    } else {
+      shop.selectAll();
+    }
+  };
+
   return (
     <main className={styles.page}>
       <div className={styles.container}>
@@ -79,12 +90,9 @@ export function ShoppingCart() {
                 <input
                   type="checkbox"
                   className={styles.selectCircle}
-                  aria-label="Chọn tất cả sản phẩm"
-                  checked={
-                    shop.lines.length > 0 &&
-                    shop.selectedLines.length === shop.lines.length
-                  }
-                  onChange={() => shop.selectAll()}
+                  aria-label="Chọn hoặc bỏ chọn tất cả sản phẩm"
+                  checked={isAllSelected}
+                  onChange={handleToggleSelectAll}
                 />
                 <span>Sản phẩm</span>
                 <span>Đơn giá</span>
