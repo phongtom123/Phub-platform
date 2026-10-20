@@ -30,5 +30,5 @@ export default function WarehouseFrame({ children }: { children: ReactNode }) {
     if (!response.ok) { window.alert("Không đăng xuất được. Thử lại sau."); return; }
     window.location.assign(adminLoginUrl);
   };
-  return <div className="app-shell"><Sidebar user={user} onLogout={logout} /><div className="main-shell"><Header user={user} /><main className="main-content">{children}<footer className="app-footer">PHUB Warehouse · Dữ liệu theo kho được phân công</footer></main></div></div>;
+  return <div className="app-shell warehouse-scope"><Sidebar user={user} onLogout={logout} /><div className="main-shell"><Header user={user} /><main className="main-content">{children}<footer className="app-footer">PHUB Warehouse · Dữ liệu theo kho được phân công</footer></main></div></div>;
 }

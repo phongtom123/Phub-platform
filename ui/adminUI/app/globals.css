@@ -3648,6 +3648,72 @@ body {
 .crumb a {
   font-size: 14px;
 }
+
+/* The admin and warehouse apps share one document. Keep the warehouse shell
+   isolated from the admin's generic .sidebar/.topbar rules. */
+.warehouse-scope .sidebar {
+  position: sticky;
+  inset: auto;
+  z-index: auto;
+  width: auto;
+  height: 100vh;
+  background: var(--nav);
+  border-right: 0;
+  padding: 23px 15px;
+}
+.warehouse-scope .topbar {
+  position: static;
+  z-index: auto;
+  height: 72px;
+  padding: 0 34px;
+  border-bottom: 1px solid var(--line);
+}
+.warehouse-scope .main-shell {
+  padding-left: 0;
+}
+.warehouse-scope .main-content {
+  max-width: 1550px;
+  padding: 30px 34px 24px;
+}
+.warehouse-scope .brand {
+  height: auto;
+  border: 0;
+  padding: 0 10px 29px;
+}
+.warehouse-scope .nav-item {
+  height: 42px;
+  padding: 0 12px;
+  margin: 3px 0;
+}
+.warehouse-scope .top-user .avatar {
+  width: 32px;
+  height: 32px;
+}
+
+@media (max-width: 1150px) {
+  .warehouse-scope .main-content {
+    padding: 25px 22px 20px;
+  }
+  .warehouse-scope .topbar {
+    padding: 0 22px;
+  }
+}
+
+@media (max-width: 700px) {
+  .warehouse-scope .sidebar {
+    position: relative;
+    height: 60px;
+    width: auto;
+    padding: 10px 15px;
+  }
+  .warehouse-scope .main-content {
+    padding: 21px 14px;
+  }
+  .warehouse-scope .topbar {
+    height: 58px;
+    padding: 0 15px;
+  }
+}
 .top-actions > label input {
   font-size: 14px;
 }
