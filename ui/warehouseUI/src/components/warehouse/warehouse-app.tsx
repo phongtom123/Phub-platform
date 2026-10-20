@@ -16,6 +16,7 @@ export default function WarehouseApp() {
   const segments = pathname.split("/"); const section = segments[1] as ModuleKey | undefined; const definition = section ? modules[section] : undefined;
   const dataResource = segments[1] === "data" ? segments[2] : undefined;
   const creating = segments[2] === "new" && (section === "receipts" || section === "transfers");
+  const editing = /^\d+$/.test(segments[2] ?? "") && segments[3] === "edit" && (section === "receipts" || section === "transfers");
   function addRecord() { router.push(`/${section}/new`); }
-  return <><WarehouseFrame>{creating ? <WarehouseWorkflowForm section={section!} /> : dataResource ? <BackendDataView resource={dataResource} /> : pathname === "/" ? <Dashboard/> : section === "account" || section === "settings" ? <AccountSettings section={section}/> : definition ? <ModuleView definition={definition} section={section!} onAdd={addRecord}/> : <Dashboard/>}</WarehouseFrame>{toast && <div className="toast" role="status">{toast}</div>}</>;
+  return <><WarehouseFrame>{creating || editing ? <WarehouseWorkflowForm section={section!} recordId={editing ? Number(segments[2]) : undefined} /> : dataResource ? <BackendDataView resource={dataResource} /> : pathname === "/" ? <Dashboard/> : section === "account" || section === "settings" ? <AccountSettings section={section}/> : definition ? <ModuleView definition={definition} section={section!} onAdd={addRecord}/> : <Dashboard/>}</WarehouseFrame>{toast && <div className="toast" role="status">{toast}</div>}</>;
 }

@@ -116,6 +116,34 @@ def list_dispatches(user: User = Depends(current_user), db=Depends(get_supabase)
     return list(grouped.values())
 
 
+@router.get("/receipts/{receipt_id}", summary="Chi tiết phiếu nhập và các dòng hàng")
+def receipt_detail(receipt_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
+    if user.role not in {"ADMIN", "THU_KHO"}:
+        raise HTTPException(403, "Role không được xem phiếu nhập.")
+    header_rows = db.table("PHIEU_NHAP").select("*").eq("ma_phieu_nhap", receipt_id).limit(1).execute().data
+    if not header_rows:
+        raise HTTPException(404, "Không tìm thấy phiếu nhập.")
+    header = header_rows[0]
+    if user.role == "THU_KHO" and header.get("ma_kho") != user.warehouse_id:
+        raise HTTPException(403, "Phiếu không thuộc kho được phân quyền.")
+    lines = db.table("CT_PHIEU_NHAP").select("sku,so_luong_nhap,gia_nhap").eq("ma_phieu_nhap", receipt_id).order("sku").execute().data
+    return {"header": header, "lines": lines}
+
+
+@router.get("/transfers/{transfer_id}", summary="Chi tiết phiếu chuyển và các dòng hàng")
+def transfer_detail(transfer_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
+    if user.role not in {"ADMIN", "THU_KHO"}:
+        raise HTTPException(403, "Role không được xem phiếu chuyển.")
+    header_rows = db.table("PHIEU_CHUYEN_KHO").select("*").eq("ma_phieu_chuyen", transfer_id).limit(1).execute().data
+    if not header_rows:
+        raise HTTPException(404, "Không tìm thấy phiếu chuyển.")
+    header = header_rows[0]
+    if user.role == "THU_KHO" and header.get("ma_kho_xuat") != user.warehouse_id and header.get("ma_kho_nhan") != user.warehouse_id:
+        raise HTTPException(403, "Phiếu không thuộc kho được phân quyền.")
+    lines = db.table("CT_CHUYEN_KHO").select("sku,so_luong").eq("ma_phieu_chuyen", transfer_id).order("sku").execute().data
+    return {"header": header, "lines": lines}
+
+
 @router.post("/dispatches/{order_id}/dispatch", response_model=OrderDispatchResult,
              summary="Xuất kho theo đơn hàng và trừ tồn trong một transaction")
 def dispatch_order(order_id: str, user: User = Depends(current_user), db=Depends(get_supabase)):

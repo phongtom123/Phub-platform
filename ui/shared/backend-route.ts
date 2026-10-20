@@ -33,6 +33,7 @@ function validWarehousePath(path: string[], method: string): boolean {
     return method === "POST";
   }
   if (path.length === 3 && ["receipts", "transfers"].includes(path[1])) {
+    if (method === "GET" && /^\d+$/.test(path[2])) return true;
     return path[2] === "draft" && method === "POST";
   }
   if (path.length === 4 && path[1] === "dispatches") {
