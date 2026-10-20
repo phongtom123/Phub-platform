@@ -26,6 +26,7 @@ function validAdminPath(path: string[], method: string): boolean {
 function validWarehousePath(path: string[], method: string): boolean {
   if (path[0] !== "warehouse") return false;
   if (path.length === 2 && path[1] === "options") return method === "GET";
+  if (path.length === 2 && path[1] === "summary") return method === "GET";
   if (path.length === 2 && path[1] === "dispatches") return method === "GET";
   if (path.length === 2 && path[1] === "stocktakes") return method === "GET";
   if (path.length === 3 && path[1] === "stocktakes" && path[2] === "draft") return method === "POST";

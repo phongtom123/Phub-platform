@@ -38,6 +38,31 @@ def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabas
     return {"warehouses": warehouses, "suppliers": suppliers, "products": products}
 
 
+@router.get("/summary", summary="Tổng quan số liệu kho theo phiên đăng nhập")
+def warehouse_summary(user: User = Depends(current_user), db=Depends(get_supabase)):
+    if user.role not in {"ADMIN", "THU_KHO"}:
+        raise HTTPException(403, "Role không được xem tổng quan kho.")
+    inventory = db.table("TON_KHO").select("sku,so_luong_ton").limit(5000)
+    receipts = db.table("PHIEU_NHAP").select("trang_thai").limit(5000)
+    transfers = db.table("PHIEU_CHUYEN_KHO").select("trang_thai,ma_kho_xuat,ma_kho_nhan").limit(5000)
+    if user.role == "THU_KHO":
+        if user.warehouse_id is None:
+            raise HTTPException(403, "Tài khoản thủ kho chưa được phân công kho.")
+        inventory = inventory.eq("ma_kho", user.warehouse_id)
+        receipts = receipts.eq("ma_kho", user.warehouse_id)
+        transfers = transfers.or_(f"ma_kho_xuat.eq.{user.warehouse_id},ma_kho_nhan.eq.{user.warehouse_id}")
+    inventory_rows = inventory.execute().data
+    receipt_rows = receipts.execute().data
+    transfer_rows = transfers.execute().data
+    return {
+        "sku_count": len({row.get("sku") for row in inventory_rows}),
+        "total_quantity": sum(int(row.get("so_luong_ton") or 0) for row in inventory_rows),
+        "low_stock_count": sum(1 for row in inventory_rows if int(row.get("so_luong_ton") or 0) <= 0),
+        "pending_receipts": sum(1 for row in receipt_rows if row.get("trang_thai") in {"NHAP", "CHO_DUYET"}),
+        "pending_transfers": sum(1 for row in transfer_rows if row.get("trang_thai") in {"NHAP", "DANG_CHUYEN"}),
+    }
+
+
 @router.get("/stocktakes", summary="Danh sách phiên kiểm kê theo kho")
 def list_stocktakes(user: User = Depends(current_user), db=Depends(get_supabase)):
     if user.role not in {"ADMIN", "THU_KHO"}:
