@@ -2225,6 +2225,77 @@ tbody tr:last-child td {
   }
 }
 
+/* Warehouse account/sidebar details must not inherit the admin form styles. */
+.warehouse-scope .account-panel {
+  overflow: hidden;
+}
+.warehouse-scope .account-panel > p[role="alert"],
+.warehouse-scope .account-panel > p[role="status"] {
+  margin: 22px;
+  color: var(--muted);
+}
+.warehouse-scope .account-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 4px 24px 8px;
+}
+.warehouse-scope .account-details > div {
+  min-width: 0;
+  padding: 15px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.warehouse-scope .account-details dt {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.warehouse-scope .account-details dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.warehouse-scope .account-note {
+  margin: 12px 24px 22px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f7f9fc;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.warehouse-scope .sidebar-user > span:not(.avatar) {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.warehouse-scope .sidebar-user strong,
+.warehouse-scope .sidebar-user small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.warehouse-scope .sidebar-user .user-logout {
+  flex: 0 0 31px;
+  margin-left: auto;
+}
+
+@media (max-width: 700px) {
+  .warehouse-scope .account-details {
+    grid-template-columns: 1fr;
+    padding: 4px 14px 8px;
+  }
+  .warehouse-scope .account-note {
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+}
+
 /* Readability pass: comfortable type sizes for daily admin use */
 body {
   font-size: 15px;
