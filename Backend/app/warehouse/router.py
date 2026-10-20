@@ -27,7 +27,12 @@ def _require_warehouse_scope(user: User, warehouse_id: int):
 def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabase)):
     if user.role not in {"ADMIN", "THU_KHO"}:
         raise HTTPException(403, "Role không được lập phiếu kho.")
-    warehouses = db.table("KHO").select("ma_kho,ten_kho").eq("trang_thai", 1).order("ma_kho").limit(500).execute().data
+    warehouse_query = db.table("KHO").select("ma_kho,ten_kho").eq("trang_thai", 1).order("ma_kho").limit(500)
+    if user.role == "THU_KHO":
+        if user.warehouse_id is None:
+            raise HTTPException(403, "Tài khoản thủ kho chưa được phân công kho.")
+        warehouse_query = warehouse_query.eq("ma_kho", user.warehouse_id)
+    warehouses = warehouse_query.execute().data
     suppliers = db.table("NHA_CUNG_CAP").select("ma_ncc,ten_ncc").eq("trang_thai", 1).order("ma_ncc").limit(500).execute().data
     products = db.table("SAN_PHAM").select("sku,ten_sp").eq("trang_thai", 1).order("sku").limit(1000).execute().data
     return {"warehouses": warehouses, "suppliers": suppliers, "products": products}
@@ -64,6 +69,12 @@ def create_stocktake(body: StocktakeDraftRequest, user: User = Depends(current_u
 def submit_stocktake(stocktake_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
     if user.role not in {"ADMIN", "THU_KHO"}:
         raise HTTPException(403, "Role không được gửi kiểm kê.")
+    if user.role == "THU_KHO":
+        row = db.table("PHIEU_KIEM_KE").select("ma_kho").eq("ma_phieu_kiem", stocktake_id).limit(1).execute().data
+        if not row:
+            raise HTTPException(404, "Không tìm thấy phiên kiểm kê.")
+        if row[0].get("ma_kho") != user.warehouse_id:
+            raise HTTPException(403, "Phiên kiểm kê không thuộc kho được phân quyền.")
     try:
         result = db.rpc("submit_stocktake", {"p_ma_phieu_kiem": stocktake_id}).execute().data
         return {"data": result}
