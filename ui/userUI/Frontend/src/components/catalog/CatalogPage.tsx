@@ -15,8 +15,6 @@ import { CatalogPreview } from "./CatalogPreview";
 import { CatalogStatus } from "./CatalogStatus";
 import { emptyFilters, type CatalogProduct } from "./catalogData";
 import styles from "./Catalog.module.css";
-import { useShopping } from "@/components/shopping/ShoppingProvider";
-import { AddToCartButton } from "@/components/shopping/AddToCartButton";
 
 export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   const { request, products, pagination, loading, error, metadata } = catalog;
@@ -34,7 +32,7 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
     const values = kind === "compare" ? compared : wished;
     const setValues = kind === "compare" ? setCompared : setWished;
     setValues(values.some(item => item.id === product.id) ? values.filter(item => item.id !== product.id) : [...values, product]);
-    setNotice("Đã cập nhật danh sách so sánh hoặc yêu thích tạm trên giao diện.");
+    setNotice("Đã cập nhật danh sách tạm trên giao diện. Chức năng tài khoản và đặt hàng chưa được kết nối.");
   }
   const chips = [
     ...filters.categories.map(id => ({ key: id, label: metadata.data.categories.find(option => option.id === id)?.label ?? id, next: { ...filters, categories: filters.categories.filter(value => value !== id) } })),
@@ -44,9 +42,6 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
       next: { ...filters, subcategories: filters.subcategories.filter(value => value !== id) },
     })),
     ...(filters.brand ? [{ key: "brand", label: filters.brand, next: { ...filters, brand: "" } }] : []),
-    ...(filters.minPrice || filters.maxPrice ? [{ key: "price", label: `${filters.minPrice || "0"} – ${filters.maxPrice || "không giới hạn"} ₫`, next: { ...filters, minPrice: "", maxPrice: "" } }] : []),
-    ...(filters.color ? [{ key: "color", label: metadata.data.colors.find(option => option.value === filters.color)?.label || filters.color, next: { ...filters, color: "" } }] : []),
-    ...(filters.stockStatus ? [{ key: "stock", label: filters.stockStatus === "in-stock" ? "Còn hàng" : "Hết hàng", next: { ...filters, stockStatus: "" as const } }] : []),
   ];
   return <div className={styles.catalog}>
     <div className={styles.container}>

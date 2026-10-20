@@ -1,4 +1,5 @@
 "use client";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -21,6 +22,7 @@ type Panel = Dropdown | "mobile" | "notice" | null;
 export default function AltHeader() {
   const router = useRouter();
   const pathname = usePathname();
+ const shop = useShopping();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);

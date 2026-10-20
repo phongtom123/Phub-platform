@@ -1,4 +1,4 @@
-import { storeProducts, formatCurrency } from "@/data/storefront-data";
+import { formatCurrency } from "@/data/storefront-data";
 import { catalogProducts } from "@/components/catalog/catalogData";
 
 export interface SearchSuggestion {
@@ -68,17 +68,6 @@ const sampleProducts: SearchSuggestion[] = [
     brand: "Samsung",
     imageSrc: "/images/catalog/product-placeholder.svg",
   },
-  ...storeProducts.map((p) => ({
-    id: p.id,
-    name: p.name,
-    sku: p.id.toUpperCase(),
-    price: p.price,
-    originalPrice: p.originalPrice,
-    currency: "VND",
-    category: p.category,
-    brand: p.brand,
-    imageSrc: "/images/catalog/product-placeholder.svg",
-  })),
   ...catalogProducts.map((p) => ({
     id: p.id,
     name: p.name,

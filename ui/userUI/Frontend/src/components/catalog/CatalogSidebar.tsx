@@ -8,7 +8,6 @@ import { CatalogSelectionPanel } from "./CatalogSelectionPanel";
 import { filterCount, type CatalogFilters, type CatalogProduct } from "./catalogData";
 import type { CatalogController } from "@/lib/catalog/useCatalog";
 import styles from "./Catalog.module.css";
-import { CatalogFilterFields } from "./CatalogFilterFields";
 
 interface Props {
   draft: CatalogFilters; onChange: (value: CatalogFilters) => void; onApply: () => void; onClear: () => void; onBrand: (brand: string) => void; activeBrand: string;
@@ -31,7 +30,7 @@ export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, act
           </div>
         </div>)}
       </Accordion>
-      {([{ section: "price", title: "Khoảng giá" }, { section: "color", title: "Màu sắc" }, { section: "stock", title: "Tình trạng tồn kho" }] as const).map(option => <Accordion key={option.section} title={option.title} className={styles.filterGroup}><CatalogFilterFields section={option.section} draft={draft} onChange={onChange} colors={metadata.data.colors}/></Accordion>)}
+      {["Khoảng giá", "Màu sắc", "Tình trạng tồn kho"].map(title => <Accordion key={title} title={title} className={styles.filterGroup}><FilterOption label="Chưa khả dụng" disabled /></Accordion>)}
       <div className={styles.apply}><Button onClick={onApply} disabled={metadata.loading}>Áp dụng ({filterCount(draft)})</Button></div>
     </section>
     {!filtersOnly && <>

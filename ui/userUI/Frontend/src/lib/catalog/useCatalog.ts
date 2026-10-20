@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type CatalogFilters, type CatalogSort } from "@/components/catalog/catalogData";
+import { emptyFilters, type CatalogFilters, type CatalogSort } from "@/components/catalog/catalogData";
 import { catalogProduct, type CatalogMetadata, type CatalogPagination, type CatalogRequest } from "./types";
-import { filtersFromParams, getMetadata, getProducts, queryFor } from "./client";
+import { getMetadata, getProducts, queryFor } from "./client";
 
 type CatalogItem = ReturnType<typeof catalogProduct>;
 type CatalogPageData = { products: CatalogItem[]; pagination: CatalogPagination };

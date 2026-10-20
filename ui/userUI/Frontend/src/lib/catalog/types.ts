@@ -11,15 +11,12 @@ export interface ApiProduct {
   images: { url: string; alt: string }[];
   specifications: { label: string; value: string }[];
   specifications_text: string | null;
-  color?: string | null;
-  stock_status?: "in-stock" | "out-of-stock" | null;
 }
 export interface CatalogSubcategory { id: string; label: string }
 export interface CatalogCategory { id: string; label: string; children: CatalogSubcategory[] }
 export interface CatalogMetadata {
   categories: CatalogCategory[];
   brands: { id: string; name: string }[];
-  colors: { value: string; label: string }[];
 }
 export interface CatalogPagination { page: number; page_size: number; total: number; total_pages: number }
 export interface ApiProductPage { items: ApiProduct[]; pagination: CatalogPagination }
