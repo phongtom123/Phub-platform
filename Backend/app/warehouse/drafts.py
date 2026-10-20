@@ -52,3 +52,18 @@ class WarehouseOptionsResult(BaseModel):
     warehouses: list[WarehouseOption]
     suppliers: list[SupplierOption]
     products: list[ProductOption]
+
+
+class StocktakeLineDraft(BaseModel):
+    sku: str = Field(min_length=1, max_length=200)
+    counted_quantity: int = Field(ge=0)
+
+
+class StocktakeDraftRequest(BaseModel):
+    warehouse_id: int
+    note: str | None = Field(default=None, max_length=20000)
+    lines: list[StocktakeLineDraft] = Field(min_length=1, max_length=1000)
+
+
+class StocktakeWorkflowResult(BaseModel):
+    data: dict[str, Any]

@@ -2284,6 +2284,57 @@ tbody tr:last-child td {
   flex: 0 0 31px;
   margin-left: auto;
 }
+.warehouse-scope .stocktake-panel {
+  margin-bottom: 16px;
+}
+.warehouse-scope .stocktake-form {
+  display: grid;
+  gap: 12px;
+  padding: 18px 22px 22px;
+}
+.warehouse-scope .stocktake-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px auto;
+  gap: 9px;
+}
+.warehouse-scope .stocktake-form select,
+.warehouse-scope .stocktake-form input,
+.warehouse-scope .stocktake-form textarea {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: #fff;
+}
+.warehouse-scope .stocktake-form textarea {
+  resize: vertical;
+}
+.warehouse-scope .stocktake-form button,
+.warehouse-scope .stocktake-panel .panel-head button,
+.warehouse-scope .stocktake-panel td button {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 12px;
+  background: #fff;
+  color: #445167;
+  cursor: pointer;
+}
+.warehouse-scope .stocktake-form .live-primary {
+  width: max-content;
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+@media (max-width: 700px) {
+  .warehouse-scope .stocktake-line {
+    grid-template-columns: 1fr;
+  }
+  .warehouse-scope .stocktake-form .live-primary {
+    width: 100%;
+  }
+}
 
 @media (max-width: 700px) {
   .warehouse-scope .account-details {

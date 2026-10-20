@@ -7,7 +7,7 @@ from .repository import ReceiptWorkflowError, WarehouseRepository
 from .schemas import OrderDispatchResult, ReceiptConfirmation, ReceiptWorkflowResult
 from .schemas import TransferWorkflowResult
 from .transfer_repository import TransferRepository, TransferWorkflowError
-from .drafts import DraftWorkflowResult, ReceiptDraftRequest, TransferDraftRequest, WarehouseOptionsResult
+from .drafts import DraftWorkflowResult, ReceiptDraftRequest, TransferDraftRequest, WarehouseOptionsResult, StocktakeDraftRequest, StocktakeWorkflowResult
 
 router = APIRouter(prefix="/api/warehouse", tags=["Warehouse Workflows"])
 
@@ -31,6 +31,57 @@ def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabas
     suppliers = db.table("NHA_CUNG_CAP").select("ma_ncc,ten_ncc").eq("trang_thai", 1).order("ma_ncc").limit(500).execute().data
     products = db.table("SAN_PHAM").select("sku,ten_sp").eq("trang_thai", 1).order("sku").limit(1000).execute().data
     return {"warehouses": warehouses, "suppliers": suppliers, "products": products}
+
+
+@router.get("/stocktakes", summary="Danh sách phiên kiểm kê theo kho")
+def list_stocktakes(user: User = Depends(current_user), db=Depends(get_supabase)):
+    if user.role not in {"ADMIN", "THU_KHO"}:
+        raise HTTPException(403, "Role không được xem kiểm kê.")
+    query = db.table("PHIEU_KIEM_KE").select("ma_phieu_kiem,ma_phieu_code,ma_kho,ngay_tao,trang_thai,nguoi_tao,nguoi_duyet,ngay_duyet,ghi_chu,warehouse:KHO(ten_kho)").order("ngay_tao", desc=True).limit(500)
+    if user.role == "THU_KHO":
+        query = query.eq("ma_kho", user.warehouse_id)
+    return query.execute().data
+
+
+@router.post("/stocktakes/draft", response_model=StocktakeWorkflowResult, status_code=201,
+             summary="Tạo phiên kiểm kê nháp")
+def create_stocktake(body: StocktakeDraftRequest, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_warehouse_scope(user, body.warehouse_id)
+    try:
+        result = db.rpc("create_stocktake_draft", {
+            "p_ma_kho": body.warehouse_id,
+            "p_nguoi_tao": user.employee_id,
+            "p_ghi_chu": body.note,
+            "p_lines": [line.model_dump() for line in body.lines],
+        }).execute().data
+        return {"data": result}
+    except APIError as exc:
+        raise HTTPException(422, "Không thể tạo phiên kiểm kê: " + str(exc.message or exc)) from None
+
+
+@router.post("/stocktakes/{stocktake_id}/submit", response_model=StocktakeWorkflowResult,
+             summary="Gửi phiên kiểm kê chờ duyệt")
+def submit_stocktake(stocktake_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
+    if user.role not in {"ADMIN", "THU_KHO"}:
+        raise HTTPException(403, "Role không được gửi kiểm kê.")
+    try:
+        result = db.rpc("submit_stocktake", {"p_ma_phieu_kiem": stocktake_id}).execute().data
+        return {"data": result}
+    except APIError as exc:
+        raise HTTPException(409, "Không thể gửi phiên kiểm kê: " + str(exc.message or exc)) from None
+
+
+@router.post("/stocktakes/{stocktake_id}/approve", response_model=StocktakeWorkflowResult,
+             summary="Admin duyệt và cập nhật tồn kho từ kiểm kê")
+def approve_stocktake(stocktake_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
+    if user.role != "ADMIN":
+        raise HTTPException(403, "Chỉ ADMIN được duyệt kiểm kê.")
+    _require_employee(user)
+    try:
+        result = db.rpc("approve_stocktake", {"p_ma_phieu_kiem": stocktake_id, "p_nguoi_duyet": user.employee_id}).execute().data
+        return {"data": result}
+    except APIError as exc:
+        raise HTTPException(409, "Không thể duyệt phiên kiểm kê: " + str(exc.message or exc)) from None
 
 
 @router.get("/dispatches", summary="Danh sách phiếu xuất theo đơn hàng và kho")
