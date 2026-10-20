@@ -170,7 +170,14 @@ export default function AltHeader() {
               className={styles.searchForm}
               placeholder="Tìm theo Tên hoặc Mã SP..."
               maxLength={100}
-              onSearch={query => { close(); router.push(`/main/product?${new URLSearchParams({ q: query.trim() })}`); }}
+              onSearch={query => {
+                close();
+                router.push(`/main/product?${new URLSearchParams({ q: query.trim() })}`);
+              }}
+              onSelectProduct={product => {
+                close();
+                router.push(`/main/product/${encodeURIComponent(product.id)}`);
+              }}
             />
           </div>
         )}

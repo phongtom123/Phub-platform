@@ -63,22 +63,85 @@ Trang đăng nhập quản trị viên: `http://localhost:3000`.
 - `admin.thinh / password123` → giao diện quản trị viên tại cổng `3000`.
 - `phong.kho / password123` → giao diện nhân viên kho tại cổng `3002`.
 
-## Chạy giao diện khách hàng
+## Khởi động hệ thống Khách hàng (Sản phẩm, Giỏ hàng, Checkout) trên PowerShell
 
-```bash
-cd ui/userUI/Frontend
-npm install
-npm run dev
+Hệ thống mua sắm khách hàng (`ui/userUI/Frontend` + `Backend`) bao gồm: danh mục sản phẩm, tìm kiếm, bộ lọc, chi tiết sản phẩm, thêm vào giỏ hàng, giỏ hàng, thông tin nhận hàng và xác nhận đơn hàng.
+
+> [!IMPORTANT]
+> **Lưu ý về lỗi "Chức năng mua hàng hiện chưa sẵn sàng":**
+> Nếu chạy Backend ở chế độ `Real` (`app.main:app`), API xác thực khách hàng đang tạm khóa bằng mã lỗi `503 AUTH_INTEGRATION_REQUIRED` (chờ module đăng nhập của nhóm gộp vào). Do đó, khi thêm vào giỏ hàng sẽ bị báo chưa sẵn sàng.
+> **Để sử dụng và kiểm thử đầy đủ giỏ hàng:** hãy khởi động theo **Cách 1 (Script tự động với Mode SupabaseTest)** hoặc **Cách 2 (Mở 2 Terminal PowerShell thủ công)** dưới đây.
+
+---
+
+### Cách 1: Khởi động tự động bằng Script PowerShell (Khuyên dùng)
+
+Mở **PowerShell** tại thư mục gốc của dự án (`Phub-platform`):
+
+#### 1. Chế độ `SupabaseTest` (Dữ liệu Supabase thật)
+Kết nối trực tiếp Supabase lấy danh sách sản phẩm thật, tự động dùng phiên khách hàng test đầu tiên để không bị vướng bước đăng nhập:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-customer.ps1 -Mode SupabaseTest
+```
+- **Giao diện mua hàng:** [http://127.0.0.1:3001/main/product](http://127.0.0.1:3001/main/product)
+- **Tài liệu API Swagger:** [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
+- *Chức năng test được:* Xem danh sách, tìm kiếm, lọc (danh mục, hãng, giá, màu sắc), xem chi tiết, **thêm vào giỏ hàng**, chỉnh sửa số lượng giỏ, tính tổng tiền, điền và bấm **"Lưu"** thông tin nhận hàng trực tiếp vào Supabase.
+
+#### 2. Chế độ `Demo` (Mock RAM độc lập - Toàn bộ luồng đặt hàng & thanh toán)
+Chạy server fixture độc lập trong RAM, cho phép test đặt đơn và mô phỏng thanh toán mà không làm ảnh hưởng Supabase:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start-customer.ps1 -Mode Demo
+```
+- **Giao diện mua hàng:** [http://127.0.0.1:13001/main/product](http://127.0.0.1:13001/main/product)
+- **Trang điều khiển khách mẫu & thanh toán:** [http://127.0.0.1:18001/__manual](http://127.0.0.1:18001/__manual)
+- *Chức năng test được:* Thêm sản phẩm SKU-A vào giỏ, áp mã voucher `SAVE10`, bấm **"Đặt đơn"** thành công, và thử các kịch bản thanh toán (Chờ xử lý / Đã thanh toán / Hoàn tiền).
+
+#### 3. Dừng server
+Khi muốn dừng hệ thống, chạy:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/stop-customer.ps1 -Mode SupabaseTest
+# hoặc nếu đang chạy Demo:
+powershell -ExecutionPolicy Bypass -File scripts/stop-customer.ps1 -Mode Demo
 ```
 
-Trang đăng nhập khách hàng (UI mẫu, chưa xác thực): `http://localhost:3000/auth/login`.
+---
 
-- Trang chủ mua sắm: `http://localhost:3000/` (alias: `/main/landing`).
-- Danh mục sản phẩm: `http://localhost:3000/main/product`.
-- Catalog List View: `http://localhost:3000/main/product?view=list`.
-- Chi tiết sản phẩm: `http://localhost:3000/main/product/ps-001`.
+### Cách 2: Khởi động thủ công bằng 2 Terminal PowerShell (Xem log trực tiếp)
 
-Nếu chạy cùng admin ở cổng 3000, dùng `npm run dev -- -p 3001` trong `ui/userUI/Frontend` để tránh trùng cổng. Đăng nhập khách hàng hiện chỉ là thao tác chuyển trang demo, không tạo phiên xác thực.
+Mở 2 cửa sổ PowerShell riêng biệt từ thư mục gốc của dự án:
+
+#### Terminal 1: Chạy Backend (cổng 8001)
+```powershell
+cd Backend
+$env:PHUB_SUPABASE_TEST_MODE = 'local-only'
+$env:PHUB_SUPABASE_TEST_AUTO_CUSTOMER = '1'
+$env:PHUB_SUPABASE_TEST_UI_ORIGIN = 'http://127.0.0.1:3001'
+.\.venv\Scripts\python.exe -m uvicorn scripts.supabase_shopping_test:app --host 127.0.0.1 --port 8001
+```
+
+#### Terminal 2: Chạy Frontend (cổng 3001)
+```powershell
+cd ui/userUI/Frontend
+$env:PHUB_API_BASE_URL = 'http://127.0.0.1:8001'
+$env:PHUB_UI_ORIGIN = 'http://127.0.0.1:3001'
+$env:NEXT_TELEMETRY_DISABLED = '1'
+$env:NEXT_TEST_WASM_DIR = (Resolve-Path 'node_modules/@next/swc-wasm-nodejs').Path
+npm.cmd run dev -- --webpack --hostname 127.0.0.1 --port 3001
+```
+
+---
+
+### Các đường dẫn trang chức năng (Cổng 3001)
+
+| Trang chức năng | Đường dẫn (URL) |
+| :--- | :--- |
+| **Danh mục sản phẩm (Tìm kiếm, lọc, phân trang)** | [http://127.0.0.1:3001/main/product](http://127.0.0.1:3001/main/product) |
+| **Chi tiết sản phẩm** | [http://127.0.0.1:3001/main/product/SEED_SP001](http://127.0.0.1:3001/main/product/SEED_SP001) *(hoặc click từ danh mục)* |
+| **Giỏ hàng (Chọn món, sửa số lượng, tính tổng)** | [http://127.0.0.1:3001/cart](http://127.0.0.1:3001/cart) |
+| **Thông tin người nhận hàng (Checkout form)** | [http://127.0.0.1:3001/checkout](http://127.0.0.1:3001/checkout) |
+| **Xác nhận đơn hàng** | [http://127.0.0.1:3001/checkout/confirm](http://127.0.0.1:3001/checkout/confirm) |
+| **Hồ sơ cá nhân & Lịch sử đơn hàng** | [http://127.0.0.1:3001/main/profile](http://127.0.0.1:3001/main/profile) |
+| **Swagger API docs** | [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs) |
 
 ## Chạy giao diện thủ kho
 
