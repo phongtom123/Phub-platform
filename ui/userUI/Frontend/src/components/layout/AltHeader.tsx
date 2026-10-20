@@ -6,33 +6,59 @@ import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEv
 import { IconButton } from "@/components/common/icon";
 import { SearchInput } from "@/components/common/SearchInput";
 import { AccountMenu, CartPreview, GuestAvatar } from "./HeaderPanels";
-import { headerCategories } from "./headerData";
-import { MegaMenu } from "./MegaMenu";
+import { useCategories } from "@/lib/catalog/useCategories";
+import { categoryHref } from "@/lib/catalog/categories";
 import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
+import { CatalogMegaMenu, warmAllCatalogMegaMenus, warmCatalogMegaMenu } from "./CatalogMegaMenu";
 import styles from "./Header.module.css";
-import { useRouter } from "next/navigation";
-import { useShopping } from "@/components/shopping/ShoppingProvider";
+import { usePathname, useRouter } from "next/navigation";
+import { AUTH_SESSION_EVENT, getSession, logoutSession, type SessionUser } from "../../../../../shared/auth-client";
 
-type Dropdown = "shop" | "account" | "cart" | "mega";
+type Dropdown = "shop" | "account" | "cart";
 type Panel = Dropdown | "mobile" | "notice" | null;
 
 export default function AltHeader() {
   const router = useRouter();
-  const shop = useShopping();
+  const pathname = usePathname();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const hoverRef = useRef<Dropdown | null>(null);
+  const categoryCloseTimerRef = useRef<number | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const catalog = useCategories();
+  const [session, setSession] = useState<SessionUser | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  function cancelCategoryClose() {
+    if (categoryCloseTimerRef.current !== null) {
+      window.clearTimeout(categoryCloseTimerRef.current);
+      categoryCloseTimerRef.current = null;
+    }
+  }
+
+  function openCategory(categoryId: string) {
+    cancelCategoryClose();
+    setActiveCategoryId(categoryId);
+  }
+
+  function scheduleCategoryClose(categoryId: string) {
+    cancelCategoryClose();
+    categoryCloseTimerRef.current = window.setTimeout(() => {
+      setActiveCategoryId(current => current === categoryId ? null : current);
+      categoryCloseTimerRef.current = null;
+    }, 150);
+  }
 
   function close(restoreFocus = false) {
+    cancelCategoryClose();
     setPanel(null);
-    setSelectedCategoryId(null);
     setSearchOpen(false);
+    setActiveCategoryId(null);
     hoverRef.current = null;
     if (restoreFocus) triggerRef.current?.focus();
   }
@@ -42,11 +68,12 @@ export default function AltHeader() {
     const wasHover = hoverRef.current === next;
     hoverRef.current = null;
     setSearchOpen(false);
-    if (next === "mobile") setSelectedCategoryId(null);
+    setActiveCategoryId(null);
     setPanel(current => (current === next && !wasHover ? null : next));
   }
 
   function hoverOpen(next: Dropdown, event: ReactPointerEvent<HTMLElement>) {
+    if (!window.matchMedia("(min-width: 1100px) and (hover: hover)").matches) return;
     if (event.pointerType !== "mouse" || searchOpen || (panel && hoverRef.current === null)) return;
     triggerRef.current =
       event.currentTarget instanceof HTMLButtonElement
@@ -63,12 +90,66 @@ export default function AltHeader() {
     }
   }
 
-  function showPreview(label: string) {
-    hoverRef.current = null;
-    setSearchOpen(false);
-    setNotice(label + ": hiện chỉ là giao diện, chưa kết nối chức năng.");
-    setPanel("notice");
-  }
+  useEffect(() => {
+    const controller = new AbortController();
+    function changed(event: Event) {
+      setSession((event as CustomEvent<SessionUser | null>).detail);
+      setSessionLoading(false);
+    }
+    window.addEventListener(AUTH_SESSION_EVENT, changed);
+    getSession(controller.signal)
+      .then(setSession)
+      .catch(() => setSession(null))
+      .finally(() => setSessionLoading(false));
+    return () => {
+      controller.abort();
+      window.removeEventListener(AUTH_SESSION_EVENT, changed);
+    };
+  }, []);
+
+  useEffect(() => () => {
+    if (categoryCloseTimerRef.current !== null) window.clearTimeout(categoryCloseTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if ((pathname !== "/" && pathname !== "/main/landing") || catalog.loading || !catalog.data.length) return;
+    let cancelled = false;
+    let idleId: number | null = null;
+    let gapTimer: number | null = null;
+
+    async function warmInOrder() {
+      try { await warmAllCatalogMegaMenus(catalog.data); }
+      catch { return; }
+      const targets = [
+        ...catalog.data.map(category => ({ categoryId: category.id, subcategoryId: undefined })),
+        ...catalog.data.flatMap(category => category.children.map(child => ({
+          categoryId: category.id, subcategoryId: child.id,
+        }))),
+      ];
+      for (const target of targets) {
+        if (cancelled) return;
+        try { await warmCatalogMegaMenu(target.categoryId, target.subcategoryId); }
+        catch { /* Hover keeps the normal retry UI available. */ }
+        if (cancelled) return;
+        await new Promise<void>(resolve => { gapTimer = window.setTimeout(resolve, 250); });
+      }
+    }
+
+    const delayTimer = window.setTimeout(() => {
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(() => { void warmInOrder(); }, { timeout: 2_000 });
+      } else {
+        void warmInOrder();
+      }
+    }, 1_500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(delayTimer);
+      if (gapTimer !== null) window.clearTimeout(gapTimer);
+      if (idleId !== null) window.cancelIdleCallback(idleId);
+    };
+  }, [catalog.data, catalog.loading, pathname]);
 
   useEffect(() => {
     function dismissOutside(event: Event) {
@@ -76,14 +157,16 @@ export default function AltHeader() {
         hoverRef.current = null;
         setPanel(null);
         setSearchOpen(false);
+        setActiveCategoryId(null);
       }
     }
     function escape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || (!panel && !searchOpen)) return;
+      if (event.key !== "Escape" || (!panel && !searchOpen && !activeCategoryId)) return;
       event.preventDefault();
       hoverRef.current = null;
       setPanel(null);
       setSearchOpen(false);
+      setActiveCategoryId(null);
       triggerRef.current?.focus();
     }
     document.addEventListener("pointerdown", dismissOutside);
@@ -94,18 +177,22 @@ export default function AltHeader() {
       document.removeEventListener("focusin", dismissOutside);
       document.removeEventListener("keydown", escape);
     };
-  }, [panel, searchOpen]);
+  }, [activeCategoryId, panel, searchOpen]);
+
+  async function signOut() {
+    try {
+      await logoutSession();
+      setSession(null);
+      close();
+      router.refresh();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Không thể đăng xuất lúc này.");
+      setPanel("notice");
+    }
+  }
 
   function dropdownProps(name: Dropdown) {
     return { "data-open": panel === name, "aria-hidden": panel !== name, inert: panel !== name };
-  }
-
-  function selectCategory(item: typeof headerCategories[number], trigger: HTMLElement) {
-    if (item.id === "laptops") toggle("mega", trigger);
-    else {
-      triggerRef.current = trigger;
-      showPreview(item.label);
-    }
   }
 
   return (
@@ -119,14 +206,9 @@ export default function AltHeader() {
         onClose={() => close()}
       />
 
-      <div
-        className={styles.mainBar}
-        onPointerLeave={event => {
-          if (hoverRef.current === "mega") hoverClose(event);
-        }}
-      >
+      <div className={styles.mainBar}>
         <Link href="/" className={styles.logo} aria-label="Tech Store — Trang chủ" onClick={() => close()}>
-          <Image src="/images/1.png" alt="" width={34} height={41} priority />
+          <Image src="/images/1.png" alt="" width={34} height={41} preload />
         </Link>
         <IconButton
           className={styles.mobileToggle}
@@ -147,20 +229,22 @@ export default function AltHeader() {
           aria-label="Danh mục sản phẩm"
           className={[styles.navigation, searchOpen && styles.navigationHidden].filter(Boolean).join(" ")}
         >
-          {headerCategories.map(item => (
-            <button
-              key={item.id}
-              type="button"
-              aria-expanded={item.id === "laptops" ? panel === "mega" : undefined}
-              aria-controls={item.id === "laptops" ? id + "-mega" : undefined}
-              onPointerEnter={event => {
-                if (item.id === "laptops") hoverOpen("mega", event);
-              }}
-              onClick={event => selectCategory(item, event.currentTarget)}
-            >
-              {item.label}
-            </button>
+          {catalog.loading && <span role="status">Đang tải danh mục…</span>}
+          {catalog.error && <span role="alert">Không tải được danh mục. <button type="button" onClick={catalog.retry}>Thử lại</button></span>}
+          {catalog.data.map(item => (
+            <div key={item.id} className={styles.categoryNav} data-active={activeCategoryId === item.id}
+              onMouseEnter={() => openCategory(item.id)}
+              onMouseLeave={() => scheduleCategoryClose(item.id)}
+              onFocusCapture={() => openCategory(item.id)}
+              onBlurCapture={event => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActiveCategoryId(null);
+              }}>
+              <Link href={categoryHref(item.id)} onClick={() => close()}
+                aria-haspopup="true" aria-expanded={activeCategoryId === item.id}>{item.label}</Link>
+              {activeCategoryId === item.id && <CatalogMegaMenu category={item} onNavigate={() => close()} onKeepOpen={cancelCategoryClose} />}
+            </div>
           ))}
+          <Link className={styles.dealsLink} href="/main/product" onClick={() => close()}>Tất Cả Sản Phẩm</Link>
         </nav>
 
         {searchOpen && (
@@ -192,6 +276,7 @@ export default function AltHeader() {
               triggerRef.current = event.currentTarget;
               hoverRef.current = null;
               setSearchOpen(!searchOpen);
+              setActiveCategoryId(null);
               setPanel(null);
             }}
           >
@@ -213,7 +298,6 @@ export default function AltHeader() {
               aria-expanded={panel === "cart"} aria-controls={id + "-cart"}
               onClick={event => toggle("cart", event.currentTarget)}>
               <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />
-              <span className={styles.cartBadge} aria-hidden="true">{shop.count}</span>
             </IconButton>
             <div id={id + "-cart"} className={styles.cartPanel} {...dropdownProps("cart")}>
               <CartPreview onNavigate={() => close()} />
@@ -227,29 +311,30 @@ export default function AltHeader() {
           >
             <IconButton
               className={styles.actionButton}
-              label="Mở tài khoản"
+              label={session ? `Mở tài khoản của ${session.name}` : "Mở tài khoản"}
               aria-expanded={panel === "account"}
               aria-controls={id + "-account"}
               onClick={event => toggle("account", event.currentTarget)}
             >
-              <GuestAvatar />
+              <GuestAvatar name={session?.name} />
             </IconButton>
             <div className={styles.accountPanel} id={id + "-account"} {...dropdownProps("account")}>
-              <AccountMenu onNavigate={() => close()} />
+              <AccountMenu
+                onNavigate={() => close()}
+                user={session}
+                loading={sessionLoading}
+                onLogout={signOut}
+              />
             </div>
           </div>
         </div>
 
         <MobileCategoryDrawer
+          catalog={catalog}
           id={id + "-mobile"}
           open={panel === "mobile"}
-          selectedCategoryId={selectedCategoryId}
-          onSelectCategory={setSelectedCategoryId}
           onClose={() => close(true)}
         />
-        <div id={id + "-mega"} className={styles.megaPanel} {...dropdownProps("mega")}>
-          <MegaMenu onClose={() => close(true)} />
-        </div>
         {panel === "notice" && (
           <div className={styles.notice}>
             <p role="status">{notice}</p>

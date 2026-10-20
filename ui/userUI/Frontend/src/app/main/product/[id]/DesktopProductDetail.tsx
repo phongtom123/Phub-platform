@@ -14,7 +14,7 @@ export function DesktopProductDetail({ product, activeTab }: { product: DetailPr
     </div></div>
     <section className={styles.productHero}>
       <div className={styles.productCopy}><div className={styles.copyInner}>
-        <p className={styles.breadcrumb}><Link href="/">Trang chủ</Link><span>›</span><Link href={"/main/product?" + new URLSearchParams({ category_id: product.categoryId })}>{product.category}</Link>{product.brand && <><span>›</span>{product.brand}</>}</p>
+        <p className={styles.breadcrumb}><Link href="/">Trang chủ</Link><span>›</span><Link href={"/main/product?" + new URLSearchParams({ category_id: product.categoryId })}>{product.category}</Link>{product.subcategory && product.subcategoryId && <><span>›</span><Link href={"/main/product?" + new URLSearchParams({ subcategory_id: product.subcategoryId })}>{product.subcategory}</Link></>}{product.brand && <><span>›</span>{product.brand}</>}</p>
         <h1>{product.name}</h1>
         {activeTab === "about" && <p className={styles.summary} style={{ whiteSpace: "pre-line" }}>{product.description || "Chưa có mô tả sản phẩm."}</p>}
         {activeTab === "details" && <ul className={styles.detailList}>

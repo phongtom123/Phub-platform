@@ -1,78 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import { Logo } from "@/src/components/admin/ui";
+import { loginSession, type SessionUser, type UserRole } from "../../../../shared/auth-client";
 
-export type StaffRole = "ADMIN" | "THU_KHO";
-
-type LoginResult = {
-  role: StaffRole;
-  username: string;
-};
-
-type DemoAccount = {
-  username: string;
-  password: string;
-  role: StaffRole;
-};
-
-const adminAccount: DemoAccount = {
-  username: "admin.thinh",
-  password: "password123",
-  role: "ADMIN",
-};
-const warehouseAccount: DemoAccount = {
-  username: "phong.kho",
-  password: "password123",
-  role: "THU_KHO",
-};
-
-const demoAccounts: Record<string, DemoAccount> = {
-  "admin.thinh": adminAccount,
-  "thinh@phub.vn": adminAccount,
-  "phong.kho": warehouseAccount,
-  "phong@phub.vn": warehouseAccount,
-};
+export type StaffRole = Extract<UserRole, "ADMIN" | "THU_KHO">;
 
 export function LoginView({
   onLogin,
 }: {
-  onLogin: (result: LoginResult) => void;
+  onLogin: (result: SessionUser) => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [passwordChanged, setPasswordChanged] = useState(false);
+  useEffect(() => {
+    setPasswordChanged(new URLSearchParams(window.location.search).get("passwordChanged") === "1");
+  }, []);
 
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     const form = new FormData(event.currentTarget as HTMLFormElement);
-    const username = String(form.get("username") ?? "")
-      .trim()
-      .toLowerCase();
+    const username = String(form.get("username") ?? "").trim();
     const password = String(form.get("password") ?? "");
-    const account = demoAccounts[username];
-
-    if (!account || account.password !== password) {
-      setError("Tài khoản hoặc mật khẩu không đúng.");
-      return;
-    }
-
     setError("");
     setLoading(true);
-    window.setTimeout(
-      () => onLogin({ role: account.role, username: account.username }),
-      500,
-    );
+    try {
+      const result = await loginSession(username, password);
+      if (result.role === "KHACH_HANG") {
+        window.location.assign(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
+        return;
+      }
+      onLogin(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không kết nối được backend.");
+    } finally { setLoading(false); }
   };
   return (
     <main className="login">
       <header>
         <Logo />
-        <span>
-          <i /> Hệ thống đang hoạt động
-        </span>
+        <span>Cổng đăng nhập nội bộ</span>
       </header>
       <div className="login-grid">
         <section className="login-copy">
@@ -86,21 +57,8 @@ export function LoginView({
           </h1>
           <p>
             Một không gian duy nhất để theo dõi sản phẩm, đơn hàng và tồn kho
-            trên mọi chi nhánh.
+            theo kho và vai trò được phân công.
           </p>
-          <aside>
-            <b>
-              03<small>Chi nhánh</small>
-            </b>
-            <i />
-            <b>
-              248<small>Sản phẩm</small>
-            </b>
-            <i />
-            <b>
-              99.9%<small>Đồng bộ</small>
-            </b>
-          </aside>
         </section>
         <form className="login-card" onSubmit={submit}>
           <div className="welcome">
@@ -110,11 +68,11 @@ export function LoginView({
               <small>Đăng nhập vào trang quản trị PHUB</small>
             </p>
           </div>
+          {passwordChanged && <p role="status">Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.</p>}
           <label>
             Email hoặc tên tài khoản
             <input
               name="username"
-              defaultValue="admin.thinh"
               autoComplete="username"
               required
               onChange={() => setError("")}
@@ -126,7 +84,6 @@ export function LoginView({
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                defaultValue="password123"
                 autoComplete="current-password"
                 required
                 onChange={() => setError("")}
@@ -158,11 +115,7 @@ export function LoginView({
           <p className="secure">
             <LockKeyhole /> Phiên đăng nhập được mã hóa và bảo mật
           </p>
-          <div className="demo-accounts">
-            <strong>Tài khoản dùng thử</strong>
-            <span>Quản trị viên: admin.thinh / password123</span>
-            <span>Nhân viên kho: phong.kho / password123</span>
-          </div>
+          <p className="demo-accounts">Đăng nhập bằng tài khoản đã được tạo trong Supabase. Không còn tài khoản demo cố định.</p>
         </form>
       </div>
       <footer>

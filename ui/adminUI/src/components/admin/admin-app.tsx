@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAdminAuth } from "./auth-provider";
 import type { ModuleKey } from "@/src/types/admin";
 import { moduleNames, modules } from "@/src/data/admin-data";
 import {
@@ -10,68 +12,37 @@ import {
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
 import { LoginView } from "@/src/features/auth/login-view";
-import type { StaffRole } from "@/src/features/auth/login-view";
 import { DashboardView } from "@/src/features/dashboard/dashboard-view";
 import { ModuleView } from "@/src/features/modules/module-view";
 import { EntityDrawer } from "@/src/features/forms/entity-drawer";
+import BackendDataView from "@/src/components/backend-data-view";
+import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
+import AccountsView from "@/src/features/accounts/accounts-view";
+import type { AccountView } from "@/src/features/accounts/types";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
   mode: "create" | "edit" | "settings";
 } | null;
 
-const adminSessionKey = "phub-admin-authenticated";
-const warehouseUrl =
-  process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002";
-
-export default function AdminApp() {
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
-  const [activeModule, setActiveModule] = useState<ModuleKey>("dashboard");
+export default function AdminApp({ dataResource, accountsPage }: { dataResource?: string; accountsPage?: AccountView } = {}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
+  const activeModule = accountsPage ? "accounts" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString());
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [drawer, setDrawer] = useState<DrawerState>(null);
 
-  useEffect(() => {
-    setLoggedIn(window.sessionStorage.getItem(adminSessionKey) === "true");
+  const retrySession = () => { void checkSession(); };
+  // The root provider owns the only initial verification gate across all pages.
+  if (sessionUser === undefined || (sessionUser && sessionUser.role !== "ADMIN")) return null;
 
-    const syncModuleWithUrl = () =>
-      setActiveModule(getModuleFromSearch(window.location.search));
-
-    syncModuleWithUrl();
-    window.addEventListener("popstate", syncModuleWithUrl);
-
-    return () => window.removeEventListener("popstate", syncModuleWithUrl);
-  }, []);
-
-  const login = ({
-    role,
-    username,
-  }: {
-    role: StaffRole;
-    username: string;
-  }) => {
-    if (role === "THU_KHO") {
-      window.sessionStorage.removeItem(adminSessionKey);
-      const destination = new URL(warehouseUrl);
-      destination.searchParams.set("access", "warehouse-demo");
-      destination.searchParams.set("staff", username);
-      window.location.assign(destination.toString());
-      return;
-    }
-
-    window.sessionStorage.setItem(adminSessionKey, "true");
-    setLoggedIn(true);
-  };
-
-  if (loggedIn === null) return null;
-
-  if (!loggedIn) return <LoginView onLogin={login} />;
+  if (!sessionUser) return <LoginView onLogin={acceptLogin} />;
 
   const navigate = (moduleKey: ModuleKey) => {
-    if (moduleKey === activeModule) return;
-
-    window.history.pushState({ moduleKey }, "", getModuleHref(moduleKey));
-    setActiveModule(moduleKey);
+    router.push(getModuleHref(moduleKey));
+    setMobileSidebarOpen(false);
   };
   const toggleSidebar = () =>
     window.innerWidth <= 800
@@ -81,11 +52,14 @@ export default function AdminApp() {
     setDrawer({ moduleKey: activeModule, mode: "create" });
   const openSettings = () =>
     setDrawer({ moduleKey: "settings", mode: "settings" });
-  const logout = () => {
-    window.sessionStorage.removeItem(adminSessionKey);
-    window.history.replaceState({}, "", "/");
-    setActiveModule("dashboard");
-    setLoggedIn(false);
+  const logout = async () => {
+    try {
+      await endSession();
+    } catch {
+      window.alert("Không đăng xuất được. Kiểm tra backend và thử lại.");
+      return;
+    }
+    router.replace("/");
   };
   const definition = modules[activeModule];
 
@@ -102,6 +76,8 @@ export default function AdminApp() {
       />
       <div className="main">
         <AdminHeader
+          accountsPage={accountsPage}
+          dataResource={accountsPage || activeModule === "accounts" ? undefined : dataResource ?? moduleResources[activeModule]}
           activeModule={activeModule}
           title={moduleNames[activeModule]}
           onToggleSidebar={toggleSidebar}
@@ -109,9 +85,15 @@ export default function AdminApp() {
           onGoAccounts={() => navigate("accounts")}
           onOpenSettings={openSettings}
           onLogout={logout}
+          user={sessionUser}
+          onGoProfile={() => router.push("/account")}
         />
         <main className="content">
-          {activeModule === "dashboard" ? (
+          {sessionError && <div className="session-warning" role="alert">
+            <span>{sessionError}</span>
+            <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
+          </div>}
+          {accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={dataResource === "products" ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : definition ? (
             <ModuleView

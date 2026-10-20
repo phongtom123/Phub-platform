@@ -3,4 +3,5 @@ export type WarehouseUser = {
   name: string;
   initials: string;
   employeeCode: string;
+  warehouseId: number | null;
 };

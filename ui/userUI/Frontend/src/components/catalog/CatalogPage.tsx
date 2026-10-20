@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Breadcrumb } from "@/components/common/Breadcrumb";
@@ -22,7 +21,6 @@ import { AddToCartButton } from "@/components/shopping/AddToCartButton";
 export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   const { request, products, pagination, loading, error, metadata } = catalog;
   const [draft, setDraft] = useCatalogDraft(catalog);
-  const shop = useShopping();
   const [compared, setCompared] = useState<CatalogProduct[]>([]);
   const [wished, setWished] = useState<CatalogProduct[]>([]);
   const [notice, setNotice] = useState("");
@@ -40,6 +38,11 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   }
   const chips = [
     ...filters.categories.map(id => ({ key: id, label: metadata.data.categories.find(option => option.id === id)?.label ?? id, next: { ...filters, categories: filters.categories.filter(value => value !== id) } })),
+    ...filters.subcategories.map(id => ({
+      key: id,
+      label: metadata.data.categories.flatMap(option => option.children).find(option => option.id === id)?.label ?? id,
+      next: { ...filters, subcategories: filters.subcategories.filter(value => value !== id) },
+    })),
     ...(filters.brand ? [{ key: "brand", label: filters.brand, next: { ...filters, brand: "" } }] : []),
     ...(filters.minPrice || filters.maxPrice ? [{ key: "price", label: `${filters.minPrice || "0"} – ${filters.maxPrice || "không giới hạn"} ₫`, next: { ...filters, minPrice: "", maxPrice: "" } }] : []),
     ...(filters.color ? [{ key: "color", label: metadata.data.colors.find(option => option.value === filters.color)?.label || filters.color, next: { ...filters, color: "" } }] : []),
@@ -47,7 +50,6 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   ];
   return <div className={styles.catalog}>
     <div className={styles.container}>
-      <a className={styles.banner} href="#catalog-results" aria-label="Khám phá sản phẩm"><Image src="/images/home/banner-asus.png" alt="ASUS TUF Gaming" width={1398} height={104} sizes="(max-width: 1438px) 100vw, 1398px" priority /></a>
       <Breadcrumb className={styles.breadcrumb} items={[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm" }]} />
       <h1>{request.q ? `Kết quả tìm kiếm: ${request.q}` : "Sản phẩm"}{pagination ? ` (${total})` : ""}</h1>
       <div className={styles.layout}>
@@ -56,7 +58,7 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
           <aside id="catalog-sidebar" className={styles.sidebar} aria-label="Bộ lọc sản phẩm">
             <CatalogSidebar draft={draft} onChange={setDraft} onApply={() => catalog.apply(draft)} onClear={() => catalog.apply(emptyFilters)}
               activeBrand={filters.brand} onBrand={brand => catalog.apply({ ...filters, brand })}
-              compared={compared} wished={wished} onCompare={product => toggleSelection("compare", product)} onWish={product => toggleSelection("wish", product)} onSelect={setPreview}
+              compared={compared} wished={wished} onCompare={product => toggleSelection("compare", product)} onWish={product => toggleSelection("wish", product)}
               metadata={metadata} locale="vi" />
           </aside>
         </div>
@@ -70,13 +72,13 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
           <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
           {!loading && !error && (products.length ? <div className={ `${styles.productGrid} ${request.view === "list" ? styles.productList : ""}` } aria-label="Catalog products">
             {products.map(product => request.view === "list"
-              ? <ProductListCard key={product.id} {...product} inCart={shop.lines.some(item => item.sku === product.sku)} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onSelect={() => setPreview(product)} onCart={() => void shop.add(product)} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
-              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} onSelect={() => setPreview(product)} uiLocale="vi" actions={<AddToCartButton product={product}/>} />)}
+              ? <ProductListCard key={product.id} {...product} href={productHref(product.id)} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onCart={() => setNotice("Chưa kết nối API giỏ hàng.")} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
+              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} uiLocale="vi" />)}
           </div> : <div className={styles.noResults}><h2>Không tìm thấy sản phẩm</h2><p>Hãy thay đổi điều kiện tìm kiếm hoặc bộ lọc.</p><Button onClick={() => catalog.apply(emptyFilters)}>Xóa bộ lọc và về trang đầu</Button>{request.q && <Link href="/main/product">Xem tất cả sản phẩm</Link>}</div>)}
           {!loading && !error && <div className={styles.pagination}><Pagination currentPage={request.page} totalPages={pagination?.total_pages ?? 0} onPageChange={page => { catalog.turnPage(page); resultsRef.current?.scrollIntoView({ block: "start", behavior: "instant" }); }} /></div>}
           <section className={styles.description} aria-label="Hướng dẫn chọn sản phẩm">
             <div id="catalog-description" className={expanded ? styles.descriptionExpanded : styles.descriptionCollapsed}>
-              <p>Khám phá máy tính, laptop và thiết bị phù hợp với nhu cầu học tập, công việc và giải trí.</p>
+              <p>Khám phá PC nguyên bộ và linh kiện phù hợp với nhu cầu học tập, công việc và giải trí.</p>
               <p>Tìm theo tên hoặc SKU, chọn loại sản phẩm và thương hiệu, hoặc sắp xếp theo giá để dễ dàng lựa chọn.</p>
               <p>Mở chi tiết sản phẩm để xem mô tả, thời gian bảo hành và thông số kỹ thuật hiện có.</p>
             </div>

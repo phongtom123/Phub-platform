@@ -3,8 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 
-from app.health import router
-from app.runtime import frontend_origins
+from phub_api.controllers.health import router
+from phub_api.config.runtime import frontend_origins
 
 
 def test_existing_localhost_default_is_preserved(monkeypatch):

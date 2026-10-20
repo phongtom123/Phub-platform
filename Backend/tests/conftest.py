@@ -6,8 +6,17 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from app.catalog.repository import CatalogRepository
-from app.catalog.router import get_repository, router
+from phub_api.repositories.catalog import CatalogRepository
+from phub_api.dependencies.catalog import get_repository
+from phub_api.controllers.catalog import router
+
+
+@pytest.fixture(autouse=True)
+def forbid_live_http(monkeypatch):
+    """Offline tests must use MockTransport, never credentials from a developer .env."""
+    def blocked(*args, **kwargs):
+        raise AssertionError("Live HTTP is forbidden in offline tests; override the database dependency or use MockTransport.")
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", blocked)
 
 
 @pytest.fixture
@@ -19,13 +28,14 @@ def product_row():
         "don_vi": "Cai", "bao_hanh_thang": 24,
         "duong_dan_anh": "https://example.test/msi.jpg",
         "category": {"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop", "trang_thai": 1},
+        "subcategory": {"ma_loai_sp_con": "LAPTOP_GENERAL", "ten_loai_sp_con": "Laptop phổ thông", "trang_thai": 1},
         "gia_nhap": "secret internal price", "trang_thai": 1,
     }
 
 
 @pytest.fixture
 def catalog_client(product_row):
-    state = {"rows": [deepcopy(product_row)], "total": 1, "error": None, "handler": None}
+    state = {"rows": [deepcopy(product_row)], "categories": [], "subcategories": [], "total": 1, "error": None, "handler": None}
     requests = []
 
     def handle(request):
@@ -34,7 +44,12 @@ def catalog_client(product_row):
             raise state["error"]
         if state["handler"]:
             return state["handler"](request)
-        rows = state["rows"]
+        if request.url.path.endswith("/LOAI_SP"):
+            rows = state["categories"]
+        elif request.url.path.endswith("/LOAI_SP_CON"):
+            rows = state["subcategories"]
+        else:
+            rows = state["rows"]
         headers = {"content-range": f"0-{max(0, len(rows) - 1)}/{state['total']}"}
         return httpx.Response(200, json=rows, headers=headers)
 

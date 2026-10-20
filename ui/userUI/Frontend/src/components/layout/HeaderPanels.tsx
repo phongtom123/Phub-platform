@@ -1,36 +1,63 @@
-"use client";
-import Image from "next/image";
 import Link from "next/link";
-import { useShopping } from "@/components/shopping/ShoppingProvider";
-import { guestAccountItems } from "./headerData";
+import { Button } from "@/components/common/Button";
+import type { SessionUser } from "../../../../../shared/auth-client";
+import { guestAccountItems, storeInfo } from "./headerData";
 import styles from "./Header.module.css";
 
 export function ShopInfo() {
-  return (
-    <div className={styles.shopInfo}>
-      <div className={styles.shopRow}>
-        <Image src="/icons/header/clock.svg" alt="" width={35} height={35} />
-        <div>
-          <p><strong>Giờ mở cửa:</strong></p>
-          <p><span>T2-T5:</span> <strong>9:00 AM - 5:30 PM</strong></p>
-          <p><span>T6:</span> <strong>9:00 AM - 6:00 PM</strong></p>
-          <p><span>T7:</span> <strong>11:00 AM - 5:00 PM</strong></p>
-        </div>
+  return <div className={styles.shopInfo}>
+    <section className={styles.shopRow} aria-label="Opening hours">
+      <svg className={styles.shopInfoIcon} viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="12" />
+        <path d="M16 9v8h7" />
+      </svg>
+      <div className={styles.shopHours}>
+        <p>We are open:</p>
+        <dl>
+          {storeInfo.hours.map(item => <div key={item.days}><dt>{item.days}:</dt><dd>{item.time}</dd></div>)}
+        </dl>
       </div>
-      <div className={styles.shopRow}>
-        <Image src="/icons/header/location.svg" alt="" width={35} height={35} />
-        <p><strong>Địa chỉ:</strong> 1234 Nguyễn Thị Minh Khai, Q1, HCM</p>
-      </div>
-      <div className={styles.shopContact}>
-        <p>Điện thoại: <a href="tel:0901234567">090 123 4567</a></p>
-        <p>E-mail: <a href="mailto:shop@techstore.vn">shop@techstore.vn</a></p>
-      </div>
-    </div>
-  );
+    </section>
+    <section className={styles.shopRow} aria-label="Store address">
+      <svg className={styles.shopInfoIcon} viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 29S6 20.7 6 12.8a10 10 0 0 1 20 0C26 20.7 16 29 16 29Z" />
+        <circle cx="16" cy="13" r="3.5" />
+      </svg>
+      <address>Address: {storeInfo.address}</address>
+    </section>
+    <address className={styles.shopContact}>
+      <p>Phones: <a href={storeInfo.phoneHref}>{storeInfo.phone}</a></p>
+      <p>E-mail: <a href={`mailto:${storeInfo.email}`}>{storeInfo.email}</a></p>
+    </address>
+  </div>;
 }
 
-export function AccountMenu({ onNavigate }: { onNavigate: () => void }) {
-  const shop=useShopping();
+export function AccountMenu({
+  onNavigate,
+  user,
+  loading,
+  onLogout,
+}: {
+  onNavigate: () => void;
+  user: SessionUser | null;
+  loading: boolean;
+  onLogout: () => void;
+}) {
+  if (loading) return <p className={styles.accountIdentity}>Đang kiểm tra phiên đăng nhập…</p>;
+  if (user) {
+    const portal = user.role === "ADMIN"
+      ? (process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000")
+      : (process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002");
+    return (
+      <nav aria-label="Tài khoản" className={styles.accountMenu}>
+        <p className={styles.accountIdentity}><strong>{user.name}</strong><span>@{user.username}</span></p>
+        {user.role === "KHACH_HANG"
+          ? <Link href="/main/profile" onClick={onNavigate}>Tài khoản của tôi</Link>
+          : <a href={portal} onClick={onNavigate}>Mở cổng {user.role === "ADMIN" ? "quản trị" : "kho"}</a>}
+        <button type="button" onClick={onLogout}>Đăng xuất</button>
+      </nav>
+    );
+  }
   return (
     <nav aria-label="Tài khoản" className={styles.accountMenu}>
       {shop.customer?<><p>{shop.customer.name}</p><Link href="/main/profile" onClick={onNavigate}>Tài khoản và đơn hàng</Link></>:guestAccountItems.map((label, index) => <Link key={label} href={index === 0 ? "/auth/login" : "/auth/register"} onClick={onNavigate}>{label}</Link>)}
@@ -38,13 +65,15 @@ export function AccountMenu({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-export function GuestAvatar() {
+export function GuestAvatar({ name }: { name?: string }) {
   return (
     <span className={styles.avatar}>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 21v-2a8 8 0 0 1 16 0v2Z" />
-      </svg>
+      {name ? <strong aria-hidden="true">{name.trim().charAt(0).toLocaleUpperCase("vi")}</strong> : (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21v-2a8 8 0 0 1 16 0v2Z" />
+        </svg>
+      )}
     </span>
   );
 }
@@ -55,12 +84,12 @@ export function CartPreview({ onNavigate }: { onNavigate?: () => void }) {
     <div className={styles.cartPreview}>
       <div className={styles.cartHead}>
         <h2>Giỏ hàng của tôi</h2>
-        <p>{shop.count} sản phẩm</p>
+        <p>Chưa kết nối API giỏ hàng.</p>
       </div>
       <Link href="/cart" className={styles.cartEdit} onClick={onNavigate}>Xem và Chỉnh Sửa Giỏ Hàng</Link>
-      <div className={styles.cartItems}>{shop.lines.length?<ul>{shop.lines.map(line=><li key={line.sku}>{line.name} × {line.quantity}</li>)}</ul>:<p>{shop.authStatus==="guest"?"Đăng nhập để sử dụng giỏ hàng.":shop.authStatus==="authenticated"?"Giỏ hàng đang trống.":"Đang chờ xác minh tài khoản."}</p>}</div>
+      <div className={styles.cartItems}><p>Chưa thể tải sản phẩm trong giỏ.</p></div>
       <div className={styles.cartFoot}>
-        {shop.lines.length>0&&shop.authStatus==="authenticated"&&<Link href="/checkout" className={styles.checkout} onClick={onNavigate}>Tiến hành đặt đơn</Link>}
+        <Button className={styles.checkout} disabled>Tiến Hành Thanh Toán</Button>
       </div>
     </div>
   );

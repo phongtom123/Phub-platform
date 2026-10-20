@@ -1,7 +1,9 @@
-import DetailView from "@/src/features/details/detail-view";
-import WarehouseFrame from "@/src/components/warehouse/warehouse-frame";
+import { notFound, redirect } from "next/navigation";
+import { recordHref } from "../../../../../shared/record-navigation";
 
 export default async function EditRecordPage({ params }: { params: Promise<{ section: string; id: string }> }) {
   const { section, id } = await params;
-  return <WarehouseFrame><DetailView section={section} id={id} edit/></WarehouseFrame>;
+  const href = recordHref(section, id, true);
+  if (!href) notFound();
+  redirect(href);
 }

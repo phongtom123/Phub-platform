@@ -1,55 +1,48 @@
-# Customer UI/backend only. Never starts scripts/shopping_e2e_app.py.
-# Supply actual URLs and secrets in Render; do not commit .env.
+# Both services need files outside their application folder.
+# Review/sync this Blueprint in Render, or copy these settings to existing services.
 services:
   - type: web
-    name: phub-customer-api
+    name: phub-api
     runtime: python
-    branch: ui-review
-    rootDir: Backend
-    region: singapore
-    plan: free
-    autoDeployTrigger: off
-    buildCommand: pip install -r requirements.txt -c constraints-render.txt
-    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    repo: https://github.com/phongtom123/Phub-platform
+    branch: main
+    rootDir: .
+    autoDeployTrigger: commit
+    buildCommand: pip install -r Backend/requirements.txt -c Backend/constraints-render.txt && python Backend/scripts/export_openapi.py --check
+    startCommand: cd Backend && python -m uvicorn phub_api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - Backend/**
+        - database/schema.dbml
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.14.6
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SECRET_KEY
         sync: false
-      - key: FRONTEND_URL
+      - key: JWT_SECRET
         sync: false
-      - key: ORDER_STOCK_POLICY
-        value: reserve_on_order
-      - key: ORDER_PRICE_TAX_MODE
-        value: exclusive
-      - key: ORDER_TAX_RATE
-        value: "10"
-      - key: ORDER_TAX_APPLICATION
-        value: invoice
-      - key: CHECKOUT_PROMOTION_TIMEZONE
-        value: Asia/Ho_Chi_Minh
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+
   - type: web
-    name: phub-customer-ui
+    name: phub-platform
     runtime: node
-    branch: ui-review
-    rootDir: ui/userUI/Frontend
-    region: singapore
-    plan: free
-    autoDeployTrigger: off
-    buildCommand: npm ci --include=dev && npm run build -- --webpack
-    startCommand: npm run start -- --hostname 0.0.0.0 --port $PORT
-    healthCheckPath: /api/health
+    repo: https://github.com/phongtom123/Phub-platform
+    branch: main
+    rootDir: .
+    autoDeployTrigger: commit
+    buildCommand: npm --prefix ui/userUI/Frontend ci && npm --prefix ui/userUI/Frontend run build
+    startCommand: npm --prefix ui/userUI/Frontend run start -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - ui/userUI/Frontend/**
+        - ui/shared/**
     envVars:
       - key: NODE_VERSION
-        value: 24.21.0
-      - key: NODE_ENV
-        value: production
-      - key: NEXT_TELEMETRY_DISABLED
-        value: "1"
+        value: "22"
       - key: PHUB_API_BASE_URL
-        sync: false
-      - key: PHUB_UI_ORIGIN
-        sync: false
+        value: https://phub-api.onrender.com

@@ -1,21 +1,23 @@
 # PHUB Customer Frontend
 
-Đây là bản Frontend chính tại `ui/userUI/Frontend`, được chuyển từ thư mục `Frontend` ngoài `ui`, giữ nguyên Home, Catalog Grid/List, About Us, FAQ, Dashboard và dữ liệu mẫu hiện tại.
+Frontend khách hàng tại `ui/userUI/Frontend`. Home, catalog và chi tiết sản phẩm lấy dữ liệu API; hồ sơ/đơn hàng dùng phiên đăng nhập thật. Không có sản phẩm, đánh giá, giỏ hàng hay hồ sơ mẫu thay thế.
 
-Đã bổ sung đăng nhập mẫu, trang đăng ký tạm và route chi tiết sản phẩm từ commit `699ff4c`. `/main/landing` hiển thị cùng Home với `/`. Chi tiết đầy đủ về cách gộp và giới hạn nằm trong [MERGE-NOTES.md](MERGE-NOTES.md).
+`/main/landing` hiển thị cùng Home với `/`. Đăng nhập, đăng ký khách hàng, hồ sơ và phiên cookie HttpOnly đã kết nối backend thật. Giỏ hàng, checkout và liên hệ chưa kết nối đầy đủ nghiệp vụ API; không báo gửi/đặt hàng thành công giả.
+
+Trang `/auth/register` tạo đồng thời hồ sơ khách hàng và tài khoản, sau đó đăng nhập ngay. Trước khi dùng cần chạy migration `Backend/migrations/20261011080003_customer_self_registration.sql`; Supabase secret chỉ nằm ở backend.
 
 Hướng dẫn chạy catalog với Backend, bao gồm cách xử lý Windows chặn SWC native
 và PowerShell chặn script, nằm trong [CATALOG-INTEGRATION.md](CATALOG-INTEGRATION.md#chạy-local).
 Giao diện khách hàng dùng cổng 3001 để chạy cùng admin ở cổng 3000.
 
-Các route chính: `/`, `/main/product`, `/main/product?view=list`, `/main/product/ps-001`, `/auth/login`, `/auth/register`, `/main/profile`, `/about-us`, `/faq`.
+Các route chính: `/`, `/main/product`, `/main/product?view=list`, `/main/product/{id-thực}`, `/auth/login`, `/auth/register`, `/main/profile`, `/about-us`, `/faq`.
 
 ## Getting Started
 
 First, run the development server:
 
 ```bash
-npm run dev
+npm run dev -- -p 3001
 # or
 yarn dev
 # or
@@ -24,7 +26,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -105,6 +107,9 @@ Phub-platform/
 │   ├── requirements.txt
 │   └── .env
 │
-├── docker-compose.yml
 ├── README.md
 └── .gitignore
+
+## UI local → API Render
+
+Đặt `PHUB_API_BASE_URL=https://phub-api.onrender.com` trong `.env.local` rồi khởi động lại Next.js. Không cần secret Supabase trong UI. Xem yêu cầu Origin, cookie và phiên bản endpoint trong [README gốc](../../../README.md).

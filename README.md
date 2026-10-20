@@ -1,229 +1,186 @@
-# PHUB Platform – Integrated UI
+# PHUB Platform — PC và linh kiện
 
-Repository tổng hợp giao diện từ các nhánh `adminUI`, `userUI` và `warehouseUI`.
+Ba UI Next.js, một backend FastAPI Python và Supabase PostgreSQL. Chạy local bằng npm/venv/uvicorn, không cần container.
 
-**Frontend khách hàng đang sử dụng: `ui/userUI/Frontend/`.** Bản chính trước đây ở ngoài `ui` đã được chuyển vào đây, giữ nguyên giao diện, dữ liệu và các trang đã bổ sung. Xem [ghi chú gộp](ui/userUI/Frontend/MERGE-NOTES.md).
+```text
+Browser → Next.js /api/backend/* → FastAPI :8000 → Supabase
+```
 
-**Thử đầy đủ UI đặt đơn/hóa đơn/thanh toán, chưa ghi Supabase:**
-xem [PAYMENT-UI-REVIEW.md](PAYMENT-UI-REVIEW.md). Luồng thực thi dùng fixture riêng;
-đơn/hóa đơn/thanh toán có sẵn trên Supabase vẫn đọc được.
-
-Mỗi giao diện được giữ trong một thư mục riêng để tránh xung đột giữa các phiên bản Next.js, dependency và cấu trúc source code. Không chạy `npm install` tại thư mục root; hãy mở terminal tại đúng ứng dụng cần chạy.
-
-## Cấu trúc tổng hợp
+## Cấu trúc mã
 
 ```text
 Phub-platform/
-├── Backend/                     # FastAPI và kết nối Supabase dùng chung
-├── ui/
-│   ├── adminUI/                  # Giao diện quản trị viên
-│   │   ├── app/
-│   │   ├── src/
-│   │   └── package.json
-│   ├── userUI/                   # Nội dung nhánh userUI
-│   │   └── Frontend/             # Giao diện khách hàng đã gộp, bản chính
-│   └── warehouseUI/              # Giao diện thủ kho
-│       ├── app/
-│       ├── src/
-│       └── package.json
-├── .gitignore
-└── README.md
+├── database/
+│   ├── schema.dbml                  # 19 bảng, không có chi nhánh
+│   └── migrations/001_initial_schema.sql
+├── Backend/
+│   ├── phub_api/
+│   │   ├── main.py
+│   │   ├── config/
+│   │   ├── controllers/             # Endpoint + HTTP handler
+│   │   ├── dependencies/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── repositories/            # PostgREST, Storage và SQL RPC
+│   │   ├── schemas/
+│   │   └── services/                # Quy tắc nghiệp vụ
+│   ├── scripts/hash_password.py     # Tạo hash tài khoản đầu tiên
+│   ├── tests/
+│   ├── .env.example
+│   └── README.md                    # API, quyền, hướng dẫn database
+└── ui/
+    ├── adminUI/                     # Next.js 15 · :3000
+    │   ├── app/api/backend/[...path]/route.ts
+    │   ├── app/data/[resource]/page.tsx
+    │   ├── app/accounts/ / app/account/ # Trang quản lý tài khoản thật
+    │   ├── src/features/accounts/    # List/form/detail/profile, gọi API
+    │   └── src/components/backend-data-view.tsx
+    ├── warehouseUI/                 # Next.js 15 · :3002
+    │   ├── app/ / src/
+    │   └── src/components/backend-data-view.tsx
+    ├── userUI/Frontend/             # Next.js 16 · :3001
+    │   └── src/app/                 # Catalog, auth, profile, data
+    └── shared/
+        ├── backend-route.ts         # Gateway server dùng chung
+        ├── record-navigation.ts     # Chuyển URL chi tiết cũ
+        └── data-manager.css         # Kiểu trình bày dữ liệu dùng chung
 ```
 
-## Nguồn mã đã tổng hợp
+Các UI giữ dependencies riêng để tránh xung đột Next.js/React. Không chạy `npm install` tại root.
 
-| Thư mục | Nhánh nguồn | Commit nguồn |
-| --- | --- | --- |
-| `ui/adminUI` | `origin/adminUI` | `975a497` |
-| `ui/userUI` | `origin/userUI` | `add4fa4` |
-| `ui/warehouseUI` | `origin/warehouseUI` | `76273a4` |
+Backend thống nhất **Controller → Service → Repository → Supabase**. Endpoint
+và handler nằm cùng controller; service không truy vấn database trực tiếp.
+Xem [kiến trúc và quy tắc phát triển](Backend/ARCHITECTURE.md). Refactor giữ
+nguyên API/OpenAPI, entrypoint và UI; không yêu cầu migration DB mới.
 
-Nhánh `main` tại thời điểm tổng hợp chỉ chứa README và không có ứng dụng riêng, vì vậy không tạo thêm `ui/main`.
+Phần tài khoản admin đã nối API/Supabase, không dùng dữ liệu mẫu. Hướng dẫn
+và hợp đồng: [Admin UI](ui/adminUI/README.md), [API tài khoản](Backend/docs/modules/admin-accounts.md).
+Không còn bản ghi/số liệu mẫu trong UI. Màn hình đã tích hợp lấy dữ liệu qua API;
+chức năng chưa có API hiển thị trạng thái chưa khả dụng. Điều này không đồng nghĩa
+toàn bộ nghiệp vụ quản trị đã hoàn thành. Fixtures trong tests và ví dụ Swagger
+chỉ phục vụ kiểm thử/tài liệu, không được dùng làm dữ liệu hiển thị thay thế.
 
-Nhánh `userUI` gốc có nhiều route rỗng. Trên nhánh tổng hợp, giao diện khách hàng đã được bổ sung trang đăng nhập, storefront, danh mục có bộ lọc theo nhóm và trang chi tiết sản phẩm tĩnh. Thư mục type sinh tự động cũ đã được loại bỏ; Next.js sẽ tạo lại route types trong `.next/types`.
+## Chuẩn bị
 
-## Yêu cầu môi trường
+Triển khai Render: xem [cấu hình hai service](RENDER.md) và [render.yaml](render.yaml).
+Danh mục catalog dùng hai cấp: `LOAI_SP` là danh mục cha, `LOAI_SP_CON` là danh mục con.
+Mỗi sản phẩm phải thuộc một danh mục con của đúng danh mục cha. Migration cho
+database hiện có nằm tại `Backend/migrations/20261015032210_add_product_subcategories.sql`.
 
-- Node.js 20 trở lên.
-- npm 10 trở lên.
-- Python 3.11 trở lên nếu chạy Backend mẫu của `userUI`.
+- Node.js 20.9+ (khuyến nghị Node.js 22), npm, Python 3.11+.
+- Supabase Project URL và một **secret key mới chỉ dùng phía server**.
+- Tạo `Backend/.env` theo [mẫu](Backend/.env.example); cấu hình JWT secret ngẫu nhiên ít nhất 32 ký tự.
+- Khóa đã gửi qua chat phải thu hồi/thay mới. Không lưu secret vào Git, UI hoặc `NEXT_PUBLIC_*`.
+- Làm theo [hướng dẫn database và tài khoản đầu tiên](Backend/README.md). Migration tạo mới chỉ dùng cho database trống; chưa chạy migration/seed lên Supabase tự động.
 
-## Chạy giao diện quản trị viên
+Mỗi UI có `.env.example`; có thể tạo `.env.local` tương ứng. Gateway mặc định dùng `PHUB_API_BASE_URL=http://127.0.0.1:8000`. Không cần Supabase key trong UI.
 
-```bash
-cd ui/adminUI
-npm install
-npm run dev
-```
+## Chạy UI local với API trên Render
 
-Trang đăng nhập quản trị viên: `http://localhost:3000`.
-
-Đây cũng là cổng đăng nhập chung cho nhân sự nội bộ. Giao diện sẽ điều hướng theo vai trò của tài khoản mẫu:
-
-- `admin.thinh / password123` → giao diện quản trị viên tại cổng `3000`.
-- `phong.kho / password123` → giao diện nhân viên kho tại cổng `3002`.
-
-## Khởi động hệ thống Khách hàng (Sản phẩm, Giỏ hàng, Checkout) trên PowerShell
-
-Hệ thống mua sắm khách hàng (`ui/userUI/Frontend` + `Backend`) bao gồm: danh mục sản phẩm, tìm kiếm, bộ lọc, chi tiết sản phẩm, thêm vào giỏ hàng, giỏ hàng, thông tin nhận hàng và xác nhận đơn hàng.
-
-> [!IMPORTANT]
-> **Lưu ý về lỗi "Chức năng mua hàng hiện chưa sẵn sàng":**
-> Nếu chạy Backend ở chế độ `Real` (`app.main:app`), API xác thực khách hàng đang tạm khóa bằng mã lỗi `503 AUTH_INTEGRATION_REQUIRED` (chờ module đăng nhập của nhóm gộp vào). Do đó, khi thêm vào giỏ hàng sẽ bị báo chưa sẵn sàng.
-> **Để sử dụng và kiểm thử đầy đủ giỏ hàng:** hãy khởi động theo **Cách 1 (Script tự động với Mode SupabaseTest)** hoặc **Cách 2 (Mở 2 Terminal PowerShell thủ công)** dưới đây.
-
----
-
-### Cách 1: Khởi động tự động bằng Script PowerShell (Khuyên dùng)
-
-Mở **PowerShell** tại thư mục gốc của dự án (`Phub-platform`):
-
-#### 1. Chế độ `SupabaseTest` (Dữ liệu Supabase thật)
-Kết nối trực tiếp Supabase lấy danh sách sản phẩm thật, tự động dùng phiên khách hàng test đầu tiên để không bị vướng bước đăng nhập:
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start-customer.ps1 -Mode SupabaseTest
-```
-- **Giao diện mua hàng:** [http://127.0.0.1:3001/main/product](http://127.0.0.1:3001/main/product)
-- **Tài liệu API Swagger:** [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
-- *Chức năng test được:* Xem danh sách, tìm kiếm, lọc (danh mục, hãng, giá, màu sắc), xem chi tiết, **thêm vào giỏ hàng**, chỉnh sửa số lượng giỏ, tính tổng tiền, điền và bấm **"Lưu"** thông tin nhận hàng trực tiếp vào Supabase.
-
-#### 2. Chế độ `Demo` (Mock RAM độc lập - Toàn bộ luồng đặt hàng & thanh toán)
-Chạy server fixture độc lập trong RAM, cho phép test đặt đơn và mô phỏng thanh toán mà không làm ảnh hưởng Supabase:
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start-customer.ps1 -Mode Demo
-```
-- **Giao diện mua hàng:** [http://127.0.0.1:13001/main/product](http://127.0.0.1:13001/main/product)
-- **Trang điều khiển khách mẫu & thanh toán:** [http://127.0.0.1:18001/__manual](http://127.0.0.1:18001/__manual)
-- *Chức năng test được:* Thêm sản phẩm SKU-A vào giỏ, áp mã voucher `SAVE10`, bấm **"Đặt đơn"** thành công, và thử các kịch bản thanh toán (Chờ xử lý / Đã thanh toán / Hoàn tiền).
-
-#### 3. Dừng server
-Khi muốn dừng hệ thống, chạy:
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts/stop-customer.ps1 -Mode SupabaseTest
-# hoặc nếu đang chạy Demo:
-powershell -ExecutionPolicy Bypass -File scripts/stop-customer.ps1 -Mode Demo
-```
-
----
-
-### Cách 2: Khởi động thủ công bằng 2 Terminal PowerShell (Xem log trực tiếp)
-
-Mở 2 cửa sổ PowerShell riêng biệt từ thư mục gốc của dự án:
-
-#### Terminal 1: Chạy Backend (cổng 8001)
-```powershell
-cd Backend
-$env:PHUB_SUPABASE_TEST_MODE = 'local-only'
-$env:PHUB_SUPABASE_TEST_AUTO_CUSTOMER = '1'
-$env:PHUB_SUPABASE_TEST_UI_ORIGIN = 'http://127.0.0.1:3001'
-.\.venv\Scripts\python.exe -m uvicorn scripts.supabase_shopping_test:app --host 127.0.0.1 --port 8001
-```
-
-#### Terminal 2: Chạy Frontend (cổng 3001)
-```powershell
-cd ui/userUI/Frontend
-$env:PHUB_API_BASE_URL = 'http://127.0.0.1:8001'
-$env:PHUB_UI_ORIGIN = 'http://127.0.0.1:3001'
-$env:NEXT_TELEMETRY_DISABLED = '1'
-$env:NEXT_TEST_WASM_DIR = (Resolve-Path 'node_modules/@next/swc-wasm-nodejs').Path
-npm.cmd run dev -- --webpack --hostname 127.0.0.1 --port 3001
-```
-
----
-
-### Các đường dẫn trang chức năng (Cổng 3001)
-
-| Trang chức năng | Đường dẫn (URL) |
-| :--- | :--- |
-| **Danh mục sản phẩm (Tìm kiếm, lọc, phân trang)** | [http://127.0.0.1:3001/main/product](http://127.0.0.1:3001/main/product) |
-| **Chi tiết sản phẩm** | [http://127.0.0.1:3001/main/product/SEED_SP001](http://127.0.0.1:3001/main/product/SEED_SP001) *(hoặc click từ danh mục)* |
-| **Giỏ hàng (Chọn món, sửa số lượng, tính tổng)** | [http://127.0.0.1:3001/cart](http://127.0.0.1:3001/cart) |
-| **Thông tin người nhận hàng (Checkout form)** | [http://127.0.0.1:3001/checkout](http://127.0.0.1:3001/checkout) |
-| **Xác nhận đơn hàng** | [http://127.0.0.1:3001/checkout/confirm](http://127.0.0.1:3001/checkout/confirm) |
-| **Hồ sơ cá nhân & Lịch sử đơn hàng** | [http://127.0.0.1:3001/main/profile](http://127.0.0.1:3001/main/profile) |
-| **Swagger API docs** | [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs) |
-
-## Chạy giao diện thủ kho
-
-```bash
-cd ui/warehouseUI
-npm install
-npm run dev
-```
-
-Truy cập `http://localhost:3002`.
-
-## Chạy Backend
-
-```bash
-cd Backend
-python -m venv .venv
-```
-
-Kích hoạt môi trường ảo trên PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-fastapi dev
-```
-
-### Cấu hình Supabase và file `.env`
-
-Backend đọc thông tin kết nối Supabase từ `Backend/.env`. File này nằm trong
-`.gitignore`, vì vậy không được commit URL hoặc secret key thật lên Git.
-
-Ở lần khởi động đầu tiên, nếu chưa có `.env`, backend sẽ tự sao chép
-`Backend/.env.example` thành `Backend/.env`. Lần chạy đầu có thể dừng lại và yêu
-cầu cấu hình vì file mới vẫn chứa các giá trị mẫu.
-
-Mở `Backend/.env` và thay các giá trị sau bằng thông tin của project Supabase:
+Trong `.env.local` của từng UI (`ui/adminUI`, `ui/warehouseUI`,
+`ui/userUI/Frontend`), đặt biến phía server rồi khởi động lại Next.js:
 
 ```dotenv
-FRONTEND_URL=http://localhost:3000
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SECRET_KEY=sb_secret_xxxxxxxxx
+PHUB_API_BASE_URL=https://phub-api.onrender.com
 ```
 
-- `SUPABASE_URL`: URL của project Supabase.
-- `SUPABASE_SECRET_KEY`: secret key chỉ dùng trong backend; không đưa biến này
-  sang frontend và không đặt tiền tố `NEXT_PUBLIC_`.
-- `FRONTEND_URL`: địa chỉ frontend mẫu; cấu hình CORS hiện nằm trong
-  `Backend/app/main.py`.
+Không thêm `/docs` hoặc `/api` vào URL này. Không cần chạy Python local khi
+endpoint cần dùng đã được deploy. Trình duyệt gọi gateway cùng origin của Next.js,
+gateway gọi API Render; không cần và không được đưa secret Supabase vào UI.
 
-Sau khi điền giá trị thật, khởi động lại backend:
+Để đăng nhập và ghi dữ liệu từ local, thêm các origin local vào
+`FRONTEND_ORIGINS` của **service API trên Render**, giữ lại các origin production:
+`http://localhost:3000,http://localhost:3001,http://localhost:3002`.
+Backend kiểm tra Origin cho thao tác ghi, kể cả khi đi qua gateway.
+Nếu dùng cổng/hostname khác, thêm đúng origin đó. Không dùng wildcard hoặc
+giả mạo Origin để bỏ qua kiểm tra. Giữ `COOKIE_SECURE=true` trên cloud;
+nếu trình duyệt không chấp nhận cookie Secure ở localhost HTTP, dùng HTTPS local.
+
+Code local và API cloud có thể khác phiên bản. Ngày 07/10/2026 đã kiểm tra:
+catalog cloud trả HTTP 200; OpenAPI cloud chưa có `/api/admin/accounts`.
+Muốn thử các endpoint admin mới trước khi cho phép push/deploy, dùng backend local
+và đặt lại `PHUB_API_BASE_URL=http://127.0.0.1:8000`. Xóa dữ liệu mẫu khỏi UI
+không xóa các bản ghi đang có trong Supabase.
+
+## Chạy bốn terminal
+
+Các lệnh dưới đây bắt đầu từ thư mục repository. Dùng `npm.cmd` trên PowerShell nếu `npm.ps1` bị chặn.
+
+**Terminal 1 — Python API**
 
 ```powershell
 cd Backend
-.venv\Scripts\Activate.ps1
-fastapi dev
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.venv\Scripts\python.exe -m uvicorn phub_api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Nếu muốn tạo file trước khi chạy ứng dụng, có thể sao chép thủ công:
+**Terminal 2 — Admin**
 
 ```powershell
-Copy-Item .env.example .env
+cd ui/adminUI
+npm.cmd install
+npm.cmd run dev
 ```
 
-Backend không ghi đè `.env` đã tồn tại. Khi cần thêm biến môi trường mới, hãy
-cập nhật cả `.env.example` bằng giá trị mẫu an toàn để các thành viên khác biết
-cần cấu hình biến nào.
+**Terminal 3 — Khách hàng**
 
-## Nguyên tắc phát triển
+```powershell
+cd ui/userUI/Frontend
+npm.cmd install
+npm.cmd run dev -- -p 3001
+```
 
-- Mỗi nhóm làm việc trong đúng thư mục UI của mình.
-- Không đưa `node_modules`, `.next`, file `.env` hoặc môi trường Python `.venv` lên Git.
-- Khi cần dùng chung API hoặc kiểu dữ liệu, nên tạo package dùng chung riêng thay vì import chéo trực tiếp giữa ba ứng dụng.
-- Các nhánh gốc vẫn được giữ nguyên; nhánh tổng hợp chỉ tổ chức lại source code theo thư mục.
-# PHUB Platform
+**Terminal 4 — Kho**
 
-Phần khách hàng đang phát triển trên nhánh `ui-review`.
+```powershell
+cd ui/warehouseUI
+npm.cmd install
+npm.cmd run dev
+```
 
-- [Chạy giao diện và test từng chức năng](CUSTOMER-TESTING.md)
-- [Test trên Supabase thật với khách đầu tiên được cho phép](CUSTOMER-SUPABASE-TESTING.md)
-- [Cài đặt và cấu hình Render để tự triển khai sau](CUSTOMER-DEPLOYMENT.md)
-- [Backend/API và bốn mục tiêu khách hàng](Backend/README.md)
-- [Tích hợp UI desktop/mobile và E2E](ui/userUI/Frontend/SHOPPING-INTEGRATION.md)
+| Ứng dụng | URL |
+| --- | --- |
+| Admin / đăng nhập nhân sự | http://localhost:3000 |
+| Khách hàng | http://localhost:3001/auth/login |
+| Nhân viên kho | http://localhost:3002 |
+| API / Swagger | http://localhost:8000/docs |
 
-Đăng nhập thật do thành viên khác phụ trách. Các migration mua hàng được chuẩn bị
-riêng và chưa tự áp dụng lên Supabase chung.
+Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tài khoản ADMIN vào admin, THU_KHO vào kho, KHACH_HANG vào storefront, kể cả khi đăng nhập nhầm cổng. Role do database quyết định, không lấy từ query string/localStorage. Không còn tài khoản demo `password123`.
+
+## Những phần đã nối backend
+
+- Đăng nhập, đăng ký khách hàng, phiên cookie HttpOnly, kiểm tra role/trạng thái/kho và đăng xuất.
+- API đọc/phân trang/tìm kiếm cho 19 bảng, kiểm tra scope theo role.
+- Tạo/sửa 9 bảng dữ liệu nền: kho, nhân viên, tài khoản, khách hàng, loại sản phẩm, sản phẩm, nhà cung cấp, chương trình khuyến mãi, voucher.
+- Danh sách/chi tiết/form dữ liệu thật trên admin và kho, route riêng `/data/{resource}`; URL chi tiết cũ chuyển sang route này.
+- Dashboard không còn dùng các số liệu doanh thu/tồn kho giả; số liệu danh sách lấy qua API.
+- Catalog/chi tiết sản phẩm khách hàng giữ kết nối API có sẵn; đăng nhập và hồ sơ/đơn/hóa đơn/thanh toán của khách đã dùng API theo tài khoản.
+- Sản phẩm sửa ảnh bằng URL `duong_dan_anh`. Upload file và ảnh chương trình chưa có schema/API.
+
+Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hình/kết nối hoặc danh sách rỗng thực tế. Cài đặt, thông báo, giỏ hàng, checkout và liên hệ chưa kết nối API: không hiển thị dữ liệu mẫu hay báo lưu/gửi thành công giả.
+
+## Giới hạn hiện tại
+
+Đây là đợt triển khai nền API và CRUD, **chưa hoàn thành toàn bộ backend nghiệp vụ**. Phiếu nhập/chuyển kho/đơn/chi tiết đơn/tồn/hóa đơn/thanh toán/lượt voucher mới có API đọc. Các thao tác ghi liên quan cần PostgreSQL transaction/RPC và kiểm thử đồng thời: chưa có checkout thật, xác nhận nhập/xuất/nhận kho, chốt hóa đơn, áp voucher, webhook/hoàn tiền. Không mở CRUD trực tiếp cho tồn/tiền và không có DELETE.
+
+Đăng ký tự phục vụ, reset password, refresh token và thu hồi token phía server chưa có. Hiện dùng một phiên chung trên ba cổng localhost. Đây là cấu hình phát triển local, không phải cấu hình production.
+
+Chi tiết endpoint, payload, quyền và backlog: [Backend/README.md](Backend/README.md).
+
+Quản lý đặc tả, đăng nhập bằng Bearer/cookie trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot 70 thao tác trên 49 đường dẫn: [Backend/docs/openapi.json](Backend/docs/openapi.json).
+
+## Kiểm tra mã
+
+```powershell
+cd Backend
+.venv\Scripts\python.exe -m pytest tests -q
+```
+
+Trong từng thư mục UI chạy `npm.cmd run build`; có thể kiểm tra TypeScript bằng `node node_modules/typescript/bin/tsc --noEmit`. Tests backend dùng HTTP/PostgREST mocks, không cần secret thật, không tự chứng minh migration/live Supabase hoạt động.
+
+Kiểm tra gateway dùng chung từ root: `node --test ui/shared/tests/backend-route.test.cjs` (cần dependencies admin đã cài).
+
+Kiểm tra không tái đưa fixtures vào UI: `node --test ui/shared/tests/no-ui-fixtures.test.cjs`.
+
+Không commit `node_modules`, `.next`, `.venv`, `.env`, `.env.local` hoặc thông tin khách hàng thật. Push code không tự xác nhận API mới đã được deploy; cần kiểm tra phiên bản service Render sau khi triển khai.

@@ -4,7 +4,7 @@ import styles from "./contact.module.css";
 
 export function ContactForm() {
   const [status, setStatus] = useState("");
-  function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = event.currentTarget; if (!form.checkValidity()) { form.reportValidity(); return; } setStatus("Thank you! Your message has been received in this UI preview."); form.reset(); }
+  function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const form = event.currentTarget; if (!form.checkValidity()) { form.reportValidity(); return; } setStatus("Chưa có API gửi liên hệ. Tin nhắn chưa được gửi hoặc lưu."); }
   return <form className={styles.form} onSubmit={submit}>
     <div className={styles.twoColumns}><label>Your Name <em>*</em><input name="name" placeholder="Your Name" autoComplete="name" required /></label><label>Your Email <em>*</em><input name="email" type="email" placeholder="Your Email" autoComplete="email" required /></label></div>
     <label>Your Phone Number<input name="phone" type="tel" placeholder="Your Phone" autoComplete="tel" /></label>

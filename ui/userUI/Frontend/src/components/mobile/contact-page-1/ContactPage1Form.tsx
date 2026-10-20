@@ -16,8 +16,7 @@ export function ContactPage1Form() {
       return;
     }
 
-    setStatus(form.successMessage);
-    target.reset();
+    setStatus(form.unavailableMessage);
   }
 
   return (
