@@ -1,5 +1,5 @@
 """Dynamic request schemas for the generic table APIs."""
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from functools import lru_cache
 
@@ -18,7 +18,7 @@ def payload_model(name: str, patch: bool):
             continue
         if column["generated"] or (patch and key in resource.keys) or (patch and name == "products" and key == "sku"):
             continue
-        annotation = int if kind == "int" else datetime if kind == "datetime" else Decimal if kind.startswith("decimal") else str
+        annotation = int if kind == "int" else datetime if kind in {"datetime", "timestamptz"} else date if kind == "date" else Decimal if kind.startswith("decimal") else str
         constraints = {}
         if annotation is str:
             constraints = {"min_length": 1, "max_length": 20000 if kind == "text" else 2000}

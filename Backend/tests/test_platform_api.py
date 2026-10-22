@@ -90,7 +90,9 @@ def test_order_filter_combines_with_primary_key(platform_client):
 
 def test_schema_all_tables_and_metadata(platform_client):
     client, _, _ = platform_client
-    assert len(schema()) == len(RESOURCES) == 20
+    assert len(schema()) == 22
+    assert len(RESOURCES) == 20  # CRM join tables must not become unrestricted generic CRUD.
+    assert not {"SO_THICH", "KHACH_HANG_SO_THICH"}.intersection(r.table for r in RESOURCES.values())
     resources = client.get("/api/data/resources").json()
     assert len(resources) == 20
     assert sum(item["writable"] for item in resources) == 9

@@ -93,7 +93,7 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
             <span>{sessionError}</span>
             <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
           </div>}
-          {accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={dataResource === "products" ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
+          {accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : definition ? (
             <ModuleView

@@ -15,6 +15,35 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("CRM profile and scoped orders pass the gateway; other CRM paths/methods stay closed", async () => {
+  const calls = [];
+  const proxy = gateway(async (url, options) => {
+    calls.push({ url: String(url), method: options.method, origin: options.headers.get("Origin"), cookie: options.headers.get("Cookie") });
+    return Response.json({ ok: true });
+  });
+  for (const [method, segments] of [
+    ["GET", ["crm", "customers", "KH_123"]],
+    ["PATCH", ["crm", "customers", "KH_123"]],
+    ["GET", ["crm", "customers", "KH_123", "orders"]],
+  ]) {
+    const request = new Request("http://localhost:3000/api/backend/x?page=2", { method,
+      headers: { Origin: "http://localhost:3000", Cookie: "other=hidden; phub_session=test" },
+      ...(method === "PATCH" ? { body: JSON.stringify({ so_thich: ["GAMING"] }) } : {}),
+    });
+    assert.equal((await proxy(request, segments)).status, 200);
+  }
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0].url, "http://127.0.0.1:8000/api/crm/customers/KH_123?page=2");
+  assert.equal(calls[1].origin, "http://localhost:3000");
+  assert.equal(calls[1].cookie, "phub_session=test");
+  for (const [method, segments] of [
+    ["DELETE", ["crm", "customers", "KH_123"]], ["POST", ["crm", "customers", "KH_123", "orders"]],
+    ["GET", ["crm", "customers", ".."]], ["GET", ["crm", "customers", "KH/secret"]],
+    ["GET", ["crm", "customers", "%2e%2e"]], ["GET", ["crm", "customers", "KH1", "secret"]],
+  ]) assert.equal((await proxy(new Request("http://localhost/x", { method }), segments)).status, 404);
+  assert.equal(calls.length, 3);
+});
+
 test("media upload forwards binary bytes, content type and only the session cookie", async () => {
   const bytes = Uint8Array.from([137, 80, 78, 71, 0, 255, 128, 1]);
   const proxy = gateway(async (url, options) => {

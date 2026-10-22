@@ -48,7 +48,7 @@ def schema() -> dict[str, list[dict[str, Any]]]:
     result = {}
     for table, block in re.findall(r"Table (\w+) \{(.*?)^\}", source, re.M | re.S):
         columns = []
-        for name, kind, options in re.findall(r"^  (\w+) (int|varchar|text|datetime|decimal\(\d+,\d+\))([^\n]*)", block, re.M):
+        for name, kind, options in re.findall(r"^  (\w+) (int|varchar|text|datetime|timestamptz|date|decimal\(\d+,\d+\))([^\n]*)", block, re.M):
             default_match = re.search(r"default: ('[^']*'|-?\d+)", options)
             default = default_match.group(1).strip("'") if default_match else None
             if kind == "int" and default is not None:
@@ -65,7 +65,8 @@ ENUMS = {
     ("vouchers", "trang_thai"): ["HOAT_DONG", "TAM_DUNG"],
     ("vouchers", "loai_giam"): ["PHAN_TRAM", "SO_TIEN"],
 }
-SYSTEM_FIELDS = {"promotions": {"nguoi_tao", "ngay_tao"}, "vouchers": {"ngay_tao"}}
+SYSTEM_FIELDS = {"promotions": {"nguoi_tao", "ngay_tao"}, "vouchers": {"ngay_tao"},
+                 "customers": {"ngay_tao", "cap_nhat_luc", "luu_tru_luc"}}
 
 
 def public_columns(name: str) -> list[dict[str, Any]]:

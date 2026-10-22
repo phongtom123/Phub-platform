@@ -185,3 +185,12 @@ tests/test_openapi.py      # Validator OAS 3.1, ref, mẫu, quyền, URL, drift
 ```
 
 OpenAPI mở rộng theo [cách chuẩn của FastAPI](https://fastapi.tiangolo.com/how-to/extending-openapi/). Giới hạn Authorize/cookie được mô tả trong [tài liệu Swagger](https://swagger.io/docs/specification/v3_0/authentication/cookie-authentication/).
+
+## CRM: hồ sơ khách hàng Admin
+
+API mới: `GET/PATCH /api/crm/customers/{ma_kh}` và
+`GET /api/crm/customers/{ma_kh}/orders`. Chỉ ADMIN được truy cập.
+Sau migration hồ sơ/sở thích đợt 1, cần chạy thêm
+`migrations/20261022_crm_admin_profile_api.sql` (đường dẫn tính từ `Backend/`)
+để lưu nguyên tử. Không chạy lại script tạo bảng đã áp dụng.
+Xem [hướng dẫn CRM Admin](../../docs/CRM-ADMIN-PROFILE.md) về scope, triển khai và kiểm thử.

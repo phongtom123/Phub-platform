@@ -108,8 +108,10 @@ def row_schema(name: str) -> dict:
         field, kind = column["name"], column["type"]
         prop = {"type": "integer"} if kind == "int" else {"type": "string"}
         description = field
-        if kind == "datetime":
+        if kind in {"datetime", "timestamptz"}:
             prop["format"] = "date-time"
+        if kind == "date":
+            prop["format"] = "date"
         if kind.startswith("decimal"):
             prop["pattern"] = r"^-?\d+(\.\d{1,2})?$"
             description += " · chuỗi decimal, không phải JSON number"
