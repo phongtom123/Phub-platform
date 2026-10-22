@@ -6,7 +6,7 @@ import { adminFetch } from "@/src/lib/admin-fetch";
 import { accountApi, errorMessage, jsonRequest } from "./api";
 import { accountHref, roleLabels, statusLabels, type Account, type AccountStatus, type Role } from "./types";
 
-export function AccountDetail({ account, onChange, onBack }: { account: Account; onChange: (account: Account) => void; onBack: () => void }) {
+export function AccountDetail({ account, onChange, onBack, onEditingChange }: { account: Account; onChange: (account: Account) => void; onBack: () => void; onEditingChange: (editing: boolean) => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -18,6 +18,11 @@ export function AccountDetail({ account, onChange, onBack }: { account: Account;
   const [warehouseQuery, setWarehouseQuery] = useState("");
   const [warehouseSearch, setWarehouseSearch] = useState("");
   const [warehouseError, setWarehouseError] = useState("");
+  useEffect(() => { setRole(account.role); setWarehouse(String(account.ma_kho ?? "")); }, [account.role, account.ma_kho]);
+  useEffect(() => {
+    onEditingChange(busy || Boolean(password || confirmation || warehouseQuery) || role !== account.role || warehouse !== String(account.ma_kho ?? ""));
+  }, [busy, password, confirmation, warehouseQuery, role, warehouse, account.role, account.ma_kho, onEditingChange]);
+  useEffect(() => () => onEditingChange(false), [onEditingChange]);
   const canManageRole = Boolean(account.ma_nhan_vien) && !account.is_self;
   const canAssignWarehouse = canManageRole && role === "THU_KHO";
   const roleHelp = !account.ma_nhan_vien

@@ -10,7 +10,7 @@ export function DesktopProductDetail({ product, activeTab }: { product: DetailPr
   return <article className={styles.page}>
     <div className={styles.purchaseBar}><div className={styles.purchaseInner}>
       <nav className={styles.tabs} aria-label="Product information tabs">{desktopProductDetailTabs.map(tab => <Link key={tab.id} className={activeTab === tab.id ? styles.activeTab : undefined} href={productHref(product.id) + "?tab=" + tab.id}>{tab.label}</Link>)}</nav>
-      <ProductDetailActions price={product.price} currency={product.currency} />
+      <ProductDetailActions product={product} />
     </div></div>
     <section className={styles.productHero}>
       <div className={styles.productCopy}><div className={styles.copyInner}>

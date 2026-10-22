@@ -11,7 +11,7 @@ phân bổ vào các kho khác nhau. Endpoint nay dùng dependency xác thực c
 `customer_checkout_v2` để chốt `ma_kh` từ Backend; không còn cho guest tạo đơn.
 Auth dùng phiên JWT/cookie chung; thiếu phiên trả 401 và sai role trả 403 trước khi đọc/ghi database.
 Cần migration ngày 04/10 rồi 06/10, cả hai **chưa áp dụng trên Supabase chung**.
-Checkout UI sử dụng `/api/customer/orders` có voucher; xem [commerce README](../commerce/README.md).
+Checkout UI sử dụng `/api/customer/orders` có voucher; xem [commerce README](commerce.md).
 
 ## Hợp đồng request
 

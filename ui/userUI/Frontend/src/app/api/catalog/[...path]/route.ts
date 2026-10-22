@@ -6,7 +6,7 @@ function error(status: number, code: string, message: string) {
 
 export async function GET(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
-  const allowed = path.length === 1 && ["products", "categories", "brands"].includes(path[0])
+  const allowed = path.length === 1 && ["products", "categories", "brands", "colors"].includes(path[0])
     || path.length === 2 && path[0] === "products" && path[1].length <= 100;
   const validSegments = path.every(segment => segment !== "." && segment !== ".." && !/[\\/\u0000-\u001f\u007f]/.test(segment));
   if (!allowed || !validSegments) return error(404, "NOT_FOUND", "Không tìm thấy tài nguyên.");

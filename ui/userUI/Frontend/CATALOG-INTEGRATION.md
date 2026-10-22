@@ -7,12 +7,13 @@ không sử dụng fixtures làm phương án dự phòng khi API lỗi.
 
 ## Phạm vi và luồng dữ liệu
 
-Chỉ sửa frontend khách hàng trong thư mục này. Backend, CORS chung, database,
-admin UI và warehouse UI không thay đổi trong đợt tích hợp.
+Đợt tích hợp đầu sửa frontend khách hàng trong thư mục này. Đợt sửa bộ lọc
+bổ sung API đọc catalog; CORS chung, cấu trúc database, admin UI và warehouse UI
+giữ nguyên. Chi tiết: [CUSTOMER-UI-REVIEW.md](../../../CUSTOMER-UI-REVIEW.md).
 
 - Trình duyệt gọi `/api/catalog/*` trên chính origin của Next.js.
 - Route Handler `src/app/api/catalog/[...path]/route.ts` chỉ chuyển tiếp GET của
-  danh sách, chi tiết, loại sản phẩm và thương hiệu tới FastAPI. Các đường dẫn
+  danh sách, chi tiết, loại sản phẩm, thương hiệu và màu sắc tới FastAPI. Các đường dẫn
   khác bị từ chối. Không chuyển tiếp cookie, token hoặc địa chỉ server từ client.
 - `src/lib/catalog/server.ts` dùng `PHUB_API_BASE_URL`, timeout 15 giây, không cache
   và không theo redirect. Chi tiết sản phẩm được đọc ở server qua cùng lớp này.
@@ -24,6 +25,21 @@ admin UI và warehouse UI không thay đổi trong đợt tích hợp.
 
 Giá thập phân dạng chuỗi của API được chuyển sang số **chỉ để định dạng hiển thị**
 bằng Intl theo tiền tệ API. Không dùng số này để tính đơn hàng hoặc thanh toán.
+
+## Quy tắc giá và thuế đã xác nhận
+
+Giá sản phẩm là giá trước thuế. `Price.tsx` hiển thị dòng đỏ nhỏ
+**“chưa áp dụng thuế 10%”** dưới giá; component `TaxNotice` được tái sử dụng ở
+thanh mua hàng desktop vốn định dạng giá riêng. Home, catalog grid/list, preview
+và chi tiết desktop/mobile đều có ghi chú này. CSS chỉ bổ sung kiểu chữ nhỏ màu đỏ,
+giữ bố cục và các giá hiện tại. Không cộng 10% vào giá catalog hoặc tự tạo hóa đơn.
+
+API đặt đơn mới cũng trả tổng trước thuế; thuế áp dụng khi bộ phận hóa đơn lập
+hóa đơn. Backend không trừ tồn thực khi tạo đơn; phần kho xử lý khi xuất hàng.
+Mô tả code cho cả bốn mục tiêu ở [Backend/README.md](../../../Backend/README.md).
+Migration đặt đơn vẫn chờ nhóm triển khai. Mục tiêu 4 đã nối giỏ/checkout/voucher/
+đơn/thanh toán; auth thật còn chờ module của thành viên đăng nhập. Xem trạng thái,
+file và cách kiểm thử riêng ở [SHOPPING-INTEGRATION.md](SHOPPING-INTEGRATION.md).
 
 ## Chạy local
 
@@ -109,28 +125,33 @@ Máy không gặp giới hạn này dùng các lệnh dev/build thông thường
 - Header tìm tên/SKU; giới hạn nhập 100 ký tự theo API.
 - Loại và thương hiệu lấy từ metadata thật. Chọn nhiều loại dùng query lặp
   `category_id`; thương hiệu dùng đúng chuỗi `brand`, không dùng slug/logo.
-- URL lưu `q`, `category_id`, `brand`, `sort`, `page`, `page_size` và `view`.
+- URL lưu `q`, `category_id`, `brand`, `min_price`, `max_price`, `color`,
+  `stock_status`, `sort`, `page`, `page_size` và `view`.
   Back/Forward và reload khôi phục điều kiện. Không gửi `view` tới backend.
 - Desktop giữ grid/list và tùy chọn số sản phẩm/trang. Mobile dùng 12 sản phẩm/trang.
 - Bộ lọc giữ trạng thái nháp tới khi áp dụng. Lọc/sắp xếp/đổi số lượng trang đưa
   về trang 1. Tổng/range/số trang lấy từ kết quả backend, không tính theo fixtures.
-- Khoảng giá, màu, tồn kho và sắp xếp tên chưa có API nên bị vô hiệu hóa; không
-  lọc/sắp xếp riêng trên một trang kết quả. Badge số lượng từng loại được bỏ vì
-  API chưa cung cấp facet counts.
+- Khoảng giá, màu và tồn kho lọc qua API trước phân trang, trên cả desktop/mobile.
+  Màu lấy từ thông số có sẵn; thiếu màu có lựa chọn riêng. Tồn khả dụng trừ lượng
+  đang giữ bởi đơn chưa xuất kho. Sắp xếp tên chưa có API nên vẫn vô hiệu hóa.
+  Badge số lượng từng loại được bỏ vì API chưa cung cấp facet counts.
 - Trang chủ lấy một trang 8 sản phẩm đang bán và một trang tối đa 5 sản phẩm cho
   mỗi loại đang hoạt động. Nút "Xem tất cả" mở catalog thật theo loại tương ứng.
   Không gắn nhãn "mới nhất" vì schema chưa có thời gian thêm sản phẩm.
 - Xem nhanh và chi tiết dùng tên, SKU, giá, ảnh, mô tả và thông số API. Tab chi
   tiết hiển thị thương hiệu, loại, đơn vị và bảo hành; không gắn nội dung i7/RTX
   mẫu của một model khác vào sản phẩm thật.
+- Xem nhanh có hai nút **Xem chi tiết sản phẩm** và **Thêm vào giỏ hàng**, dùng
+  chung `ProductPreviewActions` trên trang chủ và catalog.
 - URL ảnh công khai được tải trực tiếp, có fallback trung tính khi thiếu/hỏng ảnh.
   Không dùng ảnh sản phẩm khác làm fallback và không mở rộng image-host config.
 - Không sinh rating, giảm giá hoặc trạng thái còn hàng khi không có dữ liệu.
 - Lỗi danh sách có nút thử lại. Lỗi metadata có thể thử lại riêng mà danh sách
   vẫn hoạt động. Lỗi chi tiết có error boundary; sản phẩm không công khai có
   trang not-found. Không fallback sang fixtures khi lỗi hoặc không tìm thấy.
-- Giỏ hàng/so sánh/yêu thích/PayPal hiện chỉ là hành vi demo trên UI, chưa lưu
-  tài khoản, tạo đơn hay gọi dịch vụ thanh toán. Header/menu, banner, nội dung
+- Giỏ hàng và checkout đã nối API trong mục tiêu 4; so sánh/yêu thích vẫn là
+  state tạm trên UI. Thanh toán đọc giao dịch của đơn, không gọi PayPal hoặc
+  thu tiền. Header/menu, banner, nội dung
   dịch vụ và khuyến mãi tĩnh giữ thiết kế hiện có; không suy diễn nhánh menu mẫu
   thành taxonomy thật. Chỉ filter bằng `category_id` có trong metadata.
 
@@ -170,3 +191,9 @@ Lần kiểm tra tích hợp ngày 03/10/2026: TypeScript và lint các file tha
 75 kiểm thử backend và 24 kiểm tra trình duyệt đạt, không có lỗi JavaScript runtime.
 Production build bằng Webpack/SWC WASM hoàn tất thành công.
 Dữ liệu kiểm tra có 12 sản phẩm công khai; cả 12 chưa có ảnh.
+
+Sau khi bổ sung ghi chú thuế: TypeScript/lint phần thay đổi và 27 kiểm tra trình
+duyệt đạt. Script kiểm tra ghi chú đỏ nhỏ trên từng thẻ sản phẩm, preview, Home
+và chi tiết desktop/mobile; vẫn kiểm tra tìm kiếm, lọc, phân trang, lỗi và ảnh hỏng.
+Số lượng/nội dung sản phẩm có thể thay đổi khi nhóm bổ sung dữ liệu Supabase;
+các con số ở lần kiểm tra trước chỉ mô tả dữ liệu tại thời điểm đó.

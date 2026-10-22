@@ -26,6 +26,7 @@ async function main() {
       const body = request.postDataJSON();
       const respond = (data, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(data) });
       const actor = records[0];
+      if (path === "data/resources") return respond([]); // This fixture exercises account APIs only.
       if (path === "auth/me") return loggedIn
         ? respond({ account_id: actor.ma_tk, username: actor.ten_tai_khoan, role: actor.role, name: actor.ho_ten })
         : respond({ detail: "Vui lòng đăng nhập." }, 401);

@@ -1,4 +1,5 @@
 "use client";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -21,6 +22,7 @@ type Panel = Dropdown | "mobile" | "notice" | null;
 export default function AltHeader() {
   const router = useRouter();
   const pathname = usePathname();
+ const shop = useShopping();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -254,7 +256,14 @@ export default function AltHeader() {
               className={styles.searchForm}
               placeholder="Tìm theo Tên hoặc Mã SP..."
               maxLength={100}
-              onSearch={query => { close(); router.push(`/main/product?${new URLSearchParams({ q: query.trim() })}`); }}
+              onSearch={query => {
+                close();
+                router.push(`/main/product?${new URLSearchParams({ q: query.trim() })}`);
+              }}
+              onSelectProduct={product => {
+                close();
+                router.push(`/main/product/${encodeURIComponent(product.id)}`);
+              }}
             />
           </div>
         )}
@@ -287,7 +296,7 @@ export default function AltHeader() {
             onPointerEnter={event => hoverOpen("cart", event)}
             onPointerLeave={hoverClose}
           >
-            <IconButton className={styles.actionButton} label="Giỏ hàng, 0 sản phẩm"
+            <IconButton className={styles.actionButton} label={`Giỏ hàng, ${shop.count} sản phẩm`}
               aria-expanded={panel === "cart"} aria-controls={id + "-cart"}
               onClick={event => toggle("cart", event.currentTarget)}>
               <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />

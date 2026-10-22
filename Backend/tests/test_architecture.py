@@ -17,6 +17,21 @@ def imports(tree):
                 yield alias.name, set()
 
 
+def test_backend_has_no_legacy_app_package_or_imports():
+    backend = PACKAGE.parent
+    assert not (backend / "app").exists(), "Backend uses phub_api only; remove legacy app source/cache."
+    for directory in (PACKAGE, backend / "scripts", backend / "tests"):
+        for path in directory.rglob("*.py"):
+            for module, _ in imports(ast.parse(path.read_text(encoding="utf-8-sig"))):
+                assert module != "app" and not module.startswith("app."), f"{path}: import from phub_api, not app"
+
+
+def test_real_customer_launcher_uses_phub_api_entrypoint():
+    launcher = (PACKAGE.parent.parent / "scripts" / "start-customer.ps1").read_text(encoding="utf-8-sig")
+    assert "$taskApp = 'phub_api.main:app'" in launcher
+    assert "$taskApp = 'app.main:app'" not in launcher
+
+
 BOUNDARIES = {
     "controllers": {"repositories", "controllers"},
     "services": {"controllers", "dependencies", "middleware"},

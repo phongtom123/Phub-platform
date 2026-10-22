@@ -20,7 +20,42 @@ function load(fetch) {
 }
 const url = "/api/backend/data/products?page=1&page_size=20";
 
-test("demo GET cache canonicalizes query order, isolates bodies and expires both data/metadata after 10 minutes", async () => {
+test("resource polling invalidates all matching queries but keeps metadata and unrelated modules warm", async () => {
+  let calls = 0;
+  const app = load(async () => json({ value: ++calls }));
+  const urls = [url, url + "&q=pc", "/api/backend/data/resources", "/api/backend/data/warehouses?page=1"];
+  for (const path of urls) await app.adminFetch(path);
+  app.invalidateAdminCache(["/api/backend/data/products"]);
+  assert.equal((await (await app.adminFetch(urls[2])).json()).value, 3);
+  assert.equal((await (await app.adminFetch(urls[3])).json()).value, 4);
+  assert.equal(calls, 4);
+  await app.adminFetch(url); await app.adminFetch(urls[1]); assert.equal(calls, 6);
+});
+
+test("mutation epoch invalidates in-flight polling results before and after even a failed write", async () => {
+  let finish;
+  const app = load(() => new Promise(resolve => { finish = resolve; }));
+  const before = app.getAdminMutationEpoch();
+  const write = app.adminFetch(url, { method: "PATCH" });
+  assert.ok(app.getAdminMutationEpoch() > before);
+  const pending = app.getAdminMutationEpoch(); finish(json({ detail: "Conflict" }, 409)); await write;
+  assert.ok(app.getAdminMutationEpoch() > pending);
+});
+
+test("scoped invalidation prevents stale repopulation without dropping unrelated in-flight metadata", async () => {
+  const finish = [];
+  const app = load(() => new Promise(resolve => finish.push(resolve)));
+  const old = app.adminFetch(url), metadata = app.adminFetch("/api/backend/data/resources");
+  app.invalidateAdminCache(["/api/backend/data/products"]);
+  const fresh = app.adminFetch(url);
+  finish[1](json({ value: "metadata" })); finish[2](json({ value: "fresh" }));
+  await Promise.all([metadata, fresh]); finish[0](json({ value: "stale" })); await old;
+  assert.equal((await (await app.adminFetch(url)).json()).value, "fresh");
+  assert.equal((await (await app.adminFetch("/api/backend/data/resources")).json()).value, "metadata");
+  assert.equal(finish.length, 3);
+});
+
+test("GET cache has no TTL, canonicalizes queries and isolates bodies until explicit refresh/session invalidation", async () => {
   let calls = 0;
   const app = load(async () => json({ value: ++calls }));
   assert.deepEqual(await (await app.adminFetch(url)).json(), { value: 1 });
@@ -29,13 +64,55 @@ test("demo GET cache canonicalizes query order, isolates bodies and expires both
   assert.deepEqual(await (await app.adminFetch(url)).json(), { value: 1 });
   const metadata = "/api/backend/data/resources";
   await app.adminFetch(metadata); assert.equal(calls, 2);
-  app.tick(599_999);
+  app.tick(365 * 24 * 3600_000);
   assert.equal(calls, 2, "No polling or automatic background requests");
   assert.equal((await (await app.adminFetch(url)).json()).value, 1);
   await app.adminFetch(metadata); assert.equal(calls, 2);
-  app.tick(2);
-  assert.equal((await (await app.adminFetch(url)).json()).value, 3);
-  await app.adminFetch(metadata); assert.equal(calls, 4);
+  assert.equal((await (await app.adminFetch(url)).json()).value, 1);
+  await app.adminFetch(metadata); assert.equal(calls, 2);
+  assert.equal((await (await app.adminFetch(url, { cache: "no-cache" })).json()).value, 3);
+  await app.adminFetch(metadata); assert.equal(calls, 3, "Revalidation never evicts unrelated metadata");
+});
+
+test("fresh reads deduplicate, keep old snapshots available while loading and preserve them on 503", async () => {
+  let calls = 0, finish;
+  const app = load(() => { calls++; return calls === 1 ? Promise.resolve(json({ value: "cached" })) : new Promise(resolve => { finish = resolve; }); });
+  await app.adminFetch(url);
+  await app.adminFetch(url, { cache: "no-cache" }); assert.equal(calls, 1, "Cold mount and just-prefetched reads coalesce for one second");
+  app.tick(1001);
+  const a = app.adminFetch(url, { cache: "no-cache" }), b = app.adminFetch(url, { cache: "no-cache" });
+  assert.equal(calls, 2);
+  assert.equal((await (await app.adminFetch(url)).json()).value, "cached", "Foreground navigation is not blocked by background validation");
+  finish(json({ detail: "offline" }, 503)); await Promise.all([a, b]);
+  assert.equal((await (await app.adminFetch(url)).json()).value, "cached");
+});
+
+test("unchanged revalidation retains other query snapshots; confirmed changes evict related views only", async () => {
+  let value = 1, calls = 0;
+  const app = load(async () => { calls++; return json({ value }); });
+  const filtered = url + "&q=pc", other = "/api/backend/data/warehouses?page=1";
+  await app.adminFetch(url); await app.adminFetch(filtered); await app.adminFetch(other);
+  await app.adminFetch(url, { cache: "reload" }); await app.adminFetch(filtered); assert.equal(calls, 4);
+  value = 2; await app.adminFetch(url, { cache: "reload" }); await app.adminFetch(other); assert.equal(calls, 5);
+  await app.adminFetch(filtered); assert.equal(calls, 6);
+});
+
+test("a background 403 or 404 evicts the previously cached resource instead of making it usable indefinitely", async () => {
+  for (const status of [403, 404]) {
+    let calls = 0;
+    const app = load(async () => ++calls === 1 ? json({ value: "private" }) : json({ detail: "Unavailable" }, status));
+    await app.adminFetch(url); await app.adminFetch(url, { cache: "reload" });
+    assert.equal((await app.adminFetch(url)).status, status); assert.equal(calls, 3);
+  }
+});
+
+test("account list and detail endpoints invalidate each other only after a confirmed change", async () => {
+  let value = 1, calls = 0;
+  const app = load(async () => { calls++; return json({ value }); });
+  const list = "/api/backend/admin/accounts?page=1", detail = "/api/backend/admin/accounts/AD1";
+  await app.adminFetch(list); await app.adminFetch(detail);
+  await app.adminFetch(detail, { cache: "reload" }); await app.adminFetch(list); assert.equal(calls, 3);
+  value = 2; await app.adminFetch(detail, { cache: "reload" }); await app.adminFetch(list); assert.equal(calls, 5);
 });
 
 test("search, page, order context, detail keys and endpoint types are distinct cache entries", async () => {
