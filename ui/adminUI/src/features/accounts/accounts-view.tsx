@@ -9,7 +9,8 @@ import { AccountDetail } from "./account-detail";
 import { AccountProfile } from "./account-profile";
 import { AccountTable } from "./account-table";
 import { roleLabels, statusLabels, type Account, type AccountPage, type AccountView } from "./types";
-import { invalidateAdminCache } from "@/src/lib/admin-fetch";
+import { invalidateAdminCache, sameAdminData } from "@/src/lib/admin-fetch";
+import { useAdminPolling } from "@/src/lib/use-admin-polling";
 
 export default function AccountsView({ mode = "list", id }: AccountView) {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
   const [query, setQuery] = useState(requestedEdit ?? "");
   const [search, setSearch] = useState(requestedEdit ?? "");
   const [inlineEditing, setInlineEditing] = useState(false);
+  const [detailEditing, setDetailEditing] = useState(false);
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -54,6 +56,22 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
     return () => controller.abort();
   }, [mode, id, effectiveSearch, role, status, page, version]);
 
+  const pollError = useAdminPolling(JSON.stringify([mode, id, effectiveSearch, role, status, page, version]),
+    !loading && !error && !inlineEditing && !detailEditing && (mode === "list" || mode === "detail"),
+    async (signal, canApply) => {
+      if (mode === "list") {
+        const params = new URLSearchParams({ q: effectiveSearch, page: String(page) });
+        if (role) params.set("role", role);
+        if (status) params.set("status", status);
+        const data = await accountApi<AccountPage>(`accounts?${params}`, { signal, cache: "no-cache" });
+        if (canApply()) setResult(current => sameAdminData(current, data) ? current : data);
+      } else {
+        const path = `accounts/${encodeURIComponent(id ?? "")}`;
+        const data = await accountApi<Account>(path, { signal, cache: "no-cache" });
+        if (canApply()) setAccount(current => sameAdminData(current, data) ? current : data);
+      }
+    });
+
   function submitSearch(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setSearch(query); setPage(1); }
   function back() {
     const referrer = document.referrer;
@@ -62,6 +80,7 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
   }
 
   return <section className="live-data accounts-page">
+    {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi; đang hiển thị dữ liệu lần tải trước. {pollError}</p>}
     {mode !== "list" && (mode !== "detail" || loading || error || !account) && <div className="live-page-actions">
       <button type="button" onClick={back}>← Quay lại</button>
     </div>}
@@ -79,6 +98,6 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
       <AccountTable rows={result.data} requestedEdit={requestedEdit} onRequestedEditHandled={handledRequestedEdit} onEditingChange={setInlineEditing}
         onSaved={saved => setResult(current => current && ({ ...current, data: current.data.map(row => row.ma_tk === saved.ma_tk ? saved : row) }))} />
       <div className="live-tools"><span>{result.total} tài khoản · Trang {page}</span><button disabled={inlineEditing || page === 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={inlineEditing || page * result.page_size >= result.total} onClick={() => setPage(p => p + 1)}>Sau</button></div>
-    </> : account && (mode === "self" ? <AccountProfile account={account} onChange={setAccount} /> : <AccountDetail key={account.ma_tk} account={account} onChange={setAccount} onBack={back} />)}
+    </> : account && (mode === "self" ? <AccountProfile account={account} onChange={setAccount} /> : <AccountDetail key={account.ma_tk} account={account} onChange={setAccount} onBack={back} onEditingChange={setDetailEditing} />)}
   </section>;
 }

@@ -1,6 +1,6 @@
 # Kế hoạch cập nhật dữ liệu admin theo thời gian thực
 
-Trạng thái: dự định làm, chưa triển khai realtime.
+Trạng thái: chưa triển khai realtime push; đã có polling 10 giây để kiểm tra.
 
 ## Mục tiêu
 
@@ -10,12 +10,19 @@ phiên đăng nhập theo từng sự kiện. Giữ cache để giảm độ tr�
 
 ## Hiện trạng
 
-- Cache GET trong bộ nhớ riêng của tab, đang tạm đặt 10 phút cho dữ liệu và
-  metadata để demo; mất khi F5/đóng tab hoặc đổi phiên.
+- Cache GET không TTL trong bộ nhớ riêng của tab, giới hạn LRU/dung lượng;
+  mất khi F5/đóng tab hoặc đổi phiên. Cache không được coi là luôn mới.
+- Sau xác thực, preload trang đầu các mục được API cho phép, 2 request nền
+  đồng thời; không tải toàn bộ database/mọi chi tiết/ảnh.
 - Thao tác ghi qua admin xóa cache trước và sau request; UI áp dụng response vào
   hàng/form vừa lưu. Nút Làm mới lấy lại dữ liệu từ server.
-- Thay đổi từ bên ngoài chưa được tự phát hiện. Trang đang mở cũng chưa tự
-  tải lại chỉ vì TTL hết; lần đọc tiếp theo mới kiểm tra cache.
+- Đã bổ sung kiểm tra nền ngay khi mở lại trang và polling 10 giây cho dữ liệu
+  đang xem; không đổi thì giữ cache/state, khác thì cập nhật cache liên quan.
+  Giữ nội dung trong lúc tải, tạm dừng
+  khi tab ẩn/offline/đang nhập/sửa/lưu/upload; không gọi lại API phiên.
+- Polling chờ request hoàn tất rồi mới đếm 10 giây tiếp theo, không phải realtime
+  push và không có bảo đảm độ trễ khi backend chậm. Trang chưa mở giữ snapshot
+  và kiểm tra lại khi được mở; lỗi mạng giữ snapshot kèm cảnh báo.
 - Xác thực dùng cookie/JWT riêng của PHUB qua backend. Không mặc định JWT này
   có thể dùng trực tiếp cho Supabase Realtime.
 
@@ -33,8 +40,8 @@ Chỉ cần thông báo dạng `{ "resource": "orders", "type": "changed" }`, kh
 chuyển toàn bộ bản ghi, dữ liệu khách hàng hoặc thông tin tài khoản vào sự kiện.
 Dữ liệu thực tế tiếp tục được lấy qua API đã có xác thực/phân quyền.
 
-Cache 10 phút vẫn dùng được: khi có sự kiện thì vô hiệu hóa sớm; khi không có
-sự kiện thì dùng cache đến hết TTL. Realtime không loại bỏ thời gian chờ API
+Cache không TTL vẫn dùng được: sự kiện sẽ đánh dấu cần kiểm tra sớm; polling
+và kiểm tra khi mở trang là phương án dự phòng. Realtime không loại bỏ thời gian chờ API
 khi tải dữ liệu mới hoặc khi backend chưa sẵn sàng.
 
 ## Kiến trúc cần xác nhận bằng thử nghiệm nhỏ
@@ -85,9 +92,9 @@ khi tải dữ liệu mới hoặc khi backend chưa sẵn sàng.
 - [ ] Tự kết nối lại có backoff khi mất mạng; hủy kết nối cũ để tránh nghe trùng.
 - [ ] Sau khi kết nối lại, đồng bộ các tài nguyên đang xem vì có thể đã bỏ lỡ sự kiện.
 - [ ] Xử lý khoảng trống giữa lần tải dữ liệu đầu và lúc đăng ký nhận sự kiện;
-  không để một cập nhật rơi vào khoảng này rồi bị giữ cache suốt TTL.
+  không để một cập nhật rơi vào khoảng này rồi bị giữ cache vô thời hạn.
 - [ ] Sự kiện/response của phiên cũ không được cập nhật UI hoặc cache của phiên mới.
-- [ ] Khi realtime lỗi, giữ nút Làm mới và cơ chế TTL làm phương án dự phòng;
+- [ ] Khi realtime lỗi, giữ nút Làm mới và polling làm phương án dự phòng;
   không coi mất kết nối realtime là đã đăng xuất.
 - [ ] Log local có nhãn riêng, chỉ ghi trạng thái kết nối/tài nguyên/lỗi an toàn.
 

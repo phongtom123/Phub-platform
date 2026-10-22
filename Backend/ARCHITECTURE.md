@@ -2,6 +2,8 @@
 
 Backend dùng **3 lớp: Controller → Service → Repository**. Ba UI Next.js vẫn
 độc lập; backend vẫn là một ứng dụng FastAPI, chạy bằng `phub_api.main:app`.
+Chỉ dùng package `phub_api/`; không giữ thư mục `Backend/app` hoặc import `app.*`.
+Kiểm thử kiến trúc chặn việc đưa cấu trúc cũ trở lại, kể cả thư mục cache sót lại.
 Không phải MVP; tên `models/` và `controllers/` không có nghĩa backend render View.
 
 ```text
