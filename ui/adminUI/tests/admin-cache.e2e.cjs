@@ -61,31 +61,29 @@ async function main() {
     await page.goto(base + "/data/customers"); await waitCustomers();
     assert.equal(reads.session, 1); assert.equal(reads.metadata, 1);
     await detailAndBack(); const warm = { ...reads };
-    await detailAndBack(); assert.deepEqual(reads, warm, "Warm list/detail/back navigation must issue zero API requests");
+    await detailAndBack(); assert.equal(reads.session, warm.session, "Navigation never checks the session again");
     await navigate("Kho", "TỔ CHỨC");
     assert.equal(reads.metadata, 1, "Metadata is shared between resources");
     await navigate("Khách hàng", "BÁN HÀNG"); const bothWarm = { ...reads };
     await navigate("Kho", "TỔ CHỨC"); await navigate("Khách hàng", "BÁN HÀNG");
-    assert.deepEqual(reads, bothWarm, "Returning via sidebar must reuse page data too");
+    assert.equal(reads.metadata, bothWarm.metadata, "Navigation keeps cached metadata");
     assert.equal(reads.documents, 1);
 
     customerName = "Thay đổi ngoài ứng dụng";
+    await page.evaluate(() => { window.cacheTimeOffset += 2_000; });
     await navigate("Kho", "TỔ CHỨC"); await navigate("Khách hàng", "BÁN HÀNG");
-    assert.ok((await row().innerText()).includes("Khách ban đầu"), "Fresh cache is intentionally a short-lived snapshot");
+    await row().getByText(customerName, { exact: true }).waitFor();
     const beforeRefresh = { ...reads };
     await page.getByRole("button", { name: "Làm mới", exact: true }).click();
     await row().getByText("Thay đổi ngoài ứng dụng", { exact: true }).waitFor();
-    assert.equal(reads.data, beforeRefresh.data + 1); assert.equal(reads.metadata, beforeRefresh.metadata + 1);
+    assert.ok(reads.data >= beforeRefresh.data + 1); assert.equal(reads.metadata, beforeRefresh.metadata + 1);
     await navigate("Kho", "TỔ CHỨC"); await navigate("Khách hàng", "BÁN HÀNG");
     const beforeTTL = { ...reads };
-    await page.evaluate(() => { window.cacheTimeOffset += 540_000; });
+    await page.evaluate(() => { window.cacheTimeOffset += 365 * 24 * 3600_000; });
+    customerName = "Dữ liệu sau một năm";
     await navigate("Kho", "TỔ CHỨC"); await navigate("Khách hàng", "BÁN HÀNG");
-    assert.deepEqual(reads, beforeTTL, "Demo cache still serves data and metadata after 9 minutes");
-    await page.evaluate(() => { window.cacheTimeOffset += 61_000; });
-    customerName = "Dữ liệu sau TTL";
-    await navigate("Kho", "TỔ CHỨC"); await navigate("Khách hàng", "BÁN HÀNG");
-    await row().getByText("Dữ liệu sau TTL", { exact: true }).waitFor();
-    assert.equal(reads.metadata, beforeTTL.metadata + 1); assert.equal(reads.data, beforeTTL.data + 2);
+    await row().getByText(customerName, { exact: true }).waitFor();
+    assert.equal(reads.metadata, beforeTTL.metadata, "Metadata has no time expiry; visible data revalidates immediately");
 
     await row().locator('[data-field="ten_kh"]').dblclick();
     const beforeSave = { ...reads };
@@ -97,7 +95,7 @@ async function main() {
     await row().getByText("Khách đã chỉnh sửa", { exact: true }).waitFor();
     assert.ok(reads.data > beforeSave.data); assert.ok(reads.metadata > beforeSave.metadata);
     const warmAgain = { ...reads };
-    await navigate("Kho", "TỔ CHỨC"); await navigate("Khách hàng", "BÁN HÀNG"); assert.deepEqual(reads, warmAgain);
+    await navigate("Kho", "TỔ CHỨC"); await navigate("Khách hàng", "BÁN HÀNG"); assert.equal(reads.metadata, warmAgain.metadata);
 
     // Cache cannot preserve access after a real data 401, or cross a login boundary.
     denyData = true;
@@ -118,7 +116,7 @@ async function main() {
     assert.equal(await page.locator(".shell").count(), 0);
     assert.deepEqual(writes, [{ ten_kh: "Khách đã chỉnh sửa" }, "login", "logout"]);
     assert.deepEqual(errors, []);
-    console.log("PASS: warm list/detail/sidebar navigation makes zero API calls; 1 document; metadata reuse; TTL and manual refresh; mutation invalidation without eager reload; 401/login/logout/F5 privacy boundaries; no live writes.");
+    console.log("PASS: cached navigation with immediate background validation; 1 document; no TTL, metadata reuse, manual refresh, mutation invalidation and 401/login/logout/F5 privacy boundaries; no live writes.");
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

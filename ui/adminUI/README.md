@@ -33,10 +33,11 @@ Backend xử lý retry có giới hạn cho request đọc; xem [hướng dẫn]
 ### Cache dữ liệu khi chuyển trang
 
 `adminFetch` giữ response GET JSON thành công trong bộ nhớ riêng của tab: dữ liệu
-danh sách/chi tiết/tài khoản/thống kê và metadata cấu trúc bảng tối đa **10 phút**
-(cấu hình tạm để demo, `READ_CACHE_TTL_MS` trong `src/lib/admin-fetch.ts`).
-Các trang dùng chung cache; quay lại danh sách/chi tiết đã mở trong TTL
-không cần gọi API. Search, page, key bản ghi, bộ lọc và `order_id` có cache key
+danh sách/chi tiết/tài khoản/thống kê và metadata cấu trúc bảng **không có TTL**.
+Cache giữ đến khi phát hiện thay đổi, thao tác ghi/làm mới/đổi phiên hoặc bị LRU
+thu hồi; không có nghĩa dữ liệu được coi là luôn mới. Các trang dùng chung cache;
+quay lại danh sách/chi tiết đã mở hiển thị snapshot ngay, kiểm tra mới ở nền.
+Search, page, key bản ghi, bộ lọc và `order_id` có cache key
 riêng; các request trùng đang chờ dùng chung một lần gọi mạng. Hủy một reader
 không hủy request của reader khác; hủy hết thì dừng request. Có giới hạn LRU
 80 mục, 8 MiB tổng và tối đa 2 MiB mỗi response.
@@ -52,10 +53,59 @@ không lưu localStorage/IndexedDB, không chia sẻ cache server giữa ngườ
 không cache `/auth/*`, `/admin/me`, lỗi HTTP/JSON, response đặt cookie hoặc
 request có header/credential riêng. Backend và gateway vẫn dùng HTTP `no-store`;
 đây là cache trong bộ nhớ ứng dụng, không phải cookie/token hay quyền offline.
-Khi hết TTL phải gọi API lại, không dùng bản hết hạn để che lỗi kết nối.
+Cache cũ được giữ nếu API nền lỗi 503/mất mạng nhưng UI phải hiện cảnh báo đang
+giữ dữ liệu lần tải trước, không khẳng định là dữ liệu mới. API 403/404 loại cache
+tài nguyên không còn truy cập/tồn tại; API 401 xóa toàn bộ cache và đóng phiên.
 
-Thay đổi từ người dùng/hệ thống khác có thể hiển thị chậm tối đa TTL; bấm
-**Làm mới** để xem ngay. Lần đầu mở hoặc Render đang khởi động vẫn cần chờ mạng.
+### Tải trước các mục admin
+
+Sau khi xác thực ADMIN, chờ 1,5 giây để ưu tiên trang đang xem rồi tải trước
+**trang đầu 20 bản ghi** của từng tài nguyên API cho phép (tối đa 40 mục), gồm
+danh sách tài khoản qua endpoint riêng nếu có trong metadata. Tối đa **2 request
+nền đồng thời**, timeout 12 giây mỗi reader; khi ẩn tab/offline/focus ô nhập,
+đang mở form hoặc sửa inline thì
+tạm dừng, đổi phiên/đăng xuất/thao tác ghi thì dừng lượt preload đang chạy.
+API 5xx dừng phần còn lại để tránh tăng tải lúc backend lỗi; không lặp vô hạn.
+
+Metadata và data dùng chung cache/in-flight với trang thật, không gọi lại nếu đã
+có. Có prefetch route Next.js tương ứng sau khi đọc thành công. Không chặn shell
+để chờ tải xong toàn bộ; không tải toàn bộ database, các trang sau, mọi chi tiết,
+ảnh hay lịch sử. Tìm kiếm/phân trang/chi tiết chưa có cache vẫn cần đọc lần đầu.
+Trang chưa được tải trước xong hoặc Render đang khởi động vẫn có thể phải chờ.
+
+### Tự cập nhật nền mỗi 10 giây (polling để kiểm tra)
+
+Danh sách/chi tiết dữ liệu, danh sách/chi tiết tài khoản và thống kê dashboard
+tự đọc API mới khi vừa mở lại trang có cache và sau mỗi **10 giây**. Đây là polling,
+chưa phải Supabase Realtime/SSE. Dùng `cache: no-cache` của `adminFetch` để đọc
+nền nhưng vẫn giữ snapshot cho điều hướng; gộp đọc vừa hoàn tất trong 1 giây để
+không gọi trùng ngay sau cold load/preload. `cache: reload` luôn yêu cầu đọc mới.
+Không đổi thì giữ state/cache; xác nhận khác thì thay snapshot và loại các query
+khác của cùng tài nguyên, không xóa metadata/module không liên quan. Không gọi
+`/auth/me` trong chu kỳ này. Timer vẫn chạy khi dữ liệu không đổi.
+
+Giữ bảng/ảnh/thống kê cũ trong khi tải; chỉ cập nhật state khi đọc thành công,
+không reload document, không đặt lại tìm kiếm/phân trang/vị trí cuộn. Lỗi hiển thị
+cảnh báo đang giữ dữ liệu lần trước; chu kỳ sau thử GET lại, không replay thao tác ghi.
+API 401 vẫn vô hiệu phiên như trước. Timer bị hủy khi chuyển trang/đăng xuất.
+
+Tạm dừng khi tab ẩn/offline, ô nhập/select đang focus, sửa inline/chờ lưu,
+upload hoặc đang ở form thêm/sửa. Chi tiết tài khoản cũng dừng khi có bản nháp
+phân quyền/mật khẩu; trang **Tài khoản của tôi** không tự đọc đè form.
+Response cũ không được ghi đè nếu đã bắt đầu chỉnh sửa/thao tác ghi/đổi phiên.
+Mở trang mới kiểm tra ngay; sau khi hết bận ở cùng trang sẽ đếm lại 10 giây,
+không refetch tức thì response vừa lưu thành công. Không chạy request
+chu kỳ mới chồng lên chu kỳ cũ: API chậm thì chờ hoàn tất rồi mới đếm 10 giây.
+Vì vậy **không bảo đảm dữ liệu trễ tối đa 10 giây** khi server chậm, mất mạng hay đang nhập.
+Dashboard có thể đọc nhiều trang thống kê mỗi chu kỳ; cấu hình này tăng tải API
+và chỉ đang dùng để kiểm tra, chưa thay thế API tổng hợp/realtime cho production.
+
+Bấm **Làm mới** để đọc ngay. Kiểm tra bằng hai phiên hoặc thay đổi dữ liệu ở môi
+trường test rồi để tab admin đang xem, không focus ô nhập: nội dung cập nhật sau
+chu kỳ kế tiếp. F12 → Network thấy GET dữ liệu định kỳ, không thêm GET phiên.
+Browser test dùng fixture, không ghi database thật: `node ui/adminUI/tests/admin-polling.e2e.cjs`.
+
+Lần đầu mở hoặc Render đang khởi động vẫn cần chờ mạng.
 Cache không giữ server free luôn thức và không bỏ qua xác thực lần mở/F5 hay
 kiểm tra quyền/quy tắc dữ liệu khi backend thực hiện thao tác ghi.
 
@@ -208,6 +258,8 @@ node ui/adminUI/tests/account-inline-edit.e2e.cjs
 node ui/adminUI/tests/account-status.e2e.cjs
 node ui/adminUI/tests/inline-data-table.e2e.cjs
 node ui/adminUI/tests/admin-cache.e2e.cjs
+node ui/adminUI/tests/admin-polling.e2e.cjs
+node ui/adminUI/tests/admin-preload.e2e.cjs
 ```
 
 Các lệnh trên chạy từ root repository; unit tests dùng TypeScript đã cài trong

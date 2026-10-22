@@ -25,6 +25,7 @@ async function main() {
       if (url.origin !== new URL(base).origin) return route.abort();
       if (!url.pathname.startsWith("/api/")) return route.continue();
       const respond = (data, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(data) });
+      if (url.pathname === "/api/backend/data/resources") return respond([]);
       if (url.pathname.endsWith("/auth/me")) { reads.session++; return respond({ account_id: "AD000001", username: records[0].ten_tai_khoan, name: "Admin Test", role: "ADMIN" }); }
       if (url.pathname === "/api/backend/admin/accounts" && request.method() === "GET") {
         reads.list++;

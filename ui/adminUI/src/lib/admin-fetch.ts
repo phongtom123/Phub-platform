@@ -2,19 +2,30 @@
 export const ADMIN_SESSION_EXPIRED = "phub-admin-session-expired";
 let sessionEpoch = 0;
 let cacheGeneration = 0;
+let mutationEpoch = 0;
+export const getAdminMutationEpoch = () => mutationEpoch;
 type Snapshot = { body: ArrayBuffer; status: number; statusText: string; headers: [string, string][] };
-type Entry = { snapshot: Snapshot; expires: number };
+type Entry = { snapshot: Snapshot; checkedAt: number };
 type Flight = { promise: Promise<Snapshot>; controller: AbortController; users: number; settled: boolean };
 const entries = new Map<string, Entry>();
 const flights = new Map<string, Flight>();
 const MAX_ENTRIES = 80;
 const MAX_BYTES = 8 * 1024 * 1024;
 const MAX_ENTRY_BYTES = 2 * 1024 * 1024;
-// Temporary demo setting for both data and table metadata.
-const READ_CACHE_TTL_MS = 10 * 60_000;
+// No TTL. no-cache revalidates in the background; reuse a just-completed read
+// for one second to avoid duplicating cold loads/prefetch on mount.
+const REVALIDATE_DEDUPE_MS = 1_000;
+
+export const sameAdminData = (before: unknown, after: unknown) => JSON.stringify(before) === JSON.stringify(after);
 
 /** Application memory only, never the browser HTTP cache, localStorage or a CDN. */
-export function invalidateAdminCache(): void {
+export function invalidateAdminCache(paths?: readonly string[]): void {
+  if (paths) {
+    const matches = (key: string) => paths.includes(key.split("?")[0]);
+    for (const key of entries.keys()) if (matches(key)) entries.delete(key);
+    for (const key of flights.keys()) if (matches(key)) flights.delete(key);
+    return;
+  }
   cacheGeneration++;
   entries.clear();
   // Existing readers own their requests, but new readers must not join a pre-write flight.
@@ -36,22 +47,39 @@ async function verifiedFetch(input: RequestInfo | URL, options: RequestInit | un
   return response;
 }
 
-function cacheKey(input: RequestInfo | URL, options?: RequestInit): { key: string; ttl: number } | null {
+function cacheKey(input: RequestInfo | URL, options?: RequestInit): { key: string } | null {
   // Never share protected data between server requests or across browser origins.
   if (typeof window === "undefined" || !window.location || typeof input !== "string" ||
     options?.credentials === "omit" || (options?.headers && [...new Headers(options.headers)].length)) return null;
   const url = new URL(input, window.location.origin);
   if (url.origin !== window.location.origin || !/^\/api\/backend\/(data\/[a-z-]+|admin\/(accounts(?:\/[A-Za-z0-9_.-]+)?|account-owners))$/.test(url.pathname)) return null;
   url.searchParams.sort();
-  return { key: url.pathname + url.search, ttl: READ_CACHE_TTL_MS };
+  return { key: url.pathname + url.search };
 }
 
-function remember(key: string, snapshot: Snapshot, ttl: number) {
+function sameBody(before: Snapshot, after: Snapshot) {
+  if (before.body.byteLength !== after.body.byteLength) return false;
+  const a = new Uint8Array(before.body), b = new Uint8Array(after.body);
+  return a.every((value, index) => value === b[index]);
+}
+
+function resourceFamily(key: string) {
+  const path = key.split("?")[0];
+  return path.startsWith("/api/backend/admin/accounts/") ? "/api/backend/admin/accounts" : path;
+}
+
+function remember(key: string, snapshot: Snapshot) {
   if (snapshot.body.byteLength > MAX_ENTRY_BYTES) return;
-  const now = Date.now();
-  for (const [key, value] of entries) if (value.expires <= now) entries.delete(key);
+  const previous = entries.get(key);
+  // Only a confirmed change evicts other views of this resource. A failed or
+  // unchanged background read must not destroy useful navigation snapshots.
+  if (previous && !sameBody(previous.snapshot, snapshot)) {
+    const family = resourceFamily(key);
+    for (const other of entries.keys()) if (other !== key && resourceFamily(other) === family) entries.delete(other);
+    for (const other of flights.keys()) if (other !== key && resourceFamily(other) === family) flights.delete(other);
+  }
   entries.delete(key);
-  entries.set(key, { snapshot, expires: now + ttl });
+  entries.set(key, { snapshot: previous && sameBody(previous.snapshot, snapshot) ? previous.snapshot : snapshot, checkedAt: Date.now() });
   let bytes = [...entries.values()].reduce((total, value) => total + value.snapshot.body.byteLength, 0);
   for (const [key, value] of entries) {
     if (entries.size <= MAX_ENTRIES && bytes <= MAX_BYTES) break;
@@ -101,24 +129,23 @@ export async function adminFetch(input: RequestInfo | URL, options?: RequestInit
   const method = (options?.method ?? (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET")).toUpperCase();
   if (options?.signal?.aborted) throw new DOMException("Yêu cầu đã bị hủy.", "AbortError");
   if (!["GET", "HEAD"].includes(method)) {
+    mutationEpoch++;
     invalidateAdminCache();
     try { return await verifiedFetch(input, options, epoch); }
-    finally { if (epoch === getSessionEpoch()) invalidateAdminCache(); } // A failed/timeout write may already have committed.
+    finally { if (epoch === getSessionEpoch()) { mutationEpoch++; invalidateAdminCache(); } } // A failed/timeout write may already have committed.
   }
   const cache = method === "GET" ? cacheKey(input, options) : null;
   if (!cache) return verifiedFetch(input, options, epoch);
-  const { key, ttl } = cache;
+  const { key } = cache;
   const fresh = options?.cache === "reload" || options?.cache === "no-cache";
   const entry = entries.get(key);
-  if (!fresh && entry && entry.expires > Date.now()) {
+  if (entry && (!fresh || (options?.cache === "no-cache" && Date.now() - entry.checkedAt < REVALIDATE_DEDUPE_MS))) {
     entries.delete(key); entries.set(key, entry);
     // A logout/navigation can happen before this async cache hit is consumed.
     await Promise.resolve();
     if (epoch !== getSessionEpoch() || options?.signal?.aborted) throw new DOMException("Phiên hoặc yêu cầu đã thay đổi.", "AbortError");
     return responseFrom(entry.snapshot);
   }
-  entries.delete(key);
-  if (fresh) flights.delete(key);
   let flight = flights.get(key);
   if (!flight || flight.controller.signal.aborted) {
     const generation = cacheGeneration;
@@ -129,10 +156,11 @@ export async function adminFetch(input: RequestInfo | URL, options?: RequestInit
       const snapshot: Snapshot = { body: await response.arrayBuffer(), status: response.status,
         statusText: response.statusText, headers: [...response.headers] };
       if (epoch !== getSessionEpoch() || controller.signal.aborted) throw new DOMException("Phiên hoặc yêu cầu đã thay đổi.", "AbortError");
+      if (response.status === 403 || response.status === 404) invalidateAdminCache([key.split("?")[0]]);
       if (generation === cacheGeneration && flights.get(key) === next && snapshot.body.byteLength <= MAX_ENTRY_BYTES && response.status === 200 &&
         response.headers.get("content-type")?.includes("application/json") && !response.headers.has("set-cookie")) {
         // Invalid JSON/HTML/error responses must never become a successful cache hit.
-        try { JSON.parse(new TextDecoder().decode(snapshot.body)); remember(key, snapshot, ttl); } catch { /* No cache. */ }
+        try { JSON.parse(new TextDecoder().decode(snapshot.body)); remember(key, snapshot); } catch { /* No cache. */ }
       }
       return snapshot;
     })().finally(() => { next.settled = true; if (flights.get(key) === next) flights.delete(key); });

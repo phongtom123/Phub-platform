@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AuthRequestError, getSession, logoutSession, type SessionUser } from "../../../../shared/auth-client";
 import { ADMIN_SESSION_EXPIRED, advanceSessionEpoch, getSessionEpoch } from "@/src/lib/admin-fetch";
+import { AdminDataPreloader } from "./data-preloader";
 
 type AuthState = {
   user: SessionUser | null | undefined;
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // dehydrated page render a shell against server HTML containing a session gate.
   const needsVerification = user === undefined || (user !== null && user.role !== "ADMIN");
   return <AuthContext.Provider value={{ user, checking, error, checkSession, acceptLogin, logout }}>
+    {user?.role === "ADMIN" && <AdminDataPreloader identity={JSON.stringify([user.account_id, user.role, user.warehouse_id])} />}
     {needsVerification ? <main className="session-gate" aria-busy={checking}>
       <h1>PHUB Admin</h1>
       {checking ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : <>

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminFetch, invalidateAdminCache } from "@/src/lib/admin-fetch";
+import { adminFetch, invalidateAdminCache, sameAdminData } from "@/src/lib/admin-fetch";
+import { useAdminPolling } from "@/src/lib/use-admin-polling";
 import { dataHref, orderChildren } from "@/src/lib/data-navigation";
 import { ImageEditor } from "@/src/features/forms/image-editor";
 import { uploadProductImage } from "@/src/lib/media-upload";
@@ -35,7 +36,7 @@ const labels: Record<string, string> = {
 const label = (name: string) => labels[name] ?? name.replaceAll("_", " ");
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await adminFetch("/api/backend/" + path, { ...options, cache: "no-store" });
+  const response = await adminFetch("/api/backend/" + path, { cache: "no-store", ...options });
   const body = response.status === 204 ? null : await response.json();
   if (!response.ok) {
     const detail = body?.detail;
@@ -78,6 +79,20 @@ export default function BackendDataView({ resource, embedded = false }: { resour
   const persistedKey = useRef<string | null>(null);
   const routeIdentity = JSON.stringify([resource, embedded, view.key, view.edit, view.create, view.orderId]);
   useEffect(() => () => { saveController.current?.abort(); }, []);
+
+  const pollError = useAdminPolling(JSON.stringify([routeIdentity, page, search, version]),
+    !loading && !error && Boolean(result) && !view.edit && !view.create && !inlineEditing && !saving && !uploading && !dirty.length && !imageFile,
+    async (signal, canApply) => {
+      const params = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
+      if (view.key) params.set("key", view.key);
+      if (view.orderId) params.set("order_id", view.orderId);
+      const data = await api<Page>("data/" + resource + "?" + params, { signal, cache: "no-cache" });
+      if (view.orderId && (data.order_id !== view.orderId || data.data.some(row => row.ma_donhang !== view.orderId))) {
+        throw new Error("API chưa lọc đúng đơn hàng.");
+      }
+      if (view.key && !data.data.length) throw new Error("Bản ghi không còn tồn tại. Hãy làm mới.");
+      if (canApply()) setResult(current => sameAdminData(current, data) ? current : data);
+    });
 
   useEffect(() => {
     if (reuseSavedRoute.current === routeIdentity) return;
@@ -180,6 +195,7 @@ export default function BackendDataView({ resource, embedded = false }: { resour
   }
 
   return <section className="live-data">
+    {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi; đang hiển thị dữ liệu lần tải trước. {pollError}</p>}
     {(view.key || view.create || view.orderId) && <div className="live-page-actions">
       <button type="button" onClick={() => window.history.length > 1 ? router.back() : router.push(href())}>← Quay lại</button>
       {detailMode && !loading && !error && meta?.writable && result?.data[0] && <Link className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</Link>}
