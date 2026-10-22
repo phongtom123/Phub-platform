@@ -37,7 +37,7 @@ Mục tiêu 4 đã nối tạo đơn mới với cùng dependency: Backend lấy
 đã xác minh, không nhận mã khách tùy ý từ frontend. Checkout/chi tiết đơn có
 màn hình trạng thái và lịch sử giao dịch. Đơn guest của phiên bản trước không
 được tự gán lại. Auth thật và migration checkout vẫn cần nhóm tích hợp trước
-khi chạy với dữ liệu thật; xem [commerce README](../commerce/README.md).
+khi chạy với dữ liệu thật; xem [commerce README](commerce.md).
 
 ## Endpoint và hợp đồng công khai
 

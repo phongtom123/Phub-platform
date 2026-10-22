@@ -31,7 +31,7 @@ if ($Production -and -not (Test-Path -LiteralPath (Join-Path $taskFrontend '.nex
 }
 New-Item -ItemType Directory -Path $taskRuntime -Force | Out-Null
 $taskProcesses = @()
-$taskApp = 'app.main:app'
+$taskApp = 'phub_api.main:app'
 if ($Mode -eq 'Demo') {
     $env:PHUB_E2E_MODE = 'isolated-fixtures'
     if (-not $env:PHUB_E2E_CONTROL_KEY -or $env:PHUB_E2E_CONTROL_KEY.Length -lt 32) {

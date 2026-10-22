@@ -10,11 +10,11 @@ và UI desktop/mobile giữ nguyên cấu trúc. Không thay UI admin, kho, đă
 | --- | --- | --- |
 | SupabaseTest local | Supabase thật, phiên khách cố định đầu tiên theo quyền đã cấp | Catalog/hồ sơ/giỏ; checkout/voucher/đơn cần RPC đã chuẩn bị. Không dùng mode này trên Render |
 | Demo local | Database và phiên khách giả lập trong RAM | Catalog → giỏ → voucher → checkout → đơn → thanh toán; test quyền khách A/B |
-| Real local hoặc Render | Supabase cấu hình trong Backend | Catalog thật; các API khách chờ dependency xác thực của thành viên đăng nhập |
+| Real local hoặc Render | Supabase cấu hình trong Backend | Catalog thật; API khách xác thực bằng phiên JWT/cookie chung, cần kiểm tra RPC/migration trước khi đặt đơn |
 
-**Phần còn chờ nhóm:** nối `app/payments/auth.py::require_customer` với danh tính
-đã xác minh; review và áp hai migration vào database thử trước khi dùng chung.
-API khách hiện trả `503 AUTH_INTEGRATION_REQUIRED`, không tin mã khách tự gửi.
+API khách dùng `phub_api/dependencies/customer.py::require_customer` với danh tính
+đã xác minh từ cơ chế xác thực chung, không tin mã khách tự gửi.
+**Phần cần phối hợp:** review và áp các migration vào database thử trước khi dùng chung.
 Triển khai được hai tiến trình không có nghĩa toàn luồng đặt đơn thật đã hoạt động.
 Demo không kiểm tra mật khẩu, không chứng nhận Supabase hoặc luồng xuất kho.
 
@@ -166,8 +166,8 @@ có routes fixture trên app production; không tạo đơn hoặc ghi database.
 Giữ database chung đến khi nhóm duyệt. Thứ tự migration trên database riêng/staging:
 `Backend/migrations/20261004_customer_orders.sql` rồi
 `Backend/migrations/20261006_customer_checkout.sql`. Đọc các điều kiện/kiểm tra
-schema trong [orders README](Backend/app/orders/README.md) và
-[commerce README](Backend/app/commerce/README.md) trước khi áp dụng.
+schema trong [orders README](Backend/docs/modules/orders.md) và
+[commerce README](Backend/docs/modules/commerce.md) trước khi áp dụng.
 Việc seed sản phẩm/kho/tồn/voucher/khách trong staging thuộc dữ liệu cần nhóm xác nhận;
 không seed giả vào Supabase chung. Các script SQL local đã có fixture để kiểm tra
 transaction mà không dùng project Supabase.
@@ -185,7 +185,7 @@ kiểm tra quyền sở hữu, retry và giữ hàng với thành viên kho trư
 ## File bổ sung cho chạy/deploy
 
 - `render.yaml`: định nghĩa hai dịch vụ customer.
-- `Backend/app/runtime.py`, `health.py`: CORS theo env và health check trong Swagger.
+- `Backend/phub_api/config/runtime.py`, `middleware/cors.py`, `controllers/health.py`: CORS theo env và health check trong Swagger.
 - `constraints-render.txt`, `requirements-test.txt`: phiên bản runtime đã test, dependencies kiểm thử; requirements chung giữ nguyên.
 - `src/lib/server/backend.ts`: hai proxy dùng cùng cấu hình backend; production phải khai báo URL, không fallback localhost âm thầm.
 - `src/app/api/health/route.ts`: liveness của UI.

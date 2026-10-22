@@ -43,7 +43,7 @@ Nhóm Swagger **Customer Shopping**:
 | `GET /api/customer/orders/{order_id}` | Chi tiết và các dòng snapshot của đơn thuộc khách |
 | `GET /api/customer/orders/{order_id}/invoice` | Tổng hóa đơn và dòng đơn thuộc khách; chưa có thì invoice=null |
 
-Thanh toán dùng hai API sẵn có trong [payments](../payments/README.md).
+Thanh toán dùng hai API sẵn có trong [payments](payments.md).
 `POST /api/orders` cũ giữ body/receipt không voucher, nhưng nay cũng cần khách
 đã xác minh và gọi transaction v2 để ghi `ma_kh`. Cùng SKU ở các kho khác nhau
 vẫn hợp lệ ở API cũ; checkout mới nhận một dòng cho mỗi SKU.
