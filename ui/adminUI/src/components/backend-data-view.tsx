@@ -11,6 +11,7 @@ import { uploadProductImage } from "@/src/lib/media-upload";
 import { ProductImagePreview } from "@/src/features/forms/product-image-preview";
 import { InlineDataTable } from "@/src/features/tables/inline-data-table";
 import { dataRowKey, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
+import { CustomerDetail } from "@/src/features/customers/customer-detail";
 
 type Row = DataRow;
 type Column = DataColumn;
@@ -32,6 +33,7 @@ const labels: Record<string, string> = {
   giam_toi_da: "Giảm tối đa", gia_tri_don_toi_thieu: "Giá trị đơn tối thiểu", gioi_han_tong_luot: "Tổng lượt tối đa", gioi_han_moi_khach: "Lượt mỗi khách",
   tong_tien_giam: "Tổng tiền giảm", tong_tien_sau_thue: "Tổng sau thuế", so_tien: "Số tiền",
   dia_chi_chi_tiet_md: "Địa chỉ mặc định", tinh_thanh_md: "Tỉnh / thành phố", xa_phuong_md: "Xã / phường",
+  ngay_sinh: "Ngày sinh", ngay_tao: "Ngày tạo", cap_nhat_luc: "Cập nhật lần cuối", luu_tru_luc: "Thời điểm lưu trữ",
 };
 const label = (name: string) => labels[name] ?? name.replaceAll("_", " ");
 
@@ -45,7 +47,16 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
   return body as T;
 }
 
-export default function BackendDataView({ resource, embedded = false }: { resource: string; embedded?: boolean }) {
+export default function BackendDataView(props: { resource: string; embedded?: boolean }) {
+  const params = useSearchParams();
+  const key = params.get("key");
+  if (props.resource === "customers" && !props.embedded && key && params.get("new") !== "1") {
+    return <CustomerDetail key={key} recordKey={key} editMode={params.get("edit") === "1"} />;
+  }
+  return <GenericBackendDataView {...props} />;
+}
+
+function GenericBackendDataView({ resource, embedded = false }: { resource: string; embedded?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const [meta, setMeta] = useState<Resource | null>(null);
@@ -211,7 +222,7 @@ export default function BackendDataView({ resource, embedded = false }: { resour
           onChange={value => change(column.name, value)} onFileChange={file => { setImageFile(file); setSaveError(""); setNotice(""); }} /> : <label key={column.name}>{label(column.name)}{column.required && " *"}
           {column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice}>{choice}</option>)}</select>
           : column.type === "text" ? <textarea rows={4} required={column.required} value={values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />
-          : <input required={column.required} type={column.type === "int" ? "number" : column.type === "datetime" ? "datetime-local" : column.name === "duong_dan_anh" ? "url" : "text"} step={column.type === "int" ? "1" : undefined} value={column.type === "datetime" && values[column.name] ? new Date(values[column.name]).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />}
+          : <input required={column.required} type={column.type === "int" ? "number" : column.type === "date" ? "date" : column.type === "datetime" ? "datetime-local" : column.name === "duong_dan_anh" ? "url" : "text"} step={column.type === "int" ? "1" : undefined} value={column.type === "datetime" && values[column.name] ? new Date(values[column.name]).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />}
         </label>)}
         {resource === "accounts" && <label>{view.create ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu giữ nguyên)"}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} required={view.create} value={values.password ?? ""} onChange={e => change("password", e.target.value)} /></label>}
         </fieldset>

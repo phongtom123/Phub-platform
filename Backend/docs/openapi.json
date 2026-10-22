@@ -1272,6 +1272,108 @@
         "title": "CreateOrder",
         "type": "object"
       },
+      "CustomerAccount": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "ma_tk": {
+            "title": "Ma Tk",
+            "type": "string"
+          },
+          "ten_tai_khoan": {
+            "title": "Ten Tai Khoan",
+            "type": "string"
+          },
+          "trang_thai": {
+            "title": "Trang Thai",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ma_tk",
+          "ten_tai_khoan",
+          "trang_thai"
+        ],
+        "title": "CustomerAccount",
+        "type": "object"
+      },
+      "CustomerDetail": {
+        "properties": {
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerAccount"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "danh_muc_so_thich": {
+            "items": {
+              "$ref": "#/components/schemas/Interest"
+            },
+            "title": "Danh Muc So Thich",
+            "type": "array"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/phub_api__schemas__crm__CustomerProfile"
+          },
+          "so_thich": {
+            "items": {
+              "type": "string"
+            },
+            "title": "So Thich",
+            "type": "array"
+          }
+        },
+        "required": [
+          "profile",
+          "account",
+          "so_thich",
+          "danh_muc_so_thich"
+        ],
+        "title": "CustomerDetail",
+        "type": "object"
+      },
+      "CustomerOrder": {
+        "properties": {
+          "kenh_ban": {
+            "title": "Kenh Ban",
+            "type": "string"
+          },
+          "ma_donhang": {
+            "title": "Ma Donhang",
+            "type": "string"
+          },
+          "thoi_gian_dat": {
+            "format": "date-time",
+            "title": "Thoi Gian Dat",
+            "type": "string"
+          },
+          "trang_thai": {
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_donhang",
+          "trang_thai",
+          "kenh_ban",
+          "thoi_gian_dat"
+        ],
+        "title": "CustomerOrder",
+        "type": "object"
+      },
       "CustomerOrderReceipt": {
         "additionalProperties": false,
         "properties": {
@@ -1460,71 +1562,118 @@
         "title": "CustomerOrderRequest",
         "type": "object"
       },
-      "CustomerProfile": {
-        "additionalProperties": false,
+      "CustomerOrders": {
         "properties": {
-          "address_line": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Address Line"
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerOrder"
+            },
+            "title": "Data",
+            "type": "array"
           },
-          "customer_id": {
-            "title": "Customer Id",
-            "type": "string"
+          "page": {
+            "title": "Page",
+            "type": "integer"
           },
-          "name": {
-            "title": "Name",
-            "type": "string"
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
           },
-          "phone": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Phone"
-          },
-          "province": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Province"
-          },
-          "ward": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ward"
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
         "required": [
-          "customer_id",
-          "name",
-          "phone",
-          "address_line",
-          "province",
-          "ward"
+          "data",
+          "total",
+          "page",
+          "page_size"
         ],
-        "title": "CustomerProfile",
+        "title": "CustomerOrders",
+        "type": "object"
+      },
+      "CustomerUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "dia_chi_chi_tiet_md": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dia Chi Chi Tiet Md"
+          },
+          "ngay_sinh": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Sinh"
+          },
+          "sdt": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sdt"
+          },
+          "so_thich": {
+            "items": {
+              "maxLength": 50,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "So Thich",
+            "type": "array"
+          },
+          "ten_kh": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Ten Kh",
+            "type": "string"
+          },
+          "tinh_thanh_md": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tinh Thanh Md"
+          },
+          "xa_phuong_md": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xa Phuong Md"
+          }
+        },
+        "title": "CustomerUpdate",
         "type": "object"
       },
       "DON_HANGPage": {
@@ -1937,6 +2086,29 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "Interest": {
+        "properties": {
+          "ma_so_thich": {
+            "title": "Ma So Thich",
+            "type": "string"
+          },
+          "ten_so_thich": {
+            "title": "Ten So Thich",
+            "type": "string"
+          },
+          "trang_thai": {
+            "title": "Trang Thai",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ma_so_thich",
+          "ten_so_thich",
+          "trang_thai"
+        ],
+        "title": "Interest",
+        "type": "object"
+      },
       "InvoiceOverview": {
         "additionalProperties": false,
         "properties": {
@@ -2021,6 +2193,7 @@
         "example": {
           "dia_chi_chi_tiet_md": null,
           "ma_kh": "KH001",
+          "ngay_sinh": null,
           "sdt": "0900000000",
           "ten_kh": "Khách hàng minh họa",
           "tinh_thanh_md": null,
@@ -2048,6 +2221,20 @@
             "minLength": 1,
             "title": "Ma Kh",
             "type": "string"
+          },
+          "ngay_sinh": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ngay_sinh",
+            "title": "Ngay Sinh"
           },
           "sdt": {
             "anyOf": [
@@ -2143,14 +2330,30 @@
       "KHACH_HANGRead": {
         "additionalProperties": false,
         "example": {
+          "cap_nhat_luc": null,
           "dia_chi_chi_tiet_md": null,
+          "luu_tru_luc": null,
           "ma_kh": "KH001",
+          "ngay_sinh": null,
+          "ngay_tao": null,
           "sdt": "0900000000",
           "ten_kh": "Khách hàng minh họa",
           "tinh_thanh_md": null,
           "xa_phuong_md": null
         },
         "properties": {
+          "cap_nhat_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "cap_nhat_luc · server tự gán"
+          },
           "dia_chi_chi_tiet_md": {
             "anyOf": [
               {
@@ -2162,9 +2365,45 @@
             ],
             "description": "dia_chi_chi_tiet_md"
           },
+          "luu_tru_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "luu_tru_luc · server tự gán"
+          },
           "ma_kh": {
             "description": "ma_kh",
             "type": "string"
+          },
+          "ngay_sinh": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ngay_sinh"
+          },
+          "ngay_tao": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ngay_tao · server tự gán"
           },
           "sdt": {
             "anyOf": [
@@ -2210,7 +2449,11 @@
           "sdt",
           "dia_chi_chi_tiet_md",
           "tinh_thanh_md",
-          "xa_phuong_md"
+          "xa_phuong_md",
+          "ngay_sinh",
+          "ngay_tao",
+          "cap_nhat_luc",
+          "luu_tru_luc"
         ],
         "title": "KHACH_HANGRead",
         "type": "object"
@@ -2251,6 +2494,19 @@
             ],
             "description": "dia_chi_chi_tiet_md",
             "title": "Dia Chi Chi Tiet Md"
+          },
+          "ngay_sinh": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ngay_sinh",
+            "title": "Ngay Sinh"
           },
           "sdt": {
             "anyOf": [
@@ -6401,6 +6657,183 @@
         ],
         "title": "ValidationIssue",
         "type": "object"
+      },
+      "phub_api__schemas__commerce__CustomerProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "address_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address Line"
+          },
+          "customer_id": {
+            "title": "Customer Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "province": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Province"
+          },
+          "ward": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ward"
+          }
+        },
+        "required": [
+          "customer_id",
+          "name",
+          "phone",
+          "address_line",
+          "province",
+          "ward"
+        ],
+        "title": "CustomerProfile",
+        "type": "object"
+      },
+      "phub_api__schemas__crm__CustomerProfile": {
+        "properties": {
+          "cap_nhat_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Nhat Luc"
+          },
+          "dia_chi_chi_tiet_md": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dia Chi Chi Tiet Md"
+          },
+          "luu_tru_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Luu Tru Luc"
+          },
+          "ma_kh": {
+            "title": "Ma Kh",
+            "type": "string"
+          },
+          "ngay_sinh": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Sinh"
+          },
+          "ngay_tao": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Tao"
+          },
+          "sdt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sdt"
+          },
+          "ten_kh": {
+            "title": "Ten Kh",
+            "type": "string"
+          },
+          "tinh_thanh_md": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tinh Thanh Md"
+          },
+          "xa_phuong_md": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xa Phuong Md"
+          }
+        },
+        "required": [
+          "ma_kh",
+          "ten_kh"
+        ],
+        "title": "CustomerProfile",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -9448,6 +9881,385 @@
         ]
       }
     },
+    "/api/crm/customers/{customer_id}": {
+      "get": {
+        "operationId": "customer_detail_api_crm_customers__customer_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customer_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Customer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy khách hàng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy khách hàng."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Hồ sơ CRM, tài khoản liên kết và sở thích của khách",
+        "tags": [
+          "Admin · CRM"
+        ]
+      },
+      "patch": {
+        "operationId": "update_customer_api_crm_customers__customer_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customer_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Customer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy khách hàng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy khách hàng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Lưu nguyên tử hồ sơ và sở thích; không sửa trạng thái tài khoản/lưu trữ",
+        "tags": [
+          "Admin · CRM"
+        ]
+      }
+    },
+    "/api/crm/customers/{customer_id}/orders": {
+      "get": {
+        "operationId": "customer_orders_api_crm_customers__customer_id__orders_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customer_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Customer Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrders"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Lịch sử đơn hàng được lọc theo đúng khách hàng",
+        "tags": [
+          "Admin · CRM"
+        ]
+      }
+    },
     "/api/customer/checkout/quote": {
       "post": {
         "operationId": "quote_checkout_api_customer_checkout_quote_post",
@@ -9614,7 +10426,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CustomerProfile"
+                  "$ref": "#/components/schemas/phub_api__schemas__commerce__CustomerProfile"
                 }
               }
             },
@@ -9770,7 +10582,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CustomerProfile"
+                  "$ref": "#/components/schemas/phub_api__schemas__commerce__CustomerProfile"
                 }
               }
             },
@@ -11379,8 +12191,12 @@
                 "example": {
                   "data": [
                     {
+                      "cap_nhat_luc": null,
                       "dia_chi_chi_tiet_md": null,
+                      "luu_tru_luc": null,
                       "ma_kh": "KH001",
+                      "ngay_sinh": null,
+                      "ngay_tao": null,
                       "sdt": "0900000000",
                       "ten_kh": "Khách hàng minh họa",
                       "tinh_thanh_md": null,
@@ -11549,8 +12365,12 @@
                 "example": {
                   "data": [
                     {
+                      "cap_nhat_luc": null,
                       "dia_chi_chi_tiet_md": null,
+                      "luu_tru_luc": null,
                       "ma_kh": "KH001",
+                      "ngay_sinh": null,
+                      "ngay_tao": null,
                       "sdt": "0900000000",
                       "ten_kh": "Khách hàng minh họa",
                       "tinh_thanh_md": null,
@@ -11708,6 +12528,7 @@
                   "value": {
                     "dia_chi_chi_tiet_md": null,
                     "ma_kh": "KH001",
+                    "ngay_sinh": null,
                     "sdt": "0900000000",
                     "ten_kh": "Khách hàng minh họa",
                     "tinh_thanh_md": null,
@@ -11729,8 +12550,12 @@
                 "example": {
                   "data": [
                     {
+                      "cap_nhat_luc": null,
                       "dia_chi_chi_tiet_md": null,
+                      "luu_tru_luc": null,
                       "ma_kh": "KH001",
+                      "ngay_sinh": null,
+                      "ngay_tao": null,
                       "sdt": "0900000000",
                       "ten_kh": "Khách hàng minh họa",
                       "tinh_thanh_md": null,
@@ -18603,6 +19428,10 @@
     {
       "description": "API công khai, không cần đăng nhập. Chỉ trả sản phẩm/loại đang hoạt động.",
       "name": "Customer · Catalog"
+    },
+    {
+      "description": "Hồ sơ khách, sở thích và đơn hàng liên quan; chỉ ADMIN.",
+      "name": "Admin · CRM"
     },
     {
       "description": "Customer order creation and idempotent retries.",

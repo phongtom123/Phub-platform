@@ -149,7 +149,7 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
               ref={node => { if (node) inputNodes.current.set(column.name, node); else inputNodes.current.delete(column.name); }}
               aria-label={`${label(column.name)} ${keys.map(name => row[name]).join(" / ")}`} aria-invalid={Boolean(error)}
               aria-describedby={error ? `${id}-error` : `${id}-help`} required={column.required} disabled={saving}
-              type={column.type === "int" ? "number" : "text"} maxLength={column.type === "text" ? 20000 : 2000}
+              type={column.type === "int" ? "number" : column.type === "date" ? "date" : "text"} maxLength={column.type === "text" ? 20000 : 2000}
               value={editor.draft[column.name] ?? ""} onChange={event => { const value = event.target.value; setEditor(current => current && ({ ...current, draft: { ...current.draft, [column.name]: value } })); setError(""); }} />
             : String(row[column.name] ?? "—")}
           </td>)}

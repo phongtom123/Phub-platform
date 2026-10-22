@@ -32,7 +32,7 @@ const account = { ma_tk: "TK1", ten_tai_khoan: "admin.test", email: null, ma_nha
   trang_thai: 1, role: "ADMIN", ho_ten: "Admin Test", ma_kho: null, owner_active: true, is_self: true };
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PHUB_CHROMIUM_EXECUTABLE || undefined });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
     const errors = [];
@@ -47,6 +47,10 @@ async function main() {
       if (url.pathname.endsWith("/data/resources")) return respond(resources);
       if (url.pathname === "/api/backend/admin/accounts/TK1") return respond(account);
       if (url.pathname === "/api/backend/admin/accounts") return respond({ data: [account], total: 1, page: 1, page_size: 20 });
+      if (url.pathname === "/api/backend/crm/customers/TEST-1") return respond({
+        profile: { ma_kh: "TEST-1", ten_kh: "Khách kiểm thử", ngay_sinh: null, ngay_tao: null, cap_nhat_luc: null, luu_tru_luc: null },
+        account: null, so_thich: [], danh_muc_so_thich: [],
+      });
       const meta = resources.find(item => url.pathname === "/api/backend/data/" + item.name);
       assert.ok(meta, "Unexpected API: " + url.pathname);
       const row = Object.fromEntries(meta.keys.map(key => [key, "TEST-1"]));

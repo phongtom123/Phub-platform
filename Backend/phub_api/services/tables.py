@@ -15,6 +15,7 @@ from phub_api.models.resources import (
 from phub_api.models.user import User
 from phub_api.repositories.tables import TablesRepository, clean
 from phub_api.schemas.resources import payload_model
+from phub_api.schemas.crm import vietnam_today
 from phub_api.services.auth import passwords
 
 
@@ -67,6 +68,8 @@ def read_payload(body, name: str, patch: bool) -> dict:
             raise HTTPException(422, f"{field} không được để trống.")
     if name == "vouchers" and "ma_code" in data:
         data["ma_code"] = data["ma_code"].strip().upper()
+    if name == "customers" and data.get("ngay_sinh") and data["ngay_sinh"] > vietnam_today().isoformat():
+        raise HTTPException(422, "Ngày sinh không được ở tương lai.")
     return data
 
 

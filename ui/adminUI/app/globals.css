@@ -4,6 +4,22 @@
 .live-data .live-page-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .live-data .live-page-actions-group { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-left: auto; max-width: 100%; }
 .live-data .live-related { margin-top: 24px; }
+.customer-detail .customer-card { padding: 24px; margin-bottom: 20px; border: 1px solid #e0e5dc; border-radius: 10px; background: white; min-width: 0; }
+.customer-detail h3 { margin: 0 0 20px; font-size: 18px; }
+.customer-detail .customer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 20px; }
+.customer-detail .customer-interests { grid-column: 1 / -1; margin: 20px 0 0; padding: 0; border: 0; min-width: 0; }
+.customer-detail .customer-interests legend { font-weight: 600; margin-bottom: 12px; }
+.customer-detail .customer-interest { display: inline-flex; flex-direction: row; align-items: center; gap: 8px; margin: 8px 20px 8px 0; }
+.customer-detail .customer-interest input { width: 18px; height: 18px; accent-color: #14a800; }
+.customer-detail .customer-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.customer-detail .customer-tags span { padding: 6px 12px; background: #edf8e9; border-radius: 20px; overflow-wrap: anywhere; }
+.customer-detail .customer-section-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.customer-detail .customer-section-actions h3 { margin: 0; }
+.customer-detail .customer-wide { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .customer-detail .customer-card { padding: 16px; }
+  .customer-detail .live-form { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+}
 .live-data .live-related h3 { font-size: 18px; }
 .live-data .live-related a { display: inline-flex; padding: 10px 16px; border: 1px solid #dce1db; border-radius: 8px; background: white; color: #181818; text-decoration: none; }
 .live-data .live-related a:hover { background: #edf8e9; border-color: #14a800; }

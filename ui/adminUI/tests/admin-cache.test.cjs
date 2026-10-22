@@ -20,6 +20,22 @@ function load(fetch) {
 }
 const url = "/api/backend/data/products?page=1&page_size=20";
 
+test("CRM profiles and order pages cache independently and invalidate on profile writes/session change", async () => {
+  let calls = 0;
+  const app = load(async () => json({ count: ++calls }));
+  const profile = "/api/backend/crm/customers/KH1", orders = profile + "/orders?page=1";
+  const first = await (await app.adminFetch(profile)).json();
+  assert.deepEqual(await (await app.adminFetch(profile)).json(), first);
+  await app.adminFetch(orders);
+  assert.equal(calls, 2);
+  await app.adminFetch(profile, { method: "PATCH", body: "{}" });
+  await app.adminFetch(profile); await app.adminFetch(orders);
+  assert.equal(calls, 5);
+  app.advanceSessionEpoch();
+  await app.adminFetch(profile);
+  assert.equal(calls, 6);
+});
+
 test("resource polling invalidates all matching queries but keeps metadata and unrelated modules warm", async () => {
   let calls = 0;
   const app = load(async () => json({ value: ++calls }));
