@@ -44,6 +44,24 @@ test("CRM profile and scoped orders pass the gateway; other CRM paths/methods st
   assert.equal(calls.length, 3);
 });
 
+test("support gateway permits only the admin inbox/read/update and customer create/own-read contracts", async () => {
+  const calls = [];
+  const proxy = gateway(async (url, options) => { calls.push([String(url), options.method]); return Response.json({}); });
+  const id = 'a1111111-1111-4111-8111-111111111111';
+  for (const [method, parts] of [
+    ['GET', ['crm','feedback']], ['GET',['crm','feedback',id]], ['PATCH',['crm','feedback',id]],
+    ['GET',['customer','crm','feedback']], ['POST',['customer','crm','feedback']], ['GET',['customer','crm','feedback',id]],
+  ]) {
+    assert.equal((await proxy(new Request('http://localhost/api/backend/x', {method}), parts)).status, 200);
+  }
+  assert.equal(calls.length, 6);
+  for (const [method, parts] of [
+    ['POST',['crm','feedback']], ['DELETE',['crm','feedback',id]], ['PATCH',['customer','crm','feedback',id]],
+    ['GET',['crm','feedback','..']], ['GET',['crm','feedback','%2e%2e']], ['GET',['crm','feedback',id,'secret']],
+  ]) assert.equal((await proxy(new Request('http://localhost/api/backend/x', {method}), parts)).status, 404);
+  assert.equal(calls.length, 6);
+});
+
 test("media upload forwards binary bytes, content type and only the session cookie", async () => {
   const bytes = Uint8Array.from([137, 80, 78, 71, 0, 255, 128, 1]);
   const proxy = gateway(async (url, options) => {

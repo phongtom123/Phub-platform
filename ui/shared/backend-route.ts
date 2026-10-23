@@ -54,6 +54,10 @@ function validIdentifier(value: string | undefined): boolean {
 
 function validCustomerPath(path: string[], method: string): boolean {
   if (path[0] === "customer") {
+    if (path[1] === "crm" && path[2] === "feedback") {
+      if (path.length === 3) return ["GET", "POST"].includes(method);
+      return path.length === 4 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3]) && method === "GET";
+    }
     if (path.length === 2 && path[1] === "me") return ["GET", "PUT"].includes(method);
     if (path.length === 3 && path[1] === "checkout" && path[2] === "quote") return method === "POST";
     if (path[1] !== "orders") return false;
@@ -76,6 +80,10 @@ function validAuthPath(path: string[], method: string): boolean {
 }
 
 function validCrmPath(path: string[], method: string): boolean {
+  if (path[0] === "crm" && path[1] === "feedback") {
+    if (path.length === 2) return method === "GET";
+    return path.length === 3 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2]) && ["GET", "PATCH"].includes(method);
+  }
   if (path[0] !== "crm" || path[1] !== "customers" || !path[2] ||
     !/^[A-Za-z0-9_.-]{1,200}$/.test(path[2]) || [".", ".."].includes(path[2])) return false;
   if (path.length === 3) return ["GET", "PATCH"].includes(method);

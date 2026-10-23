@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   Sparkles,
   TicketPercent,
+  MessageSquare,
   Truck,
   UserCog,
   UserRound,
@@ -64,6 +65,7 @@ const navigation = [
     items: [
       ["promotions", "Khuyến mãi", Sparkles],
       ["vouchers", "Voucher", TicketPercent],
+      ["support", "Hỗ trợ khách hàng", MessageSquare],
     ],
   },
 ] as const;

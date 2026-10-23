@@ -13,6 +13,7 @@ from phub_api.controllers.health import router as health_router
 from phub_api.controllers.admin_accounts import router as admin_accounts_router
 from phub_api.controllers.media import router as media_router
 from phub_api.controllers.crm import router as crm_router
+from phub_api.controllers.support import router as support_router
 from phub_api.middleware.errors import register_errors
 from phub_api.config.database import close_supabase
 from phub_api.config.openapi import DESCRIPTION, TAGS, install_openapi
@@ -33,6 +34,8 @@ app = FastAPI(
     description=DESCRIPTION,
     openapi_tags=TAGS + [
         {"name": "Admin · CRM", "description": "Hồ sơ khách, sở thích và đơn hàng liên quan; chỉ ADMIN."},
+        {"name": "Admin · Hỗ trợ khách hàng", "description": "Tiếp nhận và xử lý ticket phản hồi của khách."},
+        {"name": "Customer · Hỗ trợ", "description": "Khách gửi và xem ticket thuộc chính mình."},
         {"name": "Customer Orders", "description": "Customer order creation and idempotent retries."},
         {"name": "Customer Payments", "description": "Customer payment requests and status."},
         {"name": "Customer Shopping", "description": "Customer profile, cart, checkout and order history."},
@@ -53,6 +56,7 @@ app.include_router(health_router)
 app.include_router(admin_accounts_router)
 app.include_router(media_router)
 app.include_router(crm_router)
+app.include_router(support_router)
 app.include_router(legacy_router)
 register_errors(app)
 

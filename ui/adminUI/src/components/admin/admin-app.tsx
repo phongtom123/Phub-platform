@@ -19,17 +19,18 @@ import BackendDataView from "@/src/components/backend-data-view";
 import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
 import AccountsView from "@/src/features/accounts/accounts-view";
 import type { AccountView } from "@/src/features/accounts/types";
+import SupportView from "@/src/features/support/support-view";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
   mode: "create" | "edit" | "settings";
 } | null;
 
-export default function AdminApp({ dataResource, accountsPage }: { dataResource?: string; accountsPage?: AccountView } = {}) {
+export default function AdminApp({ dataResource, accountsPage, supportPage = false }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
-  const activeModule = accountsPage ? "accounts" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString());
+  const activeModule = accountsPage ? "accounts" : supportPage ? "support" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString());
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [drawer, setDrawer] = useState<DrawerState>(null);
@@ -93,7 +94,7 @@ export default function AdminApp({ dataResource, accountsPage }: { dataResource?
             <span>{sessionError}</span>
             <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
           </div>}
-          {accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
+          {activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : definition ? (
             <ModuleView
