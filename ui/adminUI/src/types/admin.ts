@@ -13,7 +13,8 @@ export type ModuleKey =
   | "employees"
   | "accounts"
   | "promotions"
-  | "vouchers";
+  | "vouchers"
+  | "support";
 
 export type DataValue = string | number | boolean;
 export type DataRow = Record<string, DataValue> & { id: string };

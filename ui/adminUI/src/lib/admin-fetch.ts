@@ -52,7 +52,7 @@ function cacheKey(input: RequestInfo | URL, options?: RequestInit): { key: strin
   if (typeof window === "undefined" || !window.location || typeof input !== "string" ||
     options?.credentials === "omit" || (options?.headers && [...new Headers(options.headers)].length)) return null;
   const url = new URL(input, window.location.origin);
-  if (url.origin !== window.location.origin || !/^\/api\/backend\/(data\/[a-z-]+|admin\/(accounts(?:\/[A-Za-z0-9_.-]+)?|account-owners)|crm\/customers\/[^/]+(?:\/orders)?)$/.test(url.pathname)) return null;
+  if (url.origin !== window.location.origin || !/^\/api\/backend\/(data\/[a-z-]+|admin\/(accounts(?:\/[A-Za-z0-9_.-]+)?|account-owners)|crm\/(customers\/[^/]+(?:\/orders)?|feedback(?:\/[0-9a-f-]{36})?))$/i.test(url.pathname)) return null;
   url.searchParams.sort();
   return { key: url.pathname + url.search };
 }
@@ -65,6 +65,7 @@ function sameBody(before: Snapshot, after: Snapshot) {
 
 function resourceFamily(key: string) {
   const path = key.split("?")[0];
+  if (path.startsWith("/api/backend/crm/feedback/")) return "/api/backend/crm/feedback";
   return path.startsWith("/api/backend/admin/accounts/") ? "/api/backend/admin/accounts" : path;
 }
 

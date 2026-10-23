@@ -238,6 +238,178 @@
         "title": "AccountUpdate",
         "type": "object"
       },
+      "AdminTicket": {
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "ma_donhang": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Donhang"
+          },
+          "ma_kh": {
+            "title": "Ma Kh",
+            "type": "string"
+          },
+          "ma_phan_hoi": {
+            "format": "uuid",
+            "title": "Ma Phan Hoi",
+            "type": "string"
+          },
+          "ma_sp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Sp"
+          },
+          "muc_do_uu_tien": {
+            "enum": [
+              "THAP",
+              "BINH_THUONG",
+              "CAO",
+              "KHAN_CAP"
+            ],
+            "title": "Muc Do Uu Tien",
+            "type": "string"
+          },
+          "ngay_phan_hoi": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Phan Hoi"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "nguoi_xu_ly": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nguoi Xu Ly"
+          },
+          "noi_dung": {
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "phan_hoi_quan_ly": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phan Hoi Quan Ly"
+          },
+          "ten_kh": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ten Kh"
+          },
+          "ten_nguoi_xu_ly": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ten Nguoi Xu Ly"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "MOI",
+              "DANG_XU_LY",
+              "DA_GIAI_QUYET",
+              "DA_DONG"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_phan_hoi",
+          "tieu_de",
+          "noi_dung",
+          "trang_thai",
+          "ngay_tao",
+          "cap_nhat_luc",
+          "ma_kh",
+          "muc_do_uu_tien"
+        ],
+        "title": "AdminTicket",
+        "type": "object"
+      },
+      "AdminTicketPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AdminTicket"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "AdminTicketPage",
+        "type": "object"
+      },
       "ApiErrorResponse": {
         "properties": {
           "detail": {
@@ -1591,6 +1763,129 @@
           "page_size"
         ],
         "title": "CustomerOrders",
+        "type": "object"
+      },
+      "CustomerTicket": {
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "ma_donhang": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Donhang"
+          },
+          "ma_phan_hoi": {
+            "format": "uuid",
+            "title": "Ma Phan Hoi",
+            "type": "string"
+          },
+          "ma_sp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Sp"
+          },
+          "ngay_phan_hoi": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Phan Hoi"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "noi_dung": {
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "phan_hoi_quan_ly": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phan Hoi Quan Ly"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "MOI",
+              "DANG_XU_LY",
+              "DA_GIAI_QUYET",
+              "DA_DONG"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_phan_hoi",
+          "tieu_de",
+          "noi_dung",
+          "trang_thai",
+          "ngay_tao",
+          "cap_nhat_luc"
+        ],
+        "title": "CustomerTicket",
+        "type": "object"
+      },
+      "CustomerTicketPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerTicket"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "CustomerTicketPage",
         "type": "object"
       },
       "CustomerUpdate": {
@@ -6142,6 +6437,99 @@
         "title": "TON_KHORead",
         "type": "object"
       },
+      "TicketCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "ma_donhang": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Donhang"
+          },
+          "ma_sp": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Sp"
+          },
+          "noi_dung": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "tieu_de": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Tieu De",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tieu_de",
+          "noi_dung"
+        ],
+        "title": "TicketCreate",
+        "type": "object"
+      },
+      "TicketUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "muc_do_uu_tien": {
+            "enum": [
+              "THAP",
+              "BINH_THUONG",
+              "CAO",
+              "KHAN_CAP"
+            ],
+            "title": "Muc Do Uu Tien",
+            "type": "string"
+          },
+          "nhan_xu_ly": {
+            "default": false,
+            "title": "Nhan Xu Ly",
+            "type": "boolean"
+          },
+          "phan_hoi_quan_ly": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phan Hoi Quan Ly"
+          },
+          "trang_thai": {
+            "enum": [
+              "MOI",
+              "DANG_XU_LY",
+              "DA_GIAI_QUYET",
+              "DA_DONG"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "title": "TicketUpdate",
+        "type": "object"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -10260,6 +10648,427 @@
         ]
       }
     },
+    "/api/crm/feedback": {
+      "get": {
+        "operationId": "admin_tickets_api_crm_feedback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "MOI",
+                    "DANG_XU_LY",
+                    "DA_GIAI_QUYET",
+                    "DA_DONG"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "THAP",
+                    "BINH_THUONG",
+                    "CAO",
+                    "KHAN_CAP"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTicketPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Danh sách ticket hỗ trợ: tìm kiếm, lọc và phân trang",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng"
+        ]
+      }
+    },
+    "/api/crm/feedback/{ticket_id}": {
+      "get": {
+        "operationId": "admin_ticket_api_crm_feedback__ticket_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTicket"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy ticket."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy ticket."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xem nội dung ticket và kết quả xử lý",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng"
+        ]
+      },
+      "patch": {
+        "operationId": "update_ticket_api_crm_feedback__ticket_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminTicket"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy ticket."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy ticket."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Nhận xử lý, cập nhật trạng thái/ưu tiên và phản hồi gửi khách",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng"
+        ]
+      }
+    },
     "/api/customer/checkout/quote": {
       "post": {
         "operationId": "quote_checkout_api_customer_checkout_quote_post",
@@ -10415,6 +11224,350 @@
         "summary": "Báo giá giỏ hàng và kiểm tra voucher",
         "tags": [
           "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/crm/feedback": {
+      "get": {
+        "operationId": "customer_tickets_api_customer_crm_feedback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerTicketPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Danh sách ticket của khách đang đăng nhập",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng",
+          "Customer · Hỗ trợ"
+        ]
+      },
+      "post": {
+        "operationId": "create_ticket_api_customer_crm_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerTicket"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Khách gửi ticket phản hồi; chủ sở hữu lấy từ phiên",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng",
+          "Customer · Hỗ trợ"
+        ]
+      }
+    },
+    "/api/customer/crm/feedback/{ticket_id}": {
+      "get": {
+        "operationId": "customer_ticket_api_customer_crm_feedback__ticket_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerTicket"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy ticket."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy ticket."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Khách xem ticket và phản hồi của chính mình",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng",
+          "Customer · Hỗ trợ"
         ]
       }
     },
@@ -19432,6 +20585,14 @@
     {
       "description": "Hồ sơ khách, sở thích và đơn hàng liên quan; chỉ ADMIN.",
       "name": "Admin · CRM"
+    },
+    {
+      "description": "Tiếp nhận và xử lý ticket phản hồi của khách.",
+      "name": "Admin · Hỗ trợ khách hàng"
+    },
+    {
+      "description": "Khách gửi và xem ticket thuộc chính mình.",
+      "name": "Customer · Hỗ trợ"
     },
     {
       "description": "Customer order creation and idempotent retries.",

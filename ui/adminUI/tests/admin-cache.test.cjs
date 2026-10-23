@@ -20,6 +20,21 @@ function load(fetch) {
 }
 const url = "/api/backend/data/products?page=1&page_size=20";
 
+test("support detail changes invalidate inbox snapshots; customer feedback is not cached here", async () => {
+  let calls = 0, changed = false;
+  const app = load(async () => { calls++; return json({ status: changed ? 'DA_DONG' : 'MOI' }); });
+  const list = '/api/backend/crm/feedback?page=1', detail = '/api/backend/crm/feedback/a1111111-1111-4111-8111-111111111111';
+  await app.adminFetch(list); await app.adminFetch(detail); await app.adminFetch(list);
+  assert.equal(calls, 2);
+  changed = true; app.tick(1100);
+  await app.adminFetch(detail, {cache:'no-cache'});
+  await app.adminFetch(list);
+  assert.equal(calls, 4);
+  await app.adminFetch('/api/backend/customer/crm/feedback');
+  await app.adminFetch('/api/backend/customer/crm/feedback');
+  assert.equal(calls, 6);
+});
+
 test("CRM profiles and order pages cache independently and invalidate on profile writes/session change", async () => {
   let calls = 0;
   const app = load(async () => json({ count: ++calls }));

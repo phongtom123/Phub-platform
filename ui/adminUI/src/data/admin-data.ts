@@ -20,6 +20,7 @@ export const moduleNames: Record<ModuleKey, string> = {
   accounts: "Tài khoản",
   promotions: "Khuyến mãi",
   vouchers: "Voucher",
+  support: "Hỗ trợ khách hàng",
 };
 
 export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {

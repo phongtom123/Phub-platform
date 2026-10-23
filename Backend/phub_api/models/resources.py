@@ -48,7 +48,7 @@ def schema() -> dict[str, list[dict[str, Any]]]:
     result = {}
     for table, block in re.findall(r"Table (\w+) \{(.*?)^\}", source, re.M | re.S):
         columns = []
-        for name, kind, options in re.findall(r"^  (\w+) (int|varchar|text|datetime|timestamptz|date|decimal\(\d+,\d+\))([^\n]*)", block, re.M):
+        for name, kind, options in re.findall(r"^  (\w+) (int|varchar|text|datetime|timestamptz|date|uuid|decimal\(\d+,\d+\))([^\n]*)", block, re.M):
             default_match = re.search(r"default: ('[^']*'|-?\d+)", options)
             default = default_match.group(1).strip("'") if default_match else None
             if kind == "int" and default is not None:

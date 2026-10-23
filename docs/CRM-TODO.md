@@ -7,8 +7,9 @@ Trạng thái: **đã có mã Admin CRM đợt 1; chưa áp dụng migration lê
 Cập nhật đợt 1 Admin: mã đã có hồ sơ CRM tại URL khách hàng cũ, ngày sinh/sở thích,
 tài khoản liên kết, lịch sử đơn và RPC lưu nguyên tử. Xem
 [phạm vi, migration bổ sung và hướng dẫn kiểm thử](CRM-ADMIN-PROFILE.md).
-Chưa áp dụng migration lên Supabase thật; phần CRM phía khách hàng, phản hồi và
-khảo sát vẫn chưa triển khai. Các checklist bên dưới là backlog tổng, không phải
+Chưa áp dụng migration lên Supabase thật. Đợt hỗ trợ khách hàng đã có trang Admin
+và API tiếp nhận/xử lý ticket; xem [phạm vi và hướng dẫn](CUSTOMER-SUPPORT.md).
+Form gửi phản hồi phía khách hàng và khảo sát chưa triển khai. Các checklist bên dưới là backlog tổng, không phải
 xác nhận toàn bộ ticket đã hoàn thành.
 
 ## 1. Mục tiêu và giới hạn
@@ -141,7 +142,12 @@ không chạy lại script tạo bảng. Những tên constraint/index cũ còn 
 
 ### 4.3. P0 — phản hồi: 1 bảng
 
-`CRM_PHAN_HOI` dự kiến gồm:
+`PHAN_HOI` (tên đã dùng trong bản hỗ trợ khách hàng) gồm:
+
+Bản Admin hỗ trợ đã có mã tiếp nhận/xử lý, API khách tạo và xem ticket của mình.
+Xem [phạm vi, migration và giới hạn](CUSTOMER-SUPPORT.md). Chưa có form gửi ticket
+trên website khách, rating hoặc hội thoại nhiều lượt; các mục dưới vẫn là backlog
+để đối chiếu, không phải xác nhận đã nghiệm thu Supabase thật.
 
 - PK `ma_phan_hoi`; FK `ma_kh` và `ma_sp` tới khách/sản phẩm.
 - `ma_donhang` nullable để liên kết giao dịch khi có; xác minh đơn và sản phẩm
