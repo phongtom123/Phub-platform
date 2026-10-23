@@ -1490,29 +1490,13 @@
               }
             ]
           },
-          "danh_muc_so_thich": {
-            "items": {
-              "$ref": "#/components/schemas/Interest"
-            },
-            "title": "Danh Muc So Thich",
-            "type": "array"
-          },
           "profile": {
             "$ref": "#/components/schemas/phub_api__schemas__crm__CustomerProfile"
-          },
-          "so_thich": {
-            "items": {
-              "type": "string"
-            },
-            "title": "So Thich",
-            "type": "array"
           }
         },
         "required": [
           "profile",
-          "account",
-          "so_thich",
-          "danh_muc_so_thich"
+          "account"
         ],
         "title": "CustomerDetail",
         "type": "object"
@@ -1926,16 +1910,6 @@
               }
             ],
             "title": "Sdt"
-          },
-          "so_thich": {
-            "items": {
-              "maxLength": 50,
-              "minLength": 1,
-              "type": "string"
-            },
-            "maxItems": 50,
-            "title": "So Thich",
-            "type": "array"
           },
           "ten_kh": {
             "maxLength": 2000,
@@ -2379,29 +2353,6 @@
           "status"
         ],
         "title": "HealthResponse",
-        "type": "object"
-      },
-      "Interest": {
-        "properties": {
-          "ma_so_thich": {
-            "title": "Ma So Thich",
-            "type": "string"
-          },
-          "ten_so_thich": {
-            "title": "Ten So Thich",
-            "type": "string"
-          },
-          "trang_thai": {
-            "title": "Trang Thai",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "ma_so_thich",
-          "ten_so_thich",
-          "trang_thai"
-        ],
-        "title": "Interest",
         "type": "object"
       },
       "InvoiceOverview": {
@@ -10379,7 +10330,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Hồ sơ CRM, tài khoản liên kết và sở thích của khách",
+        "summary": "Hồ sơ khách hàng và tài khoản liên kết",
         "tags": [
           "Admin · CRM"
         ]
@@ -10516,7 +10467,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Lưu nguyên tử hồ sơ và sở thích; không sửa trạng thái tài khoản/lưu trữ",
+        "summary": "Lưu hồ sơ khách; không sửa trạng thái tài khoản/lưu trữ",
         "tags": [
           "Admin · CRM"
         ]
@@ -10720,11 +10671,13 @@
             }
           },
           {
+            "description": "Tìm tiêu đề/nội dung, mã thẻ PH-XXXXXXXX, phần đầu mã sau dấu - (1–8 ký tự hex) hoặc UUID đầy đủ; không phân biệt hoa thường.",
             "in": "query",
             "name": "q",
             "required": false,
             "schema": {
               "default": "",
+              "description": "Tìm tiêu đề/nội dung, mã thẻ PH-XXXXXXXX, phần đầu mã sau dấu - (1–8 ký tự hex) hoặc UUID đầy đủ; không phân biệt hoa thường.",
               "maxLength": 100,
               "title": "Q",
               "type": "string"
@@ -20583,7 +20536,7 @@
       "name": "Customer · Catalog"
     },
     {
-      "description": "Hồ sơ khách, sở thích và đơn hàng liên quan; chỉ ADMIN.",
+      "description": "Hồ sơ khách và đơn hàng liên quan; chỉ ADMIN.",
       "name": "Admin · CRM"
     },
     {

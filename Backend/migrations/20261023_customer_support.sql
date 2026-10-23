@@ -24,8 +24,11 @@ create table public."PHAN_HOI" (
 );
 create index "PHAN_HOI_trang_thai_ngay_idx" on public."PHAN_HOI"(trang_thai, ngay_tao desc);
 create index "PHAN_HOI_khach_ngay_idx" on public."PHAN_HOI"(ma_kh, ngay_tao desc);
+create index "PHAN_HOI_san_pham_idx" on public."PHAN_HOI"(ma_sp);
+create index "PHAN_HOI_don_hang_idx" on public."PHAN_HOI"(ma_donhang);
+create index "PHAN_HOI_nguoi_xu_ly_idx" on public."PHAN_HOI"(nguoi_xu_ly);
 alter table public."PHAN_HOI" enable row level security;
-revoke all on table public."PHAN_HOI" from public, anon, authenticated;
+revoke all on table public."PHAN_HOI" from public, anon, authenticated, service_role;
 grant select, insert, update on table public."PHAN_HOI" to service_role;
 
 create function public.customer_create_feedback_v1(p_actor_account_id text, p_payload jsonb)

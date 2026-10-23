@@ -1,7 +1,28 @@
+import re
+from uuid import UUID
+
 from phub_api.repositories.admin_accounts import literal_search
 
 PUBLIC_COLUMNS = 'ma_phan_hoi,tieu_de,noi_dung,ma_sp,ma_donhang,trang_thai,phan_hoi_quan_ly,ngay_phan_hoi,ngay_tao,cap_nhat_luc'
 ADMIN_COLUMNS = PUBLIC_COLUMNS + ',ma_kh,muc_do_uu_tien,nguoi_xu_ly,khach:KHACH_HANG(ten_kh),nhan_vien:NHAN_VIEN(ho_ten)'
+
+
+def ticket_id_filter(query: str) -> str | None:
+    """Match the visible PH-XXXXXXXX code without casting the UUID column to text."""
+    value = query.strip()
+    if value[:3].lower() == 'ph-':
+        value = value[3:]
+    if re.fullmatch(r'[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}', value):
+        return f'ma_phan_hoi.eq.{UUID(value)}'
+    if not re.fullmatch(r'[0-9a-fA-F]{1,8}', value):
+        return None
+    shift = (32 - len(value)) * 4
+    lower = int(value, 16) << shift
+    upper = (int(value, 16) + 1) << shift
+    start = f'ma_phan_hoi.gte.{UUID(int=lower)}'
+    if upper == 1 << 128:
+        return start
+    return f'and({start},ma_phan_hoi.lt.{UUID(int=upper)})'
 
 
 class SupportRepository:
@@ -17,7 +38,9 @@ class SupportRepository:
         if priority:
             request = request.eq('muc_do_uu_tien', priority)
         if query:
-            request = request.or_(literal_search(query, ('tieu_de', 'noi_dung')))
+            search = literal_search(query, ('tieu_de', 'noi_dung'))
+            identifier = ticket_id_filter(query)
+            request = request.or_(f'{search},{identifier}' if identifier else search)
         return request.order('ngay_tao', desc=True).order('ma_phan_hoi').range((page - 1) * page_size, page * page_size - 1).execute()
 
     def detail(self, ticket_id, customer_id=None):

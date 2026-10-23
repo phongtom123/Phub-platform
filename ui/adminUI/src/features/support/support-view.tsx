@@ -103,15 +103,14 @@ export default function SupportView() {
     finally { if (!controller.signal.aborted) { setSaving(false); write.current = null; } }
   }
 
-  return <section className="live-data support-page">
-    <div className="support-heading"><div><h1>Hỗ trợ khách hàng</h1><p>Tiếp nhận phản hồi và theo dõi kết quả xử lý ticket.</p></div>
-      <button type="button" disabled={saving || dirty} onClick={() => setVersion(v => v + 1)}>Làm mới</button></div>
+  return <section className="live-data support-page" aria-label="Hỗ trợ khách hàng">
     {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi; đang giữ dữ liệu lần trước. {pollError}</p>}
     <form className="live-tools support-filters" onSubmit={e => { e.preventDefault(); setQuery(search.trim()); setPage(1); }}>
-      <input aria-label="Tìm ticket" value={search} maxLength={100} placeholder="Tìm trong tiêu đề, nội dung…" onChange={e => setSearch(e.target.value)} />
+      <input aria-label="Tìm ticket" value={search} maxLength={100} placeholder="Tìm mã thẻ, tiêu đề, nội dung…" onChange={e => setSearch(e.target.value)} />
       <select aria-label="Lọc trạng thái" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}><option value="">Tất cả trạng thái</option>{Object.entries(statuses).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select>
       <select aria-label="Lọc ưu tiên" value={priority} onChange={e => { setPriority(e.target.value); setPage(1); }}><option value="">Tất cả ưu tiên</option>{Object.entries(priorities).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select>
       <button type="submit">Tìm kiếm</button>
+      <button type="button" disabled={saving || dirty} onClick={() => setVersion(v => v + 1)}>Làm mới</button>
     </form>
     <div className={`support-layout ${id ? "has-selection" : ""}`}>
       <section className="support-inbox" aria-label="Danh sách ticket">

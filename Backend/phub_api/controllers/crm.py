@@ -14,14 +14,14 @@ Write = Annotated[CrmService, Depends(write_service)]
 
 @router.get("/customers/{customer_id}", response_model=CustomerDetail,
             responses={**READ_ERRORS, 404: error_response(404, "Không tìm thấy khách hàng.")},
-            summary="Hồ sơ CRM, tài khoản liên kết và sở thích của khách")
+            summary="Hồ sơ khách hàng và tài khoản liên kết")
 def customer_detail(customer_id: Identifier, service: Read):
     return service.detail(customer_id)
 
 
 @router.patch("/customers/{customer_id}", response_model=CustomerDetail,
               responses={**WRITE_ERRORS, 404: error_response(404, "Không tìm thấy khách hàng.")},
-              summary="Lưu nguyên tử hồ sơ và sở thích; không sửa trạng thái tài khoản/lưu trữ")
+              summary="Lưu hồ sơ khách; không sửa trạng thái tài khoản/lưu trữ")
 def update_customer(customer_id: Identifier, body: CustomerUpdate, service: Write):
     return service.update(customer_id, body)
 

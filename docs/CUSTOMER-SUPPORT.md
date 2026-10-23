@@ -3,8 +3,14 @@
 ## Giao diện Admin
 
 - URL: `/support`, nằm trong **Tiếp thị → Hỗ trợ khách hàng**.
-- Hộp thư có tổng kết quả theo bộ lọc, tìm trong tiêu đề/nội dung, lọc trạng thái,
+- Không lặp lại tiêu đề/mô tả trang dưới breadcrumb; nút Làm mới nằm cùng bộ lọc.
+- Hộp thư có tổng kết quả theo bộ lọc, tìm theo mã thẻ/tiêu đề/nội dung, lọc trạng thái,
   ưu tiên và phân trang 20 ticket/lần; không thay thế dữ liệu thật bằng ticket mẫu.
+- Mã thẻ dạng `PH-XXXXXXXX` không phân biệt hoa/thường; có thể nhập riêng phần đầu
+  sau dấu `-` (1–8 ký tự hex, ví dụ `CB9A`), có hoặc không có `PH-`, hoặc UUID đầy đủ.
+  Tìm trên backend trước khi phân trang, giữ bộ lọc trạng thái/ưu tiên; mã rút gọn có
+  thể trùng nên trả tất cả ticket khớp. Không ép cột UUID sang kiểu text/ILIKE.
+  Cần deploy backend mới để API trên Render hỗ trợ tìm mã; không cần migration DB.
 - Chọn một ticket để xem khách gửi, nội dung, sản phẩm/đơn liên quan nếu có.
 - Nhận xử lý gán cho ADMIN đang đăng nhập; có thể cập nhật trạng thái, ưu tiên
   và một phản hồi hiện tại cho khách. Lưu không reload document.
@@ -26,9 +32,32 @@
 4. Gửi ticket bằng API khách rồi kiểm tra trong Admin. Chưa có form gửi ticket mới
    trên website khách, chưa tự nối trang liên hệ cũ vào module này.
 
-Chưa chạy migration trên Supabase thật trong phiên triển khai này. Bản SQL đã được
-kiểm thử trong PostgreSQL nhúng/PGlite biệt lập; vẫn cần smoke test trên project test
-với PostgREST và quyền/trigger hiện hữu trước khi đưa production.
+Ngày 23/10/2026 đã áp dụng migration `customer_support`, phiên bản
+`20261023012058`, vào project **Phub** (`btfhahnjydaiivvcqnna`) qua Supabase MCP.
+Đã xác nhận bảng `PHAN_HOI`, hai RPC, 4 khóa ngoại, 6 index (gồm khóa chính), RLS
+và quyền service role đọc/thêm/sửa nhưng không xóa. Không thêm ticket mẫu hoặc sửa
+dữ liệu cũ; không áp dụng vào project Phub1. **Không chạy lại migration trên Phub.**
+Bản SQL đã qua kiểm thử PostgreSQL nhúng/PGlite biệt lập. Kiểm tra cấu trúc/quyền
+trên database thật không thay thế nghiệm thu luồng gửi/xử lý ticket bằng tài khoản thật.
+Truy vấn SQL đọc đầy đủ các cột/quan hệ của hộp thư đã thành công, trả danh sách rỗng.
+Chưa smoke test qua HTTP Data API/backend bằng phiên người dùng: backend local không
+có cấu hình Supabase; Admin local vẫn trỏ API Render. Không tạo ticket giả để kiểm thử.
+
+Advisor sau triển khai chỉ ghi nhận mức INFO cho bảng mới: RLS chưa có policy là
+chủ ý vì chặn `anon`/`authenticated` và chỉ backend service role truy cập; index chưa
+được dùng vì bảng vừa tạo, chưa có ticket. Không mở policy công khai để bỏ thông báo.
+Xem [RLS không có policy](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+và [index chưa sử dụng](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
+
+## Dữ liệu demo theo yêu cầu
+
+Sau bước tạo bảng, ngày 23/10/2026 người dùng yêu cầu thêm dữ liệu mẫu. Đã thêm
+6 ticket tiếng Việt vào Phub, đánh dấu `[DEMO-PHUB]` ở tiêu đề và ghi rõ demo trong
+nội dung; chỉ gắn 6 khách `SEED_` và Admin mẫu, không gắn khách/đơn hàng thật.
+Gồm 2 mới, 2 đang xử lý, 1 đã giải quyết, 1 đã đóng; đủ 4 mức ưu tiên.
+Script [customer_support_demo.sql](../Backend/seeds/customer_support_demo.sql)
+chỉ dùng khi được yêu cầu, không tự chạy trong deploy; chạy lại bỏ qua ticket
+trùng tiêu đề và khách mẫu. Đây không phải kết quả nghiệm thu luồng gửi ticket thật.
 
 ## API
 

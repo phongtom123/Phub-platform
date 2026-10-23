@@ -1,114 +1,76 @@
-# Hồ sơ CRM khách hàng — Admin, đợt 1
+# Hồ sơ khách hàng — Admin
 
-## Phạm vi đã triển khai trong mã
+## Phạm vi hiện tại
 
-- Giữ URL `/data/customers`; `key=` trống là danh sách, chọn mã khách để mở chi tiết.
-- Chi tiết cùng đường dẫn cũ: `/data/customers?key=["MA_KH_THAT"]` (trình duyệt sẽ URL-encode).
-- Hồ sơ có ngày sinh, tuổi tính theo ngày tại Việt Nam, sở thích và mốc thời gian.
-- Hồ sơ cũ không biết ngày tạo hiển thị "Chưa có thông tin", không điền ngày migration.
-- Tài khoản liên kết: mã, username, email, trạng thái; đi tới trang tài khoản để quản lý.
-- Lịch sử đơn hàng lọc đúng khách, tải khi bấm mở và phân trang 10 đơn/lần.
-- Chỉnh sửa hồ sơ và nhiều sở thích trong cùng giao dịch SQL; bỏ chọn tất cả gửi `[]`.
-- Bỏ trường sở thích khỏi PATCH thì giữ nguyên; sở thích cũ ngừng hoạt động vẫn được
-  giữ lại nhưng không cho chọn mới sau khi đã bỏ.
-- Lưu dùng snapshot server trả về, không reload document hoặc tải lại cả hồ sơ.
-- Cache theo phiên, mutation invalidation, polling 10 giây khi không chỉnh sửa và tab
-  hiển thị; không coi polling là realtime.
-- ADMIN mới được dùng API này. THU_KHO và KHACH_HANG bị từ chối ở backend.
+Ngày 23/10/2026 đã bỏ chức năng sở thích theo yêu cầu, xóa hai bảng
+`SO_THICH`, `KHACH_HANG_SO_THICH` trong Supabase project **Phub**
+(`btfhahnjydaiivvcqnna`). Không thay đổi khách hàng, tài khoản, đơn hàng,
+ticket hỗ trợ hoặc các bảng kho. Project Phub1 không bị tác động.
 
-Chưa làm giao diện tự phục vụ CRM phía khách, lưu trữ/khôi phục khách, phản hồi,
-khảo sát hoặc báo cáo tổng hợp. Không coi KAN-41 hoặc KAN-40 hoàn thành toàn bộ
-chỉ vì đã có bản nâng cấp Admin này. Không tự thay đổi ticket Jira.
+- Giữ URL `/data/customers`; chọn mã khách để mở chi tiết.
+- Hồ sơ gồm tên, điện thoại, địa chỉ, ngày sinh/tuổi và mốc thời gian.
+- Giữ tài khoản liên kết và lịch sử đơn lọc đúng khách, phân trang 10 đơn/lần.
+- Không còn ô chọn, danh mục hay dữ liệu sở thích trong UI/API.
+- PATCH chỉ nhận trường hồ sơ. `so_thich` hiện là trường không hợp lệ (422).
+- Lưu dùng snapshot từ RPC, không reload toàn trang hoặc refetch sau khi lưu.
+- Chỉ ADMIN được đọc/sửa hồ sơ này; quyền và Origin vẫn được kiểm tra.
+- Cache tách phiên, invalidation khi ghi và polling 10 giây khi không chỉnh sửa.
+- Không đổi ngày tạo NULL của hồ sơ cũ thành ngày migration.
 
-## Chuẩn bị database
+## Triển khai database và mã
 
-1. Backup và thử trên DB test trước.
-2. Nếu đã áp dụng đợt 1 với `SO_THICH`, `KHACH_HANG_SO_THICH` và 4 cột hồ sơ thì
-   **không chạy lại** script tạo bảng:
-   [20261022_crm_customer_profile_interests.sql](../Backend/migrations/20261022_crm_customer_profile_interests.sql).
-3. Chạy **script bổ sung** bằng role `postgres` trong Supabase SQL Editor:
-   [20261022_crm_admin_profile_api.sql](../Backend/migrations/20261022_crm_admin_profile_api.sql).
-   Script kiểm tra cấu trúc đợt 1 trước, chỉ thêm/cập nhật RPC và quyền EXECUTE;
-   không tạo lại bảng và không thay đổi dữ liệu khách cũ.
-4. DB trống mới dựng: chạy initial schema, rồi lần lượt migration CRM đợt 1 và 1B.
-   Các migration nghiệp vụ cũ như tạo tài khoản/checkout vẫn có yêu cầu riêng.
-5. Deploy/restart backend **và** cập nhật frontend. Nếu frontend đang trỏ Render,
-   backend trên Render cũng phải có mã mới, không chỉ chạy SQL là đủ.
+Migration hiện tại:
+[20261023012955_remove_customer_interests.sql](../Backend/migrations/20261023012955_remove_customer_interests.sql).
 
-Không chạy tự động các bước trên lên Supabase production. SQL đã được kiểm thử
-trong PostgreSQL nhúng/PGlite biệt lập, nhưng chưa kiểm chứng schema, quyền,
-trigger hiện hữu và PostgREST của project Supabase thật.
+Migration tạo RPC `admin_update_customer_profile_v2(text,text,jsonb)`, gỡ RPC
+lưu sở thích cũ nếu có, xóa đúng hai bảng bằng RESTRICT và gỡ trigger function
+riêng của sở thích. Không dùng CASCADE. Các trigger hồ sơ khách được giữ nguyên.
+
+Đã sao lưu 3 mục sở thích và 0 liên kết khách trước khi xóa, lưu backup JSON và
+script restore ngoài repository, đồng thời thử restore trong PGlite biệt lập.
+Khi áp dụng, kiểm tra snapshot dưới khóa bảng và rollback nếu dữ liệu đã thay đổi.
+
+**Không chạy lại migration trên Phub.** Nếu dựng database mới, các migration CRM
+ngày 22/10 là lịch sử: chạy theo thứ tự rồi áp dụng migration bỏ sở thích cuối cùng.
+Không xóa/sửa lịch sử migration để mô phỏng một database chưa từng có hai bảng.
+
+**Cần deploy backend và frontend mới.** Theo lựa chọn của người dùng, bảng thật đã
+được xóa ngay sau backup, trước khi deploy: backend Render cũ vẫn gọi hai bảng nên
+trang hồ sơ khách có thể tạm lỗi cho đến khi cập nhật mã. Chưa push/deploy mã thay
+đổi trong lượt xóa bảng. Admin local dùng API Render, không tự chuyển sang backend local.
 
 ## API
 
-| Phương thức | Đường dẫn backend | Công dụng |
+| Phương thức | Đường dẫn | Công dụng |
 |---|---|---|
-| GET | `/api/crm/customers/{ma_kh}` | Hồ sơ, tài khoản công khai, sở thích và danh mục |
-| PATCH | `/api/crm/customers/{ma_kh}` | Lưu hồ sơ và/hoặc sở thích nguyên tử |
-| GET | `/api/crm/customers/{ma_kh}/orders?page=1&page_size=10` | Đơn hàng của đúng khách |
+| GET | `/api/crm/customers/{ma_kh}` | `{profile, account}`, không đọc hai bảng đã xóa |
+| PATCH | `/api/crm/customers/{ma_kh}` | Lưu các trường hồ sơ bằng một RPC |
+| GET | `/api/crm/customers/{ma_kh}/orders` | Đơn của đúng khách, phân trang |
 
-Browser gọi `/api/backend/crm/...` qua gateway Next.js; không gọi DB trực tiếp.
-Chỉ forward các đường dẫn/phương thức đã cho phép và cookie phiên/Origin.
-Không đưa Supabase secret/service key vào browser.
+Browser gọi gateway `/api/backend/crm/...`; không gọi Supabase trực tiếp.
 
-Ví dụ body PATCH, thay bằng dữ liệu khách được phép chỉnh sửa:
+Ví dụ PATCH:
 
 ```json
-{
-  "ngay_sinh": "2000-02-29",
-  "so_thich": ["GAMING", "VAN_PHONG"]
-}
+{"ngay_sinh":"2000-02-29","sdt":"0901234567"}
 ```
 
-- Ngày sinh `null` để xóa giá trị; không nhận ngày tương lai hoặc ngày không tồn tại.
-- Trường có thể sửa: `ten_kh`, `sdt`, `dia_chi_chi_tiet_md`, `tinh_thanh_md`,
-  `xa_phuong_md`, `ngay_sinh`, `so_thich`.
-- Không nhận `ma_kh`, email, trạng thái tài khoản, ngày tạo/cập nhật hoặc `luu_tru_luc`
-  trong body. Thay đổi email/trạng thái đi qua nghiệp vụ tài khoản hiện hữu.
-- RPC kiểm tra lại ADMIN còn hoạt động ngay tại thời điểm ghi; chỉ `service_role`
-  được EXECUTE. Tất cả thao tác thay đổi hồ sơ/sở thích cùng transaction.
-- Thiếu RPC trả 503 có tên migration cần chạy; draft trên form được giữ để retry.
-- Metadata generic đọc thêm `date`/`timestamptz`, ngày tạo/cập nhật/lưu trữ là trường
-  hệ thống, không tạo input cho người dùng sửa. Hai bảng sở thích không được mở
-  thành generic CRUD không kiểm tra nghiệp vụ.
+Trường cho sửa: `ten_kh`, `sdt`, `dia_chi_chi_tiet_md`, `tinh_thanh_md`,
+`xa_phuong_md`, `ngay_sinh`. Bỏ trường khỏi PATCH sẽ giữ nguyên; null xóa giá trị
+nullable. Không nhận PK/email/trạng thái tài khoản/các mốc thời gian/lưu trữ.
+RPC kiểm tra lại ADMIN hoạt động ngay khi ghi, khóa hồ sơ và chỉ cấp EXECUTE cho
+service_role; trả hồ sơ cùng tài khoản công khai, không trả mật khẩu/hash.
 
 ## Kiểm thử
 
-Backend (offline, chặn HTTP thật):
-
-```powershell
-cd Backend
-.\.venv\Scripts\python.exe -m pytest tests -q
-.\.venv\Scripts\python.exe scripts/export_openapi.py --check
-```
-
-Admin và gateway (HTTP giả lập):
-
-```powershell
-cd ui/adminUI
-node node_modules/typescript/bin/tsc --noEmit
-node --test tests/*.test.cjs
-node --test ../shared/tests/*.test.cjs
-```
-
-Browser: chạy frontend Admin ở cổng 3000 rồi chạy
-`tests/customer-detail.e2e.cjs` và `tests/page-actions.e2e.cjs`.
-Đặt `PHUB_PLAYWRIGHT_MODULE` nếu Playwright ở thư mục tooling ngoài repo;
-`PHUB_CHROMIUM_EXECUTABLE` để chỉ định Chromium đã cài, `PHUB_ADMIN_TEST_URL`
-để đổi URL kiểm thử. Toàn bộ API trong browser test bị chặn và trả mock,
-không chuyển request ghi tới backend thật.
-
-SQL: `Backend/tests/crm-profile-sql.test.cjs` dùng package `@electric-sql/pglite`
-ở môi trường tooling riêng (hoặc biến `PHUB_PGLITE_MODULE`). Test dựng DB RAM,
-áp dụng cả hai migration CRM, kiểm tra NULL cũ, timestamp, quyền, ngày sinh,
-sở thích ngừng hoạt động và rollback khi lỗi xuất hiện giữa giao dịch.
-Không đọc `.env`, không kết nối Supabase, không thay dependencies runtime của app.
-
-## Smoke test sau khi triển khai được phép
-
-- [ ] Mở danh sách khách, chọn một khách thật; trường cũ/NULL hiển thị đúng.
-- [ ] Chọn nhiều sở thích, đổi ngày sinh, lưu; kiểm tra DB và UI cùng kết quả.
-- [ ] Thử ngày tương lai, tài khoản sai role, mã khách không tồn tại.
-- [ ] Mở lịch sử và trang 2; không có đơn của khách khác.
-- [ ] Đăng xuất/đổi tài khoản không thấy dữ liệu cache của phiên trước.
-- [ ] Thử trên project test với PostgREST; ghi nhận kết quả trước khi triển khai thật.
+- `Backend/tests/test_crm.py`: GET không đọc bảng cũ, PATCH dùng RPC mới, phân quyền,
+  Origin, validation, lỗi an toàn và lịch sử đơn.
+- `Backend/tests/remove-interests-sql.test.cjs`: SQL trên DB RAM, xóa bảng có dữ liệu,
+  giữ khách/kho/ticket, RPC mới, rollback và quyền; có thể kiểm thử file backup bằng
+  `PHUB_INTEREST_RESTORE_SQL`. Không kết nối database thật.
+- `Backend/tests/crm-profile-sql.test.cjs`: kiểm tra lịch sử migration CRM cũ,
+  không có nghĩa tính năng sở thích vẫn đang dùng.
+- `ui/adminUI/tests/customer-detail.e2e.cjs`: UI không còn sở thích, sửa/lưu không
+  reload, lỗi giữ draft, tài khoản liên kết, lịch sử đơn và mobile; API hoàn toàn mock.
+- Sau deploy: smoke test bằng tài khoản Admin thật, kiểm tra ngày sinh NULL, lưu
+  hồ sơ, lịch sử đơn và đăng xuất; không seed ticket hoặc sửa khách thật tự động.

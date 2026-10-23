@@ -20,19 +20,16 @@ class CrmService:
         if not rows:
             raise HTTPException(404, "Không tìm thấy khách hàng.")
         accounts = self.repository.account(customer_id)
-        return {"profile": rows[0], "account": accounts[0] if accounts else None,
-                "so_thich": [row["ma_so_thich"] for row in self.repository.selected_interests(customer_id)],
-                "danh_muc_so_thich": self.repository.interests()}
+        return {"profile": rows[0], "account": accounts[0] if accounts else None}
 
     def update(self, customer_id, body: CustomerUpdate):
         self.require_admin()
         fields = body.model_dump(mode="json", exclude_unset=True)
-        interests = fields.pop("so_thich", None)
         try:
-            result = self.repository.update(customer_id, self.actor.account_id, fields, interests)
+            result = self.repository.update(customer_id, self.actor.account_id, fields)
         except APIError as exc:
             if str(exc.code) in {"PGRST202", "42883"}:
-                raise HTTPException(503, "Chưa có hàm lưu CRM. Cần áp dụng migration 20261022_crm_admin_profile_api.sql.") from None
+                raise HTTPException(503, "Chưa có hàm lưu hồ sơ. Cần áp dụng migration 20261023012955_remove_customer_interests.sql.") from None
             if str(exc.code) == "P0002":
                 raise HTTPException(404, "Không tìm thấy khách hàng.") from None
             if str(exc.code) == "42501":

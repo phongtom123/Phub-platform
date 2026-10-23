@@ -13,17 +13,10 @@ class CrmRepository:
         return (self.db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,email,trang_thai")
                 .eq("ma_kh", customer_id).limit(1).execute().data)
 
-    def interests(self):
-        return self.db.table("SO_THICH").select("ma_so_thich,ten_so_thich,trang_thai").order("ten_so_thich").limit(1000).execute().data
-
-    def selected_interests(self, customer_id):
-        return (self.db.table("KHACH_HANG_SO_THICH").select("ma_so_thich")
-                .eq("ma_kh", customer_id).order("ma_so_thich").limit(1000).execute().data)
-
-    def update(self, customer_id, actor_id, changes, interests):
-        return self.db.rpc("admin_update_customer_crm_v1", {
+    def update(self, customer_id, actor_id, changes):
+        return self.db.rpc("admin_update_customer_profile_v2", {
             "p_customer_id": customer_id, "p_actor_account_id": actor_id,
-            "p_changes": changes, "p_interest_ids": interests,
+            "p_changes": changes,
         }).execute().data
 
     def orders(self, customer_id, page, page_size):

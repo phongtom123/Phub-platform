@@ -22,10 +22,10 @@ test("age uses birthday and Vietnam civil day, not the migration date", () => {
   assert.equal(vietnamDate(new Date("2026-10-21T18:00:00Z")), "2026-10-22");
 });
 const draft = { ten_kh: "Khách", sdt: "09001", ngay_sinh: "", dia_chi_chi_tiet_md: "", tinh_thanh_md: "", xa_phuong_md: "" };
-const data = { profile: { ...draft, ngay_sinh: null }, so_thich: ["GAMING", "OLD"] };
-test("patch sends dirty fields only, preserving untouched/inactive interests", () => {
-  assert.deepEqual(plain(customerPatch(data, { ...draft, sdt: "09002" }, ["OLD", "GAMING"])), { sdt: "09002" });
-  assert.deepEqual(plain(customerPatch(data, draft, [])), { so_thich: [] });
-  assert.deepEqual(plain(customerPatch(data, draft, ["GAMING", "OLD"])), {});
-  assert.throws(() => customerPatch(data, { ...draft, ten_kh: " " }, []), /Tên khách hàng/);
+const data = { profile: { ...draft, ngay_sinh: null } };
+test("patch sends dirty profile fields only, without the removed interest feature", () => {
+  assert.deepEqual(plain(customerPatch(data, { ...draft, sdt: "09002" })), { sdt: "09002" });
+  assert.deepEqual(plain(customerPatch(data, draft)), {});
+  assert.deepEqual(plain(customerPatch(data, { ...draft, ngay_sinh: "2000-02-29" })), { ngay_sinh: "2000-02-29" });
+  assert.throws(() => customerPatch(data, { ...draft, ten_kh: " " }), /Tên khách hàng/);
 });

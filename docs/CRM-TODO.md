@@ -1,5 +1,10 @@
 # Kế hoạch phát triển CRM trên nền Phub
 
+> Cập nhật 23/10/2026: người dùng bỏ chức năng sở thích. Đã xóa `SO_THICH` và
+> `KHACH_HANG_SO_THICH` trên project Phub sau sao lưu; các mục sở thích bên dưới
+> chỉ còn là lịch sử, không thuộc backlog đang thực hiện. Giữ hồ sơ khách/ngày sinh,
+> lịch sử đơn, ticket và các bảng kho. Xem [phạm vi hiện tại](CRM-ADMIN-PROFILE.md).
+
 Ngày lập: 22/10/2026. Mốc mã đối chiếu: `01c4f9e`.
 
 Trạng thái: **đã có mã Admin CRM đợt 1; chưa áp dụng migration lên Supabase thật trong phiên làm việc này**.
@@ -7,7 +12,8 @@ Trạng thái: **đã có mã Admin CRM đợt 1; chưa áp dụng migration lê
 Cập nhật đợt 1 Admin: mã đã có hồ sơ CRM tại URL khách hàng cũ, ngày sinh/sở thích,
 tài khoản liên kết, lịch sử đơn và RPC lưu nguyên tử. Xem
 [phạm vi, migration bổ sung và hướng dẫn kiểm thử](CRM-ADMIN-PROFILE.md).
-Chưa áp dụng migration lên Supabase thật. Đợt hỗ trợ khách hàng đã có trang Admin
+Migration hỗ trợ khách hàng đã áp dụng vào Supabase project Phub ngày 23/10/2026;
+không đồng nghĩa toàn bộ migration CRM đã được nghiệm thu. Đợt hỗ trợ đã có trang Admin
 và API tiếp nhận/xử lý ticket; xem [phạm vi và hướng dẫn](CUSTOMER-SUPPORT.md).
 Form gửi phản hồi phía khách hàng và khảo sát chưa triển khai. Các checklist bên dưới là backlog tổng, không phải
 xác nhận toàn bộ ticket đã hoàn thành.

@@ -33,7 +33,7 @@ app = FastAPI(
     version="0.3.0",
     description=DESCRIPTION,
     openapi_tags=TAGS + [
-        {"name": "Admin · CRM", "description": "Hồ sơ khách, sở thích và đơn hàng liên quan; chỉ ADMIN."},
+        {"name": "Admin · CRM", "description": "Hồ sơ khách và đơn hàng liên quan; chỉ ADMIN."},
         {"name": "Admin · Hỗ trợ khách hàng", "description": "Tiếp nhận và xử lý ticket phản hồi của khách."},
         {"name": "Customer · Hỗ trợ", "description": "Khách gửi và xem ticket thuộc chính mình."},
         {"name": "Customer Orders", "description": "Customer order creation and idempotent retries."},

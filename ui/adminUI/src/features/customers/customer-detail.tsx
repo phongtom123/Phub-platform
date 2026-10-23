@@ -32,7 +32,6 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   const path = `crm/customers/${encodeURIComponent(id ?? "")}`;
   const [data, setData] = useState<Detail | null>(null);
   const [draft, setDraft] = useState<Record<CustomerField, string>>({ ten_kh: "", sdt: "", ngay_sinh: "", dia_chi_chi_tiet_md: "", tinh_thanh_md: "", xa_phuong_md: "" });
-  const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [notice, setNotice] = useState("");
@@ -62,7 +61,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   useEffect(() => {
     if (data && editMode) {
       setDraft(Object.fromEntries(fields.map(field => [field, data.profile[field] ?? ""])) as Record<CustomerField, string>);
-      setSelected(data.so_thich); setSaveError("");
+      setSaveError("");
     }
   }, [editMode, data]);
 
@@ -92,7 +91,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
     if (!data || saving || saveController.current) return;
     setSaveError(""); setNotice("");
     let patch;
-    try { patch = customerPatch(data, draft, selected); }
+    try { patch = customerPatch(data, draft); }
     catch (cause) { setSaveError((cause as Error).message); return; }
     if (!Object.keys(patch).length) { setSaveError("Chưa có thay đổi."); return; }
     const controller = new AbortController(); saveController.current = controller; setSaving(true);
@@ -100,7 +99,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
       const result = await request<Detail>(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch), signal: controller.signal });
       if (controller.signal.aborted) return;
       if (result.profile.ma_kh !== id) throw new Error("API trả về hồ sơ không khớp khách đang sửa.");
-      setData(result); setNotice("Đã lưu hồ sơ và sở thích.");
+      setData(result); setNotice("Đã lưu hồ sơ khách hàng.");
       router.replace(detailHref, { scroll: false });
     } catch (cause) { if (!controller.signal.aborted) setSaveError((cause as Error).message); }
     finally { if (!controller.signal.aborted) { saveController.current = null; setSaving(false); } }
@@ -123,14 +122,6 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
               required={field === "ten_kh"} max={field === "ngay_sinh" ? vietnamDate() : undefined} maxLength={field === "sdt" ? 100 : 2000}
               value={draft[field]} onChange={e => setDraft(current => ({ ...current, [field]: e.target.value }))} />
           </label>)}
-          <fieldset className="customer-interests"><legend>Sở thích</legend>
-            {!data.danh_muc_so_thich.length && <p>Chưa có danh mục sở thích.</p>}
-            {data.danh_muc_so_thich.map(item => <label className="customer-interest" key={item.ma_so_thich}>
-              <input type="checkbox" checked={selected.includes(item.ma_so_thich)} disabled={item.trang_thai !== 1 && !selected.includes(item.ma_so_thich)}
-                onChange={e => setSelected(current => e.target.checked ? [...current, item.ma_so_thich] : current.filter(id => id !== item.ma_so_thich))} />
-              {item.ten_so_thich}{item.trang_thai !== 1 && " (ngừng sử dụng)"}
-            </label>)}
-          </fieldset>
         </fieldset>
         {saveError && <p className="live-error customer-wide" role="alert">{saveError}</p>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving}>{saving ? "Đang lưu…" : "Lưu hồ sơ"}</button>
@@ -144,9 +135,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
           <div className="live-field"><strong>Ngày tạo hồ sơ</strong>{displayDate(data.profile.ngay_tao)}</div>
           <div className="live-field"><strong>Cập nhật lần cuối</strong>{displayDate(data.profile.cap_nhat_luc)}</div>
           <div className="live-field"><strong>Trạng thái hồ sơ</strong>{data.profile.luu_tru_luc ? "Đã lưu trữ" : "Chưa lưu trữ"}</div>
-        </div><div className="customer-interests"><strong>Sở thích</strong><div className="customer-tags">
-          {data.so_thich.length ? data.so_thich.map(id => <span key={id}>{data.danh_muc_so_thich.find(item => item.ma_so_thich === id)?.ten_so_thich ?? id}</span>) : "Chưa có thông tin"}
-        </div></div></section>
+        </div></section>
         <section className="customer-card"><h3>Tài khoản liên kết</h3>
           {data.account ? <div className="customer-grid">
             <div className="live-field"><strong>Mã tài khoản</strong><Link href={`/accounts/${encodeURIComponent(data.account.ma_tk)}`}>{data.account.ma_tk}</Link></div>
