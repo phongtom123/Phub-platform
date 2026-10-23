@@ -90,8 +90,8 @@ def test_order_filter_combines_with_primary_key(platform_client):
 
 def test_schema_all_tables_and_metadata(platform_client):
     client, _, _ = platform_client
-    assert len(schema()) == 23
-    assert len(RESOURCES) == 20  # CRM join tables must not become unrestricted generic CRUD.
+    assert len(schema()) == 21
+    assert len(RESOURCES) == 20  # Support tickets are not unrestricted generic CRUD.
     assert not {"SO_THICH", "KHACH_HANG_SO_THICH", "PHAN_HOI"}.intersection(r.table for r in RESOURCES.values())
     resources = client.get("/api/data/resources").json()
     assert len(resources) == 20

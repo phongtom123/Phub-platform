@@ -61,27 +61,6 @@ Table KHACH_HANG {
   luu_tru_luc timestamptz [note: 'Chi doc; chua co nghiep vu luu tru/khoa tai khoan']
 }
 
-Table SO_THICH {
-  ma_so_thich varchar(50) [pk]
-  ten_so_thich varchar(100) [not null, note: 'Unique lower(trim(ten_so_thich)) trong SQL']
-  trang_thai int [not null, default: 1]
-  ngay_tao timestamptz [not null]
-  cap_nhat_luc timestamptz [not null]
-}
-
-Table KHACH_HANG_SO_THICH {
-  ma_kh varchar [not null]
-  ma_so_thich varchar(50) [not null]
-  ngay_tao timestamptz [not null]
-  indexes {
-    (ma_kh, ma_so_thich) [pk]
-    (ma_so_thich, ma_kh)
-  }
-}
-
-Ref: KHACH_HANG_SO_THICH.ma_kh > KHACH_HANG.ma_kh
-Ref: KHACH_HANG_SO_THICH.ma_so_thich > SO_THICH.ma_so_thich
-
 Table PHAN_HOI {
   ma_phan_hoi uuid [pk, note: 'gen_random_uuid()']
   ma_kh varchar [not null]

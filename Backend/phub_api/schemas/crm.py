@@ -5,7 +5,6 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 Identifier = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
-InterestId = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
 
 
 def vietnam_today() -> date:
@@ -20,7 +19,6 @@ class CustomerUpdate(BaseModel):
     tinh_thanh_md: str | None = Field(default=None, max_length=2000)
     xa_phuong_md: str | None = Field(default=None, max_length=2000)
     ngay_sinh: date | None = None
-    so_thich: list[InterestId] = Field(default=None, max_length=50)
 
     @field_validator("ten_kh", "sdt", "dia_chi_chi_tiet_md", "tinh_thanh_md", "xa_phuong_md", mode="before")
     @classmethod
@@ -36,24 +34,11 @@ class CustomerUpdate(BaseModel):
             raise ValueError("Ngày sinh không được ở tương lai.")
         return value
 
-    @field_validator("so_thich")
-    @classmethod
-    def unique_interests(cls, value):
-        if value is None or len(value) != len(set(value)):
-            raise ValueError("Sở thích phải là danh sách không trùng; dùng [] để bỏ chọn tất cả.")
-        return value
-
     @model_validator(mode="after")
     def nonempty_patch(self):
         if not self.model_fields_set:
             raise ValueError("Chưa có thay đổi.")
         return self
-
-
-class Interest(BaseModel):
-    ma_so_thich: str
-    ten_so_thich: str
-    trang_thai: int
 
 
 class CustomerProfile(BaseModel):
@@ -79,8 +64,6 @@ class CustomerAccount(BaseModel):
 class CustomerDetail(BaseModel):
     profile: CustomerProfile
     account: CustomerAccount | None
-    so_thich: list[str]
-    danh_muc_so_thich: list[Interest]
 
 
 class CustomerOrder(BaseModel):

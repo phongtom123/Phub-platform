@@ -28,7 +28,7 @@ test("CRM profile and scoped orders pass the gateway; other CRM paths/methods st
   ]) {
     const request = new Request("http://localhost:3000/api/backend/x?page=2", { method,
       headers: { Origin: "http://localhost:3000", Cookie: "other=hidden; phub_session=test" },
-      ...(method === "PATCH" ? { body: JSON.stringify({ so_thich: ["GAMING"] }) } : {}),
+      ...(method === "PATCH" ? { body: JSON.stringify({ ngay_sinh: "2000-02-29" }) } : {}),
     });
     assert.equal((await proxy(request, segments)).status, 200);
   }

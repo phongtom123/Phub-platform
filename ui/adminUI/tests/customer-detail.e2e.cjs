@@ -16,10 +16,6 @@ async function main() {
       profile: { ma_kh: "KH1", ten_kh: "Khách kiểm thử", sdt: "09001", ngay_sinh: null, ngay_tao: null,
         cap_nhat_luc: null, luu_tru_luc: null, dia_chi_chi_tiet_md: null, tinh_thanh_md: null, xa_phuong_md: null },
       account: { ma_tk: "CUSTOMER-TK1", ten_tai_khoan: "customer.test", email: "customer@example.test", trang_thai: 1 },
-      so_thich: [], danh_muc_so_thich: [
-        { ma_so_thich: "GAMING", ten_so_thich: "Chơi game", trang_thai: 1 },
-        { ma_so_thich: "OLD", ten_so_thich: "Sở thích cũ", trang_thai: 0 },
-      ],
     };
     const admin = { ma_tk: "TK1", ten_tai_khoan: "admin.test", email: null, ma_nhan_vien: "NV1", ma_kh: null,
       trang_thai: 1, role: "ADMIN", ho_ten: "Admin Test", ma_kho: null, owner_active: true, is_self: true };
@@ -34,9 +30,7 @@ async function main() {
         assert.equal(request.method(), "PATCH");
         patches.push(request.postDataJSON());
         if (failSave) return respond({ detail: "Chưa có hàm lưu CRM. Cần áp dụng migration bổ sung." }, 503);
-        const { so_thich, ...changes } = request.postDataJSON();
-        Object.assign(data.profile, changes);
-        if (so_thich) data.so_thich = so_thich;
+        Object.assign(data.profile, request.postDataJSON());
         data.profile.cap_nhat_luc = "2026-10-22T10:00:00Z";
         return respond(data);
       }
@@ -65,13 +59,13 @@ async function main() {
     await page.evaluate(() => window.__crmDocumentMarker = "same-document");
     await page.getByRole("link", { name: "Chỉnh sửa", exact: true }).click();
     await page.getByLabel("Ngày sinh", { exact: true }).fill("2000-02-29");
-    await page.getByLabel("Chơi game", { exact: true }).check();
-    assert.equal(await page.getByLabel("Sở thích cũ (ngừng sử dụng)").isDisabled(), true);
+    assert.equal(await page.getByText("Sở thích", { exact: true }).count(), 0);
+    assert.equal(await page.getByRole("checkbox").count(), 0);
     const beforeSave = reads;
     await page.getByRole("button", { name: "Lưu hồ sơ", exact: true }).click();
-    await page.getByText("Đã lưu hồ sơ và sở thích.", { exact: true }).waitFor();
+    await page.getByText("Đã lưu hồ sơ khách hàng.", { exact: true }).waitFor();
     await page.getByRole("heading", { name: "Thông tin khách hàng" }).waitFor();
-    assert.deepEqual(patches[0], { ngay_sinh: "2000-02-29", so_thich: ["GAMING"] });
+    assert.deepEqual(patches[0], { ngay_sinh: "2000-02-29" });
     assert.equal(await page.evaluate(() => window.__crmDocumentMarker), "same-document");
     await page.waitForTimeout(250);
     assert.equal(reads, beforeSave, "Save uses its committed snapshot without a full profile refetch");
@@ -105,7 +99,7 @@ async function main() {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.screenshot({ path: path.join(os.tmpdir(), "phub-customer-profile-desktop.png"), fullPage: true, animations: "disabled" });
     assert.deepEqual(errors, []);
-    console.log("PASS: CRM detail/edit/save without reload or refetch, account link, null dates, interests, lazy/paginated orders, error-preserved draft and mobile layout. Mocked HTTP only.");
+    console.log("PASS: customer detail/edit/save without interests, reload or refetch; account link, null dates, lazy/paginated orders, draft and mobile. Mocked HTTP only.");
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

@@ -49,7 +49,7 @@ async function main() {
       if (url.pathname === "/api/backend/admin/accounts") return respond({ data: [account], total: 1, page: 1, page_size: 20 });
       if (url.pathname === "/api/backend/crm/customers/TEST-1") return respond({
         profile: { ma_kh: "TEST-1", ten_kh: "Khách kiểm thử", ngay_sinh: null, ngay_tao: null, cap_nhat_luc: null, luu_tru_luc: null },
-        account: null, so_thich: [], danh_muc_so_thich: [],
+        account: null,
       });
       const meta = resources.find(item => url.pathname === "/api/backend/data/" + item.name);
       assert.ok(meta, "Unexpected API: " + url.pathname);

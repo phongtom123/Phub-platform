@@ -19,7 +19,7 @@ NOT_FOUND = {404: error_response(404, 'Không tìm thấy ticket.')}
 @router.get('/api/crm/feedback', response_model=AdminTicketPage, responses=READ_ERRORS, summary='Danh sách ticket hỗ trợ: tìm kiếm, lọc và phân trang')
 def admin_tickets(service: Read, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
                   status: TicketStatus | None = None, priority: TicketPriority | None = None,
-                  q: str = Query('', max_length=100)):
+                  q: str = Query('', max_length=100, description='Tìm tiêu đề/nội dung, mã thẻ PH-XXXXXXXX, phần đầu mã sau dấu - (1–8 ký tự hex) hoặc UUID đầy đủ; không phân biệt hoa thường.')):
     return service.page(False, page, page_size, status, priority, q.strip())
 
 

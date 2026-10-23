@@ -188,6 +188,13 @@ OpenAPI mở rộng theo [cách chuẩn của FastAPI](https://fastapi.tiangolo.
 
 ## CRM: hồ sơ khách hàng Admin
 
+**Cập nhật 23/10/2026:** đã bỏ sở thích, GET/PATCH chỉ trả `{profile, account}`.
+Backend dùng RPC `admin_update_customer_profile_v2`, không đọc `SO_THICH` hoặc
+`KHACH_HANG_SO_THICH`. Migration mới nhất là
+`migrations/20261023012955_remove_customer_interests.sql` (đã áp dụng trên Phub,
+không chạy lại); hai migration ngày 22/10 bên dưới chỉ còn là các bước lịch sử.
+Deploy backend/frontend mới sau thay đổi này để không gọi các bảng đã bị xóa.
+
 API mới: `GET/PATCH /api/crm/customers/{ma_kh}` và
 `GET /api/crm/customers/{ma_kh}/orders`. Chỉ ADMIN được truy cập.
 Sau migration hồ sơ/sở thích đợt 1, cần chạy thêm

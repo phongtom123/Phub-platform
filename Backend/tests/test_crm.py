@@ -18,8 +18,6 @@ PROFILE = {"ma_kh": "KH1", "ten_kh": "Khách cũ", "sdt": "0901234567",
            "dia_chi_chi_tiet_md": None, "tinh_thanh_md": None, "xa_phuong_md": None,
            "ngay_sinh": None, "ngay_tao": None, "cap_nhat_luc": None, "luu_tru_luc": None}
 ACCOUNT = {"ma_tk": "TK1", "ten_tai_khoan": "customer", "email": "customer@example.test", "trang_thai": 1}
-CATALOG = [{"ma_so_thich": "GAMING", "ten_so_thich": "Chơi game", "trang_thai": 1},
-           {"ma_so_thich": "OLD", "ten_so_thich": "Cũ", "trang_thai": 0}]
 PATH = "/api/crm/customers/KH1"
 ORIGIN = {"Origin": "http://localhost:3000"}
 
@@ -28,33 +26,27 @@ ORIGIN = {"Origin": "http://localhost:3000"}
 def crm_client(monkeypatch):
     monkeypatch.setenv("FRONTEND_ORIGINS", "http://localhost:3000")
     state = {"actor": ADMIN, "profile": deepcopy(PROFILE), "account": deepcopy(ACCOUNT),
-             "selected": [], "rpc_error": None, "rpc_calls": [], "requests": [], "orders": [], "total": 0}
+             "rpc_error": None, "rpc_calls": [], "requests": [], "orders": [], "total": 0}
 
     def handle(request):
         state["requests"].append(request)
         table = request.url.path.split("/")[-1]
-        if table == "admin_update_customer_crm_v1":
+        if table == "admin_update_customer_profile_v2":
             values = json.loads(request.content)
             state["rpc_calls"].append(values)
             if state["rpc_error"]:
                 return httpx.Response(400, json={"code": state["rpc_error"], "message": "private SQL", "details": None, "hint": None})
             state["profile"].update(values["p_changes"])
-            if values["p_interest_ids"] is not None:
-                state["selected"] = values["p_interest_ids"]
-            return httpx.Response(200, json={"profile": state["profile"], "account": state["account"],
-                                            "so_thich": state["selected"], "danh_muc_so_thich": CATALOG})
+            assert set(values) == {"p_customer_id", "p_actor_account_id", "p_changes"}
+            return httpx.Response(200, json={"profile": state["profile"], "account": state["account"]})
         assert request.method == "GET", "CRM writes must be one RPC, not separate table writes"
-        if table != "SO_THICH":
-            assert request.url.params["ma_kh"] in {"eq.KH1", "eq.MISSING"}
+        assert table not in {"SO_THICH", "KHACH_HANG_SO_THICH"}
+        assert request.url.params["ma_kh"] in {"eq.KH1", "eq.MISSING"}
         if table == "KHACH_HANG":
             rows = [state["profile"]] if state["profile"] and request.url.params["ma_kh"] == "eq.KH1" else []
         elif table == "TAI_KHOAN":
             assert "mat_khau_hash" not in request.url.params["select"]
             rows = [state["account"]] if state["account"] else []
-        elif table == "SO_THICH":
-            rows = CATALOG
-        elif table == "KHACH_HANG_SO_THICH":
-            rows = [{"ma_so_thich": value} for value in state["selected"]]
         else:
             assert table == "DON_HANG"
             return httpx.Response(200, json=state["orders"], headers={"Content-Range": f"0-0/{state['total']}"})
@@ -78,7 +70,8 @@ def test_profile_old_nulls_and_safe_account(crm_client):
     assert response.headers["cache-control"] == "no-store"
     assert response.json()["profile"] == PROFILE
     assert response.json()["account"] == ACCOUNT
-    assert response.json()["so_thich"] == []
+    assert set(response.json()) == {"profile", "account"}
+    assert len(state["requests"]) == 2  # No reads of the removed interest tables.
     assert "mat_khau" not in response.text
     state["account"] = None
     assert client.get(PATH).json()["account"] is None
@@ -102,36 +95,34 @@ def test_unknown_customer(crm_client):
 
 def test_patch_uses_one_rpc_and_committed_snapshot(crm_client):
     client, state = crm_client
-    response = client.patch(PATH, headers=ORIGIN, json={"ten_kh": "  Tên mới  ", "ngay_sinh": "2000-02-29", "so_thich": ["GAMING"]})
+    response = client.patch(PATH, headers=ORIGIN, json={"ten_kh": "  Tên mới  ", "ngay_sinh": "2000-02-29"})
     assert response.status_code == 200
     assert response.json()["profile"]["ten_kh"] == "Tên mới"
-    assert response.json()["so_thich"] == ["GAMING"]
+    assert set(response.json()) == {"profile", "account"}
     assert len(state["requests"]) == 1
     assert state["rpc_calls"] == [{"p_customer_id": "KH1", "p_actor_account_id": "AD1",
-                                   "p_changes": {"ten_kh": "Tên mới", "ngay_sinh": "2000-02-29"}, "p_interest_ids": ["GAMING"]}]
+                                   "p_changes": {"ten_kh": "Tên mới", "ngay_sinh": "2000-02-29"}}]
 
 
-def test_clear_birthday_and_all_interests(crm_client):
+def test_clear_birthday(crm_client):
     client, state = crm_client
-    response = client.patch(PATH, headers=ORIGIN, json={"ngay_sinh": None, "so_thich": []})
+    response = client.patch(PATH, headers=ORIGIN, json={"ngay_sinh": None})
     assert response.status_code == 200
-    assert state["rpc_calls"][0]["p_interest_ids"] == []
     assert state["rpc_calls"][0]["p_changes"] == {"ngay_sinh": None}
 
 
-def test_omitted_interests_are_not_erased(crm_client):
+def test_omitted_profile_fields_are_preserved(crm_client):
     client, state = crm_client
-    state["selected"] = ["OLD"]
     response = client.patch(PATH, headers=ORIGIN, json={"sdt": None})
     assert response.status_code == 200
-    assert response.json()["so_thich"] == ["OLD"]
-    assert state["rpc_calls"][0]["p_interest_ids"] is None
+    assert response.json()["profile"]["ten_kh"] == PROFILE["ten_kh"]
+    assert state["rpc_calls"][0]["p_changes"] == {"sdt": None}
 
 
 @pytest.mark.parametrize("body", [{}, {"ma_kh": "KH2"}, {"ngay_tao": "2026-01-01"}, {"luu_tru_luc": None},
                                   {"trang_thai": 2}, {"email": "x@test.com"}, {"ten_kh": None}, {"ten_kh": "   "},
                                   {"ngay_sinh": "2999-01-01"}, {"ngay_sinh": "2001-02-29"}, {"ngay_sinh": 1000},
-                                  {"so_thich": None}, {"so_thich": ["GAMING", " GAMING "]}, {"so_thich": [""]}])
+                                  {"so_thich": None}, {"so_thich": []}, {"so_thich": ["GAMING"]}])
 def test_invalid_or_readonly_patch_denied(crm_client, body):
     client, state = crm_client
     assert client.patch(PATH, headers=ORIGIN, json=body).status_code == 422
@@ -148,11 +139,11 @@ def test_csrf_denied(crm_client):
 def test_rpc_errors_are_sanitized(crm_client, code, status):
     client, state = crm_client
     state["rpc_error"] = code
-    response = client.patch(PATH, headers=ORIGIN, json={"so_thich": ["GAMING"]})
+    response = client.patch(PATH, headers=ORIGIN, json={"ten_kh": "Khách mới"})
     assert response.status_code == status
     assert "private SQL" not in response.text
     if status == 503:
-        assert "20261022_crm_admin_profile_api.sql" in response.json()["detail"]
+        assert "20261023012955_remove_customer_interests.sql" in response.json()["detail"]
 
 
 def test_orders_scoped_paginated_and_stable(crm_client):
@@ -170,7 +161,7 @@ def test_orders_scoped_paginated_and_stable(crm_client):
 
 
 def test_dbml_dates_and_system_fields():
-    assert "SO_THICH" in schema() and "KHACH_HANG_SO_THICH" in schema()
+    assert "SO_THICH" not in schema() and "KHACH_HANG_SO_THICH" not in schema()
     columns = {c["name"]: c["type"] for c in public_columns("customers")}
     assert columns["ngay_sinh"] == "date" and columns["cap_nhat_luc"] == "timestamptz"
     model = payload_model("customers", True)

@@ -9,7 +9,7 @@ async function main() {
   const browser = await chromium.launch({ headless: true, executablePath: process.env.PHUB_CHROMIUM_EXECUTABLE || undefined });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-    const errors = [], patches = [];
+    const errors = [], patches = [], queries = [];
     let failWrite = false, empty = false;
     const item = { ma_phan_hoi: ID, ma_kh: 'KH1', ten_kh: 'Khách kiểm thử', tieu_de: 'Cần hỗ trợ kiểm tra đơn hàng',
       noi_dung: 'Tôi cần kiểm tra tình trạng đơn hàng.\nVui lòng phản hồi giúp tôi.', ma_sp: null, ma_donhang: 'DH1',
@@ -25,7 +25,14 @@ async function main() {
       const respond = (body, status = 200) => route.fulfill({ status, contentType:'application/json',body:JSON.stringify(body) });
       if (url.pathname === '/api/backend/crm/feedback') {
         assert.equal(req.method(),'GET');
-        const matches = !empty && (!url.searchParams.get('status') || url.searchParams.get('status') === item.trang_thai);
+        const q = url.searchParams.get('q') || '';
+        queries.push(q);
+        const code = 'PH-' + ID.slice(0,8).toUpperCase();
+        const fragment = q.replace(/^ph-/i,'');
+        const codeMatch = /^[0-9a-f]{1,8}$/i.test(fragment) && code.slice(3).toLowerCase().startsWith(fragment.toLowerCase());
+        const matches = !empty && (!q || codeMatch ||
+          item.tieu_de.toLowerCase().includes(q.toLowerCase()) || item.noi_dung.toLowerCase().includes(q.toLowerCase())) &&
+          (!url.searchParams.get('status') || url.searchParams.get('status') === item.trang_thai);
         return respond({ data:matches?[item]:[],total:matches?1:0,page:1,page_size:20 });
       }
       if (url.pathname === '/api/backend/crm/feedback/' + ID) {
@@ -45,7 +52,33 @@ async function main() {
       throw Error('Unexpected API: '+url.pathname);
     });
     await page.goto(base+'/support');
-    await page.getByRole('heading',{name:'Hỗ trợ khách hàng',exact:true}).waitFor();
+    await page.locator('.support-ticket').first().waitFor();
+    assert.equal(await page.getByRole('heading',{name:'Hỗ trợ khách hàng',exact:true}).count(),0);
+    assert.equal(await page.getByText('Tiếp nhận phản hồi và theo dõi kết quả xử lý ticket.',{exact:true}).count(),0);
+    assert.equal(await page.locator('.crumb').getByText('Hỗ trợ khách hàng',{exact:true}).count(),1);
+    const search = page.getByRole('textbox',{name:'Tìm ticket',exact:true});
+    assert.match(await search.getAttribute('placeholder'),/mã thẻ/);
+    await search.fill('ph-a1111111');
+    await Promise.all([
+      page.waitForResponse(r=>r.url().includes('/api/backend/crm/feedback?') && new URL(r.url()).searchParams.get('q') === 'ph-a1111111'),
+      page.getByRole('button',{name:'Tìm kiếm',exact:true}).click(),
+    ]);
+    await page.locator('.support-ticket').first().waitFor();
+    assert.ok(queries.includes('ph-a1111111'));
+    for (const term of ['A1111111','a111']) {
+      await search.fill(term);
+      await Promise.all([
+        page.waitForResponse(r=>r.url().includes('/api/backend/crm/feedback?') && new URL(r.url()).searchParams.get('q') === term),
+        page.getByRole('button',{name:'Tìm kiếm',exact:true}).click(),
+      ]);
+      await page.locator('.support-ticket').first().waitFor();
+      assert.ok(queries.includes(term));
+    }
+    await search.fill('PH-DEADBEEF');
+    await page.getByRole('button',{name:'Tìm kiếm',exact:true}).click();
+    await page.getByRole('heading',{name:'Chưa có ticket phù hợp',exact:true}).waitFor();
+    await search.fill('');
+    await page.getByRole('button',{name:'Tìm kiếm',exact:true}).click();
     await page.locator('.support-ticket').first().waitFor();
     const marketing = page.locator('.nav-section').filter({has:page.getByRole('button',{name:'TIẾP THỊ',exact:true})});
     assert.equal(await marketing.getByRole('button',{name:'Hỗ trợ khách hàng',exact:true}).count(),1);
@@ -88,7 +121,7 @@ async function main() {
     await page.getByRole('button',{name:'Làm mới',exact:true}).click();
     await page.getByRole('heading',{name:'Chưa có ticket phù hợp',exact:true}).waitFor();
     assert.deepEqual(errors,[]);
-    console.log('PASS: marketing navigation, support inbox/detail, claim, status/priority/reply, failed-save draft, filters/empty state, no reload and mobile. Mocked HTTP only.');
+    console.log('PASS: compact support header, ticket-code search, navigation, inbox/detail, claim, save/draft, filters, no reload and mobile. Mocked HTTP only.');
   } finally { await browser.close(); }
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

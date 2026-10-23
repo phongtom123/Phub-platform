@@ -6,8 +6,6 @@ export type Customer = {
 export type CustomerDetail = {
   profile: Customer;
   account: { ma_tk: string; ten_tai_khoan: string; email: string | null; trang_thai: number } | null;
-  so_thich: string[];
-  danh_muc_so_thich: { ma_so_thich: string; ten_so_thich: string; trang_thai: number }[];
 };
 export type CustomerOrderPage = {
   data: { ma_donhang: string; trang_thai: string; kenh_ban: string; thoi_gian_dat: string }[];
@@ -33,14 +31,13 @@ export function customerAge(birthday: string | null, today = vietnamDate()): num
   const [year, month, day] = birthday.split("-").map(Number), [y, m, d] = today.split("-").map(Number);
   return y - year - (m < month || (m === month && d < day) ? 1 : 0);
 }
-export function customerPatch(data: CustomerDetail, draft: Record<CustomerField, string>, selected: string[]) {
-  const patch: Record<string, string | string[] | null> = {};
+export function customerPatch(data: CustomerDetail, draft: Record<CustomerField, string>) {
+  const patch: Record<string, string | null> = {};
   for (const key of Object.keys(customerFields) as CustomerField[]) {
     const value = draft[key].trim();
     if (key === "ten_kh" && !value) throw new Error("Tên khách hàng không được để trống.");
     if (key === "ngay_sinh" && value && value > vietnamDate()) throw new Error("Ngày sinh không được ở tương lai.");
     if ((value || null) !== (data.profile[key] || null)) patch[key] = value || null;
   }
-  if (JSON.stringify([...new Set(selected)].sort()) !== JSON.stringify([...data.so_thich].sort())) patch.so_thich = [...new Set(selected)].sort();
   return patch;
 }

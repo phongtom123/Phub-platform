@@ -1,5 +1,7 @@
 import json
+import re
 from copy import deepcopy
+from uuid import UUID
 
 import httpx
 import pytest
@@ -10,6 +12,7 @@ from phub_api.config.database import get_supabase
 from phub_api.dependencies.auth import current_user
 from phub_api.main import app
 from phub_api.models.user import User
+from phub_api.repositories.support import ticket_id_filter
 
 ADMIN = User('AD1', 'admin', 'ADMIN', 'Admin', employee_id='NV1')
 CUSTOMER = User('TK1', 'customer', 'KHACH_HANG', 'Khách', customer_id='KH1')
@@ -56,6 +59,20 @@ def support_client(monkeypatch):
         for key, value in request.url.params.multi_items():
             if value.startswith('eq.'):
                 rows = [row for row in rows if str(row.get(key)) == value[3:]]
+        expression = request.url.params.get('or')
+        if expression:
+            text_terms = re.findall(r'(tieu_de|noi_dung)\.imatch\.("(?:\\.|[^"\\])*")', expression)
+            id_terms = re.findall(r'ma_phan_hoi\.(eq|gte|lt)\.([0-9a-f-]{36})', expression)
+
+            def matches(row):
+                text_match = any(re.search(json.loads(value), row[field], re.IGNORECASE) for field, value in text_terms)
+                identifier = UUID(row['ma_phan_hoi'])
+                id_match = bool(id_terms) and all(
+                    {'eq': identifier == UUID(value), 'gte': identifier >= UUID(value), 'lt': identifier < UUID(value)}[operator]
+                    for operator, value in id_terms)
+                return text_match or id_match
+
+            rows = [row for row in rows if matches(row)]
         total = len(rows)
         offset, limit = int(request.url.params.get('offset', 0)), int(request.url.params.get('limit', 20))
         return httpx.Response(200, json=rows[offset:offset+limit], headers={'Content-Range': f'{offset}-{offset+len(rows)-1}/{total}'})
@@ -92,6 +109,44 @@ def test_filtering_and_literal_search(support_client):
     assert response.status_code == 200
     assert 'ma_kh' not in state['requests'][-1].url.params
     assert 'tieu_de.imatch.' in state['requests'][-1].url.params['or']
+
+
+@pytest.mark.parametrize('query', ['PH-A1111111', 'ph-a1111111', ' A1111111 ', TICKET.upper(), 'PH-A111', 'a111', ' A1 '])
+def test_search_visible_ticket_code_and_uuid(support_client, query):
+    client, state = support_client
+    response = client.get(BASE, params={'q': query, 'status': 'MOI', 'priority': 'BINH_THUONG', 'page_size': 1})
+    assert response.status_code == 200
+    assert response.json()['total'] == 1
+    assert response.json()['data'][0]['ma_phan_hoi'] == TICKET
+    params = state['requests'][-1].url.params
+    assert 'ma_phan_hoi.' in params['or']
+    assert 'ma_phan_hoi.ilike' not in params['or'] and 'ma_phan_hoi.imatch' not in params['or']
+    assert params['trang_thai'] == 'eq.MOI' and params['muc_do_uu_tien'] == 'eq.BINH_THUONG'
+    assert client.get(BASE, params={'q': query, 'status': 'DA_DONG'}).json()['total'] == 0
+
+
+def test_code_search_counts_prefix_collisions_before_pagination(support_client):
+    client, state = support_client
+    state['rows'].append({**deepcopy(ROW), 'ma_phan_hoi': 'a1111111-9999-4999-8999-999999999999'})
+    result = client.get(BASE, params={'q': 'PH-A1111111', 'page': 2, 'page_size': 1}).json()
+    assert result['total'] == 2 and len(result['data']) == 1
+    assert result['data'][0]['ma_phan_hoi'].startswith('a1111111-')
+
+
+def test_text_search_remains_case_insensitive_and_no_match_returns_empty(support_client):
+    client, _ = support_client
+    assert client.get(BASE, params={'q': 'cần HỖ trợ'}).json()['total'] == 2
+    assert client.get(BASE, params={'q': 'PH-DEADBEEF'}).json()['data'] == []
+
+
+def test_uuid_range_boundaries_and_untrusted_text():
+    assert ticket_id_filter('PH-00000000') == 'and(ma_phan_hoi.gte.00000000-0000-0000-0000-000000000000,ma_phan_hoi.lt.00000001-0000-0000-0000-000000000000)'
+    assert ticket_id_filter('PH-FFFFFFFF') == 'ma_phan_hoi.gte.ffffffff-0000-0000-0000-000000000000'
+    assert ticket_id_filter('ph-f') == 'ma_phan_hoi.gte.f0000000-0000-0000-0000-000000000000'
+    assert ticket_id_filter('a111') == ticket_id_filter('PH-A111')
+    assert ticket_id_filter('a') == ticket_id_filter('PH-A')
+    for query in ['PH-', 'PH-XYZ', 'PH-123456789', 'PH-A1111111),ma_kh.eq.KH2', 'a11111111', '*', '%', 'hello']:
+        assert ticket_id_filter(query) is None
 
 
 @pytest.mark.parametrize('actor', [CUSTOMER, WAREHOUSE])
