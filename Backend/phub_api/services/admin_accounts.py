@@ -2,7 +2,6 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 from postgrest.exceptions import APIError
-from pwdlib.exceptions import UnknownHashError
 
 from phub_api.models.user import User
 from phub_api.repositories.admin_accounts import ACCOUNT_COLUMNS, AccountsRepository
@@ -13,7 +12,7 @@ from phub_api.schemas.admin_accounts import (
     NewAccountCreate,
     RoleUpdate,
 )
-from phub_api.services.auth import passwords
+from phub_api.services.auth import password_matches
 
 
 class AccountsService:
@@ -81,7 +80,7 @@ class AccountsService:
             raise HTTPException(422, "Khách hàng không tồn tại.")
         if self.repository.owner_has_account(field, owner):
             raise HTTPException(409, "Người này đã có tài khoản. Mỗi người chỉ được có một tài khoản.")
-        values = body.model_dump(exclude={"password"}) | {"mat_khau_hash": passwords.hash(body.password), "trang_thai": 1}
+        values = body.model_dump(exclude={"password"}) | {"mat_khau": body.password, "trang_thai": 1}
         result = self.repository.insert(values)
         if not result:
             raise RuntimeError("Account insert returned no rows")
@@ -95,7 +94,7 @@ class AccountsService:
                 "p_actor_account_id": self.actor.account_id,
                 "p_username": body.ten_tai_khoan,
                 "p_email": body.email,
-                "p_password_hash": passwords.hash(body.password),
+                "p_password": body.password,
                 "p_owner_id": owner_id,
                 "p_name": owner.ho_ten,
                 "p_role": owner.role,
@@ -103,7 +102,7 @@ class AccountsService:
             })
         except APIError as exc:
             if str(exc.code) == "PGRST202":
-                raise HTTPException(503, "Chưa cài chức năng tạo tài khoản mới trong database. Cần chạy migration 20261010_admin_account_creation.sql.") from None
+                raise HTTPException(503, "Chưa cài chức năng tạo tài khoản mới trong database. Cần chạy migration 20261024161801_account_plaintext_passwords.sql.") from None
             if str(exc.code) == "42501":
                 raise HTTPException(403, "Phiên quản trị không còn hợp lệ hoặc API chưa được cấp quyền gọi chức năng tạo tài khoản.") from None
             raise
@@ -146,17 +145,15 @@ class AccountsService:
         own = account_id == self.actor.account_id
         if own and current_password is None:
             raise HTTPException(409, "Đổi mật khẩu của bạn trong mục Tài khoản của tôi và xác nhận mật khẩu hiện tại.")
-        new_hash = passwords.hash(password)
-        expected_hash = None
+        expected_password = None
+        expected_version = None
         if own:
-            rows = self.repository.password_hash(account_id)
-            try:
-                valid = bool(rows) and passwords.verify(current_password, rows[0]["mat_khau_hash"])
-            except (ValueError, TypeError, UnknownHashError):
-                valid = False
+            rows = self.repository.password_value(account_id)
+            valid = bool(rows) and password_matches(current_password, rows[0]["mat_khau"])
             if not valid:
                 raise HTTPException(422, "Mật khẩu hiện tại không đúng.")
-            expected_hash = rows[0]["mat_khau_hash"]
-        if not self.repository.set_password(account_id, new_hash, expected_hash):
+            expected_password = rows[0]["mat_khau"]
+            expected_version = rows[0]["phien_ban_mat_khau"]
+        if not self.repository.set_password(account_id, password, expected_password, expected_version):
             raise HTTPException(409, "Tài khoản đã thay đổi. Tải lại và thử lại.")
         return self.detail(account_id)

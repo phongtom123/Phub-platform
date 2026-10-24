@@ -11,22 +11,24 @@ from phub_api.models.customer import CurrentCustomer
 from phub_api.models.errors import OrderError, PaymentError
 from phub_api.models.user import User
 from phub_api.services.admin_accounts import AccountsService
-from phub_api.services.auth import AuthService, password_version
+from phub_api.services.auth import AuthService, credential_state, password_version
 from phub_api.services.catalog_availability import available_skus
 from phub_api.services.orders import OrderService
 from phub_api.services.payments import PaymentService
 
 
-def test_auth_rechecks_persisted_role_and_password_version():
-    account = {"ma_tk": "A", "ten_tai_khoan": "admin", "trang_thai": 1, "ma_nhan_vien": "N", "ma_kh": None, "mat_khau_hash": "hash"}
+def test_auth_rechecks_persisted_role_and_password_version(monkeypatch):
+    monkeypatch.setenv("JWT_SECRET", "test-only-" + "x" * 64)
+    account = {"ma_tk": "A", "ten_tai_khoan": "admin", "trang_thai": 1, "ma_nhan_vien": "N", "ma_kh": None, "mat_khau": "hash"}
+    account["phien_ban_mat_khau"] = "00000000-0000-4000-8000-000000000001"
     profile = {"ma_nhan_vien": "N", "ho_ten": "Admin", "loai_nhan_vien": "ADMIN", "ma_kho": None, "trang_thai": 1}
     repository = SimpleNamespace(account=lambda identifier: [account], employee=lambda identifier: [profile])
     service = AuthService(repository)
-    claims = {"sub": "A", "ver": password_version("hash")}
+    claims = {"sub": "A", "ver": password_version(credential_state(account))}
     assert service.current_user(claims).role == "ADMIN"
     profile.update(loai_nhan_vien="THU_KHO", ma_kho=-7)
     assert service.current_user(claims).warehouse_id == -7
-    account["mat_khau_hash"] = "changed"
+    account["mat_khau"] = "changed"
     with pytest.raises(HTTPException) as error:
         service.current_user(claims)
     assert error.value.status_code == 401

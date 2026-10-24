@@ -1,5 +1,5 @@
 """Persisted identity lookups; authentication decisions belong to AuthService."""
-ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash"
+ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau,phien_ban_mat_khau"
 
 
 class AuthRepository:
@@ -19,4 +19,4 @@ class AuthRepository:
         return self.client.table("KHACH_HANG").select("ma_kh,ten_kh").eq("ma_kh", identifier).limit(1).execute().data
 
     def register_customer(self, parameters):
-        return self.client.rpc("customer_register_v1", parameters).execute().data
+        return self.client.rpc("customer_register_v2", parameters).execute().data

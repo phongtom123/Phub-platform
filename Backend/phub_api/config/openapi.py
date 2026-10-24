@@ -83,7 +83,7 @@ RESOURCE_TAGS = {
 NOTES = {
     "categories": "Danh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
     "subcategories": "Danh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
-    "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
+    "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau.",
     "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
     "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
@@ -274,7 +274,7 @@ def describe_auth_and_public(spec: dict) -> None:
             "schema": {"type": "string"},
         }
     login = paths["/api/auth/login"]["post"]
-    login["description"] = "Tài khoản thật trong TAI_KHOAN, hash Argon2/bcrypt; role và kho lấy từ NHAN_VIEN/KHACH_HANG. Tạo cookie HttpOnly 8 giờ; không trả token trong JSON. Ví dụ password là placeholder, không có tài khoản demo."
+    login["description"] = "Tài khoản thật trong TAI_KHOAN, mật khẩu lưu dạng chữ ở mat_khau theo cấu hình dự án; role và kho lấy từ NHAN_VIEN/KHACH_HANG. Tạo cookie HttpOnly 8 giờ; không trả mật khẩu/token trong JSON. Ví dụ password là placeholder, không có tài khoản demo."
     login["requestBody"]["content"]["application/json"]["example"] = {"username": "example.admin", "password": "Replace_with_your_password"}
     login["responses"]["200"]["content"]["application/json"]["example"] = SESSION_EXAMPLE
     token = paths["/api/auth/token"]["post"]
@@ -292,7 +292,7 @@ def describe_auth_and_public(spec: dict) -> None:
         "description": "Nếu gửi Origin thì phải thuộc FRONTEND_ORIGINS. Postman/CLI có thể bỏ; trình duyệt tự gửi Origin.",
     })
     registration = paths["/api/auth/register"]["post"]
-    registration["description"] = "Tạo KHACH_HANG và TAI_KHOAN trong một transaction, chỉ cho role KHACH_HANG. Mật khẩu hash Argon2 ở backend; thành công tạo cookie HttpOnly 8 giờ và không trả token/hash."
+    registration["description"] = "Tạo KHACH_HANG và TAI_KHOAN trong một transaction qua customer_register_v2, chỉ cho role KHACH_HANG. Mật khẩu lưu nguyên văn ở mat_khau; thành công tạo cookie HttpOnly 8 giờ và không trả mật khẩu/token."
     registration["requestBody"]["content"]["application/json"]["example"] = {
         "name": "Nguyễn Văn A", "username": "nguyenvana", "email": "customer@example.com",
         "phone": "0901234567", "password": "Replace_with_10+_characters",

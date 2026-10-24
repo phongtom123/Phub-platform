@@ -24,7 +24,7 @@ Phub-platform/
 │   │   ├── repositories/            # PostgREST, Storage và SQL RPC
 │   │   ├── schemas/
 │   │   └── services/                # Quy tắc nghiệp vụ
-│   ├── scripts/hash_password.py     # Tạo hash tài khoản đầu tiên
+│   ├── scripts/                     # Kiểm tra API và xuất OpenAPI
 │   ├── tests/
 │   ├── .env.example
 │   └── README.md                    # API, quyền, hướng dẫn database

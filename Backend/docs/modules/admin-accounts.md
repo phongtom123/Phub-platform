@@ -11,7 +11,7 @@ Không có tài khoản demo, migration hoặc seed tự chạy.
 ## Endpoint
 
 Tất cả cần phiên ADMIN qua cookie `phub_session`. Request ghi cần `Origin`
-trong `FRONTEND_ORIGINS`. Response đọc không có hash, CCCD, lương hoặc địa chỉ khách.
+trong `FRONTEND_ORIGINS`. Response đọc không có mật khẩu, CCCD, lương hoặc địa chỉ khách.
 
 | Method | URL | Chức năng |
 | --- | --- | --- |
@@ -61,12 +61,12 @@ Form mới gửi payload sau (ví dụ minh họa, không phải thông tin đă
 - Username 3–80 ký tự ASCII chữ/số/._-, phân biệt hoa/thường. Không có `@`.
   Email tùy chọn, chuẩn hóa chữ thường. Chỉ payload cũ cấp tài khoản cho người có sẵn
   nhận mã thủ công: 1–100 ký tự chữ/số/._-, khác `.`/`..`/`new`.
-- Mật khẩu 10–128 ký tự, giữ nguyên khoảng trắng, hash Argon2. Không nhận hash
+- Mật khẩu 10–128 ký tự, giữ nguyên khoảng trắng, lưu nguyên văn ở `mat_khau`. Không nhận trường DB
   từ UI, không trả mật khẩu/hash; validation không echo payload bí mật.
 - Trạng thái 0 = ẩn và không đăng nhập; 1 = hoạt động; 2 = tạm khóa. Không DELETE.
   Chặn tự khóa/ẩn/hạ quyền, kể cả qua API nhân viên generic.
 - Cấp lại mật khẩu tài khoản khác không cần mật khẩu cũ (quyền ADMIN).
-  Tự đổi phải xác nhận mật khẩu hiện tại, compare-and-swap hash chống ghi đè
+  Tự đổi phải xác nhận mật khẩu hiện tại, compare-and-swap mật khẩu qua RPC (không gửi mật khẩu trong URL) chống ghi đè
   hai lần đổi đồng thời; thành công xóa cookie và yêu cầu đăng nhập lại.
 - Hash mới vô hiệu mọi token cũ. Khóa/ẩn chặn truy cập, nhưng mở lại có thể khôi
   phục token còn hạn: chưa có blacklist phiên. Không có bảo vệ “admin cuối cùng”
@@ -84,7 +84,8 @@ thêm schema/sequence riêng và hàm RPC, thay overload cũ nhận mã thủ c�
 xóa/sửa dữ liệu hay mã tài khoản cũ, không thay cấu trúc bảng; không tự chạy khi app start.
 Hàm chỉ cho `service_role` gọi, kiểm tra lại phiên ADMIN và kho hoạt động ngay trong transaction.
 Nếu chưa cài hàm, API trả 503 kèm hướng dẫn migration, không fallback tạo hai dòng bằng HTTP.
-Mật khẩu chỉ được hash Argon2 trên Python; không trả hash trong response.
+Mật khẩu được lưu dạng chữ theo yêu cầu dự án; không trả trong response đọc.
+Chuyển đổi/RPC v2: [PLAINTEXT_PASSWORDS.md](../PLAINTEXT_PASSWORDS.md).
 
 Test SQL dùng PostgreSQL WASM cách ly, không cần Supabase và không ghi lên cloud:
 

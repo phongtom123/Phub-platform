@@ -1,4 +1,6 @@
 // Isolated, in-memory PostgreSQL tests. Never accepts a Supabase/database URL.
+// Historical v1 migration contract. Current plaintext/v2 contract is covered by
+// Backend/tests/plaintext-passwords-sql.test.cjs after applying migration history.
 // Install @electric-sql/pglite outside the repo and set PHUB_PGLITE_MODULE
 // to its dist/index.js file URL, or make the package resolvable locally.
 import assert from "node:assert/strict";

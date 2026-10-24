@@ -9,7 +9,7 @@ from postgrest import SyncPostgrestClient
 
 from phub_api.models.user import User
 from phub_api.dependencies.auth import current_user
-from phub_api.services.auth import login_attempts, passwords
+from phub_api.services.auth import login_attempts
 from phub_api.main import app
 from phub_api.models.resources import RESOURCES, public_columns, schema
 from phub_api.schemas.resources import payload_model
@@ -99,20 +99,20 @@ def test_schema_all_tables_and_metadata(platform_client):
     subcategories = next(item for item in resources if item["name"] == "subcategories")
     assert subcategories["keys"] == ["ma_loai_sp_con"]
     accounts = next(item for item in resources if item["name"] == "accounts")
-    assert "mat_khau_hash" not in json.dumps(accounts)
+    assert "mat_khau" not in json.dumps(accounts)
     assert accounts["create_schema"] is None
 
 
 @pytest.mark.parametrize("name", RESOURCES)
 def test_admin_can_read_every_table(platform_client, name):
     client, state, requests = platform_client
-    state["rows"] = [{"example": "value", "mat_khau_hash": "must-not-leak", "scope": {}}]
+    state["rows"] = [{"example": "value", "mat_khau": "must-not-leak", "scope": {}}]
     response = client.get(f"/api/data/{name}")
     assert response.status_code == 200
     assert response.json()["data"] == [{"example": "value"}]
     assert requests[-1].url.path.endswith("/" + RESOURCES[name].table)
     assert "*" not in requests[-1].url.params["select"]
-    assert "mat_khau_hash" not in requests[-1].url.params["select"]
+    assert "mat_khau" not in requests[-1].url.params["select"]
 
 
 @pytest.mark.parametrize("name,field", [("warehouses", "ma_kho"), ("inventory", "ma_kho"), ("receipts", "ma_kho"), ("receipt-lines", "scope.ma_kho")])
@@ -193,7 +193,7 @@ def test_create_category_and_csrf(platform_client):
 
 def test_generic_accounts_cannot_bypass_admin_account_rules(platform_client):
     client, state, requests = platform_client
-    state["rows"] = [{"ma_tk": "TKNEW", "mat_khau_hash": "private"}]
+    state["rows"] = [{"ma_tk": "TKNEW", "mat_khau": "private"}]
     data = {"ma_tk": "TKNEW", "ten_tai_khoan": "new", "ma_kh": "KH1", "password": "test-password-long"}
     response = client.post("/api/data/accounts", json=data, headers=ORIGIN)
     assert response.status_code == 403
@@ -287,7 +287,8 @@ def test_database_errors_are_safe(platform_client, code, status):
 
 
 def configure_login(state):
-    account = {"ma_tk": "TK1", "ten_tai_khoan": "admin", "ma_kh": None, "ma_nhan_vien": "NV1", "trang_thai": 1, "mat_khau_hash": passwords.hash("long-test-password")}
+    account = {"ma_tk": "TK1", "ten_tai_khoan": "admin", "ma_kh": None, "ma_nhan_vien": "NV1", "trang_thai": 1, "mat_khau": "long-test-password"}
+    account["phien_ban_mat_khau"] = "00000000-0000-4000-8000-000000000001"
     profile = {"ma_nhan_vien": "NV1", "ho_ten": "Admin", "loai_nhan_vien": "ADMIN", "ma_kho": None, "trang_thai": 1}
     def handle(request):
         rows = [account] if request.url.path.endswith("TAI_KHOAN") else [profile]
@@ -305,12 +306,12 @@ def test_real_login_me_and_cookie(platform_client):
     assert response.json()["role"] == "ADMIN"
     cookie = response.headers["set-cookie"]
     assert "HttpOnly" in cookie and "SameSite=lax" in cookie
-    assert "mat_khau_hash" not in response.text
+    assert "mat_khau" not in response.text
     assert client.get("/api/auth/me").status_code == 200
     account["trang_thai"] = 0
     assert client.get("/api/auth/me").status_code == 401
     account["trang_thai"] = 1
-    account["mat_khau_hash"] = passwords.hash("different-password")
+    account["mat_khau"] = "different-password"
     assert client.get("/api/auth/me").status_code == 401
 
 
@@ -357,7 +358,7 @@ def test_login_rate_limit(platform_client):
 def test_invalid_stored_hash_is_not_a_server_error(platform_client):
     client, state, _ = platform_client
     account, _ = configure_login(state)
-    account["mat_khau_hash"] = "invalid-not-a-hash"
+    account["mat_khau"] = "invalid-not-a-hash"
     response = client.post("/api/auth/login", json={"username": "admin", "password": "long-test-password"}, headers=ORIGIN)
     assert response.status_code == 401
     assert "invalid-not-a-hash" not in response.text
@@ -379,7 +380,7 @@ def test_bearer_token_flow_and_live_account_checks(platform_client):
     claims = jwt.decode(body["access_token"], "test-only-" + "x" * 64, algorithms=["HS256"],
                         issuer="phub-backend", audience="phub-ui")
     assert claims["sub"] == "TK1" and claims["exp"] - claims["iat"] == 28800
-    assert "role" not in claims and "mat_khau_hash" not in claims
+    assert "role" not in claims and "mat_khau" not in claims
     headers = {"Authorization": "Bearer " + body["access_token"]}
     assert client.get("/api/auth/me", headers=headers).json()["role"] == "ADMIN"
     assert client.get("/api/data/resources", headers=headers).status_code == 200
@@ -393,7 +394,7 @@ def test_bearer_token_flow_and_live_account_checks(platform_client):
     account["trang_thai"] = 0
     assert client.get("/api/auth/me", headers=headers).status_code == 401
     account["trang_thai"] = 1
-    account["mat_khau_hash"] = passwords.hash("changed-password")
+    account["mat_khau"] = "changed-password"
     assert client.get("/api/auth/me", headers=headers).status_code == 401
 
 
@@ -443,7 +444,7 @@ def test_token_issuance_rejects_invalid_accounts(platform_client, case, status):
     if case == "password":
         password = "wrong"
     elif case == "hash":
-        account["mat_khau_hash"] = "invalid-hash"
+        account["mat_khau"] = "invalid-hash"
     elif case == "disabled":
         account["trang_thai"] = 0
     else:

@@ -8,7 +8,7 @@ from postgrest import SyncPostgrestClient
 
 from phub_api.models.user import User
 from phub_api.dependencies.auth import current_user, require_admin, require_customer_user, require_warehouse
-from phub_api.services.auth import login_attempts, passwords, registration_attempts
+from phub_api.services.auth import login_attempts, registration_attempts
 from phub_api.controllers.auth import router as auth_router
 from phub_api.models.customer import CurrentCustomer
 from phub_api.dependencies.customer import require_customer
@@ -87,7 +87,8 @@ def test_customer_auth_flows_through_the_shared_dependency(monkeypatch, endpoint
     account = {
         "ma_tk": "TK3", "ten_tai_khoan": "customer", "ma_kh": "KH3",
         "ma_nhan_vien": None, "trang_thai": 1,
-        "mat_khau_hash": passwords.hash("customer-password"),
+        "mat_khau": "customer-password",
+        "phien_ban_mat_khau": "00000000-0000-4000-8000-000000000001",
     }
 
     def handle(request):
@@ -128,24 +129,26 @@ def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch):
     state = {}
 
     def handle(request):
-        if request.url.path.endswith("/rpc/customer_register_v1"):
+        if request.url.path.endswith("/rpc/customer_register_v2"):
             payload = json.loads(request.content)
             state.update(payload)
             assert payload["p_customer_id"].startswith("KH_")
             assert payload["p_email"] == "customer@example.com"
             assert payload["p_name"] == "Customer Name"
             assert payload["p_phone"] == "0901234567"
-            assert passwords.verify("customer-password", payload["p_password_hash"])
+            assert ("customer-password" == payload["p_password"])
             return httpx.Response(200, json={
                 "account_id": "KH000001", "username": "customer", "role": "KHACH_HANG",
                 "name": "Customer Name", "customer_id": payload["p_customer_id"],
                 "employee_id": None, "warehouse_id": None,
+                "credential_version": "00000000-0000-4000-8000-000000000001",
             })
         if request.url.path.endswith("/TAI_KHOAN"):
             return httpx.Response(200, json=[{
                 "ma_tk": "KH000001", "ten_tai_khoan": "customer",
                 "ma_kh": state["p_customer_id"], "ma_nhan_vien": None, "trang_thai": 1,
-                "mat_khau_hash": state["p_password_hash"],
+                "mat_khau": state["p_password"],
+                "phien_ban_mat_khau": "00000000-0000-4000-8000-000000000001",
             }])
         return httpx.Response(200, json=[{"ma_kh": state["p_customer_id"], "ten_kh": "Customer Name"}])
 
@@ -167,7 +170,7 @@ def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch):
                 "employee_id": None, "warehouse_id": None,
             }
             assert "HttpOnly" in response.headers["set-cookie"]
-            assert "customer-password" not in response.text and "p_password_hash" not in response.text
+            assert "customer-password" not in response.text and "p_password" not in response.text
             assert client.get("/api/auth/me").status_code == 200
     registration_attempts.clear()
 

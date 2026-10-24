@@ -81,13 +81,9 @@ Vì Python dùng khóa đặc quyền bỏ qua RLS, toàn bộ quyền truy cậ
 
 ### Tài khoản đầu tiên
 
-Không có tài khoản/password demo hardcode. Tạo bản ghi `NHAN_VIEN` qua Supabase Table Editor (`loai_nhan_vien=ADMIN`, `ma_kho=NULL`, `trang_thai=1`). Chạy:
+Backend hiện đọc mật khẩu dạng chữ trong `TAI_KHOAN.mat_khau` theo lựa chọn của dự án. Trước khi dùng code này trên database cũ, xem [hướng dẫn chuyển đổi](docs/PLAINTEXT_PASSWORDS.md). Không xóa cột cũ trên Render/Supabase khi backend cũ còn phục vụ.
 
-```powershell
-.venv\Scripts\python.exe scripts/hash_password.py
-```
-
-Nhập mật khẩu hai lần ở terminal (không hiển thị). Lưu chuỗi hash trả về vào `TAI_KHOAN.mat_khau_hash`, gán `ma_nhan_vien` đúng nhân viên, `ma_kh=NULL`, trạng thái 1 và tên tài khoản duy nhất. Từ đó admin có thể tạo nhân viên/khách/tài khoản bằng UI. Tài khoản khách phải liên kết một `KHACH_HANG`; thủ kho phải có `ma_kho` và role `THU_KHO`.
+Để tạo admin đầu tiên trên database đã chuyển đổi, tạo `NHAN_VIEN` có `loai_nhan_vien=ADMIN`, `ma_kho=NULL`, `trang_thai=1`; tạo tài khoản liên kết với `mat_khau` 10–128 ký tự, `ma_kh=NULL`, trạng thái 1. Admin sau đó tạo các tài khoản khác qua UI/API. Thủ kho phải được phân kho. Không còn dùng script `hash_password.py`.
 
 ## API đã có
 
@@ -103,9 +99,9 @@ Nhập mật khẩu hai lần ở terminal (không hiển thị). Lưu chuỗi h
 
 Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. `/login` và `/register` không trả token trong JSON; UI không lưu token ở localStorage. `/token` trả JWT trong JSON, không đặt cookie, dùng chung `authenticate_credentials` và `create_access_token` với đăng nhập cookie. Trong Swagger chọn **Authorize → BearerAuth** và dán riêng token, không thêm `Bearer`; xem [hướng dẫn test](docs/README.md#lấy-jwt-và-thử-bằng-bearer-swaggerpostman).
 
-`current_user` nhận Bearer hoặc cookie và dùng chung `verify_access_token`. Khi có Authorization thì ưu tiên Bearer; header/token sai trả 401, không chuyển sang cookie. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, quên mật khẩu qua email, xác minh email hoặc thu hồi từng token bị đánh cắp. Đăng xuất chỉ xóa cookie; token Bearer đã cấp vẫn có hiệu lực đến khi hết hạn hoặc tài khoản/mật khẩu mất hiệu lực.
+`current_user` nhận Bearer hoặc cookie và dùng chung `verify_access_token`. Khi có Authorization thì ưu tiên Bearer; header/token sai trả 401, không chuyển sang cookie. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu lưu nguyên văn ở `mat_khau`, so sánh đúng ký tự/khoảng trắng; không đọc hash cũ. Dấu phiên mật khẩu là HMAC với JWT secret, không nhúng mật khẩu vào JWT. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, quên mật khẩu qua email, xác minh email hoặc thu hồi từng token bị đánh cắp. Đăng xuất chỉ xóa cookie; token Bearer đã cấp vẫn có hiệu lực đến khi hết hạn hoặc tài khoản/mật khẩu mất hiệu lực.
 
-Đăng ký khách hàng cần chạy `migrations/20261011080003_customer_self_registration.sql`. RPC chỉ cấp `EXECUTE` cho `service_role`; browser gọi backend qua `/api/backend/auth/register`, không nhận Supabase secret. Hai bản ghi `KHACH_HANG` và `TAI_KHOAN` được tạo trong cùng transaction nên không để lại hồ sơ dở dang khi username/email bị trùng. Đăng ký giới hạn 5 lần/IP/phút trong một process.
+Database mới chạy lịch sử migration rồi `migrations/20261024161801_account_plaintext_passwords.sql`; xem hướng dẫn chuyển đổi trước khi chạy trên database có tài khoản. Đăng ký dùng RPC `customer_register_v2`. RPC chỉ cấp `EXECUTE` cho `service_role`; browser gọi backend qua `/api/backend/auth/register`, không nhận Supabase secret. Hai bản ghi `KHACH_HANG` và `TAI_KHOAN` được tạo trong cùng transaction nên không để lại hồ sơ dở dang khi username/email bị trùng. Đăng ký giới hạn 5 lần/IP/phút trong một process.
 
 Ba cổng dùng cùng một cơ chế: `current_user` xác minh JWT và tải lại danh tính từ
 database; `require_admin`, `require_warehouse`, `require_customer_user` kiểm tra
@@ -159,7 +155,7 @@ API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua q
 
 ADMIN xem 19 bảng. THU_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
 
-Account payload dùng `password`, không nhận/trả `mat_khau_hash`. Các API không trả password/hash. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm sửa bằng `duong_dan_anh` (URL); upload file chưa có API. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
+Account payload dùng `password`, không nhận trường lưu trữ `mat_khau`/`mat_khau_hash`. Các API đọc không trả mật khẩu. Lưu ý database chủ ý lưu mật khẩu dạng chữ theo cấu hình dự án. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm sửa bằng `duong_dan_anh` (URL); upload file chưa có API. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
 
 Catalog công khai hiện có `/api/catalog/products`, `/products/{ma_sp}`, `/categories`, `/brands` (giữ response contract cũ). Alias `/api/products` còn trả mảng, giới hạn trường công khai và sản phẩm/loại đang hoạt động; ưu tiên API catalog cho tính năng mới.
 

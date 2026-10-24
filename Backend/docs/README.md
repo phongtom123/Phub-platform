@@ -201,3 +201,7 @@ Sau migration hồ sơ/sở thích đợt 1, cần chạy thêm
 `migrations/20261022_crm_admin_profile_api.sql` (đường dẫn tính từ `Backend/`)
 để lưu nguyên tử. Không chạy lại script tạo bảng đã áp dụng.
 Xem [hướng dẫn CRM Admin](../../docs/CRM-ADMIN-PROFILE.md) về scope, triển khai và kiểm thử.
+
+## Lưu trữ mật khẩu hiện tại
+
+Backend đã chuyển sang `TAI_KHOAN.mat_khau` và các RPC v2. Đọc [hướng dẫn triển khai đồng bộ và đặt lại mật khẩu cũ](PLAINTEXT_PASSWORDS.md) trước khi đổi database cloud. Các migration cũ là lịch sử, không sửa để xóa dấu vết schema cũ.

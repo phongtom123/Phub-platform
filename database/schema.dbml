@@ -32,7 +32,8 @@ Table TAI_KHOAN {
   ma_tk varchar [pk]
   ten_tai_khoan varchar [not null, unique]
   email varchar [unique]
-  mat_khau_hash varchar [not null]
+  mat_khau varchar [not null]
+  phien_ban_mat_khau uuid [not null, default: `gen_random_uuid()`]
 
   ma_kh varchar [unique]
   ma_nhan_vien varchar [unique]
