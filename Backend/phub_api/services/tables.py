@@ -16,7 +16,6 @@ from phub_api.models.user import User
 from phub_api.repositories.tables import TablesRepository, clean
 from phub_api.schemas.resources import payload_model
 from phub_api.schemas.crm import vietnam_today
-from phub_api.services.auth import passwords
 
 
 def can_write(name: str, user: User) -> bool:
@@ -97,7 +96,7 @@ def validate_combined(name: str, data: dict, user: User) -> None:
 
 def private_payload(data: dict) -> dict:
     if "password" in data:
-        data["mat_khau_hash"] = passwords.hash(data.pop("password"))
+        data["mat_khau"] = data.pop("password")
     return data
 
 

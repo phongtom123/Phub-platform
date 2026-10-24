@@ -32,7 +32,7 @@ def commerce_client(monkeypatch):
     body = {"recipient": recipient, "note": None, "voucher_code": "save10", "expected_discount": "0.02", "expected_total": "0.18",
             "items": [{"sku": "SKU-A", "warehouse_id": -900002, "quantity": 2, "expected_unit_price": "0.10"}]}
     state = {"quote": quote, "receipt": receipt, "detail": detail, "result": None, "replayed": False, "error": None,
-             "profile": [{"ma_kh": "KH-A", "ten_kh": "Customer A", "sdt": "0901234567", "dia_chi_chi_tiet_md": "Test address", "tinh_thanh_md": "Test province", "xa_phuong_md": "Test ward", "mat_khau_hash": "PRIVATE-PASSWORD"}]}
+             "profile": [{"ma_kh": "KH-A", "ten_kh": "Customer A", "sdt": "0901234567", "dia_chi_chi_tiet_md": "Test address", "tinh_thanh_md": "Test province", "xa_phuong_md": "Test ward", "mat_khau": "PRIVATE-PASSWORD"}]}
     requests = []
 
     def handle(request):
@@ -242,7 +242,7 @@ def test_save_recipient_updates_only_verified_customer_and_shipping_fields(comme
     write = next(request for request in requests if request.method == "PATCH")
     assert write.url.params["ma_kh"] == "eq.KH-A"
     assert set(json.loads(write.content)) == {"ten_kh", "sdt", "dia_chi_chi_tiet_md", "tinh_thanh_md", "xa_phuong_md"}
-    assert state["profile"][0]["mat_khau_hash"] == "PRIVATE-PASSWORD"
+    assert state["profile"][0]["mat_khau"] == "PRIVATE-PASSWORD"
 
 
 @pytest.mark.parametrize("field,value", [("name", " "), ("phone", "abc"), ("address_line", ""),

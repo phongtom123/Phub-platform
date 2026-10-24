@@ -13,16 +13,16 @@ from phub_api.services.auth import AuthService, create_access_token, registratio
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-def issue_session(response: Response, user: User, password_hash: str) -> None:
-    set_session_cookie(response, create_access_token(user, password_hash))
+def issue_session(response: Response, user: User, password: str) -> None:
+    set_session_cookie(response, create_access_token(user, password))
 
 
 @router.post("/login", summary="Đăng nhập bằng tên tài khoản hoặc email", response_model=SessionUser,
              responses={**WRITE_ERRORS, 429: error_response(429, "Quá 20 lần đăng nhập/IP/phút; thử lại sau một phút.")})
 def login(body: LoginBody, request: Request, response: Response, service: AuthService = Depends(get_auth_service)):
     check_origin(request)
-    user, password_hash = service.authenticate(body, request.client.host if request.client else "unknown")
-    issue_session(response, user, password_hash)
+    user, password = service.authenticate(body, request.client.host if request.client else "unknown")
+    issue_session(response, user, password)
     return asdict(user)
 
 
@@ -31,10 +31,10 @@ def login(body: LoginBody, request: Request, response: Response, service: AuthSe
 def issue_token(body: LoginBody, request: Request, response: Response, service: AuthService = Depends(get_auth_service)):
     if "origin" in request.headers:
         check_origin(request)
-    user, password_hash = service.authenticate(body, request.client.host if request.client else "unknown")
+    user, password = service.authenticate(body, request.client.host if request.client else "unknown")
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
-    return TokenResponse(access_token=create_access_token(user, password_hash))
+    return TokenResponse(access_token=create_access_token(user, password))
 
 
 @router.post("/register", status_code=201, summary="Đăng ký tài khoản khách hàng", response_model=SessionUser,
@@ -42,8 +42,8 @@ def issue_token(body: LoginBody, request: Request, response: Response, service: 
 def register(body: RegisterBody, request: Request, response: Response, service: AuthService = Depends(get_auth_service)):
     check_origin(request)
     throttle(request.client.host if request.client else "unknown", registration_attempts, 5)
-    user, password_hash = service.register(body)
-    issue_session(response, user, password_hash)
+    user, password = service.register(body)
+    issue_session(response, user, password)
     return asdict(user)
 
 

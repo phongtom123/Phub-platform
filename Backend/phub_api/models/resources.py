@@ -70,7 +70,7 @@ SYSTEM_FIELDS = {"promotions": {"nguoi_tao", "ngay_tao"}, "vouchers": {"ngay_tao
 
 
 def public_columns(name: str) -> list[dict[str, Any]]:
-    return [column for column in schema()[RESOURCES[name].table] if column["name"] != "mat_khau_hash"]
+    return [column for column in schema()[RESOURCES[name].table] if column["name"] not in {"mat_khau", "mat_khau_hash", "phien_ban_mat_khau"}]
 
 
 

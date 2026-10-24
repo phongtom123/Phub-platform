@@ -8987,7 +8987,7 @@
     },
     "/api/auth/login": {
       "post": {
-        "description": "Tài khoản thật trong TAI_KHOAN, hash Argon2/bcrypt; role và kho lấy từ NHAN_VIEN/KHACH_HANG. Tạo cookie HttpOnly 8 giờ; không trả token trong JSON. Ví dụ password là placeholder, không có tài khoản demo.",
+        "description": "Tài khoản thật trong TAI_KHOAN, mật khẩu lưu dạng chữ ở mat_khau theo cấu hình dự án; role và kho lấy từ NHAN_VIEN/KHACH_HANG. Tạo cookie HttpOnly 8 giờ; không trả mật khẩu/token trong JSON. Ví dụ password là placeholder, không có tài khoản demo.",
         "operationId": "login_api_auth_login_post",
         "parameters": [
           {
@@ -9293,7 +9293,7 @@
     },
     "/api/auth/register": {
       "post": {
-        "description": "Tạo KHACH_HANG và TAI_KHOAN trong một transaction, chỉ cho role KHACH_HANG. Mật khẩu hash Argon2 ở backend; thành công tạo cookie HttpOnly 8 giờ và không trả token/hash.",
+        "description": "Tạo KHACH_HANG và TAI_KHOAN trong một transaction qua customer_register_v2, chỉ cho role KHACH_HANG. Mật khẩu lưu nguyên văn ở mat_khau; thành công tạo cookie HttpOnly 8 giờ và không trả mật khẩu/token.",
         "operationId": "register_api_auth_register_post",
         "parameters": [
           {
@@ -12505,7 +12505,7 @@
     },
     "/api/data/accounts": {
       "get": {
-        "description": "Bảng `TAI_KHOAN`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Quản lý tài khoản dùng `/api/admin/accounts`, không dùng API ghi bảng chung.** \n\nKhóa chính: `ma_tk`. Ví dụ query `key=[\"TK001\"]` (URL-encode khi gửi).\n\nGET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau_hash.",
+        "description": "Bảng `TAI_KHOAN`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Quản lý tài khoản dùng `/api/admin/accounts`, không dùng API ghi bảng chung.** \n\nKhóa chính: `ma_tk`. Ví dụ query `key=[\"TK001\"]` (URL-encode khi gửi).\n\nGET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau.",
         "operationId": "get_accounts",
         "parameters": [
           {

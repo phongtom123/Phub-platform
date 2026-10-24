@@ -42,7 +42,7 @@ def apply_keys(query, name: str, values: list):
 
 
 def clean(rows: list[dict]) -> list[dict]:
-    return [{key: value for key, value in row.items() if key not in {"scope", "mat_khau_hash"}} for row in rows]
+    return [{key: value for key, value in row.items() if key not in {"scope", "mat_khau", "mat_khau_hash", "phien_ban_mat_khau"}} for row in rows]
 
 
 class TablesRepository:

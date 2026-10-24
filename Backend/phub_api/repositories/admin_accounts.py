@@ -60,7 +60,7 @@ class AccountsRepository:
         return self.client.table("TAI_KHOAN").insert(values).execute().data
 
     def create_new(self, parameters):
-        return self.client.rpc("admin_create_account_v1", parameters).execute().data
+        return self.client.rpc("admin_create_account_v2", parameters).execute().data
 
     def update(self, identifier, values):
         return self.client.table("TAI_KHOAN").update(values).eq("ma_tk", identifier).execute().data
@@ -68,11 +68,13 @@ class AccountsRepository:
     def update_employee(self, identifier, values):
         return self.client.table("NHAN_VIEN").update(values).eq("ma_nhan_vien", identifier).execute().data
 
-    def password_hash(self, identifier):
-        return self.client.table("TAI_KHOAN").select("mat_khau_hash").eq("ma_tk", identifier).limit(1).execute().data
+    def password_value(self, identifier):
+        return self.client.table("TAI_KHOAN").select("mat_khau,phien_ban_mat_khau").eq("ma_tk", identifier).limit(1).execute().data
 
-    def set_password(self, identifier, value, expected_hash=None):
-        query = self.client.table("TAI_KHOAN").update({"mat_khau_hash": value}).eq("ma_tk", identifier)
-        if expected_hash is not None:
-            query = query.eq("mat_khau_hash", expected_hash)
-        return query.execute().data
+    def set_password(self, identifier, value, expected_password=None, expected_version=None):
+        # Keep passwords out of PostgREST URL filters/access logs.
+        return self.client.rpc("set_account_password_v2", {
+            "p_account_id": identifier, "p_password": value,
+            "p_expected_password": expected_password,
+            "p_expected_version": expected_version,
+        }).execute().data

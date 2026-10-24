@@ -2,14 +2,11 @@ from datetime import datetime, timedelta, timezone
 from threading import Lock
 from uuid import uuid4
 import hashlib
+import hmac
 import time
 
 from fastapi import HTTPException
 from postgrest.exceptions import APIError
-from pwdlib import PasswordHash
-from pwdlib.exceptions import UnknownHashError
-from pwdlib.hashers.argon2 import Argon2Hasher
-from pwdlib.hashers.bcrypt import BcryptHasher
 import jwt
 
 from phub_api.config.settings import TOKEN_TTL_SECONDS, jwt_secret
@@ -17,8 +14,6 @@ from phub_api.models.user import User
 from phub_api.repositories.auth import AuthRepository
 from phub_api.schemas.auth import LoginBody, RegisterBody
 
-passwords = PasswordHash((Argon2Hasher(), BcryptHasher()))
-dummy_hash = passwords.hash("not-a-valid-login-password")
 login_attempts: dict[str, tuple[float, int]] = {}
 registration_attempts: dict[str, tuple[float, int]] = {}
 attempt_lock = Lock()
@@ -45,8 +40,18 @@ def identity(account: dict, repository: AuthRepository) -> User:
     return User(account["ma_tk"], account["ten_tai_khoan"], "KHACH_HANG", rows[0]["ten_kh"], customer_id=customer)
 
 
+def password_matches(candidate: str, stored: str | None) -> bool:
+    """Plaintext storage requested by the project; never trim or return credentials."""
+    return isinstance(candidate, str) and isinstance(stored, str) and bool(stored) and hmac.compare_digest(candidate.encode(), stored.encode())
+
+
 def password_version(value: str) -> str:
-    return hashlib.sha256(value.encode()).hexdigest()
+    return hmac.new(jwt_secret().encode(), b"phub-password-version-v2\0" + value.encode(), hashlib.sha256).hexdigest()
+
+
+def credential_state(account: dict) -> str:
+    # Revision changes even when a password is reset to its previous value.
+    return account["mat_khau"] + "\0" + str(account["phien_ban_mat_khau"])
 
 
 def verify_access_token(token: str) -> dict:
@@ -75,10 +80,10 @@ def throttle(host: str, attempts: dict[str, tuple[float, int]] = login_attempts,
         attempts[host] = (start, count + 1)
 
 
-def create_access_token(user: User, password_hash: str) -> str:
+def create_access_token(user: User, password: str) -> str:
     now = datetime.now(timezone.utc)
     return jwt.encode({"sub": user.account_id, "iat": now, "exp": now + timedelta(seconds=TOKEN_TTL_SECONDS),
-                        "iss": "phub-backend", "aud": "phub-ui", "ver": password_version(password_hash)},
+                        "iss": "phub-backend", "aud": "phub-ui", "ver": password_version(password)},
                        jwt_secret(), algorithm="HS256")
 
 
@@ -91,25 +96,22 @@ def authenticate_credentials(body: LoginBody, host: str, repository: AuthReposit
         username = username.lower()
     rows = repository.login_account(column, username)
     account = rows[0] if rows else None
-    try:
-        valid = passwords.verify(body.password, account["mat_khau_hash"] if account else dummy_hash)
-    except (ValueError, TypeError, UnknownHashError):
-        valid = False
+    valid = password_matches(body.password, account.get("mat_khau") if account else None)
     if not account or not valid:
         raise HTTPException(401, "Tài khoản hoặc mật khẩu không đúng.")
     user = identity(account, repository)
-    return user, account["mat_khau_hash"]
+    return user, credential_state(account)
 
 
 def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[User, str]:
     jwt_secret()
-    password_hash = passwords.hash(body.password)
+    password = body.password
     customer_id = "KH_" + uuid4().hex
     try:
         result = repository.register_customer({
             "p_username": body.username,
             "p_email": body.email,
-            "p_password_hash": password_hash,
+            "p_password": password,
             "p_customer_id": customer_id,
             "p_name": body.name,
             "p_phone": body.phone,
@@ -117,7 +119,7 @@ def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[U
     except APIError as exc:
         code = str(exc.code)
         if code == "PGRST202":
-            raise HTTPException(503, "Chưa cài chức năng đăng ký khách hàng trong database. Cần chạy migration customer_self_registration.") from None
+            raise HTTPException(503, "Chưa cài chức năng đăng ký khách hàng trong database. Cần chạy migration 20261024161801_account_plaintext_passwords.sql.") from None
         if code == "23505":
             raise HTTPException(409, "Tên tài khoản hoặc email đã được sử dụng.") from None
         if code in {"23502", "23514", "22P02"}:
@@ -129,7 +131,7 @@ def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[U
         account_id=result["account_id"], username=result["username"], role="KHACH_HANG",
         name=result["name"], customer_id=result["customer_id"],
     )
-    return user, password_hash
+    return user, password + "\0" + str(result["credential_version"])
 
 
 class AuthService:
@@ -144,6 +146,6 @@ class AuthService:
 
     def current_user(self, claims: dict) -> User:
         rows = self.repository.account(claims["sub"])
-        if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
+        if not rows or password_version(credential_state(rows[0])) != claims["ver"]:
             raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.", headers={"WWW-Authenticate": "Bearer"})
         return identity(rows[0], self.repository)

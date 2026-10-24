@@ -113,7 +113,7 @@ def test_cookie_auth_and_public_operations(spec):
 def test_row_examples_match_schema_and_no_hashes(spec, name):
     component = spec["components"]["schemas"][RESOURCES[name].table + "Read"]
     Draft202012Validator(component).validate(row_example(name))
-    assert "mat_khau_hash" not in component["properties"]
+    assert "mat_khau" not in component["properties"]
     assert "password" not in component["properties"]
 
 
@@ -190,7 +190,7 @@ def test_versioned_snapshot_has_no_drift_or_real_secrets(spec):
     assert json.loads(path.read_text(encoding="utf-8")) == spec
     serialized = json.dumps(spec)
     assert "sb_secret_" not in serialized
-    assert "mat_khau_hash" not in spec["components"]["schemas"]["TAI_KHOANRead"]["properties"]
+    assert "mat_khau" not in spec["components"]["schemas"]["TAI_KHOANRead"]["properties"]
 
 
 def test_swagger_origins_remain_explicit(monkeypatch):

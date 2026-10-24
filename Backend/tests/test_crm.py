@@ -45,7 +45,7 @@ def crm_client(monkeypatch):
         if table == "KHACH_HANG":
             rows = [state["profile"]] if state["profile"] and request.url.params["ma_kh"] == "eq.KH1" else []
         elif table == "TAI_KHOAN":
-            assert "mat_khau_hash" not in request.url.params["select"]
+            assert "mat_khau" not in request.url.params["select"]
             rows = [state["account"]] if state["account"] else []
         else:
             assert table == "DON_HANG"
