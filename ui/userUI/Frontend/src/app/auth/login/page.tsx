@@ -29,12 +29,11 @@ export default function LoginPage() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const username = String(form.get("username") ?? "").trim();
+    const password = String(form.get("password") ?? "");
     setLoading(true); setError("");
     try {
-      const account = await loginSession(
-        String(form.get("account") ?? ""),
-        String(form.get("password") ?? ""),
-      );
+      const account = await loginSession(username, password);
       if (account.role === "ADMIN") { window.location.assign(process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000"); return; }
       if (account.role === "THU_KHO") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
       router.replace("/");
@@ -84,7 +83,7 @@ export default function LoginPage() {
           Email hoặc tên tài khoản
           <input
             required
-            name="account"
+            name="username"
             autoComplete="username"
             className="mt-2 h-12 w-full rounded-lg border border-zinc-300 px-4 text-sm text-zinc-950 outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
           />

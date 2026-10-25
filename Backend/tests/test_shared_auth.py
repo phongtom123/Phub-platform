@@ -110,7 +110,7 @@ def test_customer_auth_flows_through_the_shared_dependency(monkeypatch, endpoint
             login = client.post(
                 "/api/auth/" + endpoint,
                 json={"username": "customer", "password": "customer-password"},
-                headers={"Origin": "http://localhost:3000"},
+                headers={"Origin": "http://127.0.0.1:3001"},
             )
             assert login.status_code == 200
             headers = {}
@@ -162,7 +162,7 @@ def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch):
                 "name": "  Customer Name  ", "username": " customer ",
                 "email": " CUSTOMER@EXAMPLE.COM ", "phone": " 0901234567 ",
                 "password": "customer-password",
-            }, headers={"Origin": "http://localhost:3001"})
+            }, headers={"Origin": "http://127.0.0.1:3001"})
             assert response.status_code == 201
             assert response.json() == {
                 "account_id": "KH000001", "username": "customer", "role": "KHACH_HANG",

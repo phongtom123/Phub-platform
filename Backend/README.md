@@ -19,7 +19,7 @@ Tạo `Backend/.env` dựa trên [.env.example](.env.example). Không commit fil
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_SECRET_KEY=YOUR_NEW_SERVER_ONLY_KEY
 JWT_SECRET=YOUR_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
-FRONTEND_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8000,http://127.0.0.1:8000
+FRONTEND_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8000,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:8000
 COOKIE_SECURE=false
 ```
 
