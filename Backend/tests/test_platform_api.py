@@ -48,6 +48,93 @@ def test_health_is_offline():
         assert client.get("/api/health").json() == {"status": "ok"}
 
 
+@pytest.mark.parametrize("resource,pk,patch", [
+    ("receipts", "ma_phieu_nhap", {"ma_ncc": -3, "ma_phieu_code": "PN-MOI"}),
+    ("transfers", "ma_phieu_chuyen", {"ma_kho_nhan": -4}),
+])
+def test_draft_header_edits_are_guarded_and_do_not_write_stock(platform_client, resource, pk, patch):
+    client, state, requests = platform_client
+    original = {pk: -5, "trang_thai": "NHAP", "ma_kho_xuat": -1, "ma_kho_nhan": -2}
+    def handle(request):
+        if request.method == "GET":
+            return httpx.Response(200, json=[original])
+        assert request.method == "PATCH"
+        assert request.url.params["trang_thai"] == "eq.NHAP"
+        assert request.url.params[pk] == "eq.-5"
+        values = json.loads(request.content)
+        assert values == (patch | {"nguoi_cap_nhat": "NV1"} if resource == "receipts" else patch)
+        return httpx.Response(200, json=[original | values])
+    state["handler"] = handle
+    response = client.patch(f"/api/admin/warehouse-drafts/{resource}?key=[-5]", json=patch, headers=ORIGIN)
+    assert response.status_code == 200
+    assert response.json()["data"][0]["trang_thai"] == "NHAP"
+    assert len(requests) == 2
+    assert all(request.url.path.endswith(RESOURCES[resource].table) for request in requests)
+
+
+@pytest.mark.parametrize("resource,pk,status", [
+    ("receipts", "ma_phieu_nhap", "DA_NHAP"), ("receipts", "ma_phieu_nhap", "HUY"),
+    ("transfers", "ma_phieu_chuyen", "DANG_CHUYEN"), ("transfers", "ma_phieu_chuyen", "DA_NHAN"),
+])
+def test_processed_documents_cannot_be_edited(platform_client, resource, pk, status):
+    client, state, requests = platform_client
+    state["rows"] = [{pk: -5, "trang_thai": status}]
+    response = client.patch(f"/api/admin/warehouse-drafts/{resource}?key=[-5]", json={"ghi_chu": "Test"}, headers=ORIGIN)
+    assert response.status_code == 409
+    assert len(requests) == 1 and requests[0].method == "GET"
+
+
+def test_confirmation_racing_with_draft_edit_returns_conflict(platform_client):
+    client, state, requests = platform_client
+    state["handler"] = lambda request: httpx.Response(200, json=[{"ma_phieu_nhap": 1, "trang_thai": "NHAP"}] if request.method == "GET" else [])
+    response = client.patch("/api/admin/warehouse-drafts/receipts?key=[1]", json={"ma_kho": -2}, headers=ORIGIN)
+    assert response.status_code == 409
+    assert requests[-1].url.params["trang_thai"] == "eq.NHAP"
+
+
+@pytest.mark.parametrize("resource,payload", [
+    ("receipts", {"trang_thai": "DA_NHAP"}), ("transfers", {"trang_thai": "DA_NHAN"}),
+    ("receipts", {"nguoi_cap_nhat": "OTHER"}), ("transfers", {"nguoi_tao": "OTHER"}),
+    ("receipts", {"ma_kho": True}), ("receipts", {"ma_ncc": None}),
+    ("receipts", {}), ("transfers", {"ma_phieu_chuyen": 99}),
+])
+def test_draft_edits_reject_workflow_audit_keys_and_invalid_fields(platform_client, resource, payload):
+    client, _, requests = platform_client
+    assert client.patch(f"/api/admin/warehouse-drafts/{resource}?key=[1]", json=payload, headers=ORIGIN).status_code == 422
+    assert requests == []
+
+
+@pytest.mark.parametrize("actor", [WAREHOUSE, CUSTOMER])
+def test_draft_updates_require_admin(platform_client, actor):
+    client, state, requests = platform_client
+    state["actor"] = actor
+    assert client.patch("/api/admin/warehouse-drafts/receipts?key=[1]", json={"ma_kho": 2}, headers=ORIGIN).status_code == 403
+    assert requests == []
+
+
+def test_draft_transfers_require_distinct_warehouses_and_origin(platform_client):
+    client, state, requests = platform_client
+    url = "/api/admin/warehouse-drafts/transfers?key=[1]"
+    assert client.patch(url, json={"ma_kho_nhan": 1}).status_code == 403
+    assert requests == []
+    state["rows"] = [{"ma_phieu_chuyen": 1, "ma_kho_xuat": -5, "ma_kho_nhan": -6, "trang_thai": "NHAP"}]
+    assert client.patch(url, json={"ma_kho_nhan": -5}, headers=ORIGIN).status_code == 422
+    assert len(requests) == 1
+
+
+def test_draft_metadata_grants_update_without_generic_create(platform_client):
+    client, state, _ = platform_client
+    for actor in [ADMIN, WAREHOUSE]:
+        state["actor"] = actor
+        resources = client.get("/api/data/resources").json()
+        for item in resources:
+            if item["name"] in {"receipts", "transfers"}:
+                assert item["writable"] is False and item["create_schema"] is None
+                assert bool(item["draft_update_path"]) == (actor == ADMIN)
+                if actor == ADMIN:
+                    assert "trang_thai" not in item["draft_update_fields"]
+
+
 @pytest.mark.parametrize("name", ["orders", "order-lines", "invoices", "payments", "voucher-uses"])
 @pytest.mark.parametrize("actor", [ADMIN, CUSTOMER])
 def test_order_relation_filter_is_exact_and_preserves_scope(platform_client, name, actor):

@@ -37,6 +37,27 @@ test("hidden/offline/typing pause is cancellable without fetching any data", asy
   setTimeout(() => controller.abort(), 5); await pending; assert.equal(calls, 0);
 });
 
+test("workers resuming together claim the final job only once", async () => {
+  const calls = [], routes = [];
+  let runnable = true, pausedWorkers = 0;
+  const app = load(async url => {
+    calls.push(url);
+    if (url.endsWith("resources")) {
+      runnable = false;
+      return json([{ name: "products" }]);
+    }
+    return json({ data: [] });
+  });
+  await assert.doesNotReject(app.preloadAdminData(new AbortController().signal, () => {
+    if (runnable) return true;
+    if (++pausedWorkers === app.ADMIN_PRELOAD_CONCURRENCY) queueMicrotask(() => { runnable = true; });
+    return false;
+  }, href => routes.push(href)));
+  assert.equal(pausedWorkers, 2);
+  assert.deepEqual(calls, ["/api/backend/data/resources", "/api/backend/data/products?page=1&page_size=20&q="]);
+  assert.deepEqual(routes, ["/data/products"]);
+});
+
 test("logout, a mutation, or server failure stop remaining speculative jobs without replaying writes", async () => {
   for (const reason of ["session", "mutation", "server"]) {
     const state = { session: 0, mutation: 0 }; let calls = 0;

@@ -4955,6 +4955,64 @@
         "title": "QuoteRequest",
         "type": "object"
       },
+      "ReceiptDraftUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "ghi_chu": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ghi Chu"
+          },
+          "ma_kho": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": -2147483648.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kho"
+          },
+          "ma_ncc": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": -2147483648.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Ncc"
+          },
+          "ma_phieu_code": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Phieu Code"
+          }
+        },
+        "title": "ReceiptDraftUpdate",
+        "type": "object"
+      },
       "Recipient": {
         "additionalProperties": false,
         "properties": {
@@ -5150,6 +5208,31 @@
               }
             ],
             "title": "Create Schema"
+          },
+          "draft_update_fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Update Fields"
+          },
+          "draft_update_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Update Path"
           },
           "keys": {
             "items": {
@@ -6535,6 +6618,51 @@
           "pagination"
         ],
         "title": "TransactionPage",
+        "type": "object"
+      },
+      "TransferDraftUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "ghi_chu": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ghi Chu"
+          },
+          "ma_kho_nhan": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": -2147483648.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kho Nhan"
+          },
+          "ma_kho_xuat": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": -2147483648.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Kho Xuat"
+          }
+        },
+        "title": "TransferDraftUpdate",
         "type": "object"
       },
       "UploadedImage": {
@@ -8978,6 +9106,310 @@
         "summary": "Tải ảnh sản phẩm lên Supabase Storage (ADMIN)",
         "tags": [
           "Admin · Hình ảnh"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/warehouse-drafts/receipts": {
+      "patch": {
+        "description": "Chỉ ADMIN. Cập nhật mã phiếu, nhà cung cấp, kho và ghi chú khi trạng thái còn NHAP; không chuyển trạng thái hoặc ghi tồn kho.",
+        "operationId": "update_receipt_api_admin_warehouse_drafts_receipts_patch",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 6000,
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptDraftUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy phiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy phiếu."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Phiếu không còn ở trạng thái nháp."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Phiếu không còn ở trạng thái nháp."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Chỉnh sửa thông tin phiếu nhập nháp",
+        "tags": [
+          "Kho · Phiếu nhập"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/warehouse-drafts/transfers": {
+      "patch": {
+        "description": "Chỉ ADMIN. Cập nhật kho xuất, kho nhận và ghi chú khi trạng thái còn NHAP; không chuyển trạng thái hoặc ghi tồn kho.",
+        "operationId": "update_transfer_api_admin_warehouse_drafts_transfers_patch",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 6000,
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferDraftUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy phiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy phiếu."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Phiếu không còn ở trạng thái nháp."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Phiếu không còn ở trạng thái nháp."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Chỉnh sửa thông tin phiếu chuyển kho nháp",
+        "tags": [
+          "Kho · Chuyển kho"
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
@@ -16683,7 +17115,7 @@
     },
     "/api/data/receipts": {
       "get": {
-        "description": "Bảng `PHIEU_NHAP`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_nhap`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `PHIEU_NHAP`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/receipts`; không thay đổi trạng thái/tồn kho. \n\nKhóa chính: `ma_phieu_nhap`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_receipts",
         "parameters": [
           {
@@ -16875,7 +17307,7 @@
     },
     "/api/data/resources": {
       "get": {
-        "description": "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền của role, không phải mọi bảng đều có API ghi. create_schema là JSON Schema cho body tạo; không có hash mật khẩu.",
+        "description": "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền ghi chung của role. draft_update_path và draft_update_fields chỉ cấp cho ADMIN sửa thông tin phiếu nháp qua API riêng. create_schema là JSON Schema cho body tạo; không có mật khẩu.",
         "operationId": "resources_api_data_resources_get",
         "responses": {
           "200": {
@@ -18240,7 +18672,7 @@
     },
     "/api/data/transfers": {
       "get": {
-        "description": "Bảng `PHIEU_CHUYEN_KHO`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `PHIEU_CHUYEN_KHO`. Role: **ADMIN, THU_KHO**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/transfers`; không thay đổi trạng thái/tồn kho. \n\nKhóa chính: `ma_phieu_chuyen`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_transfers",
         "parameters": [
           {
