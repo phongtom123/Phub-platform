@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ScrollableTable } from "../tables/scrollable-table";
 import { accountApi, errorMessage, jsonRequest } from "./api";
 import { accountHref, roleLabels, statusLabels, type Account, type AccountStatus } from "./types";
 
@@ -134,6 +135,7 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
     const editingId = editor.id;
     function isOutside(target: EventTarget | null) {
       if (!(target instanceof Element)) return false;
+      if (target.closest("[data-table-scrollbar]") || target.matches("[data-table-scroll-viewport]")) return false;
       // Switching fields within the row is not a save; a detail link is navigation.
       return !rowNodes.current.get(editingId)?.contains(target) || Boolean(target.closest("a[href]"));
     }
@@ -164,7 +166,7 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
     <p className="admin-sr-only" id={hintId}>Nhấp đúp vào một hàng để đổi tên đăng nhập và email. Bấm ra ngoài hàng hoặc nhấn Enter để tự lưu; Esc để bỏ thay đổi. Chọn trạng thái trong dropdown để cập nhật; phân quyền được quản lý trong Chi tiết.</p>
     {error && <p className="live-error" id={errorId} role="alert">{error}</p>}
     {notice && <p className="live-note" role="status">{notice}</p>}
-    <div className="live-table account-inline-table"><table aria-describedby={hintId}>
+    <ScrollableTable className="account-inline-table"><table aria-describedby={hintId}>
       <thead><tr><th>Mã tài khoản</th><th>Tên đăng nhập</th><th>Chủ tài khoản</th><th>Email</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>{rows.map(row => {
         const editing = editor?.id === row.ma_tk;
@@ -188,7 +190,7 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
           <td><div className="account-row-actions"><Link href={accountHref(row.ma_tk)}>Chi tiết</Link>{editing && saving && <span role="status">Đang lưu…</span>}</div></td>
         </tr>;
       })}</tbody>
-    </table>{!rows.length && <p className="live-note">Không có tài khoản phù hợp.</p>}</div>
+    </table>{!rows.length && <p className="live-note">Không có tài khoản phù hợp.</p>}</ScrollableTable>
     {requestedEdit && !rows.some(row => row.ma_tk === requestedEdit) && <p className="live-note">Không tìm thấy tài khoản {requestedEdit} trong kết quả để chỉnh sửa. <button type="button" onClick={onRequestedEditHandled}>Bỏ yêu cầu sửa</button></p>}
   </>;
 }

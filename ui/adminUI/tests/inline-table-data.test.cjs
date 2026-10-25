@@ -9,6 +9,7 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../s
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText, sandbox);
 const { inlinePatch, dataRowKey } = sandbox.exports;
+const { inlineDraftValue, inlineOptions, inlineChoiceLabel } = sandbox.exports;
 const column = (name, options = {}) => ({ name, type: "varchar", required: false, ...options });
 const patch = (...args) => JSON.parse(JSON.stringify(inlinePatch(...args, name => name)));
 
@@ -30,4 +31,33 @@ test("required/integer/status constraints match the table API; signed warehouse 
   assert.deepEqual(patch(columns, [], { trang_thai: 1 }, { trang_thai: "0" }), { trang_thai: 0 });
   for (const value of ["1.5", "NaN", "2147483648", "3"]) assert.throws(() => patch(columns, [], {}, { trang_thai: value }));
   assert.throws(() => patch([column("ten_kh")], [], {}, { ten_kh: "a".repeat(2001) }), /quá dài/);
+});
+
+test("product prices retain decimal precision and reject negative or out-of-range amounts and warranties", () => {
+  const price = column("gia_ban_hien_tai", { type: "decimal(18,2)", required: true });
+  assert.deepEqual(patch([price], [], {}, { gia_ban_hien_tai: "9999999999999999.99" }), { gia_ban_hien_tai: "9999999999999999.99" });
+  assert.deepEqual(patch([price], [], {}, { gia_ban_hien_tai: "0" }), { gia_ban_hien_tai: "0" });
+  for (const value of ["-1", "NaN", "1e6", "12.345", "10000000000000000", "1,000"]) {
+    assert.throws(() => patch([price], [], {}, { gia_ban_hien_tai: value }), /không âm/);
+  }
+  assert.throws(() => patch([column("bao_hanh_thang", { type: "int" })], [], {}, { bao_hanh_thang: "-1" }), /không âm/);
+});
+
+test("enum labels remain Vietnamese while requests preserve backend string codes", () => {
+  const status=column("trang_thai",{choices:["NHAP","HOAT_DONG","TAM_DUNG","KET_THUC"]});
+  assert.deepEqual(patch([status],[],{trang_thai:"NHAP"},{trang_thai:"TAM_DUNG"}),{trang_thai:"TAM_DUNG"});
+  assert.equal(inlineChoiceLabel("trang_thai","DA_NHAP"),"Đã nhập");
+  assert.equal(inlineChoiceLabel("loai_nhan_vien","THU_KHO"),"Nhân viên kho");
+  assert.equal(inlineChoiceLabel("loai_giam","PHAN_TRAM"),"Phần trăm");
+  assert.equal(inlineOptions(status)[1].label,"Hoạt động");
+  assert.throws(()=>patch([status],[],{}, {trang_thai:"1"}),/không hợp lệ/);
+});
+
+test("editing another field never resends normalized timestamps; datetime edits use Vietnam time", () => {
+  const date=column("ngay_ket_thuc",{type:"datetime",required:true});
+  const row={ngay_ket_thuc:"2026-10-25T01:30:00.123456Z",ten_chuong_trinh:"Cũ"};
+  const original=inlineDraftValue(date,row.ngay_ket_thuc);
+  assert.equal(original,"2026-10-25T08:30:00");
+  assert.deepEqual(patch([date,column("ten_chuong_trinh")],[],row,{ngay_ket_thuc:original,ten_chuong_trinh:"Mới"}),{ten_chuong_trinh:"Mới"});
+  assert.deepEqual(patch([date],[],row,{ngay_ket_thuc:"2026-10-28T08:30:00"}),{ngay_ket_thuc:"2026-10-28T01:30:00.000Z"});
 });

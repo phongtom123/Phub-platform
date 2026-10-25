@@ -32,6 +32,7 @@ const resources = new Set([
 
 function validAdminPath(path: string[], method: string): boolean {
   if (path[0] !== "admin") return false;
+  if (path.length === 3 && path[1] === "warehouse-drafts" && ["receipts", "transfers"].includes(path[2])) return method === "PATCH";
   if (path.length === 3 && path[1] === "media" && path[2] === "images") return method === "POST";
   if (path.length === 2) {
     return (path[1] === "accounts" && ["GET", "POST"].includes(method)) ||

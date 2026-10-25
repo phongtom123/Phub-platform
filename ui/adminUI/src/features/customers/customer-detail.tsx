@@ -3,17 +3,22 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
 import { adminFetch, sameAdminData } from "@/src/lib/admin-fetch";
 import { useAdminPolling } from "@/src/lib/use-admin-polling";
 import { dataHref } from "@/src/lib/data-navigation";
 import { customerAge, customerFields, customerIdFromKey, customerPatch, vietnamDate,
   type CustomerDetail as Detail, type CustomerField, type CustomerOrderPage } from "@/src/lib/customer-profile";
+import { CustomerProfileView } from "./customer-profile-view";
+import { ScrollableTable } from "../tables/scrollable-table";
+import styles from "./customer-detail.module.css";
 
 const fields = Object.keys(customerFields) as CustomerField[];
-const accountStatus: Record<number, string> = { 0: "Đã ẩn", 1: "Hoạt động", 2: "Tạm khóa" };
 const orderStatus: Record<string, string> = { MOI: "Mới", XAC_NHAN: "Đã xác nhận", DANG_CHUAN_BI: "Đang chuẩn bị", DA_XUAT_KHO: "Đã xuất kho", HOAN_THANH: "Hoàn thành", HUY: "Đã hủy" };
 const displayDate = (value: string | null, dateOnly = false) => !value ? "Chưa có thông tin" :
-  dateOnly ? value.split("-").reverse().join("/") : new Date(value).toLocaleString("vi-VN");
+  dateOnly ? value.split("-").reverse().join("/") : new Date(
+    /(Z|[+-]\d{2}:?\d{2})$/i.test(value) ? value : value + "+07:00",
+  ).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await adminFetch("/api/backend/" + path, options);
@@ -106,7 +111,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   }
 
   const age = customerAge(data?.profile.ngay_sinh ?? null);
-  return <section className="live-data customer-detail">
+  return <section className={`live-data customer-detail ${styles.page}`}>
     <div className="live-page-actions">
       <button type="button" disabled={saving} onClick={() => router.push(dataHref("customers"))}>← Quay lại</button>
       {data && !editMode && !error && <Link className="live-primary" href={dataHref("customers", { key: recordKey, edit: true })}>Chỉnh sửa</Link>}
@@ -115,7 +120,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
     {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi, đang hiển thị dữ liệu lần trước. {pollError}</p>}
     {error && <p className="live-error" role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button></p>}
     {loading ? <p role="status">Đang tải hồ sơ khách hàng…</p> : data && !error && <>
-      {editMode ? <form className="live-form" onSubmit={save}>
+      {editMode ? <form className={`live-form ${styles.editForm}`} onSubmit={save}>
         <fieldset className="live-form-fields" disabled={saving}>
           {fields.map(field => <label key={field}>{customerFields[field]}{field === "ten_kh" && " *"}
             <input aria-label={customerFields[field]} type={field === "ngay_sinh" ? "date" : field === "sdt" ? "tel" : "text"}
@@ -126,39 +131,25 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
         {saveError && <p className="live-error customer-wide" role="alert">{saveError}</p>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving}>{saving ? "Đang lưu…" : "Lưu hồ sơ"}</button>
           {!saving && <Link href={detailHref}>Hủy</Link>}</div>
-      </form> : <>
-        <section className="customer-card"><h3>Thông tin khách hàng</h3><div className="customer-grid">
-          <div className="live-field"><strong>Mã khách hàng</strong>{data.profile.ma_kh}</div>
-          {fields.map(field => <div className="live-field" key={field}><strong>{customerFields[field]}</strong>
-            {field === "ngay_sinh" ? displayDate(data.profile[field], true) : data.profile[field] || "Chưa có thông tin"}</div>)}
-          <div className="live-field"><strong>Tuổi</strong>{age === null ? "Chưa có thông tin" : `${age} tuổi`}</div>
-          <div className="live-field"><strong>Ngày tạo hồ sơ</strong>{displayDate(data.profile.ngay_tao)}</div>
-          <div className="live-field"><strong>Cập nhật lần cuối</strong>{displayDate(data.profile.cap_nhat_luc)}</div>
-          <div className="live-field"><strong>Trạng thái hồ sơ</strong>{data.profile.luu_tru_luc ? "Đã lưu trữ" : "Chưa lưu trữ"}</div>
-        </div></section>
-        <section className="customer-card"><h3>Tài khoản liên kết</h3>
-          {data.account ? <div className="customer-grid">
-            <div className="live-field"><strong>Mã tài khoản</strong><Link href={`/accounts/${encodeURIComponent(data.account.ma_tk)}`}>{data.account.ma_tk}</Link></div>
-            <div className="live-field"><strong>Tên đăng nhập</strong>{data.account.ten_tai_khoan}</div>
-            <div className="live-field"><strong>Email</strong>{data.account.email || "Chưa có thông tin"}</div>
-            <div className="live-field"><strong>Trạng thái tài khoản</strong>{accountStatus[data.account.trang_thai] ?? "Không xác định"}</div>
-          </div> : <p>Khách hàng chưa có tài khoản liên kết.</p>}
-        </section>
-      </>}
-      <section className="customer-card"><div className="customer-section-actions"><h3>Lịch sử đơn hàng</h3>
-        <button type="button" onClick={() => setOrdersOpen(value => !value)}>{ordersOpen ? "Thu gọn" : "Xem đơn hàng"}</button></div>
-        {ordersOpen && <>
+      </form> : <CustomerProfileView data={data} age={age} formatDate={displayDate} />}
+      <section className={`${styles.card} ${styles.history}`}><div className={styles.historyHeading}>
+        <div><h2><ShoppingBag size={20} aria-hidden="true" />Lịch sử đơn hàng</h2><p>Tra cứu các đơn hàng của khách hàng này</p></div>
+        <button className={styles.historyToggle} type="button" aria-expanded={ordersOpen} aria-controls="customer-order-history" onClick={() => setOrdersOpen(value => !value)}>
+          {ordersOpen ? "Thu gọn" : "Xem đơn hàng"}{ordersOpen ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+        </button></div>
+        {ordersOpen && <div id="customer-order-history" className={styles.historyContent}>
           {ordersError && <p className="live-error" role="alert">{ordersError} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button></p>}
           {ordersLoading ? <p role="status">Đang tải đơn hàng…</p> : !ordersError && orders && <>
-            <div className="live-table"><table><thead><tr><th>Mã đơn hàng</th><th>Ngày đặt</th><th>Kênh bán</th><th>Trạng thái</th></tr></thead>
+            {orders.data.length ? <><ScrollableTable><table><thead><tr><th>Mã đơn hàng</th><th>Ngày đặt</th><th>Kênh bán</th><th>Trạng thái</th></tr></thead>
               <tbody>{orders.data.map(order => <tr key={order.ma_donhang}><td><Link href={dataHref("orders", { key: JSON.stringify([order.ma_donhang]) })}>{order.ma_donhang}</Link></td>
-                <td>{displayDate(order.thoi_gian_dat)}</td><td>{order.kenh_ban === "ONLINE" ? "Trực tuyến" : "Tại quầy"}</td><td>{orderStatus[order.trang_thai] ?? order.trang_thai}</td></tr>)}</tbody></table>
-              {!orders.data.length && <p>Khách hàng chưa có đơn hàng.</p>}</div>
+                <td>{displayDate(order.thoi_gian_dat)}</td><td>{order.kenh_ban === "ONLINE" ? "Trực tuyến" : order.kenh_ban === "TAI_QUAY" ? "Tại quầy" : "Chưa xác định"}</td>
+                <td><span className={`${styles.status} ${order.trang_thai === "HOAN_THANH" ? styles.complete : order.trang_thai === "HUY" ? styles.cancelled : ""}`}>{orderStatus[order.trang_thai] ?? "Chưa xác định"}</span></td></tr>)}</tbody></table></ScrollableTable>
             <div className="live-tools"><span>{orders.total} đơn hàng · Trang {page}</span>
               <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button>
-              <button disabled={page * 10 >= orders.total} onClick={() => setPage(p => p + 1)}>Sau</button></div>
+              <button disabled={page * 10 >= orders.total} onClick={() => setPage(p => p + 1)}>Sau</button></div></>
+            : <div className={styles.emptyOrders}><ShoppingBag size={30} aria-hidden="true" /><p>Khách hàng chưa có đơn hàng.</p></div>}
           </>}
-        </>}
+        </div>}
       </section>
     </>}
   </section>;

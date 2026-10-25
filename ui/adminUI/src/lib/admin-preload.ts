@@ -45,7 +45,11 @@ export async function preloadAdminData(signal: AbortSignal, canRun: () => boolea
     while (alive() && cursor < jobs.length) {
       while (alive() && !canRun()) await pause();
       if (!alive()) return;
-      const job = jobs[cursor++];
+      // Another worker may consume the final job while this worker is paused.
+      // Check and claim together, without yielding between these operations.
+      const job = jobs[cursor];
+      if (!job) return;
+      cursor++;
       const body = await read(job.path);
       if (alive() && body && Array.isArray(body.data)) {
         try { prefetchRoute(job.href); } catch { /* Route warming is optional, data remains usable. */ }

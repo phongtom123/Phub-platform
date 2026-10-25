@@ -73,3 +73,8 @@ class TablesRepository:
 
     def update(self, name, keys, values):
         return apply_keys(self.client.table(RESOURCES[name].table).update(values), name, keys).execute().data
+
+    def update_draft(self, name, keys, values):
+        # The state guard is part of the UPDATE, closing the read/confirm/write race.
+        query = self.client.table(RESOURCES[name].table).update(values).eq("trang_thai", "NHAP")
+        return apply_keys(query, name, keys).execute().data
