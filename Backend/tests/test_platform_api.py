@@ -90,7 +90,10 @@ def test_order_filter_combines_with_primary_key(platform_client):
 
 def test_schema_all_tables_and_metadata(platform_client):
     client, _, _ = platform_client
-    assert len(schema()) == 21
+    assert len(schema()) == 22
+    media_columns = {column["name"]: column for column in schema()["MEDIA"]}
+    assert media_columns["la_anh_chinh"]["type"] == "boolean"
+    assert media_columns["la_anh_chinh"]["default"] is False
     assert len(RESOURCES) == 20  # Support tickets are not unrestricted generic CRUD.
     assert not {"SO_THICH", "KHACH_HANG_SO_THICH", "PHAN_HOI"}.intersection(r.table for r in RESOURCES.values())
     resources = client.get("/api/data/resources").json()

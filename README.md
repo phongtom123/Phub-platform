@@ -10,10 +10,9 @@ Browser → Next.js /api/backend/* → FastAPI :8000 → Supabase
 
 ```text
 Phub-platform/
-├── database/
-│   ├── schema.dbml                  # 19 bảng, không có chi nhánh
-│   └── migrations/001_initial_schema.sql
 ├── Backend/
+│   ├── schema.dbml                  # 22 bảng, gồm media dùng chung, không có chi nhánh
+│   ├── migrations/001_initial_schema.sql
 │   ├── phub_api/
 │   │   ├── main.py
 │   │   ├── config/
@@ -151,12 +150,12 @@ Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tà
 ## Những phần đã nối backend
 
 - Đăng nhập, đăng ký khách hàng, phiên cookie HttpOnly, kiểm tra role/trạng thái/kho và đăng xuất.
-- API đọc/phân trang/tìm kiếm cho 19 bảng, kiểm tra scope theo role.
+- API dữ liệu chung đọc/phân trang/tìm kiếm cho 20 tài nguyên; media và hỗ trợ khách hàng dùng endpoint chuyên biệt, tất cả đều kiểm tra scope theo role.
 - Tạo/sửa 9 bảng dữ liệu nền: kho, nhân viên, tài khoản, khách hàng, loại sản phẩm, sản phẩm, nhà cung cấp, chương trình khuyến mãi, voucher.
 - Danh sách/chi tiết/form dữ liệu thật trên admin và kho, route riêng `/data/{resource}`; URL chi tiết cũ chuyển sang route này.
 - Dashboard không còn dùng các số liệu doanh thu/tồn kho giả; số liệu danh sách lấy qua API.
 - Catalog/chi tiết sản phẩm khách hàng giữ kết nối API có sẵn; đăng nhập và hồ sơ/đơn/hóa đơn/thanh toán của khách đã dùng API theo tài khoản.
-- Sản phẩm sửa ảnh bằng URL `duong_dan_anh`. Upload file và ảnh chương trình chưa có schema/API.
+- Media sản phẩm nằm trực tiếp trong `MEDIA` qua `ma_sp`; `duong_dan_anh` còn dùng để tương thích ảnh chính. Ảnh đại diện tài khoản trỏ tới cùng bảng media.
 
 Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hình/kết nối hoặc danh sách rỗng thực tế. Cài đặt, thông báo, giỏ hàng, checkout và liên hệ chưa kết nối API: không hiển thị dữ liệu mẫu hay báo lưu/gửi thành công giả.
 

@@ -12,7 +12,8 @@ PRODUCT_COLUMNS = (
     "ma_sp,sku,ten_sp,thuong_hieu,gia_ban_hien_tai::text,mo_ta,"
     "thong_so_ky_thuat,don_vi,bao_hanh_thang,duong_dan_anh,ma_loai_sp_con,"
     "category:LOAI_SP!inner(ma_loai_sp,ten_loai_sp,trang_thai),"
-    "subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(ma_loai_sp_con,ten_loai_sp_con,trang_thai)"
+    "subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(ma_loai_sp_con,ten_loai_sp_con,trang_thai),"
+    "product_media:MEDIA!MEDIA_product_fkey(ma_media,url,alt_text,thu_tu,la_anh_chinh)"
 )
 BATCH_SIZE = 500
 

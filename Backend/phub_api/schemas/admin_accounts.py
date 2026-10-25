@@ -138,6 +138,7 @@ class AccountRead(BaseModel):
     ma_kho: int | None
     owner_active: bool
     is_self: bool
+    avatar_url: str | None = None
 
 
 class AccountPage(BaseModel):

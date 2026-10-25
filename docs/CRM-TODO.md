@@ -44,7 +44,7 @@ Yêu cầu đồ án được đối chiếu từ tài liệu Word người dùn
 
 ### Những phần tái sử dụng
 
-- [Schema hiện tại](../database/schema.dbml): khách hàng, tài khoản, nhân viên,
+- [Schema hiện tại](../Backend/schema.dbml): khách hàng, tài khoản, nhân viên,
   sản phẩm, đơn hàng, hóa đơn và thanh toán.
 - [API xác thực](../Backend/phub_api/controllers/auth.py): đăng ký/đăng nhập khách.
 - [API tài khoản](../Backend/phub_api/controllers/admin_accounts.py): tạo tài khoản,
@@ -212,7 +212,7 @@ trên website khách, rating hoặc hội thoại nhiều lượt; các mục d�
 - [ ] Backup DB trước thay đổi; thử phục hồi backup trên môi trường tách biệt.
 - [ ] Dùng migration nâng cấp có phiên bản trong `Backend/migrations/`, theo
   quy ước đang có; không chạy lại `001_initial_schema.sql` trên DB có dữ liệu.
-- [ ] Cập nhật `database/schema.dbml` theo thiết kế đã duyệt và đồng bộ luồng tạo
+- [ ] Cập nhật `Backend/schema.dbml` theo thiết kế đã duyệt và đồng bộ luồng tạo
   DB trống; không chỉ sửa SQL mà quên DBML hoặc ngược lại.
 - [ ] Chạy thử cả hai đường: DB cũ có dữ liệu và DB trống mới dựng.
 - [ ] Giữ PK/FK, trạng thái và dữ liệu bán hàng hiện tại; tránh đổi tên bảng/cột cũ.

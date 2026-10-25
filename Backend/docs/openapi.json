@@ -107,6 +107,17 @@
       },
       "AccountRead": {
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "email": {
             "anyOf": [
               {
@@ -6148,6 +6159,7 @@
         "example": {
           "email": "example@example.com",
           "ma_kh": null,
+          "ma_media_anh_dai_dien": null,
           "ma_nhan_vien": "NV001",
           "ma_tk": "TK001",
           "ten_tai_khoan": "example.admin",
@@ -6175,6 +6187,17 @@
               }
             ],
             "description": "ma_kh"
+          },
+          "ma_media_anh_dai_dien": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_media_anh_dai_dien"
           },
           "ma_nhan_vien": {
             "anyOf": [
@@ -6204,6 +6227,7 @@
           "ma_tk",
           "ten_tai_khoan",
           "email",
+          "ma_media_anh_dai_dien",
           "ma_kh",
           "ma_nhan_vien",
           "trang_thai"
@@ -6551,6 +6575,10 @@
             "title": "Height",
             "type": "integer"
           },
+          "media_id": {
+            "title": "Media Id",
+            "type": "string"
+          },
           "path": {
             "title": "Path",
             "type": "string"
@@ -6569,6 +6597,7 @@
           }
         },
         "required": [
+          "media_id",
           "bucket",
           "path",
           "url",
@@ -7010,6 +7039,17 @@
               }
             ],
             "title": "Address Line"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
           },
           "customer_id": {
             "title": "Customer Id",
@@ -11828,6 +11868,146 @@
         ]
       }
     },
+    "/api/customer/me/avatar": {
+      "post": {
+        "operationId": "upload_avatar_api_customer_me_avatar_post",
+        "requestBody": {
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "format": "binary",
+                "type": "string"
+              }
+            }
+          },
+          "description": "File ảnh nhị phân JPG, PNG hoặc WebP; tối đa 5 MB.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedImage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Ảnh vượt quá 5 MB."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Ảnh vượt quá 5 MB."
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chỉ hỗ trợ JPG, PNG hoặc WebP."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chỉ hỗ trợ JPG, PNG hoặc WebP."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Tải ảnh đại diện cho tài khoản khách đang đăng nhập",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
     "/api/customer/orders": {
       "get": {
         "operationId": "list_orders_api_customer_orders_get",
@@ -12579,6 +12759,7 @@
                     {
                       "email": "example@example.com",
                       "ma_kh": null,
+                      "ma_media_anh_dai_dien": null,
                       "ma_nhan_vien": "NV001",
                       "ma_tk": "TK001",
                       "ten_tai_khoan": "example.admin",
@@ -20560,7 +20741,7 @@
       "name": "Customer Shopping"
     }
   ],
-  "x-database-schema": "database/schema.dbml",
+  "x-database-schema": "Backend/schema.dbml",
   "x-live-database-verified": false,
   "x-not-implemented": [
     "Live deployment of customer checkout/payment RPCs",

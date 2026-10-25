@@ -77,6 +77,27 @@ create table public."SAN_PHAM" (
   check (bao_hanh_thang >= 0)
 );
 
+create table public."MEDIA" (
+  "ma_media" uuid primary key default gen_random_uuid(),
+  "ma_sp" varchar,
+  "thu_tu" int check (thu_tu >= 0),
+  "la_anh_chinh" boolean not null default false,
+  "storage_bucket" varchar,
+  "storage_path" varchar,
+  "url" varchar not null,
+  "mime_type" varchar,
+  "alt_text" varchar,
+  "kich_thuoc_bytes" int check (kich_thuoc_bytes >= 0),
+  "chieu_rong" int check (chieu_rong > 0),
+  "chieu_cao" int check (chieu_cao > 0),
+  "ngay_tao" timestamptz not null default now(),
+  unique (ma_sp, thu_tu),
+  unique (ma_sp, url),
+  check ((storage_bucket is null) = (storage_path is null)),
+  check ((ma_sp is null and thu_tu is null and la_anh_chinh = false)
+      or (ma_sp is not null and thu_tu is not null))
+);
+
 create table public."TON_KHO" (
   "ma_kho" int not null,
   "sku" varchar not null,
@@ -250,9 +271,12 @@ create table public."SU_DUNG_VOUCHER" (
 alter table public."NHAN_VIEN" add constraint "fk_0_NHAN_VIEN" foreign key ("ma_kho") references public."KHO" ("ma_kho");
 alter table public."TAI_KHOAN" add constraint "fk_1_TAI_KHOAN" foreign key ("ma_kh") references public."KHACH_HANG" ("ma_kh");
 alter table public."TAI_KHOAN" add constraint "fk_2_TAI_KHOAN" foreign key ("ma_nhan_vien") references public."NHAN_VIEN" ("ma_nhan_vien");
+alter table public."TAI_KHOAN" add column "ma_media_anh_dai_dien" uuid;
+alter table public."TAI_KHOAN" add constraint "TAI_KHOAN_avatar_media_fkey" foreign key ("ma_media_anh_dai_dien") references public."MEDIA" ("ma_media") on delete set null;
 alter table public."SAN_PHAM" add constraint "fk_3_SAN_PHAM" foreign key ("ma_loai_sp") references public."LOAI_SP" ("ma_loai_sp");
 alter table public."LOAI_SP_CON" add constraint "LOAI_SP_CON_ma_loai_sp_fkey" foreign key ("ma_loai_sp") references public."LOAI_SP" ("ma_loai_sp");
 alter table public."SAN_PHAM" add constraint "SAN_PHAM_loai_sp_con_fkey" foreign key ("ma_loai_sp", "ma_loai_sp_con") references public."LOAI_SP_CON" ("ma_loai_sp", "ma_loai_sp_con");
+alter table public."MEDIA" add constraint "MEDIA_product_fkey" foreign key ("ma_sp") references public."SAN_PHAM" ("ma_sp") on delete cascade;
 alter table public."TON_KHO" add constraint "fk_4_TON_KHO" foreign key ("ma_kho") references public."KHO" ("ma_kho");
 alter table public."TON_KHO" add constraint "fk_5_TON_KHO" foreign key ("sku") references public."SAN_PHAM" ("sku");
 alter table public."PHIEU_NHAP" add constraint "fk_6_PHIEU_NHAP" foreign key ("ma_ncc") references public."NHA_CUNG_CAP" ("ma_ncc");
@@ -284,6 +308,71 @@ alter table public."SU_DUNG_VOUCHER" add constraint "fk_31_SU_DUNG_VOUCHER" fore
 create index "idx_ct_don_hang_order" on public."CT_DON_HANG" ("ma_donhang");
 create index "idx_ct_don_hang_sku" on public."CT_DON_HANG" ("sku");
 create index "SAN_PHAM_loai_sp_subcategory_idx" on public."SAN_PHAM" ("ma_loai_sp", "ma_loai_sp_con");
+create unique index "MEDIA_one_primary_per_product_idx" on public."MEDIA" ("ma_sp") where "ma_sp" is not null and "la_anh_chinh";
+create index "MEDIA_storage_object_idx" on public."MEDIA" ("storage_bucket", "storage_path") where "storage_bucket" is not null;
+create index "TAI_KHOAN_avatar_media_idx" on public."TAI_KHOAN" ("ma_media_anh_dai_dien") where "ma_media_anh_dai_dien" is not null;
+
+create function public.sync_product_primary_media()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_media_id uuid;
+begin
+  if nullif(btrim(new."duong_dan_anh"), '') is null then
+    update public."MEDIA"
+    set "ma_sp" = null, "thu_tu" = null, "la_anh_chinh" = false
+    where "ma_sp" = new."ma_sp" and ("la_anh_chinh" or "thu_tu" = 0);
+    return new;
+  end if;
+
+  select media."ma_media"
+  into v_media_id
+  from public."MEDIA" media
+  where media."url" = btrim(new."duong_dan_anh")
+    and (
+      media."ma_sp" = new."ma_sp"
+      or (
+        media."ma_sp" is null
+        and not exists (
+          select 1
+          from public."TAI_KHOAN" account
+          where account."ma_media_anh_dai_dien" = media."ma_media"
+        )
+      )
+    )
+  order by (media."ma_sp" is not null) desc, media."ngay_tao" desc, media."ma_media"
+  limit 1;
+
+  update public."MEDIA"
+  set "ma_sp" = null, "thu_tu" = null, "la_anh_chinh" = false
+  where "ma_sp" = new."ma_sp"
+    and ("la_anh_chinh" or "thu_tu" = 0)
+    and (v_media_id is null or "ma_media" <> v_media_id);
+
+  if v_media_id is null then
+    insert into public."MEDIA" ("ma_sp", "thu_tu", "la_anh_chinh", "url", "alt_text")
+    values (new."ma_sp", 0, true, btrim(new."duong_dan_anh"), new."ten_sp");
+  else
+    update public."MEDIA"
+    set "ma_sp" = new."ma_sp",
+        "thu_tu" = 0,
+        "la_anh_chinh" = true,
+        "alt_text" = coalesce("alt_text", new."ten_sp")
+    where "ma_media" = v_media_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger "SAN_PHAM_sync_primary_media"
+after insert or update of "duong_dan_anh" on public."SAN_PHAM"
+for each row execute function public.sync_product_primary_media();
+
+revoke all on function public.sync_product_primary_media() from public, anon, authenticated;
+grant execute on function public.sync_product_primary_media() to service_role;
 
 -- This project uses FastAPI authorization, not direct browser table access.
 alter table public."KHO" enable row level security;
@@ -307,6 +396,9 @@ grant all on table public."LOAI_SP_CON" to service_role;
 alter table public."SAN_PHAM" enable row level security;
 revoke all on table public."SAN_PHAM" from anon, authenticated;
 grant all on table public."SAN_PHAM" to service_role;
+alter table public."MEDIA" enable row level security;
+revoke all on table public."MEDIA" from public, anon, authenticated;
+grant all on table public."MEDIA" to service_role;
 alter table public."TON_KHO" enable row level security;
 revoke all on table public."TON_KHO" from anon, authenticated;
 grant all on table public."TON_KHO" to service_role;

@@ -9,7 +9,7 @@ cho bản danh mục phẳng. Nếu database đã có cột cha, có thể để
 
 Trong **Settings → Build & Deploy**, dùng các giá trị dưới đây. Root Directory
 để trống (gốc repository), hoặc `.`. Không đặt `Backend` hay `ui/userUI/Frontend`:
-API cần `database/schema.dbml`, còn frontend cần `ui/shared` bên ngoài thư mục app.
+API cần `Backend/schema.dbml`, còn frontend cần `ui/shared` bên ngoài thư mục app.
 
 | Cài đặt | API `phub-api` | Website `phub-platform` |
 | --- | --- | --- |
@@ -52,7 +52,7 @@ Turbopack cũ. Không cần cài thêm package `@vercel/turbopack/postcss`.
 
 Build Filters (Included Paths, tính từ gốc repository):
 
-- API: `Backend/**`, `database/schema.dbml`.
+- API: `Backend/**`.
 - Website: `ui/userUI/Frontend/**`, `ui/shared/**`.
 
 ## Environment

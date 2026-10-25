@@ -32,7 +32,7 @@ async function failsWithoutWrites(overrides, code, message) {
 
 try {
   await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");
-  await db.exec(await readFile(new URL("../../database/migrations/001_initial_schema.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../migrations/001_initial_schema.sql", import.meta.url), "utf8"));
   const migration = await readFile(new URL("../migrations/20261010_admin_account_creation.sql", import.meta.url), "utf8");
   await db.exec(migration);
   await db.exec(migration);

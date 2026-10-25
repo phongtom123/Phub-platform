@@ -3,6 +3,7 @@ import json
 import re
 
 ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,email,ma_nhan_vien,ma_kh,trang_thai"
+ACCOUNT_PROJECTION = ACCOUNT_COLUMNS + ",avatar:MEDIA!TAI_KHOAN_avatar_media_fkey(url)"
 EMPLOYEE_COLUMNS = "ma_nhan_vien,ho_ten,loai_nhan_vien,ma_kho,trang_thai"
 
 
@@ -19,7 +20,7 @@ class AccountsRepository:
         return self.client.table("NHAN_VIEN").select(EMPLOYEE_COLUMNS).eq("ma_nhan_vien", identifier).limit(1).execute().data
 
     def account(self, identifier):
-        return self.client.table("TAI_KHOAN").select(ACCOUNT_COLUMNS).eq("ma_tk", identifier).limit(1).execute().data
+        return self.client.table("TAI_KHOAN").select(ACCOUNT_PROJECTION).eq("ma_tk", identifier).limit(1).execute().data
 
     def customer(self, identifier):
         return self.client.table("KHACH_HANG").select("ma_kh,ten_kh").eq("ma_kh", identifier).limit(1).execute().data
@@ -29,7 +30,7 @@ class AccountsRepository:
 
     def page(self, page, page_size, q, status, role):
         employee_join = "!inner" if role in {"ADMIN", "THU_KHO"} else ""
-        projection = ACCOUNT_COLUMNS + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh)"
+        projection = ACCOUNT_PROJECTION + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh)"
         query = self.client.table("TAI_KHOAN").select(projection, count="exact")
         if q.strip():
             query = query.or_(literal_search(q, ("ma_tk", "ten_tai_khoan", "email")))

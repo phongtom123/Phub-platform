@@ -10,7 +10,7 @@ async function main() {
   const db = await PGlite.create();
   try {
     await db.exec('create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to service_role;');
-    await db.exec(read('database/migrations/001_initial_schema.sql'));
+    await db.exec(read('Backend/migrations/001_initial_schema.sql'));
     await db.exec(read('Backend/migrations/20261010_admin_account_creation.sql'));
     await db.exec(read('Backend/migrations/20261011080003_customer_self_registration.sql'));
     await db.exec(`insert into public."NHAN_VIEN"(ma_nhan_vien,loai_nhan_vien,ho_ten) values ('NV1','ADMIN','Admin');

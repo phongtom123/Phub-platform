@@ -71,9 +71,9 @@ Danh mục là danh sách phẳng: catalog trả `id/name` và lọc đúng các
 Không cần migration danh mục cha–con. Nếu database từng thêm cột cha thì bản này
 không đọc hoặc ghi cột đó; các danh mục và sản phẩm hiện có vẫn được giữ.
 
-Nguồn chuẩn là [schema.dbml](../database/schema.dbml), gồm 19 bảng, SKU, loại sản phẩm và tổng tiền giảm trên hóa đơn, không có bảng chi nhánh.
+Nguồn chuẩn là [schema.dbml](schema.dbml), gồm 22 bảng, SKU, loại sản phẩm, media dùng chung và tổng tiền giảm trên hóa đơn, không có bảng chi nhánh.
 
-Nếu Supabase **chưa có bảng/dữ liệu**, kiểm tra rồi chạy [001_initial_schema.sql](../database/migrations/001_initial_schema.sql) trong SQL Editor. Script có transaction, 32 khóa ngoại, check constraints, RLS và chặn truy cập bảng trực tiếp từ vai trò `anon`/`authenticated`.
+Nếu Supabase **chưa có bảng/dữ liệu**, kiểm tra rồi chạy [001_initial_schema.sql](migrations/001_initial_schema.sql) trong SQL Editor. Script có transaction, 36 khóa ngoại, check constraints, RLS và chặn truy cập bảng trực tiếp từ vai trò `anon`/`authenticated`.
 
 Nếu database **đã tồn tại**, không chạy migration tạo mới và không xóa bảng để chạy lại. So sánh tên bảng/cột/khóa ngoại với DBML trước; cần migration nâng cấp riêng. Các bảng dùng tên viết hoa có dấu nháy kép, ví dụ `public."SAN_PHAM"`. Quan hệ FK cần tồn tại để PostgREST lọc theo khách hàng/kho qua các bảng chi tiết.
 
@@ -153,9 +153,9 @@ API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua q
 | promotions / vouchers | CHUONG_TRINH_KHUYEN_MAI / VOUCHER | ADMIN |
 | voucher-uses | SU_DUNG_VOUCHER | Chỉ đọc |
 
-ADMIN xem 19 bảng. THU_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
+ADMIN xem 20 tài nguyên qua API dữ liệu chung; media và hỗ trợ khách hàng có endpoint chuyên biệt. THU_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
 
-Account payload dùng `password`, không nhận trường lưu trữ `mat_khau`/`mat_khau_hash`. Các API đọc không trả mật khẩu. Lưu ý database chủ ý lưu mật khẩu dạng chữ theo cấu hình dự án. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm sửa bằng `duong_dan_anh` (URL); upload file chưa có API. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
+Account payload dùng `password`, không nhận trường lưu trữ `mat_khau`/`mat_khau_hash`. Các API đọc không trả mật khẩu. Lưu ý database chủ ý lưu mật khẩu dạng chữ theo cấu hình dự án. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm upload qua API media; `duong_dan_anh` vẫn được đồng bộ sang ảnh chính trong `MEDIA` để tương thích form cũ. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
 
 Catalog công khai hiện có `/api/catalog/products`, `/products/{ma_sp}`, `/categories`, `/brands` (giữ response contract cũ). Alias `/api/products` còn trả mảng, giới hạn trường công khai và sản phẩm/loại đang hoạt động; ưu tiên API catalog cho tính năng mới.
 

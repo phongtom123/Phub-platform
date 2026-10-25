@@ -8,7 +8,9 @@ class CommerceRepository:
         self.reads = OrderReadRepository(client)
 
     def profile(self, customer_id):
-        return (self.client.table("KHACH_HANG").select("ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md,tinh_thanh_md,xa_phuong_md")
+        return (self.client.table("KHACH_HANG").select(
+                "ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md,tinh_thanh_md,xa_phuong_md,"
+                "account:TAI_KHOAN(avatar:MEDIA!TAI_KHOAN_avatar_media_fkey(url))")
                 .eq("ma_kh", customer_id).limit(1).execute().data)
 
     def save_profile(self, customer_id, values):

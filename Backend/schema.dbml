@@ -34,11 +34,16 @@ Table TAI_KHOAN {
   email varchar [unique]
   mat_khau varchar [not null]
   phien_ban_mat_khau uuid [not null, default: `gen_random_uuid()`]
+  ma_media_anh_dai_dien uuid [note: 'Anh dai dien; NULL voi tai khoan cu hoac chua tai anh']
 
   ma_kh varchar [unique]
   ma_nhan_vien varchar [unique]
 
   trang_thai int [not null, default: 1]
+
+  indexes {
+    (ma_media_anh_dai_dien) [note: 'Partial index khi khac NULL trong migration SQL']
+  }
 
   checks {
     `(ma_kh IS NOT NULL AND ma_nhan_vien IS NULL) OR (ma_kh IS NULL AND ma_nhan_vien IS NOT NULL)`
@@ -120,12 +125,39 @@ Table SAN_PHAM {
   thong_so_ky_thuat text
   don_vi varchar [not null, default: 'Cai']
   bao_hanh_thang int [not null, default: 0]
-  duong_dan_anh varchar [note: 'URL hoac duong dan anh san pham']
+  duong_dan_anh varchar [note: 'Anh cu de tuong thich; gallery moi lay tu MEDIA.ma_sp']
   trang_thai int [not null, default: 1]
 
   checks {
     `gia_ban_hien_tai >= 0`
     `bao_hanh_thang >= 0`
+  }
+}
+
+Table MEDIA {
+  ma_media uuid [pk, default: `gen_random_uuid()`]
+  ma_sp varchar [note: 'NULL neu la avatar hoac media chua gan; moi san pham co the co nhieu media']
+  thu_tu int [check: `thu_tu >= 0`, note: 'Bat buoc khi ma_sp khac NULL']
+  la_anh_chinh boolean [not null, default: false]
+  storage_bucket varchar [note: 'NULL voi URL ngoai hoac duong dan legacy']
+  storage_path varchar [note: 'NULL voi URL ngoai hoac duong dan legacy']
+  url varchar [not null]
+  mime_type varchar
+  alt_text varchar
+  kich_thuoc_bytes int [check: `kich_thuoc_bytes >= 0`]
+  chieu_rong int [check: `chieu_rong > 0`]
+  chieu_cao int [check: `chieu_cao > 0`]
+  ngay_tao timestamptz [not null, default: `now()`]
+
+  indexes {
+    (ma_sp, thu_tu) [unique]
+    (ma_sp, url) [unique]
+    (storage_bucket, storage_path)
+  }
+
+  checks {
+    `(storage_bucket IS NULL) = (storage_path IS NULL)`
+    `(ma_sp IS NULL AND thu_tu IS NULL AND la_anh_chinh = false) OR (ma_sp IS NOT NULL AND thu_tu IS NOT NULL)`
   }
 }
 
@@ -400,12 +432,14 @@ Ref: NHAN_VIEN.ma_kho > KHO.ma_kho
 
 Ref: KHACH_HANG.ma_kh - TAI_KHOAN.ma_kh
 Ref: NHAN_VIEN.ma_nhan_vien - TAI_KHOAN.ma_nhan_vien
+Ref: TAI_KHOAN.ma_media_anh_dai_dien > MEDIA.ma_media
 
 // San pham - Loai san pham - Ton kho
 
 Ref: SAN_PHAM.ma_loai_sp > LOAI_SP.ma_loai_sp
 Ref: LOAI_SP_CON.ma_loai_sp > LOAI_SP.ma_loai_sp
 Ref: SAN_PHAM.(ma_loai_sp, ma_loai_sp_con) > LOAI_SP_CON.(ma_loai_sp, ma_loai_sp_con)
+Ref: MEDIA.ma_sp > SAN_PHAM.ma_sp
 Ref: TON_KHO.ma_kho > KHO.ma_kho
 Ref: TON_KHO.sku > SAN_PHAM.sku
 

@@ -14,7 +14,7 @@ from phub_api.dependencies.auth import current_user
 from phub_api.middleware.errors import register_errors
 from phub_api.services.media import MAX_BYTES, store_image
 from phub_api.repositories.media import MediaRepository
-from phub_api.controllers.media import router
+from phub_api.controllers.media import customer_router, router
 from phub_api.config.database import get_supabase
 
 ORIGIN = {"Origin": "http://localhost:3000"}
@@ -32,7 +32,7 @@ def image_bytes(kind="PNG", size=(8, 6)):
 def media_client(monkeypatch):
     monkeypatch.setenv("SUPABASE_MEDIA_BUCKET", "media")
     monkeypatch.setenv("FRONTEND_ORIGINS", "http://localhost:3000")
-    state = {"role": "ADMIN", "public": True, "error": None, "uploads": [], "buckets": []}
+    state = {"role": "ADMIN", "public": True, "error": None, "uploads": [], "removed": [], "buckets": [], "media": [], "avatars": {}}
     class Storage:
         def get_bucket(self, name):
             state["buckets"].append(name)
@@ -45,10 +45,35 @@ def media_client(monkeypatch):
             state["uploads"].append(options)
         def get_public_url(self, path):
             return "https://example.supabase.co/storage/v1/object/public/media/" + path
+        def remove(self, paths):
+            state["removed"].extend(paths)
+    class Query:
+        def __init__(self, table, operation, values=None):
+            self.table, self.operation, self.values, self.filters = table, operation, values, {}
+        def eq(self, field, value): self.filters[field] = value; return self
+        def execute(self):
+            if self.table == "MEDIA" and self.operation == "insert":
+                row = {"ma_media": "00000000-0000-0000-0000-000000000001", **self.values}
+                state["media"].append(row)
+                return SimpleNamespace(data=[row])
+            assert self.table == "TAI_KHOAN" and self.operation == "update"
+            account_id = self.filters["ma_tk"]
+            state["avatars"][account_id] = self.values["ma_media_anh_dai_dien"]
+            return SimpleNamespace(data=[{"ma_tk": account_id, **self.values}])
+    class Table:
+        def __init__(self, name): self.name = name
+        def insert(self, values): return Query(self.name, "insert", values)
+        def update(self, values): return Query(self.name, "update", values)
+    class Database:
+        storage = Storage()
+        def table(self, name):
+            assert name in {"MEDIA", "TAI_KHOAN"}
+            return Table(name)
     app = FastAPI()
-    app.include_router(router); register_errors(app)
-    app.dependency_overrides[current_user] = lambda: User("TK1", "test", state["role"], "Test")
-    app.dependency_overrides[get_supabase] = lambda: SimpleNamespace(storage=Storage())
+    app.include_router(router); app.include_router(customer_router); register_errors(app)
+    app.dependency_overrides[current_user] = lambda: User(
+        "TK1", "test", state["role"], "Test", customer_id="KH1" if state["role"] == "KHACH_HANG" else None)
+    app.dependency_overrides[get_supabase] = Database
     with TestClient(app) as client:
         yield client, state, app
 
@@ -59,6 +84,7 @@ def test_upload_normalizes_and_strips_metadata(media_client, kind, mime):
     response = client.post("/api/admin/media/images", content=image_bytes(kind), headers={**ORIGIN, "Content-Type": mime})
     assert response.status_code == 201, response.text
     body = response.json()
+    assert body["media_id"] == "00000000-0000-0000-0000-000000000001"
     assert body["bucket"] == "media" and body["content_type"] == "image/webp"
     assert re.fullmatch(r"products/[0-9a-f]{32}\.webp", body["path"])
     assert (body["width"], body["height"]) == (8, 6)
@@ -69,6 +95,7 @@ def test_upload_normalizes_and_strips_metadata(media_client, kind, mime):
     with Image.open(BytesIO(upload["file"])) as image:
         assert image.format == "WEBP" and not image.getexif()
     assert body["size"] == len(upload["file"])
+    assert state["media"][0]["storage_path"] == body["path"]
     assert response.headers["cache-control"] == "no-store"
 
 
@@ -77,6 +104,16 @@ def test_non_admin_cannot_upload(media_client, role):
     client, state, _ = media_client; state["role"] = role
     assert client.post("/api/admin/media/images", content=image_bytes(), headers={**ORIGIN, "Content-Type": "image/png"}).status_code == 403
     assert not state["buckets"] and not state["uploads"]
+
+
+def test_customer_uploads_avatar_only_for_own_account(media_client):
+    client, state, _ = media_client
+    state["role"] = "KHACH_HANG"
+    response = client.post("/api/customer/me/avatar", content=image_bytes(),
+                           headers={**ORIGIN, "Content-Type": "image/png"})
+    assert response.status_code == 201, response.text
+    assert re.fullmatch(r"avatars/[0-9a-f]{32}\.webp", response.json()["path"])
+    assert state["avatars"] == {"TK1": response.json()["media_id"]}
 
 
 def test_unauthenticated_before_storage_initialization(media_client):
@@ -162,6 +199,13 @@ def test_real_storage_sdk_contract_with_mock_http(monkeypatch):
         return httpx.Response(200, json={"Key": request.url.path.removeprefix("/storage/v1/object/")})
     with httpx.Client(transport=httpx.MockTransport(handle)) as http:
         storage = SyncStorageClient("https://example.supabase.co/storage/v1/", {}, http_client=http)
-        result = store_image(image_bytes(), "image/png", MediaRepository(SimpleNamespace(storage=storage)))
+        class Query:
+            def insert(self, values): self.values = values; return self
+            def execute(self):
+                return SimpleNamespace(data=[{"ma_media": "00000000-0000-0000-0000-000000000001", **self.values}])
+        class Database:
+            def __init__(self): self.storage = storage
+            def table(self, name): assert name == "MEDIA"; return Query()
+        result = store_image(image_bytes(), "image/png", MediaRepository(Database()))
     assert result.url == "https://example.supabase.co/storage/v1/object/public/media/" + result.path
     assert len(calls) == 2

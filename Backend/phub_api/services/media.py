@@ -6,6 +6,7 @@ import warnings
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 from fastapi import HTTPException
+from postgrest.exceptions import APIError
 from storage3.utils import StorageException
 
 from phub_api.repositories.media import MediaRepository
@@ -41,7 +42,7 @@ def normalize_image(data: bytes, content_type: str) -> tuple[bytes, int, int]:
         raise HTTPException(422, "File ảnh bị hỏng hoặc không phải hình ảnh hợp lệ.") from None
 
 
-def store_image(data: bytes, content_type: str, repository: MediaRepository) -> UploadedImage:
+def store_image(data: bytes, content_type: str, repository: MediaRepository, folder: str = "products") -> UploadedImage:
     encoded, width, height = normalize_image(data, content_type)
     bucket = os.getenv("SUPABASE_MEDIA_BUCKET", "media").strip()
     if not bucket:
@@ -49,13 +50,29 @@ def store_image(data: bytes, content_type: str, repository: MediaRepository) -> 
     try:
         if not repository.is_public(bucket):
             raise HTTPException(503, "Bucket hình ảnh phải là public để hiển thị ảnh sản phẩm. Kiểm tra cấu hình Storage.")
-        path = f"products/{uuid4().hex}.webp"
+        path = f"{folder}/{uuid4().hex}.webp"
         url = repository.upload(bucket, path, encoded)
     except StorageException as exc:
         logger.warning("Media storage failed error_type=%s", type(exc).__name__)
         raise HTTPException(503, "Không tải được ảnh lên Storage. Kiểm tra bucket media, quyền và cấu hình Supabase.") from None
-    return UploadedImage(bucket=bucket, path=path, url=url, content_type="image/webp",
-                         size=len(encoded), width=width, height=height)
+    try:
+        media = repository.register({
+            "storage_bucket": bucket,
+            "storage_path": path,
+            "url": url,
+            "mime_type": "image/webp",
+            "kich_thuoc_bytes": len(encoded),
+            "chieu_rong": width,
+            "chieu_cao": height,
+        })
+    except (APIError, RuntimeError):
+        try:
+            repository.remove(bucket, path)
+        except StorageException:
+            logger.error("Could not roll back unregistered media object path=%s", path)
+        raise HTTPException(503, "Không lưu được metadata ảnh. Kiểm tra migration MEDIA trên Supabase.") from None
+    return UploadedImage(media_id=str(media["ma_media"]), bucket=bucket, path=path, url=url,
+                         content_type="image/webp", size=len(encoded), width=width, height=height)
 
 
 class MediaService:
@@ -64,3 +81,17 @@ class MediaService:
 
     def store_image(self, data: bytes, content_type: str) -> UploadedImage:
         return store_image(data, content_type, self.repository)
+
+    def store_avatar(self, data: bytes, content_type: str, account_id: str) -> UploadedImage:
+        uploaded = store_image(data, content_type, self.repository, "avatars")
+        try:
+            if not self.repository.set_avatar(account_id, uploaded.media_id):
+                raise RuntimeError("Account avatar update returned no row")
+        except (APIError, RuntimeError):
+            try:
+                self.repository.unregister(uploaded.media_id)
+                self.repository.remove(uploaded.bucket, uploaded.path)
+            except (APIError, StorageException):
+                logger.error("Could not roll back unlinked avatar media_id=%s", uploaded.media_id)
+            raise HTTPException(503, "Không gán được ảnh đại diện cho tài khoản.") from None
+        return uploaded

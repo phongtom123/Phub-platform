@@ -318,7 +318,7 @@ export default function AltHeader() {
               aria-controls={id + "-account"}
               onClick={event => toggle("account", event.currentTarget)}
             >
-              <GuestAvatar name={session?.name} />
+              <GuestAvatar name={session?.name} avatarUrl={shop.customer?.avatar_url} />
             </IconButton>
             <div className={styles.accountPanel} id={id + "-account"} {...dropdownProps("account")}>
               <AccountMenu

@@ -94,6 +94,14 @@ def test_profile_only_reads_verified_customer_and_does_not_expose_hash(commerce_
     assert "*" not in requests[0].url.params["select"] and "mat_khau" not in requests[0].url.params["select"]
 
 
+def test_profile_returns_linked_account_avatar(commerce_client):
+    client, state, _, _, _ = commerce_client
+    state["profile"][0]["account"] = {"avatar": {"url": "https://example.test/avatar.webp"}}
+    response = client.get("/api/customer/me")
+    assert response.status_code == 200
+    assert response.json()["avatar_url"] == "https://example.test/avatar.webp"
+
+
 def test_quote_rpc_uses_server_identity_canonical_voucher_and_no_create_key(commerce_client):
     client, _, requests, _, _ = commerce_client
     response = client.post("/api/customer/checkout/quote", json={"items": [{"sku": "SKU-A", "quantity": 2}], "voucher_code": " save10 "})

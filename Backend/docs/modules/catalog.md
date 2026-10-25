@@ -82,8 +82,9 @@ chỉ lấy thương hiệu của trang sản phẩm đầu tiên. Endpoint này
 - Mặc định sắp xếp theo `ma_sp`; sắp xếp giá dùng thêm `ma_sp` để xử lý giá trùng.
 - Tổng kết quả được tính sau khi lọc, trước khi phân trang. Trang không có dữ liệu
   hoặc vượt phạm vi trả 200, `items: []`, giữ nguyên tổng phù hợp bộ lọc.
-- `duong_dan_anh` ánh xạ thành `images: [{url, alt}]`. Hiện schema chỉ có một ảnh;
-  thiếu ảnh trả `[]`. API không tự tạo gallery nhiều ảnh hay URL ảnh theo thiết bị.
+- Các dòng `MEDIA` có cùng `ma_sp` ánh xạ thành `images: [{url, alt}]`, ưu tiên
+  `la_anh_chinh` rồi `thu_tu`. `duong_dan_anh` chỉ là trường tương thích cho ảnh
+  cũ; thiếu media thì catalog dùng trường này, thiếu cả hai trả `[]`.
 - `thong_so_ky_thuat` hỗ trợ JSON object đơn giản, JSON array `{label, value}`,
   hoặc từng dòng `nhãn: giá trị`. Văn bản không tách được được giữ thành một mục
   `Thông số`; nội dung gốc luôn có trong `specifications_text`. Thiếu thông số

@@ -9,6 +9,7 @@ import styles from "./profile.module.css";
 export function AccountEditor({ profile, onSaved, onClose }: { profile: CustomerProfile; onSaved: () => void; onClose: () => void }) {
   const [values, setValues] = useState<Recipient>({ name: profile.name, phone: profile.phone ?? "", address_line: profile.address_line ?? "", province: profile.province ?? "", ward: profile.ward ?? "" });
   const [saving, setSaving] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const request = useRef<AbortController | null>(null);
@@ -25,6 +26,20 @@ export function AccountEditor({ profile, onSaved, onClose }: { profile: Customer
     setSaving(true); setError("");
     try {
       await accountRequest("customer/me", parseProfile, { method: "PUT", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, name: values.name.trim(), phone: values.phone.replace(/[ ()-]/g, ""), address_line: values.address_line.trim(), province: values.province.trim(), ward: values.ward.trim() }) });
+      if (avatarFile) {
+        const avatarResponse = await fetch("/api/backend/customer/me/avatar", {
+          method: "POST", signal: controller.signal, credentials: "same-origin",
+          headers: { "Content-Type": avatarFile.type }, body: avatarFile,
+        });
+        if (!avatarResponse.ok) {
+          let message = "Không tải được ảnh đại diện.";
+          try {
+            const body = await avatarResponse.json();
+            if (typeof body?.detail === "string") message = body.detail;
+          } catch { /* Keep the safe generic message. */ }
+          throw new AccountApiError(message, avatarResponse.status);
+        }
+      }
       if (!controller.signal.aborted) onSaved();
     } catch (err) {
       if (controller.signal.aborted) return;
@@ -37,6 +52,10 @@ export function AccountEditor({ profile, onSaved, onClose }: { profile: Customer
     <p className={styles.note}>Lưu vào hồ sơ khách hàng. Không thay đổi địa chỉ trên các đơn đã đặt.</p>
     <form className={styles.form} onSubmit={save}>
       <fieldset disabled={saving} className={styles.fields}>
+        <label>Ảnh đại diện (JPG, PNG hoặc WebP; tối đa 5 MB)
+          <input type="file" accept="image/jpeg,image/png,image/webp"
+            onChange={event => setAvatarFile(event.target.files?.[0] ?? null)} />
+        </label>
         <TextField label="Họ và tên" required maxLength={100} autoComplete="name" value={values.name} onChange={event => setValues({ ...values, name: event.target.value })} />
         <TextField label="Số điện thoại" required type="tel" autoComplete="tel" maxLength={25} hint="8–15 chữ số, có thể có mã quốc gia." value={values.phone} onChange={event => setValues({ ...values, phone: event.target.value })} />
         <TextField label="Địa chỉ chi tiết" required maxLength={255} autoComplete="street-address" value={values.address_line} onChange={event => setValues({ ...values, address_line: event.target.value })} />
