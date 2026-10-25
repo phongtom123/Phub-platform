@@ -195,7 +195,8 @@ def add_table_paths(spec: dict) -> None:
                 if name == "accounts":
                     description += "**Quản lý tài khoản dùng `/api/admin/accounts`, không dùng API ghi bảng chung.** "
                 elif not resource.writable:
-                    description += "**Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** "
+                    description += (f"Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/{name}`; không thay đổi trạng thái/tồn kho. "
+                                    if name in {"receipts", "transfers"} else "**Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** ")
             else:
                 description += "Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. "
                 description += "Không mở thao tác xóa. "
@@ -256,7 +257,7 @@ def describe_auth_and_public(spec: dict) -> None:
             elif path == "/api/data/resources":
                 operation["tags"] = ["Shared · Metadata"]
                 operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
-                operation["description"] = "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền của role, không phải mọi bảng đều có API ghi. create_schema là JSON Schema cho body tạo; không có hash mật khẩu."
+                operation["description"] = "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền ghi chung của role. draft_update_path và draft_update_fields chỉ cấp cho ADMIN sửa thông tin phiếu nháp qua API riêng. create_schema là JSON Schema cho body tạo; không có mật khẩu."
             elif path.startswith("/api/catalog/") or path == "/api/products":
                 operation["tags"] = ["Customer · Catalog"]
                 operation["security"] = []

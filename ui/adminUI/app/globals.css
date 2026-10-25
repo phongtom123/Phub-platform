@@ -18,6 +18,7 @@
 .live-data .live-related a { display: inline-flex; padding: 10px 16px; border: 1px solid #dce1db; border-radius: 8px; background: white; color: #181818; text-decoration: none; }
 .live-data .live-related a:hover { background: #edf8e9; border-color: #14a800; }
 .topbar .crumb { min-width: 0; flex: 1; flex-wrap: wrap; }
+.topbar .crumb a.current { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 36px; }
 .topbar .top-actions { flex-shrink: 0; }
 @media (max-width: 1200px) {
   .topbar .top-actions > label,
@@ -71,12 +72,18 @@ button {
 }
 .admin-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .live-data .inline-data-row-editing { background: #f4fbf1; }
+.live-data .inline-data-help { margin: 0 0 14px; color: #687460; font-size: 14px; line-height: 1.6; }
+.live-data .inline-data-actions { display: flex; align-items: center; gap: 12px; }
+.live-data .inline-data-actions button { padding: 6px 10px; font-size: 14px; }
 .live-data .inline-data-table tr:focus-visible { outline: 2px solid #14a800; outline-offset: -2px; }
 .live-data .inline-data-table input { width: 100%; min-width: 170px; }
 .live-data .inline-data-status { min-width: 142px; border-color: transparent; border-radius: 20px; padding: 6px 10px; }
 .live-data .inline-data-status.status-1 { background: #edf9e9; color: #126d04; }
 .live-data .inline-data-status.status-2 { background: #fff2dd; color: #825100; }
 .live-data .inline-data-status.status-0 { background: #ededed; color: #444; }
+.live-data .inline-data-status.status-HOAT_DONG { background: #edf9e9; color: #126d04; }
+.live-data .inline-data-status.status-NHAP, .live-data .inline-data-status.status-KET_THUC { background: #f0f2ed; color: #596254; }
+.live-data .inline-data-status.status-TAM_DUNG { background: #fff2dd; color: #825100; }
 .live-data .inline-data-status:disabled { opacity: .65; cursor: not-allowed; }
 .logo {
   display: flex;

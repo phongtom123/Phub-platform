@@ -15,6 +15,19 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("draft header gateway forwards only PATCH for receipts/transfers with the original key and Origin", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,origin:options.headers.get("Origin")});return Response.json({data:[]});});
+  for(const resource of ["receipts","transfers"]){
+    assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x?key=%5B-5%5D",{method:"PATCH",headers:{Origin:"http://localhost:3000"},body:'{"ghi_chu":"test"}'}),["admin","warehouse-drafts",resource])).status,200);
+  }
+  assert.equal(calls.length,2);assert.ok(calls.every(call=>call.method==="PATCH"&&call.url.endsWith("?key=%5B-5%5D")&&call.origin==="http://localhost:3000"));
+  for(const [method,resource] of [["POST","receipts"],["DELETE","transfers"],["GET","receipts"],["PATCH","inventory"]]){
+    assert.equal((await proxy(new Request("http://localhost/x",{method}),["admin","warehouse-drafts",resource])).status,404);
+  }
+  assert.equal(calls.length,2);
+});
+
 test("CRM profile and scoped orders pass the gateway; other CRM paths/methods stay closed", async () => {
   const calls = [];
   const proxy = gateway(async (url, options) => {

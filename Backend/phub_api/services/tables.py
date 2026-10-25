@@ -16,6 +16,7 @@ from phub_api.models.user import User
 from phub_api.repositories.tables import TablesRepository, clean
 from phub_api.schemas.resources import payload_model
 from phub_api.schemas.crm import vietnam_today
+from phub_api.schemas.warehouse_drafts import DRAFT_FIELDS
 
 
 def can_write(name: str, user: User) -> bool:
@@ -112,6 +113,8 @@ def resource_metadata(user: User):
                                     "immutable": column["name"] in resource.keys or (name == "products" and column["name"] == "sku")}
                                    | {"system": column["name"] in SYSTEM_FIELDS.get(name, set())} for column in public_columns(name)],
                        "writable": can_write(name, user),
+                       "draft_update_path": f"/api/admin/warehouse-drafts/{name}" if name in DRAFT_FIELDS and user.role == "ADMIN" and user.employee_id else None,
+                       "draft_update_fields": DRAFT_FIELDS[name] if name in DRAFT_FIELDS and user.role == "ADMIN" and user.employee_id else None,
                        "create_schema": payload_model(name, False).model_json_schema() if can_write(name, user) else None})
     return result
 

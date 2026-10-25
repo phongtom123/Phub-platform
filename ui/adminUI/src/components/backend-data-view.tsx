@@ -10,18 +10,26 @@ import { ImageEditor } from "@/src/features/forms/image-editor";
 import { uploadProductImage } from "@/src/lib/media-upload";
 import { ProductImagePreview } from "@/src/features/forms/product-image-preview";
 import { InlineDataTable } from "@/src/features/tables/inline-data-table";
-import { dataRowKey, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
+import { ScrollableTable } from "@/src/features/tables/scrollable-table";
+import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
+import { listDataColumns } from "@/src/lib/table-presentation";
 import { CustomerDetail } from "@/src/features/customers/customer-detail";
+import { OrderData } from "@/src/features/orders/order-data";
+import { InvoiceDetail } from "@/src/features/billing/invoice-detail";
+import { ProductStock } from "@/src/features/products/product-stock";
+import { ProductSuppliers } from "@/src/features/products/product-suppliers";
+import { CategoryDetail } from "@/src/features/categories/category-detail";
 
 type Row = DataRow;
 type Column = DataColumn;
-type Resource = { name: string; title: string; keys: string[]; columns: Column[]; writable: boolean };
+type Resource = { name: string; title: string; keys: string[]; columns: Column[]; writable: boolean;
+  draft_update_path?: string | null; draft_update_fields?: string[] | null };
 type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string };
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
 
 const labels: Record<string, string> = {
   ma_kho: "Mã kho", ten_kho: "Tên kho", dia_chi: "Địa chỉ", trang_thai: "Trạng thái",
-  ma_sp: "Mã sản phẩm", sku: "SKU", ten_sp: "Tên sản phẩm", ma_loai_sp: "Mã loại sản phẩm", ten_loai_sp: "Tên loại sản phẩm",
+  ma_sp: "Mã sản phẩm", sku: "SKU", ten_sp: "Tên sản phẩm", ma_loai_sp: "Mã loại sản phẩm", ma_loai_sp_con: "Mã loại sản phẩm con", ten_loai_sp: "Tên loại sản phẩm",
   thuong_hieu: "Thương hiệu", gia_ban_hien_tai: "Giá bán", mo_ta: "Mô tả", thong_so_ky_thuat: "Thông số kỹ thuật",
   don_vi: "Đơn vị", bao_hanh_thang: "Bảo hành (tháng)", duong_dan_anh: "URL hình ảnh", ma_tk: "Mã tài khoản",
   ten_tai_khoan: "Tên tài khoản", password: "Mật khẩu", ma_kh: "Mã khách hàng", ten_kh: "Tên khách hàng",
@@ -34,8 +42,20 @@ const labels: Record<string, string> = {
   tong_tien_giam: "Tổng tiền giảm", tong_tien_sau_thue: "Tổng sau thuế", so_tien: "Số tiền",
   dia_chi_chi_tiet_md: "Địa chỉ mặc định", tinh_thanh_md: "Tỉnh / thành phố", xa_phuong_md: "Xã / phường",
   ngay_sinh: "Ngày sinh", ngay_tao: "Ngày tạo", cap_nhat_luc: "Cập nhật lần cuối", luu_tru_luc: "Thời điểm lưu trữ",
+  thoi_gian_dat: "Thời gian đặt", thoi_gian_xuat_kho: "Thời gian xuất kho", thoi_gian_hoan_thanh: "Thời gian hoàn thành",
+  ten_nguoi_nhan: "Tên người nhận", sdt_nguoi_nhan: "Số điện thoại người nhận", dia_chi_giao_hang: "Địa chỉ giao hàng",
+  ma_hoadon: "Mã hóa đơn", nguoi_lap: "Người lập", thoi_gian_lap: "Thời gian lập",
+  ten_nguoi_mua: "Tên người mua", ma_so_thue: "Mã số thuế", dia_chi_nguoi_mua: "Địa chỉ người mua",
+  tong_tien_truoc_thue: "Tổng trước thuế", tong_tien_thue: "Tiền thuế",
+  ngay_nhap: "Ngày nhập", ngay_xuat: "Ngày xuất", ngay_nhan: "Ngày nhận", ma_kho_xuat: "Kho xuất", ma_kho_nhan: "Kho nhận",
+  nguoi_tao: "Người tạo", nguoi_cap_nhat: "Người cập nhật", nguoi_xac_nhan: "Người xác nhận", nguoi_xuat: "Người xuất", nguoi_nhan: "Người nhận", ghi_chu: "Ghi chú", cccd: "CCCD",
 };
 const label = (name: string) => labels[name] ?? name.replaceAll("_", " ");
+function displayValue(row: Row, column: Column) {
+  const value = row[column.name];
+  if (value === null || value === undefined) return "—";
+  return inlineChoiceLabel(column.name, value);
+}
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await adminFetch("/api/backend/" + path, { cache: "no-store", ...options });
@@ -78,7 +98,10 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const [saveError, setSaveError] = useState("");
   const [notice, setNotice] = useState("");
   const [inlineEditing, setInlineEditing] = useState(false);
-  const inlineEnabled = ["customers", "warehouses"].includes(resource) && Boolean(meta?.writable);
+  const draftPath = ["receipts", "transfers"].includes(resource) && meta?.draft_update_path === `/api/admin/warehouse-drafts/${resource}` ? meta.draft_update_path : null;
+  const canEditRow = (row: Row) => !draftPath || row.trang_thai === "NHAP";
+  const canUpdate = Boolean(meta?.writable || draftPath);
+  const inlineEnabled = ["customers", "warehouses", "products", "categories", "suppliers", "employees", "promotions", "vouchers", "receipts", "transfers"].includes(resource) && canUpdate;
   const savedInline = useCallback((row: Row) => {
     setResult(current => current && ({ ...current, data: current.data.map(item =>
       dataRowKey(item, meta?.keys ?? []) === dataRowKey(row, meta?.keys ?? []) ? row : item) }));
@@ -154,8 +177,9 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const href = (row?: Row, edit = false) => dataHref(resource, { orderId: view.orderId,
     key: row && meta ? JSON.stringify(meta.keys.map(key => row[key])) : null, edit });
   const change = (name: string, value: string) => { setNotice(""); setValues(current => ({ ...current, [name]: value })); setDirty(current => current.includes(name) ? current : [...current, name]); };
-  const formColumns = meta?.columns.filter(c => !c.generated && !c.system && (view.create || !c.immutable)) ?? [];
+  const formColumns = meta?.columns.filter(c => !c.generated && !c.system && (view.create || !c.immutable) && (!draftPath || meta.draft_update_fields?.includes(c.name))) ?? [];
   const detailMode = Boolean(view.key && !view.edit && !view.create);
+  const listColumns = listDataColumns(resource, meta?.columns ?? []);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -183,7 +207,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         change("duong_dan_anh", url); setImageFile(null); setUploading(false);
       }
       if (!Object.keys(data).length) throw new Error("Chưa có thay đổi.");
-      const saved = await api<{ data: Row[] }>("data/" + resource + (recordKey ? "?key=" + encodeURIComponent(recordKey) : ""), {
+      const saved = await api<{ data: Row[] }>((draftPath ? draftPath.slice(5) : "data/" + resource) + (recordKey ? "?key=" + encodeURIComponent(recordKey) : ""), {
         method: creating ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data), signal: controller.signal,
       });
       if (!saved.data.length) throw new Error("Backend chưa trả về dữ liệu đã lưu.");
@@ -209,18 +233,20 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi; đang hiển thị dữ liệu lần tải trước. {pollError}</p>}
     {(view.key || view.create || view.orderId) && <div className="live-page-actions">
       <button type="button" onClick={() => window.history.length > 1 ? router.back() : router.push(href())}>← Quay lại</button>
-      {detailMode && !loading && !error && meta?.writable && result?.data[0] && <Link className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</Link>}
+      {detailMode && !loading && !error && canUpdate && result?.data[0] && canEditRow(result.data[0]) && <Link className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</Link>}
     </div>}
     {!detailMode && <div className={embedded ? "live-section-heading" : "admin-sr-only"}><h2>{embedded ? "Danh sách đơn hàng" : meta?.title ?? "Đang tải…"}</h2>{embedded && <Link href={dataHref("orders")}>Xem tất cả đơn hàng →</Link>}</div>}
     {error && <p className="live-error" role="alert">{error} <button onClick={refresh}>Thử lại</button></p>}
     {loading ? <p role="status">Đang tải dữ liệu…</p> : meta && !error && <>
-      {((view.create || view.edit) && meta.writable) ? <form className="live-form" onSubmit={save}>
+      {((view.create && meta.writable || view.edit && canUpdate && result?.data[0] && canEditRow(result.data[0]))) ? <form className="live-form" onSubmit={save}>
         {saveError && <p className="live-error image-save-error" role="alert">{saveError}</p>}
         <fieldset disabled={saving} className="live-form-fields">
         {formColumns.map(column => column.name === "duong_dan_anh" ? <ImageEditor key={column.name} inputId={`image-${resource}`}
           value={values[column.name] ?? ""} file={imageFile} disabled={saving}
           onChange={value => change(column.name, value)} onFileChange={file => { setImageFile(file); setSaveError(""); setNotice(""); }} /> : <label key={column.name}>{label(column.name)}{column.required && " *"}
-          {column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice}>{choice}</option>)}</select>
+          {column.name === "trang_thai" && column.type === "int" ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}>
+            <option value="">Chọn trạng thái</option>{[1, 2, 0].map(value => <option key={value} value={value}>{inlineStatusLabels[value]}</option>)}
+          </select> : column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice} value={choice}>{inlineChoiceLabel(column.name, choice)}</option>)}</select>
           : column.type === "text" ? <textarea rows={4} required={column.required} value={values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />
           : <input required={column.required} type={column.type === "int" ? "number" : column.type === "date" ? "date" : column.type === "datetime" ? "datetime-local" : column.name === "duong_dan_anh" ? "url" : "text"} step={column.type === "int" ? "1" : undefined} value={column.type === "datetime" && values[column.name] ? new Date(values[column.name]).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />}
         </label>)}
@@ -232,22 +258,28 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         <div className={resource === "products" ? "product-detail-layout" : undefined}>
         {resource === "products" && <ProductImagePreview key={String(result.data[0].duong_dan_anh ?? "")}
           url={String(result.data[0].duong_dan_anh ?? "")} name={String(result.data[0].ten_sp ?? "")} />}
-        <div className="live-form">{meta.columns.map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{String(result.data[0][column.name] ?? "—")}</div>)}</div>
+        {resource === "orders" ? <OrderData rows={result.data} columns={meta.columns} keys={meta.keys} detail version={version} label={label} href={href}
+          related={available.filter(item => orderChildren.includes(item.name))} />
+        : resource === "invoices" ? <InvoiceDetail row={result.data[0]} columns={meta.columns} label={label} />
+        : resource === "categories" ? <CategoryDetail row={result.data[0]} columns={meta.columns} label={label}
+          related={available.filter(item => ["subcategories", "products"].includes(item.name))} />
+        : <div className="live-form">{meta.columns.map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{displayValue(result.data[0], column)}</div>)}</div>}
         </div>
-        {resource === "orders" && typeof result.data[0].ma_donhang === "string" && <section className="live-related">
-          <h3>Thông tin liên quan đến đơn hàng</h3>
-          <nav className="live-tools" aria-label="Thông tin đơn hàng">{available.filter(item => orderChildren.includes(item.name)).map(item => <Link key={item.name} href={dataHref(item.name, { orderId: String(result.data[0].ma_donhang) })}>{item.title}</Link>)}</nav>
-        </section>}
-        {resource === "invoices" && typeof result.data[0].ma_donhang === "string" && <nav className="live-tools live-related" aria-label="Thông tin đơn hàng">
-          <Link href={dataHref("orders", { key: JSON.stringify([result.data[0].ma_donhang]) })}>Đơn hàng {result.data[0].ma_donhang}</Link>
-          <Link href={dataHref("payments", { orderId: result.data[0].ma_donhang })}>Thanh toán của đơn hàng</Link>
-        </nav>}
-        {!["orders", "invoices"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], promotions: ["vouchers"], vouchers: ["voucher-uses"], categories: ["subcategories", "products"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={dataHref(item.name)}>{item.title}</Link>)}</nav>}
+        {resource === "products" && available.some(item => item.name === "inventory") && <ProductStock
+          key={`stock:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} unit={String(result.data[0].don_vi ?? "")} />}
+        {resource === "products" && ["receipt-lines", "receipts", "suppliers"].every(name => available.some(item => item.name === name)) &&
+          <ProductSuppliers key={`suppliers:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} />}
+        {!["orders", "invoices", "categories"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], promotions: ["vouchers"], vouchers: ["voucher-uses"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={dataHref(item.name)}>{item.title}</Link>)}</nav>}
       </> : <>
         <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
-        {inlineEnabled ? <InlineDataTable resource={resource} rows={result?.data ?? []} columns={meta.columns} keys={meta.keys}
+        {draftPath && <p className="inline-data-help">Nhấp đúp để sửa phiếu nháp. Phiếu đã xử lý chỉ xem thông tin; trạng thái được cập nhật qua nghiệp vụ kho.</p>}
+        {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label} href={href} />
+        : inlineEnabled ? <InlineDataTable resource={resource} rows={result?.data ?? []} columns={listColumns} keys={meta.keys}
+          quickEditFields={resource === "products" ? ["ten_sp", "thuong_hieu", "gia_ban_hien_tai", "don_vi", "bao_hanh_thang", "trang_thai"] : undefined}
+          editableFields={draftPath ? meta.draft_update_fields ?? [] : undefined}
+          writePath={draftPath ? "/api/backend/" + draftPath.slice(5) : undefined} canEditRow={canEditRow}
           label={label} href={href} onSaved={savedInline} onEditingChange={setInlineEditing} />
-        : <div className="live-table"><table><thead><tr>{meta.columns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{meta.columns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <Link href={href(row)}>{String(row[column.name] ?? "—")}</Link> : String(row[column.name] ?? "—")}</td>)}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</div>}
+        : <ScrollableTable><table><thead><tr>{listColumns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{listColumns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <Link href={href(row)}>{displayValue(row, column)}</Link> : displayValue(row, column)}</td>)}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
         <div className="live-tools"><span>{result?.total ?? 0} kết quả · Trang {page}</span><button disabled={inlineEditing || page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={inlineEditing || page * 20 >= (result?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Sau</button></div>
       </>}
     </>}

@@ -42,6 +42,8 @@ class ResourceMetadata(BaseModel):
     columns: list[ResourceColumn]
     writable: bool
     create_schema: dict[str, Any] | None
+    draft_update_path: str | None = None
+    draft_update_fields: list[str] | None = None
 
 
 def error_response(status: int, message: str, *, validation: bool = False) -> dict:

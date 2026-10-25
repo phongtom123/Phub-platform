@@ -1,0 +1,14 @@
+.card { min-width: 0; margin-top: 24px; padding: 24px; border: 1px solid #e1e7dc; border-radius: 14px; background: #fff; }
+.header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 22px; }
+.header h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-size: 18px; }
+.header h2 svg { color: #6c7c62; }
+.header p { margin: 0; color: #77806f; font-size: 14px; }
+.header button { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+.total { display: flex; align-items: center; gap: 16px; padding: 18px 20px; margin-bottom: 20px; border: 1px solid #dfead7; border-radius: 10px; background: #f3f9ee; }
+.icon { display: grid; place-items: center; width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px; color: #43822c; background: #e5f1dc; }
+.caption { font-size: 14px; color: #647b55; }
+.total p { margin: 2px 0 0; color: #2e691b; }
+.total strong { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.total p > span { color: #687e5a; font-size: 16px; }
+.note, .empty { margin: 16px 0 0; color: #77806f; font-size: 14px; line-height: 1.6; }
+@media (max-width: 560px) { .card { padding: 20px 18px; } }
