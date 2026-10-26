@@ -6,75 +6,43 @@ import { emptyFilters } from "@/components/catalog/catalogData";
 import { CatalogStatus } from "@/components/catalog/CatalogStatus";
 import { getProducts } from "@/lib/catalog/client";
 import { catalogProduct } from "@/lib/catalog/types";
-import type { CatalogMetadataController } from "@/lib/catalog/useCatalog";
+import { useCatalogMetadata } from "@/lib/catalog/useCatalog";
 import { NewProducts, ProductShelf } from "./ProductShelf";
 import type { HomeCategory, HomeProduct } from "./homeData";
 
-const homeProductCache = new Map<string, HomeProduct[]>();
-
-function reconcileProducts(previous: HomeProduct[] | undefined, products: HomeProduct[]) {
-  if (!previous) return products;
-  const previousById = new Map(previous.map(product => [product.id, product]));
-  const reconciled = products.map(product => {
-    const oldProduct = previousById.get(product.id);
-    return oldProduct && JSON.stringify(oldProduct) === JSON.stringify(product) ? oldProduct : product;
-  });
-  return reconciled.length === previous.length
-    && reconciled.every((product, index) => product === previous[index]) ? previous : reconciled;
-}
-
 function useHomeProducts(categoryId = "", pageSize = 8) {
-  const key = categoryId + ":" + pageSize;
-  const [state, setState] = useState<{ key: string; products: HomeProduct[] | null; error: string | null }>(
-    () => ({ key, products: homeProductCache.get(key) ?? null, error: null }),
-  );
+  const [state, setState] = useState<{ key: string; products: HomeProduct[]; error: string | null }>({ key: "", products: [], error: null });
   const [attempt, setAttempt] = useState(0);
+  const key = categoryId + ":" + pageSize;
   useEffect(() => {
     const controller = new AbortController();
     getProducts({ q: "", filters: { ...emptyFilters, categories: categoryId ? [categoryId] : [] }, sort: "position", page: 1, pageSize, view: "grid" }, controller.signal)
-      .then(result => {
-        if (controller.signal.aborted) return;
-        const products = reconcileProducts(homeProductCache.get(key), result.items.map(catalogProduct));
-        homeProductCache.set(key, products);
-        setState(current => current.key === key && current.products === products && !current.error
-          ? current : { key, products, error: null });
-      })
-      .catch(error => {
-        if (controller.signal.aborted) return;
-        const cached = homeProductCache.get(key);
-        if (cached) setState({ key, products: cached, error: null });
-        else setState({ key, products: null, error: error instanceof Error ? error.message : "Không thể tải sản phẩm." });
-      });
+      .then(result => { if (!controller.signal.aborted) setState({ key, products: result.items.map(catalogProduct), error: null }); })
+      .catch(error => { if (!controller.signal.aborted) setState({ key, products: [], error: error instanceof Error ? error.message : "Không thể tải sản phẩm." }); });
     return () => controller.abort();
   }, [categoryId, pageSize, key, attempt]);
-  const currentState = state.key === key ? state : null;
-  const products = currentState?.products ?? homeProductCache.get(key) ?? null;
-  return {
-    products: products ?? [],
-    error: products ? null : currentState?.error ?? null,
-    loading: !products && !currentState?.error,
-    retry: () => { setState(current => ({ ...current, error: null })); setAttempt(value => value + 1); },
-  };
+  return { ...state, loading: state.key !== key, retry: () => { setState(current => ({ ...current, key: "" })); setAttempt(value => value + 1); } };
 }
 
-function CategoryShelf({ category }: { category: { id: string; label: string } }) {
+function CategoryShelf({ category, onSelect }: { category: { id: string; label: string }; onSelect: (product: HomeProduct) => void }) {
   const data = useHomeProducts(category.id, 5);
   const router = useRouter();
   const shelf: HomeCategory = { id: category.id, title: category.label, image: "category-generic.svg", mobileImage: "", groups: [{ label: category.label, products: data.products }] };
   if (data.loading || data.error) return <section aria-label={category.label}><h2>{category.label}</h2><CatalogStatus loading={data.loading} error={data.error} retry={data.retry} /></section>;
   if (!data.products.length) return null;
-  return <ProductShelf category={shelf} onViewAll={() => router.push(`/main/product?${new URLSearchParams({ category_id: category.id })}`)} />;
+  return <ProductShelf category={shelf} onSelect={onSelect} onViewAll={() => router.push(`/main/product?${new URLSearchParams({ category_id: category.id })}`)} />;
 }
 
-export function HomeFeaturedProducts() {
+export function HomeFeaturedProducts({ onSelect }: { onSelect: (product: HomeProduct) => void }) {
   const data = useHomeProducts();
   const router = useRouter();
   if (data.loading || data.error) return <CatalogStatus loading={data.loading} error={data.error} retry={data.retry} />;
   if (!data.products.length) return <p>Hiện chưa có sản phẩm đang bán.</p>;
-  return <NewProducts products={data.products} onViewAll={() => router.push("/main/product")} title="Sản phẩm đang bán" />;
+  return <NewProducts products={data.products} onSelect={onSelect} onViewAll={() => router.push("/main/product")} title="Sản phẩm đang bán" />;
 }
 
-export function HomeCategoryProducts({ metadata }: { metadata: CatalogMetadataController }) {
+export function HomeCategoryProducts({ onSelect }: { onSelect: (product: HomeProduct) => void }) {
+  const metadata = useCatalogMetadata();
   if (metadata.loading || metadata.error) return <CatalogStatus loading={metadata.loading} error={metadata.error} retry={metadata.retry} />;
-  return <>{metadata.data.categories.map(category => <CategoryShelf key={category.id} category={category} />)}</>;
+  return <>{metadata.data.categories.map(category => <CategoryShelf key={category.id} category={category} onSelect={onSelect} />)}</>;
 }

@@ -19,7 +19,7 @@ Tạo `Backend/.env` dựa trên [.env.example](.env.example). Không commit fil
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_SECRET_KEY=YOUR_NEW_SERVER_ONLY_KEY
 JWT_SECRET=YOUR_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
-FRONTEND_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8000,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:8000
+FRONTEND_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8000,http://127.0.0.1:8000
 COOKIE_SECURE=false
 ```
 
@@ -29,7 +29,7 @@ Sinh JWT secret bằng lệnh sau, rồi lưu giá trị vào `.env`, không g�
 
 ```powershell
 .venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(48))"
-.venv\Scripts\python.exe -m uvicorn phub_api.main:app --reload --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 - Swagger: http://localhost:8000/docs
@@ -38,42 +38,13 @@ Sinh JWT secret bằng lệnh sau, rồi lưu giá trị vào `.env`, không g�
 - Liveness: http://127.0.0.1:8000/api/health (không kiểm tra DB).
 - Test: `.venv\Scripts\python.exe -m pytest tests -q`.
 
-Swagger có 70 thao tác, schema riêng cho từng module, role và mã lỗi. Xem [hướng dẫn Swagger/OpenAPI](docs/README.md) để đăng nhập thử bằng Bearer/cookie và cập nhật snapshot [docs/openapi.json](docs/openapi.json). Trang docs không cần Supabase để mở; thử API dữ liệu cần cấu hình thật. `.env` cũ cần thêm origin cổng 8000 nếu muốn thử POST/PATCH/PUT trực tiếp từ Swagger.
-
-## Xử lý kết nối lỗi tạm thời (503)
-
-Backend dùng HTTP client/pool chung cho Supabase, HTTP/1.1, tối đa 20 kết nối
-và 10 kết nối giữ lại. Timeout mỗi thao tác: connect 2 giây, read 4 giây,
-write 10 giây, chờ pool 1 giây. Đây không phải giới hạn thời gian toàn endpoint.
-HTTP/1.1 là lựa chọn thận trọng, chưa chứng minh HTTP/2 gây lỗi trên Render.
-
-GET/HEAD không có body được thử tối đa 3 lượt (lượt đầu + 2 retry) khi gặp
-ConnectError/ConnectTimeout/ReadError/ReadTimeout/RemoteProtocolError hoặc
-HTTP 502/503/504. Retry chờ 0,25 rồi 0,5 giây kèm jitter; không bắt đầu retry
-nếu vượt ngân sách 8 giây. Không retry lỗi pool/429/4xx, không replay
-POST/PATCH/PUT/DELETE hoặc transaction RPC: ghi dữ liệu có thể đã thành công
-trước khi kết nối mất. UI/gateway không retry thêm để tránh nhân số lượt gọi.
-
-Log lỗi mạng ghi loại exception, phương thức, route; log retry ghi host và
-thời gian. Không ghi query, body, token, mật khẩu hoặc nội dung exception.
-Kiểm tra `Database read retry` / `Database connection failed` để tìm nguyên nhân;
-`503` không tự chứng minh bảng/schema sai. Health 200 chỉ là liveness.
-
-Kiểm thử offline: `.venv\Scripts\python.exe -m pytest tests/test_database_transport.py -q`.
-Để thử Supabase thật từ backend local, điền `SUPABASE_SECRET_KEY` trong `.env`,
-chạy uvicorn và đặt `ui/adminUI/.env.local`:
-`PHUB_API_BASE_URL=http://127.0.0.1:8000`; khởi động lại admin. Đăng nhập lại vì
-JWT secret local có thể khác Render. Không cần SQL migration cho thay đổi này.
+Swagger có 68 thao tác, schema riêng cho từng module, role và mã lỗi. Xem [hướng dẫn Swagger/OpenAPI](docs/README.md) để đăng nhập thử bằng cookie và cập nhật snapshot [docs/openapi.json](docs/openapi.json). Trang docs không cần Supabase để mở; thử API dữ liệu cần cấu hình thật. `.env` cũ cần thêm origin cổng 8000 nếu muốn thử POST/PATCH/PUT trực tiếp từ Swagger.
 
 ## Chuẩn bị database
 
-Danh mục là danh sách phẳng: catalog trả `id/name` và lọc đúng các loại đã chọn.
-Không cần migration danh mục cha–con. Nếu database từng thêm cột cha thì bản này
-không đọc hoặc ghi cột đó; các danh mục và sản phẩm hiện có vẫn được giữ.
+Nguồn chuẩn là [schema.dbml](../database/schema.dbml), gồm 19 bảng, SKU, loại sản phẩm và tổng tiền giảm trên hóa đơn, không có bảng chi nhánh.
 
-Nguồn chuẩn là [schema.dbml](schema.dbml), gồm 22 bảng, SKU, loại sản phẩm, media dùng chung và tổng tiền giảm trên hóa đơn, không có bảng chi nhánh.
-
-Nếu Supabase **chưa có bảng/dữ liệu**, kiểm tra rồi chạy [001_initial_schema.sql](migrations/001_initial_schema.sql) trong SQL Editor. Script có transaction, 36 khóa ngoại, check constraints, RLS và chặn truy cập bảng trực tiếp từ vai trò `anon`/`authenticated`.
+Nếu Supabase **chưa có bảng/dữ liệu**, kiểm tra rồi chạy [001_initial_schema.sql](../database/migrations/001_initial_schema.sql) trong SQL Editor. Script có transaction, 32 khóa ngoại, check constraints, RLS và chặn truy cập bảng trực tiếp từ vai trò `anon`/`authenticated`.
 
 Nếu database **đã tồn tại**, không chạy migration tạo mới và không xóa bảng để chạy lại. So sánh tên bảng/cột/khóa ngoại với DBML trước; cần migration nâng cấp riêng. Các bảng dùng tên viết hoa có dấu nháy kép, ví dụ `public."SAN_PHAM"`. Quan hệ FK cần tồn tại để PostgREST lọc theo khách hàng/kho qua các bảng chi tiết.
 
@@ -81,9 +52,13 @@ Vì Python dùng khóa đặc quyền bỏ qua RLS, toàn bộ quyền truy cậ
 
 ### Tài khoản đầu tiên
 
-Backend hiện đọc mật khẩu dạng chữ trong `TAI_KHOAN.mat_khau` theo lựa chọn của dự án. Trước khi dùng code này trên database cũ, xem [hướng dẫn chuyển đổi](docs/PLAINTEXT_PASSWORDS.md). Không xóa cột cũ trên Render/Supabase khi backend cũ còn phục vụ.
+Không có tài khoản/password demo hardcode. Tạo bản ghi `NHAN_VIEN` qua Supabase Table Editor (`loai_nhan_vien=ADMIN`, `ma_kho=NULL`, `trang_thai=1`). Chạy:
 
-Để tạo admin đầu tiên trên database đã chuyển đổi, tạo `NHAN_VIEN` có `loai_nhan_vien=ADMIN`, `ma_kho=NULL`, `trang_thai=1`; tạo tài khoản liên kết với `mat_khau` 10–128 ký tự, `ma_kh=NULL`, trạng thái 1. Admin sau đó tạo các tài khoản khác qua UI/API. Thủ kho phải được phân kho. Không còn dùng script `hash_password.py`.
+```powershell
+.venv\Scripts\python.exe scripts/hash_password.py
+```
+
+Nhập mật khẩu hai lần ở terminal (không hiển thị). Lưu chuỗi hash trả về vào `TAI_KHOAN.mat_khau_hash`, gán `ma_nhan_vien` đúng nhân viên, `ma_kh=NULL`, trạng thái 1 và tên tài khoản duy nhất. Từ đó admin có thể tạo nhân viên/khách/tài khoản bằng UI. Tài khoản khách phải liên kết một `KHACH_HANG`; thủ kho phải có `ma_kho` và role `THU_KHO`.
 
 ## API đã có
 
@@ -92,24 +67,12 @@ Backend hiện đọc mật khẩu dạng chữ trong `TAI_KHOAN.mat_khau` theo 
 | Endpoint | Mục đích |
 | --- | --- |
 | `POST /api/auth/login` | `{ "username": "...", "password": "..." }`, username hoặc email |
-| `POST /api/auth/token` | Cùng body đăng nhập; trả `access_token`, `token_type: "bearer"`, `expires_in: 28800` cho Swagger/Postman |
-| `POST /api/auth/register` | Tạo nguyên tử hồ sơ + tài khoản khách hàng và đăng nhập ngay |
 | `GET /api/auth/me` | Tài khoản/role/kho đang đăng nhập |
 | `POST /api/auth/logout` | Xóa cookie phiên ở trình duyệt |
 
-Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. `/login` và `/register` không trả token trong JSON; UI không lưu token ở localStorage. `/token` trả JWT trong JSON, không đặt cookie, dùng chung `authenticate_credentials` và `create_access_token` với đăng nhập cookie. Trong Swagger chọn **Authorize → BearerAuth** và dán riêng token, không thêm `Bearer`; xem [hướng dẫn test](docs/README.md#lấy-jwt-và-thử-bằng-bearer-swaggerpostman).
+Cookie `phub_session`: HttpOnly, SameSite=Lax, 8 giờ. Token không trả trong JSON và không lưu localStorage. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu mới hash Argon2; có thể đọc hash bcrypt cũ. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, đăng ký tự phục vụ, quên mật khẩu qua email hoặc thu hồi từng token bị đánh cắp. Đăng xuất xóa cookie, không phải server-side blacklist.
 
-`current_user` nhận Bearer hoặc cookie và dùng chung `verify_access_token`. Khi có Authorization thì ưu tiên Bearer; header/token sai trả 401, không chuyển sang cookie. Mỗi request đọc lại role/trạng thái DB; thay mật khẩu làm vô hiệu token cũ. Mật khẩu lưu nguyên văn ở `mat_khau`, so sánh đúng ký tự/khoảng trắng; không đọc hash cũ. Dấu phiên mật khẩu là HMAC với JWT secret, không nhúng mật khẩu vào JWT. Admin có API cấp lại mật khẩu và tự đổi mật khẩu. Chưa có refresh token, quên mật khẩu qua email, xác minh email hoặc thu hồi từng token bị đánh cắp. Đăng xuất chỉ xóa cookie; token Bearer đã cấp vẫn có hiệu lực đến khi hết hạn hoặc tài khoản/mật khẩu mất hiệu lực.
-
-Database mới chạy lịch sử migration rồi `migrations/20261024161801_account_plaintext_passwords.sql`; xem hướng dẫn chuyển đổi trước khi chạy trên database có tài khoản. Đăng ký dùng RPC `customer_register_v2`. RPC chỉ cấp `EXECUTE` cho `service_role`; browser gọi backend qua `/api/backend/auth/register`, không nhận Supabase secret. Hai bản ghi `KHACH_HANG` và `TAI_KHOAN` được tạo trong cùng transaction nên không để lại hồ sơ dở dang khi username/email bị trùng. Đăng ký giới hạn 5 lần/IP/phút trong một process.
-
-Ba cổng dùng cùng một cơ chế: `current_user` xác minh JWT và tải lại danh tính từ
-database; `require_admin`, `require_warehouse`, `require_customer_user` kiểm tra
-role và dữ liệu bắt buộc của từng cổng. `require_customer` chỉ chuyển danh tính
-khách đã xác minh sang model commerce. Các UI gọi chung `ui/shared/auth-client.ts`
-qua gateway `/api/backend/auth/*`; không UI nào tự decode JWT hoặc giữ token.
-
-Các API ghi có yêu cầu `Origin` vẫn cần giá trị nằm trong `FRONTEND_ORIGINS`, kể cả khi dùng Bearer. Riêng `/token` cho Postman/CLI bỏ Origin; nếu gửi thì phải thuộc allowlist. `/login` và `/token` dùng chung giới hạn 20 lần/IP/phút trong **một process**. Triển khai nhiều worker cần shared limiter, HTTPS và `COOKIE_SECURE=true`. Ba cổng localhost dùng chung cookie trên cùng host; không trộn `localhost` với `127.0.0.1` cho URL của ba UI.
+Request ghi phải có `Origin` nằm trong `FRONTEND_ORIGINS` (Swagger/Python CLI khi thử cần gửi header này). Login giới hạn 20 lần/IP/phút trong **một process**. Triển khai nhiều worker cần shared limiter, HTTPS và `COOKIE_SECURE=true`. Ba cổng localhost dùng chung cookie trên cùng host; không trộn `localhost` với `127.0.0.1` cho URL của ba UI.
 
 ### Tài khoản admin
 
@@ -118,7 +81,7 @@ tạo/chi tiết/sửa, ẩn–khóa–mở lại, đổi quyền nhân viên, c
 tài khoản đang đăng nhập. UI riêng ở `/accounts`, `/accounts/new`,
 `/accounts/{id}`, `/accounts/{id}/edit`, `/account`.
 
-Xem [hợp đồng API và cách kiểm thử](docs/modules/admin-accounts.md). Không cần đổi
+Xem [hợp đồng API và cách kiểm thử](app/admin_accounts/README.md). Không cần đổi
 schema bảng cho module này nếu database đã khớp DBML và có các FK/unique/check hiện có.
 Form tạo mới cần cài sequence và hàm RPC bằng `migrations/20261010_admin_account_creation.sql`:
 tạo người mới và tài khoản trong một transaction, không chọn hồ sơ cũ, không để lại
@@ -153,9 +116,9 @@ API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua q
 | promotions / vouchers | CHUONG_TRINH_KHUYEN_MAI / VOUCHER | ADMIN |
 | voucher-uses | SU_DUNG_VOUCHER | Chỉ đọc |
 
-ADMIN xem 20 tài nguyên qua API dữ liệu chung; media và hỗ trợ khách hàng có endpoint chuyên biệt. THU_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
+ADMIN xem 19 bảng. THU_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
 
-Account payload dùng `password`, không nhận trường lưu trữ `mat_khau`/`mat_khau_hash`. Các API đọc không trả mật khẩu. Lưu ý database chủ ý lưu mật khẩu dạng chữ theo cấu hình dự án. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm upload qua API media; `duong_dan_anh` vẫn được đồng bộ sang ảnh chính trong `MEDIA` để tương thích form cũ. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
+Account payload dùng `password`, không nhận/trả `mat_khau_hash`. Các API không trả password/hash. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm sửa bằng `duong_dan_anh` (URL); upload file chưa có API. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
 
 Catalog công khai hiện có `/api/catalog/products`, `/products/{ma_sp}`, `/categories`, `/brands` (giữ response contract cũ). Alias `/api/products` còn trả mảng, giới hạn trường công khai và sản phẩm/loại đang hoạt động; ưu tiên API catalog cho tính năng mới.
 
@@ -175,34 +138,20 @@ Không thực hiện nhiều `.insert/.update` liên tiếp qua HTTP rồi coi �
 
 ## Cấu trúc
 
-Luồng xử lý: **`controllers → services → repositories → database`**.
-Hướng dẫn chi tiết, ví dụ tạo tài khoản và quy tắc thêm chức năng:
-[ARCHITECTURE.md](ARCHITECTURE.md).
-`models` chứa đối tượng nội bộ; `schemas` định nghĩa dữ liệu nhận/trả qua API.
-Middleware được đăng ký tại `main.py`; CORS nằm trong `middleware/cors.py`,
-xác thực/phân quyền dùng `Depends()` trong `dependencies/auth.py`.
-
 ```text
-phub_api/
-  __init__.py
-  main.py          # Khởi tạo FastAPI và đăng ký router/middleware
-  config/          # Settings, Supabase pool/transport và OpenAPI
-  controllers/     # Khai báo endpoint + nhận request, gọi service, trả response
-  dependencies/    # Guard xác thực/phân quyền và factory dependency
-  middleware/      # CORS, exception handler và chuẩn hóa lỗi
-  models/          # Danh tính, lỗi nghiệp vụ và metadata bảng
-  repositories/    # Truy vấn và thao tác dữ liệu
-  schemas/         # Pydantic request/response, model động, ví dụ OpenAPI
-  services/        # Quy tắc nghiệp vụ, token, upload và checkout
-docs/modules/       # Hợp đồng và ghi chú theo từng module
-scripts/            # Công cụ kiểm tra và hỗ trợ vận hành
-tests/              # Offline HTTP/PostgREST mocks
+app/
+  main.py        # CORS, routers, health, compatibility endpoint
+  config.py      # Server environment configuration
+  supabase.py    # Lazy client, injectable trong tests
+  auth.py        # Hash, session cookie, current user, role
+  admin_accounts/ # Schemas, service, router quản lý tài khoản ADMIN
+  resources.py   # Allowlist 19 bảng và model từ DBML
+  tables.py      # Scope dữ liệu, đọc + CRUD dữ liệu nền
+  errors.py      # Lỗi an toàn, không trả chi tiết DB/secret
+  catalog/       # Catalog công khai có sẵn
+scripts/hash_password.py
+tests/           # Offline HTTP/PostgREST mocks, không cần khóa thật
 ```
-
-Không còn package `api/` trung gian. Controller không import repository/Supabase;
-service không nhận Request/Response hoặc truy vấn DB; repository không gọi ngược
-service. Các factory trong `dependencies/` ghép lớp và giữ khả năng override
-trong test. `tests/test_architecture.py` kiểm tra các ranh giới này tự động.
 
 
 ---
@@ -265,14 +214,11 @@ Lọc/sắp tại database trước phân trang; sản phẩm và loại phải 
 trạng thái 1. Chi tiết dùng `ma_sp`, trả ảnh/mô tả/thông số/đơn vị/bảo hành.
 Tiền là chuỗi; không giả tồn kho/rating/giảm giá. Kết quả rỗng không fallback fixtures.
 
-`phub_api/schemas/catalog.py` chứa validation/model công khai,
-`phub_api/repositories/catalog.py` truy vấn dữ liệu; `phub_api/services/catalog.py`
-ánh xạ ảnh/thông số, lọc màu/tồn khả dụng và dựng kết quả,
-`phub_api/controllers/catalog.py` xử lý request,
-controller này cũng khai báo routes/Swagger; `phub_api/middleware/catalog_errors.py` chuẩn hóa lỗi riêng module.
+`app/catalog/schemas.py` validation/model công khai, `repository.py` truy vấn/ánh
+xạ ảnh và thông số, `router.py` routes/Swagger, `errors.py` lỗi riêng module.
 UI nối proxy GET, home, search header, catalog grid/list, filter, preview/detail
 desktop/mobile; query trong URL, loading/error/retry/not-found và ảnh placeholder.
-Tài liệu: [catalog README](docs/modules/catalog.md),
+Tài liệu: [catalog README](app/catalog/README.md),
 [CATALOG-INTEGRATION.md](../ui/userUI/Frontend/CATALOG-INTEGRATION.md).
 
 ## Mục tiêu 2 — Đặt đơn
@@ -289,18 +235,16 @@ Transaction khóa sản phẩm/tồn, kiểm tra giá và lượng khả dụng,
 Cùng khách/key/body trả receipt cũ 200; đơn mới 201; khác body/khách trả 409.
 Timeout cần retry cùng key/body. Không tự tạo hóa đơn hoặc thanh toán.
 
-`phub_api/schemas/orders.py` chứa request/receipt; `phub_api/config/orders.py`
-chứa quy tắc đã xác nhận; `phub_api/services/orders.py` điều phối use case/lỗi allowlist;
-`phub_api/repositories/orders.py` gọi transaction RPC; `phub_api/controllers/orders.py`
-và `phub_api/middleware/order_errors.py` xử lý HTTP/Swagger/lỗi.
+`app/orders/schemas.py` request/receipt; `settings.py` quy tắc đã xác nhận;
+`repository.py` transaction/lỗi allowlist; `router.py`, `errors.py` HTTP/Swagger/lỗi.
 Migration 04/10 tạo schema key riêng và RPC v1; migration 06/10 bổ sung v2 hiện dùng.
-Tài liệu file/request/triển khai: [orders README](docs/modules/orders.md).
+Tài liệu file/request/triển khai: [orders README](app/orders/README.md).
 
 ## Mục tiêu 3 — Thanh toán và lịch sử giao dịch
 
 Swagger **Customer Payments**: `GET /api/orders/{order_id}/payments` giao dịch
 mới nhất, `GET /api/orders/{order_id}/transactions` lịch sử phân trang mới trước.
-Lớp payment chỉ đọc `DON_HANG`, `THANH_TOAN`, không cần migration payment.
+`app/payments` chỉ đọc `DON_HANG`, `THANH_TOAN`, không cần migration payment.
 Kiểm tra chủ đơn rồi lọc lại quyền sở hữu ở truy vấn giao dịch. Đơn không tồn tại,
 khách khác hoặc `ma_kh=NULL` cùng 404. Tiền là chuỗi Decimal; không trả mã thanh
 toán/tham chiếu/payload nhạy cảm. Thành công/lỗi đều `no-store`.
@@ -309,11 +253,10 @@ toán/tham chiếu/payload nhạy cảm. Thành công/lỗi đều `no-store`.
 không phải đã thanh toán; một khoản thu hoặc hoàn tiền không xác nhận toàn đơn
 đã tất toán. UI có trạng thái/lịch sử trên chi tiết đơn và nút cập nhật.
 
-`phub_api/dependencies/customer.py::require_customer` dùng trực tiếp danh tính từ
-`phub_api/services/auth.py`: JWT trong cookie HttpOnly được kiểm tra chữ ký/hết hạn, sau đó
-tài khoản, trạng thái, role và liên kết `TAI_KHOAN.ma_kh` được tải lại từ database.
-Không tin bearer chưa xác minh, `X-Customer-Id` hoặc mã khách do client tự khai báo.
-Tài liệu file/handoff: [payments README](docs/modules/payments.md).
+Khó khăn vẫn để riêng theo yêu cầu: `auth.py::require_customer` cần kết quả xác
+thực của thành viên đăng nhập, hiện luôn 503. Không tin cookie thô, bearer chưa
+xác minh hay `X-Customer-Id` tự khai báo. Không tự gán lại đơn cũ.
+Tài liệu file/handoff: [payments README](app/payments/README.md).
 
 ## Mục tiêu 4 — Luồng mua hàng khách hàng
 
@@ -328,7 +271,7 @@ Swagger **Customer Shopping**:
 | `GET /api/customer/orders` | Lịch sử đơn có phân trang |
 | `GET /api/customer/orders/{order_id}` | Chi tiết và snapshot của đơn thuộc khách |
 
-Các controller/view commerce dùng cùng dependency khách cho mọi route. Quote chọn một kho đủ
+`app/commerce` dùng cùng dependency khách cho mọi route. Quote chọn một kho đủ
 hàng mỗi SKU; checkout mới nhận một dòng mỗi SKU. Voucher phải hoạt động, đúng
 hạn, đạt tối thiểu và còn lượt toàn hệ thống/mỗi khách. Tạo đơn kiểm tra lại,
 khóa quota, ghi usage voucher cùng đơn/key. Phân bổ giảm giá tới từng dòng và
@@ -340,7 +283,7 @@ cart chỉnh/xóa số lượng, checkout nhập người nhận và xác nhận
 hồi giữ UUID/body để retry sau reload. Hồ sơ/đơn/payment dùng dữ liệu đã xác minh;
 chi tiết lấy snapshot lúc bán. Không sửa đăng ký/đăng nhập, thu thập thẻ/CVV hay
 dùng phí/voucher mẫu. Tài liệu hợp đồng/file/migration:
-[commerce README](docs/modules/commerce.md). File map frontend, lưu trữ, auth handoff
+[commerce README](app/commerce/README.md). File map frontend, lưu trữ, auth handoff
 và hướng dẫn test cả luồng: [SHOPPING-INTEGRATION.md](../ui/userUI/Frontend/SHOPPING-INTEGRATION.md).
 
 ## Nghiệp vụ đã xác nhận
@@ -365,7 +308,7 @@ và hướng dẫn test cả luồng: [SHOPPING-INTEGRATION.md](../ui/userUI/Fro
 Từ Backend, terminal riêng:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn phub_api.main:app --host 127.0.0.1 --port 8001
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
 Swagger `http://127.0.0.1:8001/docs`, OpenAPI `/openapi.json`; có cả bốn nhóm.
@@ -402,45 +345,4 @@ khi startup; không thay dependency/lockfile của các thành viên khác.
 
 ## Integration status on feat/backend-middleware-api
 
-The shared JWT/cookie authentication now serves admin, warehouse and customer
-roles. Customer checkout/payment adapt the same verified `current_user` identity
-through `require_customer`; missing sessions return 401 and wrong roles return
-403 before customer data is queried. SQL migration files are included for team
-review; no live database migration or real payment was run when integrating this branch.
-
-## Upload ảnh sản phẩm vào Supabase Storage
-
-- API: `POST /api/admin/media/images` (ADMIN, cookie/Bearer hợp lệ và `Origin`
-  nằm trong `FRONTEND_ORIGINS`). Body là bytes của file với Content-Type
-  `image/jpeg`, `image/png` hoặc `image/webp`, không phải JSON/multipart.
-- Giới hạn đầu vào 5 MiB, ảnh tĩnh tối đa 4096 × 4096 pixel. Pillow kiểm tra và
-  giải mã nội dung thật, từ chối file giả/hỏng hoặc MIME không khớp, xử lý hướng
-  EXIF rồi chuẩn hóa WebP và bỏ metadata. File đầu ra cũng giới hạn 5 MiB.
-- File ghi vào `media/products/<uuid>.webp`, không ghi đè file cũ. Response 201
-  chứa `bucket`, `path`, `url`, `content_type`, `size`, `width`, `height`.
-  UI dùng `url` để POST/PATCH `duong_dan_anh` ở API sản phẩm.
-
-Thiết lập trước khi dùng thật:
-
-1. Cài requirements backend mới (có Pillow); deploy backend trước hoặc cùng Admin.
-2. Trong Supabase Dashboard → Storage, kiểm tra bucket `media` dùng cho ảnh
-   sản phẩm công khai. Đặt `SUPABASE_MEDIA_BUCKET=media` (mặc định cũng là `media`).
-   Bucket cần public để URL ảnh không hết hạn; nếu chỉ cho phép một số MIME,
-   danh sách phải có `image/webp`. Giới hạn bucket phải đủ cho ảnh đầu ra, tối đa 5 MiB.
-3. Không chuyển public một bucket đang chứa tài liệu riêng tư; chọn bucket mới
-   phù hợp và cấu hình lại biến môi trường. API chỉ kiểm tra, không tạo/sửa quyền bucket.
-4. `SUPABASE_URL` và secret có quyền Storage chỉ nằm ở backend. Không cấp quyền
-   ghi public/anonymous cho bucket. Next gateway chuyển bytes và cookie, không có key Supabase.
-5. Test với tài khoản admin và một sản phẩm test trên staging: chọn ảnh, lưu,
-   tải lại bản ghi và mở URL ảnh; kiểm tra lỗi quyền và dung lượng. Không dùng test
-   tự động để ghi dữ liệu production.
-
-Upload và ghi sản phẩm là hai thao tác độc lập. Nếu ghi sản phẩm lỗi, UI giữ URL
-đã upload để thử lại, không upload lại tự động. Hủy trước khi lưu không upload.
-Gỡ/thay ảnh chỉ đổi URL ở sản phẩm; không xóa file Storage cũ vì có thể còn nơi
-khác sử dụng. File upload thành công nhưng chưa được gắn vào sản phẩm có thể
-cần dọn theo quy trình lưu trữ riêng; chưa có tác vụ tự động dọn/xóa trong đợt này.
-
-Tham khảo: [Supabase Upload](https://supabase.com/docs/reference/python/storage-from-upload),
-[public/private buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals).
-Kiểm thử offline: `python -m pytest tests/test_media.py -q` từ thư mục Backend.
+The shared authentication, table APIs and customer commerce APIs are registered together. Customer checkout/payment still use the explicit `require_customer` integration boundary (503 until connected to verified customer authentication). SQL migration files are included for team review; no live database migration or real payment was run when integrating this branch. The OpenAPI snapshot includes all 59 operations.

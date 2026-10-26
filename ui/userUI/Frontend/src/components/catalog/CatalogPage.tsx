@@ -36,11 +36,6 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   }
   const chips = [
     ...filters.categories.map(id => ({ key: id, label: metadata.data.categories.find(option => option.id === id)?.label ?? id, next: { ...filters, categories: filters.categories.filter(value => value !== id) } })),
-    ...filters.subcategories.map(id => ({
-      key: id,
-      label: metadata.data.categories.flatMap(option => option.children).find(option => option.id === id)?.label ?? id,
-      next: { ...filters, subcategories: filters.subcategories.filter(value => value !== id) },
-    })),
     ...(filters.brand ? [{ key: "brand", label: filters.brand, next: { ...filters, brand: "" } }] : []),
   ];
   return <div className={styles.catalog}>
@@ -53,7 +48,7 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
           <aside id="catalog-sidebar" className={styles.sidebar} aria-label="Bộ lọc sản phẩm">
             <CatalogSidebar draft={draft} onChange={setDraft} onApply={() => catalog.apply(draft)} onClear={() => catalog.apply(emptyFilters)}
               activeBrand={filters.brand} onBrand={brand => catalog.apply({ ...filters, brand })}
-              compared={compared} wished={wished} onCompare={product => toggleSelection("compare", product)} onWish={product => toggleSelection("wish", product)}
+              compared={compared} wished={wished} onCompare={product => toggleSelection("compare", product)} onWish={product => toggleSelection("wish", product)} onSelect={setPreview}
               metadata={metadata} locale="vi" />
           </aside>
         </div>
@@ -67,8 +62,8 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
           <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
           {!loading && !error && (products.length ? <div className={ `${styles.productGrid} ${request.view === "list" ? styles.productList : ""}` } aria-label="Catalog products">
             {products.map(product => request.view === "list"
-              ? <ProductListCard key={product.id} {...product} href={productHref(product.id)} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onCart={() => setNotice("Chưa kết nối API giỏ hàng.")} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
-              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} uiLocale="vi" />)}
+              ? <ProductListCard key={product.id} {...product} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onSelect={() => setPreview(product)} onCart={() => setNotice("Chưa kết nối API giỏ hàng.")} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
+              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} onSelect={() => setPreview(product)} uiLocale="vi" />)}
           </div> : <div className={styles.noResults}><h2>Không tìm thấy sản phẩm</h2><p>Hãy thay đổi điều kiện tìm kiếm hoặc bộ lọc.</p><Button onClick={() => catalog.apply(emptyFilters)}>Xóa bộ lọc và về trang đầu</Button>{request.q && <Link href="/main/product">Xem tất cả sản phẩm</Link>}</div>)}
           {!loading && !error && <div className={styles.pagination}><Pagination currentPage={request.page} totalPages={pagination?.total_pages ?? 0} onPageChange={page => { catalog.turnPage(page); resultsRef.current?.scrollIntoView({ block: "start", behavior: "instant" }); }} /></div>}
           <section className={styles.description} aria-label="Hướng dẫn chọn sản phẩm">

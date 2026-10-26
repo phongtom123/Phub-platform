@@ -14,13 +14,13 @@ export const moduleNames: Record<ModuleKey, string> = {
   inventory: "Tồn kho",
   receipts: "Phiếu nhập",
   transfers: "Chuyển kho",
+  stocktakes: "Kiểm kê kho",
   suppliers: "Nhà cung cấp",
   branches: "Kho",
   employees: "Nhân viên",
   accounts: "Tài khoản",
   promotions: "Khuyến mãi",
   vouchers: "Voucher",
-  support: "Hỗ trợ khách hàng",
 };
 
 export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
@@ -162,6 +162,21 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     ],
     rows: [],
     note: "Kho xuất phải khác kho nhận; phiếu đã xuất không được hủy trực tiếp.",
+  },
+  stocktakes: {
+    title: "Kiểm kê kho",
+    detailSection: "stocktakes",
+    searchPlaceholder: "Tìm mã phiên kiểm kê...",
+    filters: ["Kho", "Trạng thái"],
+    columns: [
+      { key: "ma_phieu_code", label: "MÃ PHIÊN", kind: "link" },
+      { key: "ma_kho", label: "KHO", kind: "strong" },
+      { key: "ngay_tao", label: "NGÀY TẠO" },
+      { key: "trang_thai", label: "TRẠNG THÁI", kind: "status" },
+      { key: "nguoi_tao", label: "NGƯỜI TẠO" },
+    ],
+    rows: [],
+    note: "Chỉ duyệt phiên đã gửi chờ duyệt; hệ thống cập nhật tồn kho trong một transaction.",
   },
   suppliers: {
     title: "Nhà cung cấp",

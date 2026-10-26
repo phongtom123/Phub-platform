@@ -11,8 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest.exceptions import APIError
 
-from phub_api.services.catalog import specifications_from_text
-from phub_api.services.catalog import CatalogService
+from app.catalog.repository import specifications_from_text
 
 
 def test_public_list_contract_and_database_visibility_filters(catalog_client):
@@ -25,39 +24,17 @@ def test_public_list_contract_and_database_visibility_filters(catalog_client):
     assert product["price"] == "15990000.00"
     assert product["currency"] == "VND"
     assert product["category"] == {"id": "LAPTOP", "name": "Laptop"}
-    assert product["subcategory"] == {"id": "LAPTOP_GENERAL", "name": "Laptop phổ thông"}
     assert product["images"] == [{"url": "https://example.test/msi.jpg", "alt": "Laptop MSI Modern"}]
     assert product["specifications"] == [{"label": "CPU", "value": "Core i5"}, {"label": "RAM", "value": "16 GB"}]
     assert "gia_nhap" not in product and "trang_thai" not in product
     params = requests[0].url.params
     assert params["trang_thai"] == "eq.1"
     assert params["category.trang_thai"] == "eq.1"
-    assert params["subcategory.trang_thai"] == "eq.1"
     assert "LOAI_SP!inner" in params["select"]
-    assert "MEDIA!MEDIA_product_fkey" in params["select"]
-    assert "SAN_PHAM_MEDIA" not in params["select"]
     assert "gia_ban_hien_tai::text" in params["select"]
     assert "gia_nhap" not in params["select"] and "*" not in params["select"]
     assert params["order"] == "ma_sp.asc"
     assert requests[0].headers["prefer"] == "count=exact"
-
-
-def test_product_gallery_uses_direct_media_primary_then_position(catalog_client):
-    client, state, _, _ = catalog_client
-    state["rows"][0]["product_media"] = [
-        {"thu_tu": 2, "la_anh_chinh": False,
-         "ma_media": "00000000-0000-0000-0000-000000000002", "url": " https://example.test/back.jpg ", "alt_text": "Mặt sau"},
-        {"thu_tu": 1, "la_anh_chinh": False,
-         "ma_media": "00000000-0000-0000-0000-000000000001", "url": "https://example.test/side.jpg", "alt_text": None},
-        {"thu_tu": 0, "la_anh_chinh": True,
-         "ma_media": "00000000-0000-0000-0000-000000000000", "url": "https://example.test/front.jpg", "alt_text": "Mặt trước"},
-    ]
-    images = client.get("/api/catalog/products/SP001").json()["images"]
-    assert images == [
-        {"url": "https://example.test/front.jpg", "alt": "Mặt trước"},
-        {"url": "https://example.test/side.jpg", "alt": "Laptop MSI Modern"},
-        {"url": "https://example.test/back.jpg", "alt": "Mặt sau"},
-    ]
 
 
 @pytest.mark.parametrize("search", ["mSi", "MSI-001", 'a,b).or(trang_thai.eq.0)', '100%_* (a) "b" \\ c', "Máy tính"])
@@ -114,8 +91,6 @@ def test_category_ids_with_reserved_characters_cannot_add_filters(catalog_client
     {"sort": "gia_nhap"}, {"q": "x" * 101}, {"brand": "x" * 101},
     {"q": "a\x00b"}, {"category_id": ""}, {"category_id": "x" * 101},
     {"category_id": [str(i) for i in range(21)]}, {"internal_flag": "true"},
-    {"subcategory_id": ""}, {"subcategory_id": "x" * 101},
-    {"subcategory_id": [str(i) for i in range(51)]},
 ])
 def test_validation_returns_consistent_errors_without_database_query(catalog_client, params):
     client, _, requests, _ = catalog_client
@@ -172,7 +147,6 @@ def test_detail_uses_same_visibility_filter_and_returns_public_product(catalog_c
     params = requests[-1].url.params
     assert params["ma_sp"] == "eq.SP001" and params["limit"] == "1"
     assert params["trang_thai"] == "eq.1" and params["category.trang_thai"] == "eq.1"
-    assert params["subcategory.trang_thai"] == "eq.1"
 
 
 def test_missing_or_hidden_product_returns_404(catalog_client):
@@ -220,76 +194,12 @@ def test_specification_formats_preserve_content(raw, expected):
 
 def test_categories_are_active_and_ordered(catalog_client):
     client, state, requests, _ = catalog_client
-    state["categories"] = [{"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop"}]
-    state["subcategories"] = [
-        {"ma_loai_sp_con": "LAPTOP_GENERAL", "ten_loai_sp_con": "Laptop phổ thông", "ma_loai_sp": "LAPTOP"},
-    ]
+    state["rows"] = [{"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop"}]
     response = client.get("/api/catalog/categories")
     assert response.status_code == 200
-    assert response.json() == {"items": [{
-        "id": "LAPTOP", "name": "Laptop",
-        "children": [{"id": "LAPTOP_GENERAL", "name": "Laptop phổ thông"}],
-    }]}
-    assert requests[-1].url.path.endswith("/LOAI_SP_CON")
-    assert all(request.url.params["trang_thai"] == "eq.1" for request in requests[-2:])
-    assert requests[-2].url.params["select"] == "ma_loai_sp,ten_loai_sp"
-    assert requests[-1].url.params["select"] == "ma_loai_sp_con,ten_loai_sp_con,ma_loai_sp"
-
-
-def test_parent_category_filter_does_not_query_category_hierarchy(catalog_client):
-    client, state, requests, _ = catalog_client
-    state["total"] = 21
-    response = client.get("/api/catalog/products", params=[("category_id", "PC"), ("category_id", "CPU"),
-        ("page", "2"), ("page_size", "10"), ("sort", "price-desc")])
-    assert response.status_code == 200
-    assert response.json()["pagination"]["total"] == 21
-    params = requests[-1].url.params
-    assert params["ma_loai_sp"] == 'in.("PC","CPU")'
-    assert params["offset"] == "10" and params["limit"] == "10"
-    assert params["order"] == "gia_ban_hien_tai.desc,ma_sp.asc"
-    assert not any(request.url.path.endswith("/LOAI_SP") for request in requests)
-
-
-def test_parent_and_child_filters_are_combined_with_or(catalog_client):
-    client, _, requests, _ = catalog_client
-    response = client.get("/api/catalog/products", params=[
-        ("category_id", "PC"), ("subcategory_id", "LAPTOP_GAMING"),
-    ])
-    assert response.status_code == 200
-    assert requests[-1].url.params["or"] == '(ma_loai_sp.in.("PC"),ma_loai_sp_con.in.("LAPTOP_GAMING"))'
-
-
-def test_categories_and_children_read_all_database_pages(catalog_client):
-    _, state, requests, repository = catalog_client
-    def handle(request):
-        assert request.url.params["trang_thai"] == "eq.1"
-        offset = int(request.url.params["offset"])
-        if request.url.path.endswith("/LOAI_SP_CON"):
-            rows = []
-        else:
-            assert request.url.params["select"] == "ma_loai_sp,ten_loai_sp"
-            rows = [{"ma_loai_sp": f"C{i}", "ten_loai_sp": str(i)} for i in range(500)] if offset == 0 else [
-                {"ma_loai_sp": "LATE", "ten_loai_sp": "Late"},
-            ]
-        return httpx.Response(200, json=rows)
-    state["handler"] = handle
-    categories = CatalogService(repository).list_categories()
-    assert len(categories) == 501
-    assert categories[-1].id == "LATE" and len(requests) == 3
-
-
-def test_flat_filter_is_reused_for_out_of_range_count(catalog_client):
-    client, state, requests, _ = catalog_client
-    def handle(request):
-        assert request.url.path.endswith("/SAN_PHAM")
-        assert request.url.params["ma_loai_sp"] == 'in.("PC")'
-        if request.method == "GET":
-            return httpx.Response(416, json={"code": "PGRST103", "message": "out of range", "details": None, "hint": None})
-        return httpx.Response(200, json=[], headers={"content-range": "*/12"})
-    state["handler"] = handle
-    response = client.get("/api/catalog/products", params={"category_id": "PC", "page": 50})
-    assert response.status_code == 200 and response.json()["pagination"]["total"] == 12
-    assert len(requests) == 2
+    assert response.json() == {"items": [{"id": "LAPTOP", "name": "Laptop"}]}
+    assert requests[-1].url.path.endswith("/LOAI_SP")
+    assert requests[-1].url.params["trang_thai"] == "eq.1"
 
 
 def test_brands_are_unique_sorted_and_include_later_database_pages(catalog_client):
@@ -345,7 +255,7 @@ def test_swagger_documents_all_endpoints_parameters_and_error_models(catalog_cli
     assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands", "/api/catalog/colors"}
     operation = paths["/api/catalog/products"]["get"]
     assert operation["tags"] == ["Public Catalog"]
-    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "subcategory_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status"}
+    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status"}
     for path in paths.values():
         for status in ("422", "500", "503"):
             assert path["get"]["responses"][status]["content"]["application/json"]["schema"]["$ref"].endswith("/ErrorResponse")
@@ -391,8 +301,8 @@ def test_existing_products_endpoint_keeps_original_contract(monkeypatch, fails):
                 raise RuntimeError("legacy failure")
             return SimpleNamespace(data=[{"ma_sp": "legacy-product"}])
 
-    from phub_api.config.database import get_supabase
-    spec = importlib.util.spec_from_file_location("phub_api._catalog_regression_main", Path(__file__).parents[1] / "phub_api/main.py")
+    from app.supabase import get_supabase
+    spec = importlib.util.spec_from_file_location("app._catalog_regression_main", Path(__file__).parents[1] / "app/main.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module.app.dependency_overrides[get_supabase] = lambda: LegacyClient()

@@ -1,47 +1,20 @@
-# Both services need files outside their application folder.
-# Review/sync this Blueprint in Render, or copy these settings to existing services.
 services:
   - type: web
-    name: phub-api
+    name: phub-platform-api
     runtime: python
-    repo: https://github.com/phongtom123/Phub-platform
-    branch: main
-    rootDir: .
-    autoDeployTrigger: commit
-    buildCommand: pip install -r Backend/requirements.txt -c Backend/constraints-render.txt && python Backend/scripts/export_openapi.py --check
-    startCommand: cd Backend && python -m uvicorn phub_api.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r Backend/requirements.txt
+    startCommand: cd Backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
-    buildFilter:
-      paths:
-        - Backend/**
-    envVars:
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SECRET_KEY
-        sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: FRONTEND_ORIGINS
-        sync: false
-      - key: COOKIE_SECURE
-        value: "true"
+    autoDeploy: true
 
   - type: web
-    name: phub-platform
+    name: phub-admin-ui
     runtime: node
-    repo: https://github.com/phongtom123/Phub-platform
-    branch: main
-    rootDir: .
-    autoDeployTrigger: commit
-    buildCommand: npm --prefix ui/userUI/Frontend ci && npm --prefix ui/userUI/Frontend run build
-    startCommand: npm --prefix ui/userUI/Frontend run start -- --hostname 0.0.0.0 --port $PORT
+    rootDir: ui/adminUI
+    buildCommand: npm ci --include=dev && cd ../warehouseUI && npm ci --include=dev && cd ../adminUI && npm run build
+    startCommand: npm start
     healthCheckPath: /
-    buildFilter:
-      paths:
-        - ui/userUI/Frontend/**
-        - ui/shared/**
+    autoDeploy: true
     envVars:
-      - key: NODE_VERSION
-        value: "22"
       - key: PHUB_API_BASE_URL
-        value: https://phub-api.onrender.com
+        value: https://phub-platform-api.onrender.com

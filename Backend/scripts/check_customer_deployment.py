@@ -1,3 +1,4 @@
+"""Read-only smoke check for real local/Render deployments; no DB writes/login."""
 import argparse
 from urllib.parse import urlsplit
 
@@ -40,7 +41,7 @@ def check(api: str, ui: str, auth_pending: bool):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Check local or Render deployments")
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--api", type=origin, required=True)
     parser.add_argument("--ui", type=origin, required=True)
     parser.add_argument("--auth-pending", action="store_true")

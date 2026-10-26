@@ -6,14 +6,7 @@ const vm = require("node:vm");
 const ts = require("typescript");
 
 function load(fetch = () => { throw new Error("No live requests allowed"); }) {
-  const transport = { exports: {}, fetch, DOMException };
-  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/lib/admin-fetch.ts"), "utf8"), {
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
-  }).outputText, transport);
-  const sandbox = { exports: {}, Date, Intl, require: name => {
-    assert.equal(name, "../../lib/admin-fetch");
-    return transport.exports;
-  } };
+  const sandbox = { exports: {}, fetch, Date, Intl };
   const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/features/dashboard/dashboard-data.ts"), "utf8"), {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
   }).outputText;
@@ -71,13 +64,6 @@ test("statistics fetch every page and never silently use only 100 rows", async (
 test("empty API data remains genuinely empty", async () => {
   const data = load(async () => ({ ok: true, json: async () => ({ data: [], total: 0, page: 1, page_size: 100 }) }));
   assert.deepEqual(plain(await data.readAllRows("orders", new AbortController().signal)), []);
-});
-test("counts only fetch one row instead of downloading 100 unused records", async () => {
-  const data = load(async url => {
-    assert.equal(new URL(url, "http://test").searchParams.get("page_size"), "1");
-    return { ok: true, json: async () => ({ data: [{ id: 1 }], total: 123, page: 1, page_size: 1 }) };
-  });
-  assert.equal(await data.readCount("products", new AbortController().signal), 123);
 });
 test("API error, incomplete/changed/oversized datasets fail instead of producing fake charts", async () => {
   for (const variant of ["error", "malformed", "short", "changed", "too-large"]) {

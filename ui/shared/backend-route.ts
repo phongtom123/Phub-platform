@@ -1,39 +1,13 @@
 /** Shared server-only gateway: browser -> Next.js -> Python. No Supabase key here. */
 type Context = { params: Promise<{ path: string[] }> };
-const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-async function boundedImageBody(request: Request, limit: number): Promise<ArrayBuffer | null> {
-  const length = request.headers.get("content-length");
-  if (length && /^\d+$/.test(length) && Number(length) > limit) return null;
-  const reader = request.body?.getReader();
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  if (reader) {
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        size += value.byteLength;
-        if (size > limit) { await reader.cancel(); return null; }
-        chunks.push(value);
-      }
-    } finally { reader.releaseLock(); }
-  }
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  return bytes.buffer;
-}
 const resources = new Set([
-  "resources", "warehouses", "employees", "accounts", "customers", "categories", "subcategories", "products",
-  "inventory", "suppliers", "receipts", "receipt-lines", "transfers", "transfer-lines", "orders",
+  "resources", "warehouses", "employees", "accounts", "customers", "categories", "products",
+  "inventory", "stock-history", "stocktakes", "stocktake-lines", "suppliers", "receipts", "receipt-lines", "transfers", "transfer-lines", "orders",
   "order-lines", "invoices", "payments", "promotions", "vouchers", "voucher-uses",
 ]);
 
 function validAdminPath(path: string[], method: string): boolean {
   if (path[0] !== "admin") return false;
-  if (path.length === 3 && path[1] === "warehouse-drafts" && ["receipts", "transfers"].includes(path[2])) return method === "PATCH";
-  if (path.length === 3 && path[1] === "media" && path[2] === "images") return method === "POST";
   if (path.length === 2) {
     return (path[1] === "accounts" && ["GET", "POST"].includes(method)) ||
       (path[1] === "account-owners" && method === "GET") ||
@@ -49,54 +23,38 @@ function validAdminPath(path: string[], method: string): boolean {
   );
 }
 
-function validIdentifier(value: string | undefined): boolean {
-  return Boolean(value && /^[A-Za-z0-9_.-]{1,100}$/.test(value) && ![".", ".."].includes(value));
-}
-
-function validCustomerPath(path: string[], method: string): boolean {
-  if (path[0] === "customer") {
-    if (path[1] === "crm" && path[2] === "feedback") {
-      if (path.length === 3) return ["GET", "POST"].includes(method);
-      return path.length === 4 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3]) && method === "GET";
-    }
-    if (path.length === 2 && path[1] === "me") return ["GET", "PUT"].includes(method);
-    if (path.length === 3 && path[1] === "me" && path[2] === "avatar") return method === "POST";
-    if (path.length === 3 && path[1] === "checkout" && path[2] === "quote") return method === "POST";
-    if (path[1] !== "orders") return false;
-    if (path.length === 2) return ["GET", "POST"].includes(method);
-    if (!validIdentifier(path[2])) return false;
-    if (path.length === 3) return method === "GET";
-    return path.length === 4 && path[3] === "invoice" && method === "GET";
+function validWarehousePath(path: string[], method: string): boolean {
+  if (path[0] !== "warehouse") return false;
+  if (path.length === 2 && path[1] === "options") return method === "GET";
+  if (path.length === 2 && path[1] === "summary") return method === "GET";
+  if (path.length === 2 && path[1] === "dispatches") return method === "GET";
+  if (path.length === 2 && path[1] === "stocktakes") return method === "GET";
+  if (path.length === 3 && path[1] === "stocktakes" && path[2] === "draft") return method === "POST";
+  if (path.length === 4 && path[1] === "stocktakes" && /^\d+$/.test(path[2]) && ["submit", "approve"].includes(path[3])) {
+    return method === "POST";
   }
-  if (path[0] !== "orders") return false;
-  if (path.length === 1) return method === "POST";
-  if (!validIdentifier(path[1]) || path.length !== 3) return false;
-  if (["payments", "transactions"].includes(path[2])) return method === "GET";
-  return path[2] === "payment-request" && method === "POST";
-}
-
-function validAuthPath(path: string[], method: string): boolean {
-  if (path.length !== 2 || path[0] !== "auth") return false;
-  if (["login", "register", "logout"].includes(path[1])) return method === "POST";
-  return path[1] === "me" && method === "GET";
-}
-
-function validCrmPath(path: string[], method: string): boolean {
-  if (path[0] === "crm" && path[1] === "feedback") {
-    if (path.length === 2) return method === "GET";
-    return path.length === 3 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2]) && ["GET", "PATCH"].includes(method);
+  if (path.length === 3 && ["receipts", "transfers"].includes(path[1])) {
+    if (method === "GET" && /^\d+$/.test(path[2])) return true;
+    return path[2] === "draft" && method === "POST";
   }
-  if (path[0] !== "crm" || path[1] !== "customers" || !path[2] ||
-    !/^[A-Za-z0-9_.-]{1,200}$/.test(path[2]) || [".", ".."].includes(path[2])) return false;
-  if (path.length === 3) return ["GET", "PATCH"].includes(method);
-  return path.length === 4 && path[3] === "orders" && method === "GET";
+  if (path.length === 4 && path[1] === "dispatches") {
+    return path[3] === "dispatch" && method === "POST" && /^[A-Za-z0-9_.-]{1,100}$/.test(path[2]);
+  }
+  if (path.length === 4 && ["receipts", "transfers"].includes(path[1])) {
+    return /^\d+$/.test(path[2]) && ["confirm", "cancel", "draft", "dispatch", "receive"].includes(path[3]) &&
+      ((path[1] === "receipts" && ["confirm", "cancel", "draft"].includes(path[3])) ||
+       (path[1] === "transfers" && ["cancel", "draft", "dispatch", "receive"].includes(path[3]))) &&
+      ((path[3] === "draft" && method === "PUT") || (path[3] !== "draft" && method === "POST"));
+  }
+  return false;
 }
 
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {
   const { path } = await context.params;
-  const valid = validAdminPath(path, request.method) || validCustomerPath(path, request.method) || validCrmPath(path, request.method) ||
-    validAuthPath(path, request.method) ||
-    (path.length === 2 && path[0] === "data" && resources.has(path[1]));
+  const valid = validAdminPath(path, request.method) || validWarehousePath(path, request.method) || (path.length === 2 && (
+    (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) ||
+    (path[0] === "data" && resources.has(path[1]))
+  )) || (path.length === 3 && path[0] === "auth" && path[1] === "me" && path[2] === "password" && request.method === "POST");
   if (!valid) return Response.json({ detail: "Endpoint không tồn tại." }, { status: 404 });
   try {
     const base = new URL(process.env.PHUB_API_BASE_URL || "http://127.0.0.1:8000");
@@ -109,18 +67,13 @@ export async function proxyBackend(request: Request, context: Context): Promise<
     const origin = request.headers.get("origin");
     if (origin) headers.set("Origin", origin); // Python validates CSRF origins, not the caller's supplied role.
     const write = request.method !== "GET" && request.method !== "HEAD";
-    const imageUpload = path.length === 3 && ["admin/media/images", "customer/me/avatar"].includes(path.join("/"));
-    const contentType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
-    if (imageUpload && !imageTypes.has(contentType)) {
-      return Response.json({ detail: "Chỉ hỗ trợ JPG, PNG hoặc WebP." }, { status: 415 });
-    }
-    const body = imageUpload ? await boundedImageBody(request, 5 * 1024 * 1024) : write ? await request.text() : undefined;
-    if (body === null || (typeof body === "string" && new TextEncoder().encode(body).length > 1_048_576)) {
+    const body = write ? await request.text() : undefined;
+    if (body && new TextEncoder().encode(body).length > 1_048_576) {
       return Response.json({ detail: "Dữ liệu quá lớn." }, { status: 413 });
     }
-    if (write) headers.set("Content-Type", imageUpload ? contentType : "application/json");
+    if (write) headers.set("Content-Type", "application/json");
     const upstream = await fetch(url, {
-      method: request.method, headers, body, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(imageUpload ? 30_000 : 15_000),
+      method: request.method, headers, body, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15_000),
     });
     const outputHeaders = new Headers({ "Cache-Control": "no-store" });
     if (upstream.headers.get("content-type")) outputHeaders.set("Content-Type", upstream.headers.get("content-type")!);

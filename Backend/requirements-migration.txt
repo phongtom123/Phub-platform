@@ -1,2 +1,0 @@
-# Offline migration preparation only; not required by the plaintext backend.
-pwdlib[argon2,bcrypt]>=0.2,<1

@@ -8,13 +8,13 @@ export type ModuleKey =
   | "inventory"
   | "receipts"
   | "transfers"
+  | "stocktakes"
   | "suppliers"
   | "branches"
   | "employees"
   | "accounts"
   | "promotions"
-  | "vouchers"
-  | "support";
+  | "vouchers";
 
 export type DataValue = string | number | boolean;
 export type DataRow = Record<string, DataValue> & { id: string };

@@ -22,7 +22,7 @@ async function main() {
       assert.equal(request.method(), "GET", "Charts must never write data");
       calls.push(url.pathname + url.search);
       const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
-      if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", role: "ADMIN", username: "test.admin", name: "Admin Test" });
+      if (url.pathname === "/api/backend/auth/me") return respond({ role: "ADMIN", username: "test.admin", name: "Admin Test" });
       if (url.pathname === "/api/backend/data/resources") return respond(metadata);
       if (mode === "error") return respond({ detail: "Không kết nối được API thống kê." }, 503);
       const resource = url.pathname.split("/").pop();

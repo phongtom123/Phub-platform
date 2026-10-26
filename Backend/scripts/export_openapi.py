@@ -1,3 +1,12 @@
+r"""Print the credential-free OpenAPI spec, or check the versioned snapshot.
+
+From Backend:
+  .venv\Scripts\python.exe scripts/export_openapi.py
+  .venv\Scripts\python.exe scripts/export_openapi.py --output docs/openapi.json
+  .venv\Scripts\python.exe scripts/export_openapi.py --check
+
+Output goes to stdout, never reads live database records or exports .env values.
+"""
 import argparse
 import json
 from pathlib import Path
@@ -5,7 +14,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from phub_api.main import app
+from app.main import app
 
 SNAPSHOT = Path(__file__).resolve().parents[1] / "docs" / "openapi.json"
 
@@ -27,6 +36,7 @@ def main() -> None:
         args.output.write_text(json.dumps(spec, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
         print(f"Saved OpenAPI to {args.output}")
     else:
+        # ASCII escapes make stdout reproducible on Windows terminals too.
         print(json.dumps(spec, ensure_ascii=True, indent=None if args.compact else 2, sort_keys=True))
 
 

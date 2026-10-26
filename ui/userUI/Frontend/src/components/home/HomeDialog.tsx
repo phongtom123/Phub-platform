@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/common/Button";
 import { Price } from "@/components/common/Price";
 import { CatalogImage } from "@/components/common/CatalogImage";
-import { ProductPreviewActions } from "@/components/shopping/ProductPreviewActions";
 import { productHref } from "@/lib/catalog/types";
 import type { HomeProduct } from "./homeData";
 import styles from "./Home.module.css";

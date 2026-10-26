@@ -4,7 +4,6 @@ import "./globals.css";
 import "../../../../shared/data-manager.css";
 import Footer from "@/components/layout/Footer";
 import AltHeader from "@/components/layout/AltHeader";
-import { ShoppingProvider } from "@/components/shopping/ShoppingProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,11 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <ShoppingProvider>
-          <AltHeader />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </ShoppingProvider>
+        <AltHeader />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );

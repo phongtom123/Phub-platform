@@ -9,11 +9,9 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from phub_api.repositories.commerce import CommerceRepository
-from phub_api.dependencies.commerce import get_repository
-from phub_api.controllers.commerce import router
-from phub_api.models.customer import CurrentCustomer
-from phub_api.dependencies.customer import require_customer
+from app.commerce.repository import CommerceRepository
+from app.commerce.router import get_repository, router
+from app.payments.auth import CurrentCustomer, require_customer
 
 
 @pytest.fixture
@@ -32,7 +30,7 @@ def commerce_client(monkeypatch):
     body = {"recipient": recipient, "note": None, "voucher_code": "save10", "expected_discount": "0.02", "expected_total": "0.18",
             "items": [{"sku": "SKU-A", "warehouse_id": -900002, "quantity": 2, "expected_unit_price": "0.10"}]}
     state = {"quote": quote, "receipt": receipt, "detail": detail, "result": None, "replayed": False, "error": None,
-             "profile": [{"ma_kh": "KH-A", "ten_kh": "Customer A", "sdt": "0901234567", "dia_chi_chi_tiet_md": "Test address", "tinh_thanh_md": "Test province", "xa_phuong_md": "Test ward", "mat_khau": "PRIVATE-PASSWORD"}]}
+             "profile": [{"ma_kh": "KH-A", "ten_kh": "Customer A", "sdt": "0901234567", "dia_chi_chi_tiet_md": "Test address", "tinh_thanh_md": "Test province", "xa_phuong_md": "Test ward", "mat_khau_hash": "PRIVATE-PASSWORD"}]}
     requests = []
 
     def handle(request):
@@ -81,7 +79,7 @@ def test_all_customer_shopping_endpoints_block_before_db_without_auth(commerce_c
     client, _, requests, _, app = commerce_client
     app.dependency_overrides.pop(require_customer)
     response = client.request(method, "/api/customer" + path, json=body, headers={"Authorization": "Bearer forged", "X-Customer-Id": "KH-A"})
-    assert response.status_code == 401 and response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
+    assert response.status_code == 503 and response.json()["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
     assert requests == [] and response.headers["Cache-Control"] == "no-store"
 
 
@@ -92,14 +90,6 @@ def test_profile_only_reads_verified_customer_and_does_not_expose_hash(commerce_
     assert "PRIVATE" not in response.text
     assert requests[0].url.params["ma_kh"] == 'eq.KH-A'
     assert "*" not in requests[0].url.params["select"] and "mat_khau" not in requests[0].url.params["select"]
-
-
-def test_profile_returns_linked_account_avatar(commerce_client):
-    client, state, _, _, _ = commerce_client
-    state["profile"][0]["account"] = {"avatar": {"url": "https://example.test/avatar.webp"}}
-    response = client.get("/api/customer/me")
-    assert response.status_code == 200
-    assert response.json()["avatar_url"] == "https://example.test/avatar.webp"
 
 
 def test_quote_rpc_uses_server_identity_canonical_voucher_and_no_create_key(commerce_client):
@@ -250,7 +240,7 @@ def test_save_recipient_updates_only_verified_customer_and_shipping_fields(comme
     write = next(request for request in requests if request.method == "PATCH")
     assert write.url.params["ma_kh"] == "eq.KH-A"
     assert set(json.loads(write.content)) == {"ten_kh", "sdt", "dia_chi_chi_tiet_md", "tinh_thanh_md", "xa_phuong_md"}
-    assert state["profile"][0]["mat_khau"] == "PRIVATE-PASSWORD"
+    assert state["profile"][0]["mat_khau_hash"] == "PRIVATE-PASSWORD"
 
 
 @pytest.mark.parametrize("field,value", [("name", " "), ("phone", "abc"), ("address_line", ""),

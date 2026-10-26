@@ -58,8 +58,8 @@ File: [Tech Store](https://www.figma.com/design/74LIkwYtOLwg4vV1xO1JIT/Tech-Stor
 - Các component có sẵn tiếp tục dùng `common.module.css`; phần mới dùng `store.module.css`.
 - Màu thiết kế: primary `#0156ff`, surface `#f5f7ff`, border `#cacdd8`, muted `#a2a6b0`, error `#c94d3f`.
 - Root layout cung cấp `--font-poppins` qua `next/font`; các component common chọn font này mà không đổi font mặc định toàn trang.
-- SVG gốc tải từ Figma nằm ở `media/site/icons/tech-store/` trong Supabase Storage, giữ kích thước gốc. Chevron quantity/select được xoay ở CSS theo thiết kế.
-- Ảnh sản phẩm mẫu nằm ở `media/products/tech-store/msi-pro-16.png`; ảnh sản phẩm thực truyền qua `imageSrc`. Xem `MEDIA_STORAGE.md` để biết ánh xạ URL.
+- SVG gốc tải từ Figma nằm ở `public/icons/tech-store/`, giữ kích thước gốc. Chevron quantity/select được xoay ở CSS theo thiết kế.
+- Ảnh sản phẩm mẫu nằm ở `public/images/tech-store/msi-pro-16.png`; ảnh sản phẩm thực truyền qua `imageSrc`. Với ảnh ngoài domain, cấu hình `images.remotePatterns` theo nguồn ảnh trong ứng dụng.
 - Không dùng URL asset Figma tạm thời trong component.
 - CSS hỗ trợ focus, disabled và co giãn; trang preview dùng để kiểm tra ở desktop/mobile. Đây là bộ component, chưa triển khai toàn bộ các màn hình Figma hoặc tích hợp backend.
 

@@ -19,14 +19,13 @@ export interface ProductCardProps extends PriceProps {
   actions?: ReactNode;
   onSelect?: () => void;
   mobileImageSrc?: string;
-  imageLoading?: "eager" | "lazy";
   compactOnMobile?: boolean;
   uiLocale?: "en" | "vi";
 }
 
 /** Shared by home/catalog. Product data and cart actions belong to the caller. */
-export function ProductCard({ name, href, imageSrc, imageAlt, rating, reviewCount, stock, actions, className, onSelect, mobileImageSrc, imageLoading, compactOnMobile = false, uiLocale = "en", ...price }: ProductCardProps) {
-  const image = <picture>{mobileImageSrc && <source media="(max-width: 760px)" srcSet={mobileImageSrc} />}<CatalogImage src={imageSrc} alt={imageAlt ?? name} width={150} height={150} loading={imageLoading} /></picture>;
+export function ProductCard({ name, href, imageSrc, imageAlt, rating, reviewCount, stock, actions, className, onSelect, mobileImageSrc, compactOnMobile = false, uiLocale = "en", ...price }: ProductCardProps) {
+  const image = <picture>{mobileImageSrc && <source media="(max-width: 760px)" srcSet={mobileImageSrc} />}<CatalogImage src={imageSrc} alt={imageAlt ?? name} width={150} height={150} /></picture>;
   return (
     <article className={[styles.productCard, compactOnMobile && styles.compactCard, className].filter(Boolean).join(" ")}>
       {stock && <StockStatus status={stock} label={uiLocale === "vi" ? (stock === "in-stock" ? "Còn hàng" : "Liên hệ") : undefined} />}

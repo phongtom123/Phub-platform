@@ -3,39 +3,13 @@
 .accounts-page .account-wide { grid-column: 1 / -1; }
 .accounts-page .account-section { margin-top: 24px; }
 .accounts-page .account-help { color: #52614f; line-height: 1.6; font-size: 16px; }
-.accounts-page .account-card-description { margin: 0; }
-.accounts-page .account-warehouse-search { display: grid; align-content: start; gap: 8px; min-width: 0; }
-.accounts-page .account-warehouse-search-row { display: flex; gap: 8px; min-width: 0; }
-.accounts-page .account-warehouse-search-row input { flex: 1; width: 0; }
-.accounts-page .account-warehouse-search-row button { flex-shrink: 0; padding-inline: 10px; }
-.accounts-page .account-row-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.accounts-page .account-editable-cell input { width: 100%; min-width: 160px; }
-.accounts-page .account-row-editing { background: #f4fbf1; }
-.accounts-page .account-inline-table tr:focus-visible { outline: 2px solid #14a800; outline-offset: -2px; }
 .accounts-page .account-inactive { display: block; margin-top: 5px; font-size: 14px; color: #61705e; }
 .accounts-page .account-status { display: inline-flex; border-radius: 20px; padding: 5px 12px; font-size: 15px; }
-.accounts-page .account-status-select { min-width: 142px; border-color: transparent; border-radius: 20px; padding: 6px 10px; font-size: 15px; cursor: pointer; }
-.accounts-page .account-status-select:disabled { opacity: .65; cursor: not-allowed; }
-.accounts-page .account-status-message { display: block; margin-top: 6px; font-size: 13px; white-space: normal; }
-.accounts-page .account-status-error { color: #a62020; }
 .accounts-page .status-1 { background: #edf9e9; color: #126d04; }
 .accounts-page .status-2 { background: #fff2dd; color: #825100; }
 .accounts-page .status-0 { background: #ededed; color: #444; }
 .accounts-page input, .accounts-page select { min-width: 0; max-width: 100%; }
-.accounts-page .account-detail-card,
-.accounts-page .account-role-card,
-.accounts-page .account-password-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 1024px) {
-  .accounts-page .account-detail-card,
-  .accounts-page .account-role-card,
-  .accounts-page .account-password-card { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (min-width: 1440px) {
-  .accounts-page .account-detail-card,
-  .accounts-page .account-role-card,
-  .accounts-page .account-password-card { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-}
 @media (max-width: 600px) {
   .accounts-page .live-form { grid-template-columns: minmax(0, 1fr); padding: 16px; }
-  .accounts-page .live-tools .live-search { flex-basis: 100%; }
+  .accounts-page .live-tools > input { flex-basis: 100%; }
 }

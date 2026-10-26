@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useAdminAuth } from "./auth-provider";
+import { useEffect, useState } from "react";
 import type { ModuleKey } from "@/src/types/admin";
 import { moduleNames, modules } from "@/src/data/admin-data";
 import {
@@ -12,6 +10,7 @@ import {
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
 import { LoginView } from "@/src/features/auth/login-view";
+import type { StaffRole } from "@/src/features/auth/login-view";
 import { DashboardView } from "@/src/features/dashboard/dashboard-view";
 import { ModuleView } from "@/src/features/modules/module-view";
 import { EntityDrawer } from "@/src/features/forms/entity-drawer";
@@ -19,31 +18,68 @@ import BackendDataView from "@/src/components/backend-data-view";
 import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
 import AccountsView from "@/src/features/accounts/accounts-view";
 import type { AccountView } from "@/src/features/accounts/types";
-import SupportView from "@/src/features/support/support-view";
+import WarehouseApp from "@warehouse/src/components/warehouse/warehouse-app";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
   mode: "create" | "edit" | "settings";
 } | null;
 
-export default function AdminApp({ dataResource, accountsPage, supportPage = false }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean } = {}) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
-  const activeModule = accountsPage ? "accounts" : supportPage ? "support" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString());
+export default function AdminApp({ dataResource, accountsPage }: { dataResource?: string; accountsPage?: AccountView } = {}) {
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
+  const [sessionUser, setSessionUser] = useState<{ name: string; username: string } | null>(null);
+  const [sessionVersion, setSessionVersion] = useState(0);
+  const [activeModule, setActiveModule] = useState<ModuleKey>("dashboard");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [drawer, setDrawer] = useState<DrawerState>(null);
 
-  const retrySession = () => { void checkSession(); };
-  // The root provider owns the only initial verification gate across all pages.
-  if (sessionUser === undefined || (sessionUser && sessionUser.role !== "ADMIN")) return null;
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/backend/auth/me", { cache: "no-store", signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) { setLoggedIn(false); return; }
+        const user = await response.json();
+        if (user.role === "THU_KHO") { setStaffRole("THU_KHO"); setLoggedIn(true); setSessionUser(user); return; }
+        if (user.role === "KHACH_HANG") { window.location.replace(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001"); return; }
+        setLoggedIn(user.role === "ADMIN");
+        setSessionUser(user);
+      }).catch(() => { if (!controller.signal.aborted) setLoggedIn(false); });
 
-  if (!sessionUser) return <LoginView onLogin={acceptLogin} />;
+    const syncModuleWithUrl = () =>
+      setActiveModule(accountsPage ? "accounts" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(window.location.search));
+
+    syncModuleWithUrl();
+    window.addEventListener("popstate", syncModuleWithUrl);
+    const refreshSession = () => setSessionVersion(value => value + 1);
+    window.addEventListener("phub-account-updated", refreshSession);
+
+    return () => { controller.abort(); window.removeEventListener("popstate", syncModuleWithUrl); window.removeEventListener("phub-account-updated", refreshSession); };
+  }, [dataResource, accountsPage, sessionVersion]);
+
+  const login = ({
+    role,
+  }: {
+    role: StaffRole;
+    username: string;
+  }) => {
+    setStaffRole(role);
+    setLoggedIn(true);
+    setSessionVersion(value => value + 1);
+  };
+
+  if (loggedIn === null) return null;
+
+  if (!loggedIn) return <LoginView onLogin={login} />;
+  if (staffRole === "THU_KHO") return <WarehouseApp />;
 
   const navigate = (moduleKey: ModuleKey) => {
-    router.push(getModuleHref(moduleKey));
-    setMobileSidebarOpen(false);
+    if (moduleKey === "accounts" || dataResource || accountsPage) { window.location.assign(getModuleHref(moduleKey)); return; }
+    if (moduleKey === activeModule) return;
+
+    window.history.pushState({ moduleKey }, "", getModuleHref(moduleKey));
+    setActiveModule(moduleKey);
   };
   const toggleSidebar = () =>
     window.innerWidth <= 800
@@ -54,13 +90,11 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
   const openSettings = () =>
     setDrawer({ moduleKey: "settings", mode: "settings" });
   const logout = async () => {
-    try {
-      await endSession();
-    } catch {
-      window.alert("Không đăng xuất được. Kiểm tra backend và thử lại.");
-      return;
-    }
-    router.replace("/");
+    const response = await fetch("/api/backend/auth/logout", { method: "POST" });
+    if (!response.ok) { window.alert("Không đăng xuất được. Kiểm tra backend và thử lại."); return; }
+    window.history.replaceState({}, "", "/");
+    setActiveModule("dashboard");
+    setLoggedIn(false);
   };
   const definition = modules[activeModule];
 
@@ -77,7 +111,6 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
       />
       <div className="main">
         <AdminHeader
-          accountsPage={accountsPage}
           dataResource={accountsPage || activeModule === "accounts" ? undefined : dataResource ?? moduleResources[activeModule]}
           activeModule={activeModule}
           title={moduleNames[activeModule]}
@@ -87,14 +120,10 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
           onOpenSettings={openSettings}
           onLogout={logout}
           user={sessionUser}
-          onGoProfile={() => router.push("/account")}
+          onGoProfile={() => window.location.assign("/account")}
         />
         <main className="content">
-          {sessionError && <div className="session-warning" role="alert">
-            <span>{sessionError}</span>
-            <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
-          </div>}
-          {activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
+          {accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : definition ? (
             <ModuleView

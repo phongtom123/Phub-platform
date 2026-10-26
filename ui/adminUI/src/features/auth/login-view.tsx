@@ -3,14 +3,18 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import { Logo } from "@/src/components/admin/ui";
-import { loginSession, type SessionUser, type UserRole } from "../../../../shared/auth-client";
 
-export type StaffRole = Extract<UserRole, "ADMIN" | "THU_KHO">;
+export type StaffRole = "ADMIN" | "THU_KHO";
+
+type LoginResult = {
+  role: StaffRole;
+  username: string;
+};
 
 export function LoginView({
   onLogin,
 }: {
-  onLogin: (result: SessionUser) => void;
+  onLogin: (result: LoginResult) => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,12 +33,16 @@ export function LoginView({
     setError("");
     setLoading(true);
     try {
-      const result = await loginSession(username, password);
+      const response = await fetch("/api/backend/auth/login", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "Thông tin đăng nhập không hợp lệ.");
       if (result.role === "KHACH_HANG") {
         window.location.assign(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
         return;
       }
-      onLogin(result);
+      onLogin({ role: result.role, username: result.username });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không kết nối được backend.");
     } finally { setLoading(false); }

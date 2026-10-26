@@ -9,14 +9,11 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from phub_api.repositories.orders import OrderRepository
-from phub_api.services.orders import OrderService
-from phub_api.dependencies.orders import get_repository, get_service
-from phub_api.controllers.orders import router
-from phub_api.schemas.orders import CreateOrder
-from phub_api.config.orders import OrderSettings
-from phub_api.models.customer import CurrentCustomer
-from phub_api.dependencies.customer import require_customer
+from app.orders.repository import OrderRepository
+from app.orders.router import get_repository, router
+from app.orders.schemas import CreateOrder
+from app.orders.settings import OrderSettings
+from app.payments.auth import CurrentCustomer, require_customer
 
 
 @pytest.fixture
@@ -47,15 +44,13 @@ def orders_client(order_body):
         return httpx.Response(200, json=state["result"])
 
     with httpx.Client(transport=httpx.MockTransport(handle)) as transport:
-        repository = OrderRepository(SyncPostgrestClient("https://orders.test/rest/v1", http_client=transport))
-        service = OrderService(repository, OrderSettings("reserve_on_order", "exclusive", Decimal("10"), "VND", 1))
+        repository = OrderRepository(SyncPostgrestClient("https://orders.test/rest/v1", http_client=transport), OrderSettings("reserve_on_order", "exclusive", Decimal("10"), "VND", 1))
         app = FastAPI()
         app.include_router(router)
         app.dependency_overrides[get_repository] = lambda: repository
-        app.dependency_overrides[get_service] = lambda: service
         app.dependency_overrides[require_customer] = lambda: CurrentCustomer(customer_id="KH-ORDERS")
         with TestClient(app) as client:
-            yield client, state, requests, service
+            yield client, state, requests, repository
 
 
 def post(client, body, key=None):
@@ -94,8 +89,8 @@ def test_existing_order_endpoint_cannot_bypass_customer_auth(orders_client, orde
     client, _, requests, _ = orders_client
     client.app.dependency_overrides.pop(require_customer)
     response = post(client, order_body)
-    assert response.status_code == 401
-    assert response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
     assert requests == [] and response.headers["Cache-Control"] == "no-store"
 
 
@@ -212,8 +207,8 @@ def test_approved_defaults_and_explicit_bad_configuration_fail_closed(monkeypatc
         monkeypatch.delenv(name, raising=False)
     settings = OrderSettings.from_env()
     assert settings.tax_rate == 10 and settings.tax_application == "invoice"
-    client, _, requests, service = orders_client
-    service.settings = None
+    client, _, requests, repository = orders_client
+    repository.settings = None
     monkeypatch.setenv("ORDER_PRICE_TAX_MODE", "inclusive")
     response = post(client, order_body)
     assert response.status_code == 503 and response.json()["error"]["code"] == "ORDER_CONFIGURATION_REQUIRED"
@@ -222,7 +217,7 @@ def test_approved_defaults_and_explicit_bad_configuration_fail_closed(monkeypatc
 
 @pytest.mark.parametrize("field,value", [("ORDER_TAX_RATE", "NaN"), ("ORDER_TAX_RATE", "8"), ("ORDER_TAX_APPLICATION", "order"), ("ORDER_STOCK_POLICY", "deduct_now"), ("CATALOG_CURRENCY", "VNDx"), ("CATALOG_ACTIVE_STATUS", "x")])
 def test_unsupported_policy_is_rejected(monkeypatch, field, value):
-    from phub_api.middleware.order_errors import OrderError
+    from app.orders.errors import OrderError
     monkeypatch.setenv(field, value)
     with pytest.raises(OrderError): OrderSettings.from_env()
 

@@ -10,16 +10,16 @@
 
 Figma MCP was quota-limited. Implementation was adapted from the user's two screenshots, with responsive layouts added for smaller screens. Existing Vietnamese header/footer intentionally remain unchanged.
 
-The five matching About Us images and four icons were retrieved from the public [TechOnline reference implementation](https://thunderboltcreator.github.io/lesson_19/dist/), visually checked against the supplied screenshot, and are now stored in Supabase Storage. See `MEDIA_STORAGE.md`.
+The five matching About Us images and four icons were retrieved from the public [TechOnline reference implementation](https://thunderboltcreator.github.io/lesson_19/dist/), visually checked against the supplied screenshot, and stored locally; no remote runtime image requests are needed.
 
 | Local asset | Original path under that site |
 | --- | --- |
-| `media/products/about/showroom.webp` | `img/room/room.webp` |
-| `media/products/about/keyboard.webp` | `img/keyboard/keyboard.webp` |
-| `media/products/about/safe-hands.webp` | `img/hands/shell-h.webp` |
-| `media/products/about/quality.webp` | `img/quality/shell-q.webp` |
-| `media/products/about/delivery.webp` | `img/region/shell-r.webp` |
-| `media/site/icons/about/*.svg` | `img/icons/logo-white.svg`, `hearth.svg`, `star.svg`, `truck.svg` |
+| `public/images/about/showroom.webp` | `img/room/room.webp` |
+| `public/images/about/keyboard.webp` | `img/keyboard/keyboard.webp` |
+| `public/images/about/safe-hands.webp` | `img/hands/shell-h.webp` |
+| `public/images/about/quality.webp` | `img/quality/shell-q.webp` |
+| `public/images/about/delivery.webp` | `img/region/shell-r.webp` |
+| `public/icons/about/*.svg` | `img/icons/logo-white.svg`, `hearth.svg`, `star.svg`, `truck.svg` |
 
 Copy and claims reproduce the supplied design for UI review. In particular, the Australian business details, prices/tax rules and terms are **not approved policies for Tech Store**; the FAQ/terms page is marked noindex pending review. Confirm the business content and asset usage rights before production publishing.
 

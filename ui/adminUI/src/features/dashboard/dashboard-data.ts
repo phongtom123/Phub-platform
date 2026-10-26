@@ -1,5 +1,3 @@
-import { adminFetch } from "../../lib/admin-fetch";
-
 export type OrderStat = { ma_donhang: string; trang_thai: string; kenh_ban: string; thoi_gian_dat: string };
 export type InventoryStat = { ma_kho: number; sku: string; so_luong_ton: number };
 export type WarehouseStat = { ma_kho: number; ten_kho: string };
@@ -12,23 +10,23 @@ const statuses: Record<string, string> = {
   DA_XUAT_KHO: "Đã xuất kho", HOAN_THANH: "Hoàn thành", HUY: "Đã hủy",
 };
 
-async function readPage<T>(resource: string, page: number, signal: AbortSignal, pageSize = 100, fresh = false): Promise<DataPage<T>> {
-  const response = await adminFetch(`/api/backend/data/${resource}?page=${page}&page_size=${pageSize}`, { signal, cache: fresh ? "no-cache" : "no-store" });
+async function readPage<T>(resource: string, page: number, signal: AbortSignal): Promise<DataPage<T>> {
+  const response = await fetch(`/api/backend/data/${resource}?page=${page}&page_size=100`, { signal, cache: "no-store" });
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không tải được dữ liệu thống kê.");
-  if (!body || !Array.isArray(body.data) || !Number.isSafeInteger(body.total) || body.total < 0 || body.page !== page || body.page_size !== pageSize) {
+  if (!body || !Array.isArray(body.data) || !Number.isSafeInteger(body.total) || body.total < 0 || body.page !== page || body.page_size !== 100) {
     throw new Error("API trả dữ liệu thống kê không hợp lệ.");
   }
   return body;
 }
 
-export async function readAllRows<T>(resource: string, signal: AbortSignal, fresh = false): Promise<T[]> {
-  const first = await readPage<T>(resource, 1, signal, 100, fresh);
+export async function readAllRows<T>(resource: string, signal: AbortSignal): Promise<T[]> {
+  const first = await readPage<T>(resource, 1, signal);
   // Do not silently chart only the first page or a truncated sample.
   if (first.total > 20000) throw new Error("Dữ liệu vượt giới hạn thống kê trên trình duyệt. Cần API tổng hợp riêng cho dữ liệu lớn.");
   const rows = [...first.data];
   for (let page = 2; page <= Math.ceil(first.total / 100); page++) {
-    const next = await readPage<T>(resource, page, signal, 100, fresh);
+    const next = await readPage<T>(resource, page, signal);
     if (next.total !== first.total) throw new Error("Dữ liệu vừa thay đổi. Hãy làm mới thống kê.");
     rows.push(...next.data);
   }
@@ -36,8 +34,8 @@ export async function readAllRows<T>(resource: string, signal: AbortSignal, fres
   return rows;
 }
 
-export async function readCount(resource: string, signal: AbortSignal, fresh = false): Promise<number> {
-  return (await readPage(resource, 1, signal, 1, fresh)).total;
+export async function readCount(resource: string, signal: AbortSignal): Promise<number> {
+  return (await readPage(resource, 1, signal)).total;
 }
 
 /** Treat timestamps without an offset as Vietnam local time, not browser local time. */

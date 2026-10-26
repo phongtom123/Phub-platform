@@ -1,9 +1,9 @@
 import "server-only";
 import { CatalogApiError, readJson, validateProduct } from "./client";
-import { backendBaseUrl } from "@/lib/server/backend";
 
 export function backendUrl(path: string, search = ""): URL {
-  const base = backendBaseUrl();
+  const base = new URL(process.env.PHUB_API_BASE_URL || "http://127.0.0.1:8000");
+  if (!["http:", "https:"].includes(base.protocol)) throw new Error("Invalid backend protocol");
   return new URL(`${base.pathname.replace(/\/$/, "")}/api/catalog/${path}${search}`, base.origin);
 }
 

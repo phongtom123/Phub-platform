@@ -1,6 +1,6 @@
+"""Account API contracts with real PostgREST builders and an offline HTTP store."""
 import json
 import time
-from uuid import uuid4
 from copy import deepcopy
 
 import httpx
@@ -8,11 +8,9 @@ import pytest
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 
-from phub_api.models.user import User
-from phub_api.dependencies.auth import current_user
-from phub_api.services.auth import login_attempts
-from phub_api.main import app
-from phub_api.config.database import get_supabase
+from app.auth import User, current_user, login_attempts, passwords
+from app.main import app
+from app.supabase import get_supabase
 
 ORIGIN = {"Origin": "http://localhost:3000"}
 ADMIN = User("TK1", "Admin.One", "ADMIN", "Admin", employee_id="NV1")
@@ -36,12 +34,12 @@ def accounts_client(monkeypatch):
     monkeypatch.setenv("JWT_SECRET", "test-only-" + "x" * 64)
     monkeypatch.setenv("FRONTEND_ORIGINS", "http://localhost:3000")
     monkeypatch.setenv("COOKIE_SECURE", "false")
-    old_hash = PASSWORD
+    old_hash = passwords.hash(PASSWORD)
     tables = {
         "TAI_KHOAN": [
-            {"ma_tk": "TK1", "ten_tai_khoan": "Admin.One", "email": "admin@example.test", "ma_nhan_vien": "NV1", "ma_kh": None, "trang_thai": 1, "mat_khau": old_hash},
-            {"ma_tk": "TK2", "ten_tai_khoan": "warehouse", "email": None, "ma_nhan_vien": "NV2", "ma_kh": None, "trang_thai": 1, "mat_khau": old_hash},
-            {"ma_tk": "TK3", "ten_tai_khoan": "customer", "email": None, "ma_nhan_vien": None, "ma_kh": "KH1", "trang_thai": 1, "mat_khau": old_hash},
+            {"ma_tk": "TK1", "ten_tai_khoan": "Admin.One", "email": "admin@example.test", "ma_nhan_vien": "NV1", "ma_kh": None, "trang_thai": 1, "mat_khau_hash": old_hash},
+            {"ma_tk": "TK2", "ten_tai_khoan": "warehouse", "email": None, "ma_nhan_vien": "NV2", "ma_kh": None, "trang_thai": 1, "mat_khau_hash": old_hash},
+            {"ma_tk": "TK3", "ten_tai_khoan": "customer", "email": None, "ma_nhan_vien": None, "ma_kh": "KH1", "trang_thai": 1, "mat_khau_hash": old_hash},
         ],
         "NHAN_VIEN": [
             {"ma_nhan_vien": "NV1", "ho_ten": "Admin", "loai_nhan_vien": "ADMIN", "ma_kho": None, "trang_thai": 1},
@@ -51,14 +49,12 @@ def accounts_client(monkeypatch):
         "KHACH_HANG": [{"ma_kh": "KH1", "ten_kh": "Customer"}, {"ma_kh": "KH2", "ten_kh": "New customer"}],
         "KHO": [{"ma_kho": 7, "trang_thai": 1}, {"ma_kho": 8, "trang_thai": 0}, {"ma_kho": -900003, "trang_thai": 1}],
     }
-    for row in tables["TAI_KHOAN"]:
-        row["phien_ban_mat_khau"] = str(uuid4())
     requests = []
     state = {"actor": ADMIN, "conflict": False, "rpc_error": None, "account_numbers": {"ADMIN": 0, "THU_KHO": 0, "KHACH_HANG": 0}}
 
     def handle(request):
         requests.append(request)
-        if request.url.path.endswith("/rpc/admin_create_account_v2"):
+        if request.url.path.endswith("/rpc/admin_create_account_v1"):
             if state["rpc_error"] or state["conflict"]:
                 return httpx.Response(400, json={"code": state["rpc_error"] or "23505", "message": "private SQL details", "details": "private", "hint": None})
             data = json.loads(request.content)
@@ -72,21 +68,11 @@ def accounts_client(monkeypatch):
                 tables["KHACH_HANG"].append({"ma_kh": owner_id, "ten_kh": data["p_name"]})
             else:
                 tables["NHAN_VIEN"].append({"ma_nhan_vien": owner_id, "ho_ten": data["p_name"], "loai_nhan_vien": data["p_role"], "ma_kho": data["p_warehouse_id"], "trang_thai": 1})
-            row = {"ma_tk": account_id, "ten_tai_khoan": data["p_username"], "email": data["p_email"], "mat_khau": data["p_password"],
+            row = {"ma_tk": account_id, "ten_tai_khoan": data["p_username"], "email": data["p_email"], "mat_khau_hash": data["p_password_hash"],
                    "ma_nhan_vien": None if customer else owner_id, "ma_kh": owner_id if customer else None, "trang_thai": 1}
             tables["TAI_KHOAN"].append(row)
-            row["phien_ban_mat_khau"] = str(uuid4())
-            result = {k: v for k, v in row.items() if k != "mat_khau"}
+            result = {k: v for k, v in row.items() if k != "mat_khau_hash"}
             return httpx.Response(200, json=result | {"role": data["p_role"], "ho_ten": data["p_name"], "ma_kho": data["p_warehouse_id"], "owner_active": True, "is_self": False})
-        if request.url.path.endswith("/rpc/set_account_password_v2"):
-            data = json.loads(request.content)
-            matches = [row for row in tables["TAI_KHOAN"] if row["ma_tk"] == data["p_account_id"]
-                       and (data["p_expected_password"] is None or row["mat_khau"] == data["p_expected_password"])
-                       and (data["p_expected_version"] is None or row["phien_ban_mat_khau"] == data["p_expected_version"])]
-            for row in matches:
-                row["mat_khau"] = data["p_password"]
-                row["phien_ban_mat_khau"] = str(uuid4())
-            return httpx.Response(200, json=[{"ma_tk": row["ma_tk"]} for row in matches])
         table = request.url.path.split("/")[-1]
         rows = tables[table]
         params = request.url.params
@@ -176,8 +162,8 @@ def test_list_filters_pagination_projection_and_search(accounts_client):
     assert params["employee.loai_nhan_vien"] == "eq.THU_KHO"
     assert "NHAN_VIEN!inner" in params["select"]
     assert '.imatch."' in params["or"] and "\\" in params["or"]
-    assert all(field not in params["select"] for field in ["mat_khau", "luong", "cccd"])
-    assert "mat_khau" not in response.text
+    assert all(field not in params["select"] for field in ["mat_khau_hash", "luong", "cccd"])
+    assert "mat_khau_hash" not in response.text
     customer = client.get("/api/admin/accounts?role=KHACH_HANG").json()["data"]
     assert [row["ma_tk"] for row in customer] == ["TK3"]
     assert requests[-1].url.params["ma_kh"] == "not.is.null"
@@ -208,17 +194,17 @@ def test_create_hashes_password_and_derives_role(accounts_client, kind, owner, r
     assert response.json()["role"] == role
     assert response.json()["email"] == "new@example.test"
     assert response.json()["ten_tai_khoan"] == "New.User"
-    assert "mat_khau" not in response.text and body["password"] not in response.text
+    assert "mat_khau_hash" not in response.text and body["password"] not in response.text
     stored = tables["TAI_KHOAN"][-1]
     assert stored["trang_thai"] == 1
-    assert stored["mat_khau"] == body["password"]
-    assert (body["password"] == stored["mat_khau"])
+    assert stored["mat_khau_hash"].startswith("$argon2")
+    assert passwords.verify(body["password"], stored["mat_khau_hash"])
     assert len([r for r in requests if r.method != "GET"]) == 1
 
 
 @pytest.mark.parametrize("changes", [
     {"ma_kh": None}, {"ma_nhan_vien": "NV3"}, {"password": "tiny"}, {"role": "ADMIN"},
-    {"mat_khau": "fake"}, {"trang_thai": 2}, {"ten_tai_khoan": "user@host"},
+    {"mat_khau_hash": "fake"}, {"trang_thai": 2}, {"ten_tai_khoan": "user@host"},
     {"email": "invalid"}, {"ma_tk": ".."}, {"ma_tk": "."}, {"ma_tk": "new"},
 ])
 def test_invalid_create_never_writes_or_echoes_password(accounts_client, changes):
@@ -261,7 +247,7 @@ def test_create_new_person_atomically_and_login(accounts_client, role, warehouse
                "new_owner": {"ho_ten": "  New Person  ", "role": role, "ma_kho": warehouse}}
     result = client.post("/api/admin/accounts", json=payload, headers=ORIGIN)
     assert result.status_code == 201
-    assert len(requests) == 1 and requests[0].url.path.endswith("/rpc/admin_create_account_v2")
+    assert len(requests) == 1 and requests[0].url.path.endswith("/rpc/admin_create_account_v1")
     args = json.loads(requests[0].content)
     assert args["p_actor_account_id"] == ADMIN.account_id
     assert "p_account_id" not in args
@@ -270,8 +256,8 @@ def test_create_new_person_atomically_and_login(accounts_client, role, warehouse
     assert args["p_email"] == "new@example.test"
     assert args["p_username"] == "New.Person"
     assert args["p_warehouse_id"] == warehouse
-    assert (payload["password"] == args["p_password"])
-    assert payload["password"] not in result.text and "mat_khau" not in result.text
+    assert passwords.verify(payload["password"], args["p_password_hash"])
+    assert payload["password"] not in result.text and "mat_khau_hash" not in result.text
     assert result.json()["role"] == role
     assert result.json()["ma_tk"] == {"ADMIN": "AD000001", "THU_KHO": "KHO000001", "KHACH_HANG": "KH000001"}[role]
     assert len(tables["TAI_KHOAN"]) == 4
@@ -322,7 +308,7 @@ def test_new_person_rpc_failure_is_safe(accounts_client, code, status):
     assert "private" not in result.text and PASSWORD not in result.text
     assert tables == before and len(requests) == 1
     if code == "PGRST202":
-        assert "account_plaintext_passwords.sql" in result.text
+        assert "20261010_admin_account_creation.sql" in result.text
 
 
 def test_role_assignment_accepts_existing_negative_warehouse(accounts_client):
@@ -391,28 +377,13 @@ def test_reset_password_invalidates_old_token(accounts_client):
     old_token = client.cookies.get("phub_session")
     app.dependency_overrides[current_user] = lambda: ADMIN
     result = client.post("/api/admin/accounts/TK2/password", json={"password": "replacement-password"}, headers=ORIGIN)
-    assert result.status_code == 200 and "mat_khau" not in result.text
-    assert ("replacement-password" == tables["TAI_KHOAN"][1]["mat_khau"])
+    assert result.status_code == 200 and "mat_khau_hash" not in result.text
+    assert passwords.verify("replacement-password", tables["TAI_KHOAN"][1]["mat_khau_hash"])
     assert client.post("/api/admin/accounts/TK1/password", json={"password": "replacement-password"}, headers=ORIGIN).status_code == 409
     app.dependency_overrides.pop(current_user)
     client.cookies.clear(); client.cookies.set("phub_session", old_token)
     assert client.get("/api/auth/me").status_code == 401
     assert client.post("/api/auth/login", json={"username": "warehouse", "password": "replacement-password"}, headers=ORIGIN).status_code == 200
-
-
-def test_reset_to_same_password_still_revokes_previous_session(accounts_client):
-    client, tables, _, _ = accounts_client
-    app.dependency_overrides.pop(current_user)
-    assert client.post("/api/auth/login", json={"username": "warehouse", "password": PASSWORD}, headers=ORIGIN).status_code == 200
-    token = client.cookies.get("phub_session")
-    previous_revision = tables["TAI_KHOAN"][1]["phien_ban_mat_khau"]
-    app.dependency_overrides[current_user] = lambda: ADMIN
-    assert client.post("/api/admin/accounts/TK2/password", json={"password": PASSWORD}, headers=ORIGIN).status_code == 200
-    assert tables["TAI_KHOAN"][1]["mat_khau"] == PASSWORD
-    assert tables["TAI_KHOAN"][1]["phien_ban_mat_khau"] != previous_revision
-    app.dependency_overrides.pop(current_user)
-    client.cookies.clear(); client.cookies.set("phub_session", token)
-    assert client.get("/api/auth/me").status_code == 401
 
 
 def test_self_password_current_verification_cas_and_logout(accounts_client):
@@ -421,17 +392,16 @@ def test_self_password_current_verification_cas_and_logout(accounts_client):
     assert client.post("/api/auth/login", json={"username": "ADMIN@EXAMPLE.TEST", "password": PASSWORD}, headers=ORIGIN).status_code == 200
     assert requests[0].url.params["email"] == "eq.admin@example.test"
     old_token = client.cookies.get("phub_session")
-    old_hash = tables["TAI_KHOAN"][0]["mat_khau"]
+    old_hash = tables["TAI_KHOAN"][0]["mat_khau_hash"]
     body = {"current_password": "wrong", "password": "replacement-password"}
     assert client.post("/api/admin/me/password", json=body, headers=ORIGIN).status_code == 422
-    assert tables["TAI_KHOAN"][0]["mat_khau"] == old_hash
+    assert tables["TAI_KHOAN"][0]["mat_khau_hash"] == old_hash
     body["current_password"] = PASSWORD
     response = client.post("/api/admin/me/password", json=body, headers=ORIGIN)
     assert response.status_code == 200 and "Max-Age=0" in response.headers["Set-Cookie"]
-    patch = next(r for r in requests if r.url.path.endswith("/rpc/set_account_password_v2"))
-    assert json.loads(patch.content)["p_expected_password"] == old_hash
-    assert "mat_khau" not in patch.url.params
-    assert (body["password"] == tables["TAI_KHOAN"][0]["mat_khau"])
+    patch = next(r for r in requests if r.method == "PATCH")
+    assert patch.url.params["mat_khau_hash"] == "eq." + old_hash
+    assert passwords.verify(body["password"], tables["TAI_KHOAN"][0]["mat_khau_hash"])
     assert client.get("/api/auth/me").status_code == 401
     client.cookies.clear(); client.cookies.set("phub_session", old_token)
     assert client.get("/api/auth/me").status_code == 401
@@ -465,10 +435,10 @@ def test_openapi_documents_admin_security_without_password_read_fields():
     for method, path, _ in OPERATIONS:
         path = path.replace("/TK2", "/{account_id}")
         operation = spec["paths"]["/api/admin" + path][method.lower()]
-        assert operation["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
+        assert operation["security"] == [{"SessionCookie": []}]
         assert operation["x-roles"] == ["ADMIN"]
         if method != "GET":
             assert any(p["name"] == "Origin" for p in operation["parameters"])
     properties = spec["components"]["schemas"]["AccountRead"]["properties"]
-    assert "mat_khau" not in properties and "password" not in properties
+    assert "mat_khau_hash" not in properties and "password" not in properties
     assert spec["components"]["schemas"]["AccountCreate"]["properties"]["password"]["writeOnly"] is True

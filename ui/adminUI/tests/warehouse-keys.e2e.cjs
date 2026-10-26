@@ -28,7 +28,7 @@ async function main() {
       if (!url.pathname.startsWith("/api/")) return route.continue();
       assert.equal(request.method(), "GET", "This browser test must not write data");
       const respond = data => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
-      if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", username: "admin.test", role: "ADMIN", name: "Admin Test" });
+      if (url.pathname === "/api/backend/auth/me") return respond({ username: "admin.test", role: "ADMIN", name: "Admin Test" });
       if (url.pathname === "/api/backend/data/resources") return respond([metadata]);
       if (url.pathname === "/api/backend/data/warehouses") {
         const key = url.searchParams.get("key");
@@ -45,14 +45,12 @@ async function main() {
     await page.locator(".live-table").getByRole("link", { name: "-900003", exact: true }).click();
     await page.waitForURL(url => url.pathname === "/data/warehouses" && url.searchParams.get("key") === "[-900003]");
     await page.locator(".live-field").getByText("Mã kho", { exact: true }).waitFor();
-    const detailReads = keys.length;
     await page.getByRole("link", { name: "Chỉnh sửa", exact: true }).click();
     await page.waitForURL(url => url.searchParams.get("edit") === "1");
     await page.getByLabel(/^Tên kho/).waitFor();
     assert.equal(await page.getByLabel(/^Tên kho/).inputValue(), warehouse.ten_kho);
     await page.getByRole("link", { name: "Hủy", exact: true }).click();
     await page.locator(".live-field").getByText("Mã kho", { exact: true }).waitFor();
-    assert.equal(keys.length, detailReads, "Edit/cancel reuse the same cached warehouse detail");
 
     // Old detail/edit routes must preserve negative IDs through Next redirects.
     for (const edit of [false, true]) {
@@ -63,7 +61,7 @@ async function main() {
       // Next's route announcer also has role=alert; check only application errors.
       assert.equal(await page.locator('.live-data [role="alert"]').count(), 0);
     }
-    assert.ok(keys.length >= 3, "Initial detail and two fresh legacy documents verify the numeric key");
+    assert.ok(keys.length >= 4);
     assert.deepEqual(errors, []);
     console.log("PASS: negative warehouse ID list/detail/edit/cancel and legacy redirects; no live database writes.");
   } finally {

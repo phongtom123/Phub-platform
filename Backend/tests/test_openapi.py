@@ -1,3 +1,4 @@
+"""Documentation must describe actual URLs, payload models, permissions and errors."""
 import json
 from pathlib import Path
 
@@ -6,14 +7,12 @@ from fastapi.testclient import TestClient
 from openapi_spec_validator import validate
 from jsonschema import Draft202012Validator
 
-from phub_api.schemas.examples import key_example, payload_example, row_example
-from phub_api.models.user import User
-from phub_api.dependencies.auth import current_user
-from phub_api.main import app
-from phub_api.models.resources import RESOURCES, SYSTEM_FIELDS
-from phub_api.schemas.resources import payload_model
-from phub_api.config.database import get_supabase
-from phub_api.services.tables import validate_combined
+from app.api_examples import key_example, payload_example, row_example
+from app.auth import User, current_user
+from app.main import app
+from app.resources import RESOURCES, SYSTEM_FIELDS, payload_model
+from app.supabase import get_supabase
+from app.tables import validate_combined
 
 
 @pytest.fixture(scope="module")
@@ -42,7 +41,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
         methods = spec["paths"][f"/api/data/{name}"]
         assert set(methods) == ({"get", "post", "patch"} if resource.writable else {"get"})
         for operation in methods.values():
-            assert operation["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
+            assert operation["security"] == [{"SessionCookie": []}]
             assert operation["x-table"] == resource.table
             assert operation["x-primary-key"] == list(resource.keys)
             assert not any(p["in"] == "path" for p in operation.get("parameters", []))
@@ -54,7 +53,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
 def test_operation_ids_are_unique_and_tags_exist(spec):
     operations = [operation for path in spec["paths"].values() for operation in path.values()]
     identifiers = [operation["operationId"] for operation in operations]
-    assert len(identifiers) == len(set(identifiers)) == 86
+    assert len(identifiers) == len(set(identifiers)) == 68
     tags = {tag["name"] for tag in spec["tags"]}
     for operation in operations:
         assert set(operation["tags"]).issubset(tags)
@@ -85,35 +84,22 @@ def test_all_local_references_resolve(spec):
 def test_cookie_auth_and_public_operations(spec):
     cookie = spec["components"]["securitySchemes"]["SessionCookie"]
     assert (cookie["type"], cookie["in"], cookie["name"]) == ("apiKey", "cookie", "phub_session")
-    bearer = spec["components"]["securitySchemes"]["BearerAuth"]
-    assert (bearer["type"], bearer["scheme"], bearer["bearerFormat"]) == ("http", "bearer", "JWT")
-    assert spec["paths"]["/api/auth/me"]["get"]["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
-    for path in ["/api/auth/login", "/api/auth/token", "/api/auth/register", "/api/auth/logout", "/api/health", "/api/products", "/api/catalog/products"]:
+    assert spec["paths"]["/api/auth/me"]["get"]["security"] == [{"SessionCookie": []}]
+    for path in ["/api/auth/login", "/api/auth/logout", "/api/health", "/api/products", "/api/catalog/products"]:
         for operation in spec["paths"][path].values():
             assert operation["security"] == []
     login = spec["paths"]["/api/auth/login"]["post"]
     assert "Set-Cookie" in login["responses"]["200"]["headers"]
     assert "429" in login["responses"]
     assert spec["components"]["schemas"]["LoginBody"]["properties"]["password"]["writeOnly"]
-    registration = spec["paths"]["/api/auth/register"]["post"]
-    assert "Set-Cookie" in registration["responses"]["201"]["headers"]
-    assert "429" in registration["responses"]
-    assert spec["components"]["schemas"]["RegisterBody"]["properties"]["password"]["writeOnly"]
     assert "content" not in spec["paths"]["/api/auth/logout"]["post"]["responses"]["204"]
-    token = spec["paths"]["/api/auth/token"]["post"]
-    assert "Set-Cookie" not in token["responses"]["200"]["headers"]
-    assert "429" in token["responses"]
-    assert token["requestBody"]["content"]["application/json"]["schema"] == {"$ref": "#/components/schemas/LoginBody"}
-    for path in ["/api/orders", "/api/customer/me", "/api/data/resources"]:
-        for operation in spec["paths"][path].values():
-            assert operation["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
 
 
 @pytest.mark.parametrize("name", RESOURCES)
 def test_row_examples_match_schema_and_no_hashes(spec, name):
     component = spec["components"]["schemas"][RESOURCES[name].table + "Read"]
     Draft202012Validator(component).validate(row_example(name))
-    assert "mat_khau" not in component["properties"]
+    assert "mat_khau_hash" not in component["properties"]
     assert "password" not in component["properties"]
 
 
@@ -190,13 +176,13 @@ def test_versioned_snapshot_has_no_drift_or_real_secrets(spec):
     assert json.loads(path.read_text(encoding="utf-8")) == spec
     serialized = json.dumps(spec)
     assert "sb_secret_" not in serialized
-    assert "mat_khau" not in spec["components"]["schemas"]["TAI_KHOANRead"]["properties"]
+    assert "mat_khau_hash" not in spec["components"]["schemas"]["TAI_KHOANRead"]["properties"]
 
 
 def test_swagger_origins_remain_explicit(monkeypatch):
     from fastapi import HTTPException
     from starlette.requests import Request
-    from phub_api.dependencies.origin import check_origin
+    from app.auth import check_origin
     monkeypatch.delenv("FRONTEND_ORIGINS", raising=False)
     for origin in ["http://localhost:8000", "http://127.0.0.1:8000"]:
         check_origin(Request({"type": "http", "headers": [(b"origin", origin.encode())]}))

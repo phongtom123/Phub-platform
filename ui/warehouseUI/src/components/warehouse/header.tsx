@@ -3,9 +3,9 @@
 import { Bell, ChevronDown, CircleHelp } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { moduleNames } from "@/src/data/warehouse-data";
-import type { ModuleKey } from "@/src/types/warehouse";
-import type { WarehouseUser } from "@/src/types/warehouse-auth";
+import { moduleNames } from "@warehouse/src/data/warehouse-data";
+import type { ModuleKey } from "@warehouse/src/types/warehouse";
+import type { WarehouseUser } from "@warehouse/src/types/warehouse-auth";
 
 export default function Header({ user }: { user: WarehouseUser }) {
   const [notice, setNotice] = useState("");
