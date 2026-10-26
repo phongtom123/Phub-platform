@@ -11,7 +11,7 @@ services:
     name: phub-admin-ui
     runtime: node
     rootDir: ui/adminUI
-    buildCommand: npm ci --include=dev && npm run build
+    buildCommand: npm ci --include=dev && cd ../warehouseUI && npm ci --include=dev && cd ../adminUI && npm run build
     startCommand: npm start
     healthCheckPath: /
     autoDeploy: true
