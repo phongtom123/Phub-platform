@@ -10,8 +10,9 @@ services:
   - type: web
     name: phub-admin-ui
     runtime: node
-    buildCommand: cd ui/adminUI && npm ci --include=dev && npm run build
-    startCommand: cd ui/adminUI && npm start
+    rootDir: ui/adminUI
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
     healthCheckPath: /
     autoDeploy: true
     envVars:
