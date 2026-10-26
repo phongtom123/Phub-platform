@@ -43,9 +43,11 @@ class AccountsService:
                     raise HTTPException(422, "Hồ sơ khách hàng không tồn tại.")
                 customer = rows[0]
             role, name, warehouse, active = "KHACH_HANG", customer["ten_kh"], None, True
+        avatar = row.get("avatar")
+        avatar_url = avatar.get("url") if isinstance(avatar, dict) else None
         return AccountRead(**{key: row.get(key) for key in ACCOUNT_COLUMNS.split(",")},
                            role=role, ho_ten=name, ma_kho=warehouse, owner_active=active,
-                           is_self=row["ma_tk"] == self.actor.account_id)
+                           is_self=row["ma_tk"] == self.actor.account_id, avatar_url=avatar_url)
 
     def detail(self, account_id: str) -> AccountRead:
         return self.public(self.account(account_id))

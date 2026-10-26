@@ -34,10 +34,30 @@ def test_public_list_contract_and_database_visibility_filters(catalog_client):
     assert params["category.trang_thai"] == "eq.1"
     assert params["subcategory.trang_thai"] == "eq.1"
     assert "LOAI_SP!inner" in params["select"]
+    assert "MEDIA!MEDIA_product_fkey" in params["select"]
+    assert "SAN_PHAM_MEDIA" not in params["select"]
     assert "gia_ban_hien_tai::text" in params["select"]
     assert "gia_nhap" not in params["select"] and "*" not in params["select"]
     assert params["order"] == "ma_sp.asc"
     assert requests[0].headers["prefer"] == "count=exact"
+
+
+def test_product_gallery_uses_direct_media_primary_then_position(catalog_client):
+    client, state, _, _ = catalog_client
+    state["rows"][0]["product_media"] = [
+        {"thu_tu": 2, "la_anh_chinh": False,
+         "ma_media": "00000000-0000-0000-0000-000000000002", "url": " https://example.test/back.jpg ", "alt_text": "Mặt sau"},
+        {"thu_tu": 1, "la_anh_chinh": False,
+         "ma_media": "00000000-0000-0000-0000-000000000001", "url": "https://example.test/side.jpg", "alt_text": None},
+        {"thu_tu": 0, "la_anh_chinh": True,
+         "ma_media": "00000000-0000-0000-0000-000000000000", "url": "https://example.test/front.jpg", "alt_text": "Mặt trước"},
+    ]
+    images = client.get("/api/catalog/products/SP001").json()["images"]
+    assert images == [
+        {"url": "https://example.test/front.jpg", "alt": "Mặt trước"},
+        {"url": "https://example.test/side.jpg", "alt": "Laptop MSI Modern"},
+        {"url": "https://example.test/back.jpg", "alt": "Mặt sau"},
+    ]
 
 
 @pytest.mark.parametrize("search", ["mSi", "MSI-001", 'a,b).or(trang_thai.eq.0)', '100%_* (a) "b" \\ c', "Máy tính"])

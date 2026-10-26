@@ -44,15 +44,17 @@ ResourceName = Enum("ResourceName", {name.replace("-", "_"): name for name in RE
 
 @lru_cache
 def schema() -> dict[str, list[dict[str, Any]]]:
-    source = (Path(__file__).resolve().parents[3] / "database" / "schema.dbml").read_text(encoding="utf-8")
+    source = (Path(__file__).resolve().parents[2] / "schema.dbml").read_text(encoding="utf-8")
     result = {}
     for table, block in re.findall(r"Table (\w+) \{(.*?)^\}", source, re.M | re.S):
         columns = []
-        for name, kind, options in re.findall(r"^  (\w+) (int|varchar|text|datetime|timestamptz|date|uuid|decimal\(\d+,\d+\))([^\n]*)", block, re.M):
-            default_match = re.search(r"default: ('[^']*'|-?\d+)", options)
+        for name, kind, options in re.findall(r"^  (\w+) (int|boolean|varchar|text|datetime|timestamptz|date|uuid|decimal\(\d+,\d+\))([^\n]*)", block, re.M):
+            default_match = re.search(r"default: ('[^']*'|-?\d+|true|false)", options)
             default = default_match.group(1).strip("'") if default_match else None
             if kind == "int" and default is not None:
                 default = int(default)
+            if kind == "boolean" and default is not None:
+                default = default == "true"
             columns.append({"name": name, "type": kind, "required": "not null" in options or "pk" in options,
                             "generated": "increment" in options, "default": default})
         result[table] = columns

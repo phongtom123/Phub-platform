@@ -1,7 +1,7 @@
 # Quản lý và sử dụng PHUB Swagger / OpenAPI
 
 OpenAPI là đặc tả JSON cho API. Swagger UI là trang để đọc đặc tả và thử request.
-Nguồn chuẩn là code + `database/schema.dbml`; [openapi.json](openapi.json) là snapshot xuất từ ứng dụng để review trong Git hoặc import vào công cụ API.
+Nguồn chuẩn là code + `Backend/schema.dbml`; [openapi.json](openapi.json) là snapshot xuất từ ứng dụng để review trong Git hoặc import vào công cụ API.
 Không sửa snapshot thủ công để thêm một endpoint chưa có code.
 
 ## Mở Swagger

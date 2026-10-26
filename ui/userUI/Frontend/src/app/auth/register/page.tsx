@@ -53,7 +53,7 @@ export default function RegisterPage() {
           Tài khoản được đăng nhập ngay sau khi tạo thành công.
         </p>
         <ul className="mt-7 space-y-3 text-sm text-zinc-600">
-          <li className="flex gap-3"><span className="font-bold text-green-700">✓</span> Mật khẩu được băm an toàn, không lưu dạng văn bản.</li>
+          <li className="flex gap-3"><span className="font-bold text-green-700">✓</span> Đăng ký và đăng nhập dùng chung API xác thực của hệ thống.</li>
           <li className="flex gap-3"><span className="font-bold text-green-700">✓</span> Phiên đăng nhập nằm trong cookie HttpOnly.</li>
           <li className="flex gap-3"><span className="font-bold text-green-700">✓</span> Không chia sẻ khóa Supabase cho trình duyệt.</li>
         </ul>

@@ -108,10 +108,14 @@ export function AccountMenu({
   );
 }
 
-export function GuestAvatar({ name }: { name?: string }) {
+export function GuestAvatar({ name, avatarUrl }: { name?: string; avatarUrl?: string | null }) {
+  const safeAvatar = avatarUrl?.trim() && (/^https?:\/\//i.test(avatarUrl.trim()) || (avatarUrl.trim().startsWith("/") && !avatarUrl.trim().startsWith("//")))
+    ? avatarUrl.trim() : null;
   return (
     <span className={styles.avatar}>
-      {name ? (
+      {safeAvatar ? (
+        <span className={styles.avatarImage} style={{ backgroundImage: `url(${JSON.stringify(safeAvatar)})` }} aria-hidden="true" />
+      ) : name ? (
         <strong aria-hidden="true">{name.trim().charAt(0).toLocaleUpperCase("vi")}</strong>
       ) : (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

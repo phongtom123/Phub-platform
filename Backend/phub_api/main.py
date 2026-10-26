@@ -12,6 +12,7 @@ from phub_api.controllers.commerce import router as commerce_router
 from phub_api.controllers.health import router as health_router
 from phub_api.controllers.admin_accounts import router as admin_accounts_router
 from phub_api.controllers.media import router as media_router
+from phub_api.controllers.media import customer_router as customer_media_router
 from phub_api.controllers.crm import router as crm_router
 from phub_api.controllers.support import router as support_router
 from phub_api.controllers.warehouse_drafts import router as warehouse_drafts_router
@@ -56,6 +57,7 @@ app.include_router(commerce_router)
 app.include_router(health_router)
 app.include_router(admin_accounts_router)
 app.include_router(media_router)
+app.include_router(customer_media_router)
 app.include_router(crm_router)
 app.include_router(support_router)
 app.include_router(warehouse_drafts_router)

@@ -319,7 +319,7 @@ def install_openapi(app: FastAPI) -> None:
         }
         add_table_paths(spec)
         describe_auth_and_public(spec)
-        spec["x-database-schema"] = "database/schema.dbml"
+        spec["x-database-schema"] = "Backend/schema.dbml"
         spec["x-live-database-verified"] = False
         spec["x-not-implemented"] = ["Live deployment of customer checkout/payment RPCs", "Payment gateway/webhook/refund integration", "Email verification/password reset/token refresh"]
         app.openapi_schema = spec

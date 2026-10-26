@@ -124,6 +124,7 @@ class CustomerProfile(BaseModel):
     address_line: str | None
     province: str | None
     ward: str | None
+    avatar_url: str | None = None
 
 
 class OrderQuery(BaseModel):

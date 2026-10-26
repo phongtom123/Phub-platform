@@ -6,6 +6,7 @@ export interface CustomerProfile {
   address_line: string | null;
   province: string | null;
   ward: string | null;
+  avatar_url?: string | null;
 }
 export interface CartLine {
   product_id: string;

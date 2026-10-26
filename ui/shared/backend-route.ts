@@ -60,6 +60,7 @@ function validCustomerPath(path: string[], method: string): boolean {
       return path.length === 4 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3]) && method === "GET";
     }
     if (path.length === 2 && path[1] === "me") return ["GET", "PUT"].includes(method);
+    if (path.length === 3 && path[1] === "me" && path[2] === "avatar") return method === "POST";
     if (path.length === 3 && path[1] === "checkout" && path[2] === "quote") return method === "POST";
     if (path[1] !== "orders") return false;
     if (path.length === 2) return ["GET", "POST"].includes(method);
@@ -108,7 +109,7 @@ export async function proxyBackend(request: Request, context: Context): Promise<
     const origin = request.headers.get("origin");
     if (origin) headers.set("Origin", origin); // Python validates CSRF origins, not the caller's supplied role.
     const write = request.method !== "GET" && request.method !== "HEAD";
-    const imageUpload = path.length === 3 && path.join("/") === "admin/media/images";
+    const imageUpload = path.length === 3 && ["admin/media/images", "customer/me/avatar"].includes(path.join("/"));
     const contentType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";
     if (imageUpload && !imageTypes.has(contentType)) {
       return Response.json({ detail: "Chỉ hỗ trợ JPG, PNG hoặc WebP." }, { status: 415 });

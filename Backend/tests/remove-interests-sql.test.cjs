@@ -9,7 +9,7 @@ async function main() {
   const db = await PGlite.create();
   try {
     await db.exec('create role anon; create role authenticated; create role service_role bypassrls; grant usage on schema public to service_role;');
-    await db.exec(read('database/migrations/001_initial_schema.sql'));
+    await db.exec(read('Backend/migrations/001_initial_schema.sql'));
     await db.exec(`insert into public."KHACH_HANG" (ma_kh,ten_kh) values ('KH1','Khach');
       insert into public."NHAN_VIEN" (ma_nhan_vien,loai_nhan_vien,ho_ten) values ('NV1','ADMIN','Admin');
       insert into public."TAI_KHOAN" (ma_tk,ten_tai_khoan,mat_khau_hash,ma_nhan_vien) values ('AD1','admin','!test','NV1');

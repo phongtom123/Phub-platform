@@ -54,8 +54,14 @@ class CommerceService:
         if not rows or len(rows) != 1 or rows[0]["ma_kh"] != customer.customer_id:
             raise PaymentError(403, "AUTH_CUSTOMER_UNAVAILABLE", "Tài khoản chưa liên kết khách hàng hợp lệ.")
         row = rows[0]
+        account = row.get("account")
+        if isinstance(account, list):
+            account = account[0] if len(account) == 1 else None
+        avatar = account.get("avatar") if isinstance(account, dict) else None
         return CustomerProfile(customer_id=row["ma_kh"], name=row["ten_kh"], phone=row.get("sdt"),
-                               address_line=row.get("dia_chi_chi_tiet_md"), province=row.get("tinh_thanh_md"), ward=row.get("xa_phuong_md"))
+                               address_line=row.get("dia_chi_chi_tiet_md"), province=row.get("tinh_thanh_md"),
+                               ward=row.get("xa_phuong_md"),
+                               avatar_url=avatar.get("url") if isinstance(avatar, dict) else None)
 
     def save_profile(self, request, customer):
         self.profile(customer)

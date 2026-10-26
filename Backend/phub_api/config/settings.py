@@ -3,15 +3,11 @@ import os
 
 from dotenv import load_dotenv
 
+from phub_api.config.runtime import frontend_origins
+
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 COOKIE_NAME = "phub_session"
-
-
-def frontend_origins() -> list[str]:
-    return [origin.strip() for origin in os.getenv(
-        "FRONTEND_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:8000,http://127.0.0.1:8000"
-    ).split(",") if origin.strip()]
 
 
 def jwt_secret() -> str:

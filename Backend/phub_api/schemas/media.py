@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 
 class UploadedImage(BaseModel):
+    media_id: str
     bucket: str
     path: str
     url: str

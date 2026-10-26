@@ -70,7 +70,31 @@ class CatalogService:
         category = row["category"]
         subcategory = row["subcategory"]
         raw_specs = row.get("thong_so_ky_thuat")
-        image = row.get("duong_dan_anh")
+        images = []
+        seen_urls = set()
+        media_rows = row.get("product_media")
+        if isinstance(media_rows, list):
+            media_rows = sorted(
+                media_rows,
+                key=lambda media: (
+                    not bool(media.get("la_anh_chinh")),
+                    media.get("thu_tu") if isinstance(media.get("thu_tu"), int) else 2_147_483_647,
+                    str(media.get("ma_media", "")),
+                ),
+            )
+            for media in media_rows:
+                if not isinstance(media, dict):
+                    continue
+                url = media.get("url")
+                if not isinstance(url, str) or not url.strip() or url.strip() in seen_urls:
+                    continue
+                url = url.strip()
+                seen_urls.add(url)
+                alt = media.get("alt_text")
+                images.append(ProductImage(url=url, alt=alt.strip() if isinstance(alt, str) and alt.strip() else row["ten_sp"]))
+        legacy_image = row.get("duong_dan_anh")
+        if not images and isinstance(legacy_image, str) and legacy_image.strip():
+            images.append(ProductImage(url=legacy_image.strip(), alt=row["ten_sp"]))
         return CatalogProduct(
             id=row["ma_sp"], sku=row["sku"], name=row["ten_sp"],
             category=Category(id=category["ma_loai_sp"], name=category["ten_loai_sp"]),
@@ -78,7 +102,7 @@ class CatalogService:
             brand=row.get("thuong_hieu"), price=Decimal(str(row["gia_ban_hien_tai"])),
             currency=self.currency, description=row.get("mo_ta"), unit=row["don_vi"],
             warranty_months=row["bao_hanh_thang"],
-            images=[ProductImage(url=image.strip(), alt=row["ten_sp"])] if image and image.strip() else [],
+            images=images,
             specifications=specifications_from_text(raw_specs), specifications_text=raw_specs,
             color=product_color(raw_specs),
         )

@@ -143,6 +143,7 @@ export function validateProfile(value: unknown): CustomerProfile {
     invalid();
   for (const key of ["phone", "address_line", "province", "ward"])
     if (p[key] !== null && typeof p[key] !== "string") invalid();
+  if (p.avatar_url !== undefined && p.avatar_url !== null && typeof p.avatar_url !== "string") invalid();
   return p as unknown as CustomerProfile;
 }
 

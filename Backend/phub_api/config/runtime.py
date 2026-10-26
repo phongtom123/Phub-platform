@@ -2,8 +2,20 @@ from urllib.parse import urlsplit
 import os
 
 
+DEFAULT_FRONTEND_ORIGINS = ",".join([
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:8000",
+])
+
+
 def frontend_origins() -> list[str]:
-    raw = os.getenv("FRONTEND_ORIGINS", os.getenv("FRONTEND_URL", "http://localhost:3000"))
+    raw = os.getenv("FRONTEND_ORIGINS", os.getenv("FRONTEND_URL", DEFAULT_FRONTEND_ORIGINS))
     origins = []
     for value in raw.split(","):
         value = value.strip()
