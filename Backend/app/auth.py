@@ -1,5 +1,6 @@
 """DB-backed login and server-side authorization; no role from URL/localStorage."""
 import hashlib
+import hmac
 import os
 import time
 from dataclasses import asdict, dataclass
@@ -12,7 +13,6 @@ from pydantic import BaseModel, Field
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
-from pwdlib.exceptions import UnknownHashError
 
 from .config import COOKIE_NAME, frontend_origins, jwt_secret
 from .supabase import get_supabase
@@ -20,7 +20,6 @@ from .api_contracts import READ_ERRORS, WRITE_ERRORS, SessionUser, error_respons
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 passwords = PasswordHash((Argon2Hasher(), BcryptHasher()))
-dummy_hash = passwords.hash("not-a-valid-login-password")
 login_attempts: dict[str, tuple[float, int]] = {}
 attempt_lock = Lock()
 
@@ -34,6 +33,15 @@ class User:
     customer_id: str | None = None
     employee_id: str | None = None
     warehouse_id: int | None = None
+
+
+ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,email,ma_kh,ma_nhan_vien,trang_thai,mat_khau"
+
+
+def verify_account_password(account: dict, password: str) -> bool:
+    """Verify against the existing plaintext password column for compatibility."""
+    stored_password = account.get("mat_khau")
+    return isinstance(stored_password, str) and hmac.compare_digest(stored_password, password)
 
 
 def check_origin(request: Request) -> None:
@@ -76,8 +84,8 @@ def current_user(request: Request, db=Depends(get_supabase)) -> User:
                             options={"require": ["sub", "exp", "iat", "iss", "aud", "ver"]})
     except jwt.InvalidTokenError:
         raise HTTPException(401, "Phiên đăng nhập đã hết hạn.") from None
-    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq("ma_tk", claims["sub"]).limit(1).execute().data
-    if not rows or password_version(rows[0]["mat_khau_hash"]) != claims["ver"]:
+    rows = db.table("TAI_KHOAN").select(ACCOUNT_COLUMNS).eq("ma_tk", claims["sub"]).limit(1).execute().data
+    if not rows or password_version(rows[0]["mat_khau"]) != claims["ver"]:
         raise HTTPException(401, "Phiên đăng nhập không còn hợp lệ.")
     return identity(rows[0], db)
 
@@ -117,18 +125,15 @@ def login(body: LoginBody, request: Request, response: Response, db=Depends(get_
     column = "email" if "@" in username else "ten_tai_khoan"
     if column == "email":
         username = username.lower()
-    rows = db.table("TAI_KHOAN").select("ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau_hash").eq(column, username).limit(1).execute().data
+    rows = db.table("TAI_KHOAN").select(ACCOUNT_COLUMNS).eq(column, username).limit(1).execute().data
     account = rows[0] if rows else None
-    try:
-        valid = passwords.verify(body.password, account["mat_khau_hash"] if account else dummy_hash)
-    except (ValueError, TypeError, UnknownHashError):
-        valid = False
+    valid = verify_account_password(account or {"mat_khau": ""}, body.password)
     if not account or not valid:
         raise HTTPException(401, "Tài khoản hoặc mật khẩu không đúng.")
     user = identity(account, db)
     now = datetime.now(timezone.utc)
     token = jwt.encode({"sub": user.account_id, "iat": now, "exp": now + timedelta(hours=8),
-                        "iss": "phub-backend", "aud": "phub-ui", "ver": password_version(account["mat_khau_hash"])}, secret, algorithm="HS256")
+                        "iss": "phub-backend", "aud": "phub-ui", "ver": password_version(account["mat_khau"])}, secret, algorithm="HS256")
     response.set_cookie(COOKIE_NAME, token, httponly=True, secure=os.getenv("COOKIE_SECURE", "false").lower() == "true",
                         samesite="lax", max_age=8 * 3600, path="/")
     response.headers["Cache-Control"] = "no-store"
@@ -148,15 +153,15 @@ def change_my_password(body: PasswordChangeBody, request: Request, response: Res
                        user: User = Depends(current_user), db=Depends(get_supabase)):
     check_origin(request)
     throttle(request)
-    rows = db.table("TAI_KHOAN").select("mat_khau_hash").eq("ma_tk", user.account_id).limit(1).execute().data
+    rows = db.table("TAI_KHOAN").select("mat_khau").eq("ma_tk", user.account_id).limit(1).execute().data
     try:
-        valid = bool(rows) and passwords.verify(body.current_password, rows[0]["mat_khau_hash"])
-    except (ValueError, TypeError, UnknownHashError):
+        valid = bool(rows) and hmac.compare_digest(rows[0]["mat_khau"], body.current_password)
+    except (ValueError, TypeError):
         valid = False
     if not valid:
         raise HTTPException(422, "Mật khẩu hiện tại không đúng.")
-    old_hash = rows[0]["mat_khau_hash"]
-    updated = db.table("TAI_KHOAN").update({"mat_khau_hash": passwords.hash(body.new_password)}).eq("ma_tk", user.account_id).eq("mat_khau_hash", old_hash).execute().data
+    old_password = rows[0]["mat_khau"]
+    updated = db.table("TAI_KHOAN").update({"mat_khau": body.new_password}).eq("ma_tk", user.account_id).eq("mat_khau", old_password).execute().data
     if not updated:
         raise HTTPException(409, "Tài khoản đã thay đổi. Tải lại và thử lại.")
     logout(request, response)
