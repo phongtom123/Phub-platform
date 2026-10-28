@@ -19,6 +19,11 @@ import { InvoiceDetail } from "@/src/features/billing/invoice-detail";
 import { ProductStock } from "@/src/features/products/product-stock";
 import { ProductSuppliers } from "@/src/features/products/product-suppliers";
 import { CategoryDetail } from "@/src/features/categories/category-detail";
+import { OperationPanel } from "@/src/features/operations/operation-panel";
+import { ListFilters } from "@/src/features/operations/list-filters";
+import { ReferenceInput, references } from "@/src/features/operations/reference-input";
+import { StockHistory } from "@/src/features/operations/stock-history";
+import "@/src/features/operations/operations.css";
 
 type Row = DataRow;
 type Column = DataColumn;
@@ -64,6 +69,8 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
     const detail = body?.detail;
     throw new Error(Array.isArray(detail) ? detail.map((e: { loc?: string[]; msg: string }) => [e.loc?.join("."), e.msg].filter(Boolean).join(": ")).join("; ") : typeof detail === "string" ? detail : "Không thể tải dữ liệu.");
   }
+  const filter = new URL(path, "http://local/").searchParams.get("filters");
+  if (filter && Object.keys(JSON.parse(filter)).length && JSON.stringify(body?.filters) !== JSON.stringify(JSON.parse(filter))) throw new Error("Backend chưa xác nhận đúng bộ lọc. Cần cập nhật API để tránh hiển thị bản ghi không liên quan.");
   return body as T;
 }
 
@@ -79,6 +86,10 @@ export default function BackendDataView(props: { resource: string; embedded?: bo
 function GenericBackendDataView({ resource, embedded = false }: { resource: string; embedded?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
+  const workflowCreate = params.get("workflow") === "new" && ["orders", "receipts"].includes(resource);
+  const filterQuery = params.get("filters") ?? "{}";
+  let filters: Record<string, string> = {};
+  try { const value = JSON.parse(filterQuery); if (value && typeof value === "object" && !Array.isArray(value)) filters = value; } catch { /* The API reports malformed filters. */ }
   const [meta, setMeta] = useState<Resource | null>(null);
   const [available, setAvailable] = useState<Resource[]>([]);
   const [result, setResult] = useState<Page | null>(null);
@@ -98,10 +109,10 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const [saveError, setSaveError] = useState("");
   const [notice, setNotice] = useState("");
   const [inlineEditing, setInlineEditing] = useState(false);
-  const draftPath = ["receipts", "transfers"].includes(resource) && meta?.draft_update_path === `/api/admin/warehouse-drafts/${resource}` ? meta.draft_update_path : null;
+  const draftPath = resource === "receipts" && meta?.draft_update_path === `/api/admin/warehouse-drafts/${resource}` ? meta.draft_update_path : null;
   const canEditRow = (row: Row) => !draftPath || row.trang_thai === "NHAP";
   const canUpdate = Boolean(meta?.writable || draftPath);
-  const inlineEnabled = ["customers", "warehouses", "products", "categories", "suppliers", "employees", "promotions", "vouchers", "receipts", "transfers"].includes(resource) && canUpdate;
+  const inlineEnabled = ["customers", "warehouses", "products", "categories", "suppliers", "employees", "promotions", "vouchers", "receipts"].includes(resource) && canUpdate;
   const savedInline = useCallback((row: Row) => {
     setResult(current => current && ({ ...current, data: current.data.map(item =>
       dataRowKey(item, meta?.keys ?? []) === dataRowKey(row, meta?.keys ?? []) ? row : item) }));
@@ -111,13 +122,14 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const saveController = useRef<AbortController | null>(null);
   const reuseSavedRoute = useRef<string | null>(null);
   const persistedKey = useRef<string | null>(null);
-  const routeIdentity = JSON.stringify([resource, embedded, view.key, view.edit, view.create, view.orderId]);
+  const routeIdentity = JSON.stringify([resource, embedded, view.key, view.edit, view.create, view.orderId, filterQuery]);
   useEffect(() => () => { saveController.current?.abort(); }, []);
 
   const pollError = useAdminPolling(JSON.stringify([routeIdentity, page, search, version]),
     !loading && !error && Boolean(result) && !view.edit && !view.create && !inlineEditing && !saving && !uploading && !dirty.length && !imageFile,
     async (signal, canApply) => {
       const params = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
+      params.set("filters", filterQuery);
       if (view.key) params.set("key", view.key);
       if (view.orderId) params.set("order_id", view.orderId);
       const data = await api<Page>("data/" + resource + "?" + params, { signal, cache: "no-cache" });
@@ -159,6 +171,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       const params = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
       if (view.key) params.set("key", view.key);
       if (view.orderId) params.set("order_id", view.orderId);
+      params.set("filters", filterQuery);
       const data = await api<Page>("data/" + resource + "?" + params, { signal: controller.signal });
       // Old deployments ignore unknown query params. Do not display unrelated
       // records as if the backend had filtered them to the selected order.
@@ -180,6 +193,10 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const formColumns = meta?.columns.filter(c => !c.generated && !c.system && (view.create || !c.immutable) && (!draftPath || meta.draft_update_fields?.includes(c.name))) ?? [];
   const detailMode = Boolean(view.key && !view.edit && !view.create);
   const listColumns = listDataColumns(resource, meta?.columns ?? []);
+  const relatedHref = (target: string) => {
+    const parent = ({ receipts: "ma_phieu_nhap", transfers: "ma_phieu_chuyen", promotions: "ma_ctkm", vouchers: "ma_voucher", subcategories: target === "categories" ? "ma_loai_sp" : "ma_loai_sp_con" } as Record<string, string>)[resource];
+    return dataHref(target, { filters: parent && result?.data[0] ? { [parent]: result.data[0][parent] } : undefined });
+  };
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -221,7 +238,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         setDirty([]); setImageFile(null);
         setNotice(creating ? "Đã tạo sản phẩm. Bạn có thể tiếp tục chỉnh sửa." : "Đã lưu thay đổi.");
         if (creating) {
-          reuseSavedRoute.current = JSON.stringify([resource, embedded, key, true, false, view.orderId]);
+          reuseSavedRoute.current = JSON.stringify([resource, embedded, key, true, false, view.orderId, filterQuery]);
           window.history.replaceState(null, "", dataHref(resource, { key, edit: true, orderId: view.orderId }));
         }
       } else router.push(href(saved.data[0]));
@@ -231,14 +248,14 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
 
   return <section className="live-data">
     {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi; đang hiển thị dữ liệu lần tải trước. {pollError}</p>}
-    {(view.key || view.create || view.orderId) && <div className="live-page-actions">
-      <button type="button" onClick={() => window.history.length > 1 ? router.back() : router.push(href())}>← Quay lại</button>
+    {(view.key || view.create || view.orderId || workflowCreate) && <div className="live-page-actions">
+      <button type="button" disabled={inlineEditing || saving} onClick={() => window.history.length > 1 ? router.back() : router.push(href())}>← Quay lại</button>
       {detailMode && !loading && !error && canUpdate && result?.data[0] && canEditRow(result.data[0]) && <Link className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</Link>}
     </div>}
     {!detailMode && <div className={embedded ? "live-section-heading" : "admin-sr-only"}><h2>{embedded ? "Danh sách đơn hàng" : meta?.title ?? "Đang tải…"}</h2>{embedded && <Link href={dataHref("orders")}>Xem tất cả đơn hàng →</Link>}</div>}
     {error && <p className="live-error" role="alert">{error} <button onClick={refresh}>Thử lại</button></p>}
     {loading ? <p role="status">Đang tải dữ liệu…</p> : meta && !error && <>
-      {((view.create && meta.writable || view.edit && canUpdate && result?.data[0] && canEditRow(result.data[0]))) ? <form className="live-form" onSubmit={save}>
+      {workflowCreate ? <OperationPanel resource={resource} create onChanged={refresh} onEditingChange={setInlineEditing} /> : ((view.create && meta.writable || view.edit && canUpdate && result?.data[0] && canEditRow(result.data[0]))) ? <form className="live-form" onSubmit={save}>
         {saveError && <p className="live-error image-save-error" role="alert">{saveError}</p>}
         <fieldset disabled={saving} className="live-form-fields">
         {formColumns.map(column => column.name === "duong_dan_anh" ? <ImageEditor key={column.name} inputId={`image-${resource}`}
@@ -247,6 +264,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           {column.name === "trang_thai" && column.type === "int" ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}>
             <option value="">Chọn trạng thái</option>{[1, 2, 0].map(value => <option key={value} value={value}>{inlineStatusLabels[value]}</option>)}
           </select> : column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice} value={choice}>{inlineChoiceLabel(column.name, choice)}</option>)}</select>
+          : references[column.name] && !meta.keys.includes(column.name) && !(resource === "products" && column.name === "sku") ? <ReferenceInput field={column.name} label={`Chọn ${label(column.name).toLowerCase()}`} required={column.required} value={values[column.name] ?? ""} onChange={value => change(column.name, value)} filters={column.name === "ma_loai_sp_con" && values.ma_loai_sp ? { ma_loai_sp: values.ma_loai_sp } : undefined} />
           : column.type === "text" ? <textarea rows={4} required={column.required} value={values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />
           : <input required={column.required} type={column.type === "int" ? "number" : column.type === "date" ? "date" : column.type === "datetime" ? "datetime-local" : column.name === "duong_dan_anh" ? "url" : "text"} step={column.type === "int" ? "1" : undefined} value={column.type === "datetime" && values[column.name] ? new Date(values[column.name]).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />}
         </label>)}
@@ -255,6 +273,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {notice && <p className="live-note image-save-error" role="status">{notice} {result?.data[0] && <Link prefetch={false} href={href(result.data[0])}>Xem chi tiết</Link>}</p>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving || (resource === "products" && (!view.create || persistedKey.current !== null) && !imageFile && !dirty.length)}>{uploading ? "Đang tải ảnh…" : saving ? "Đang lưu…" : "Lưu dữ liệu"}</button>{!saving && <Link href={dataHref(resource, { key: view.key, orderId: view.orderId })}>Hủy</Link>}</div>
       </form> : view.key && result?.data[0] ? <>
+        {["orders", "receipts", "inventory"].includes(resource) && <OperationPanel key={`${resource}:${view.key}`} resource={resource} row={result.data[0]} onChanged={refresh} onEditingChange={setInlineEditing} />}
         <div className={resource === "products" ? "product-detail-layout" : undefined}>
         {resource === "products" && <ProductImagePreview key={String(result.data[0].duong_dan_anh ?? "")}
           url={String(result.data[0].duong_dan_anh ?? "")} name={String(result.data[0].ten_sp ?? "")} />}
@@ -269,9 +288,13 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           key={`stock:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} unit={String(result.data[0].don_vi ?? "")} />}
         {resource === "products" && ["receipt-lines", "receipts", "suppliers"].every(name => available.some(item => item.name === name)) &&
           <ProductSuppliers key={`suppliers:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} />}
-        {!["orders", "invoices", "categories"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], promotions: ["vouchers"], vouchers: ["voucher-uses"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={dataHref(item.name)}>{item.title}</Link>)}</nav>}
+        {resource === "inventory" && <StockHistory sku={String(result.data[0].sku)} />}
+        {!["orders", "invoices", "categories"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], promotions: ["vouchers"], vouchers: ["voucher-uses"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={relatedHref(item.name)}>{item.title}</Link>)}</nav>}
       </> : <>
-        <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
+        {["invoices", "payments"].includes(resource) && <nav className="live-tools" aria-label="Hóa đơn và thanh toán"><Link href={dataHref("invoices")}>Hóa đơn</Link><Link href={dataHref("payments")}>Giao dịch thanh toán</Link></nav>}
+        <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : "+ Lập phiếu nhập"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
+        <ListFilters columns={meta.columns} values={filters} label={label} disabled={inlineEditing} onChange={next => { setPage(1); router.replace(dataHref(resource, { orderId: view.orderId, filters: next })); }} />
+        {resource === "inventory" && <StockHistory />}
         {draftPath && <p className="inline-data-help">Nhấp đúp để sửa phiếu nháp. Phiếu đã xử lý chỉ xem thông tin; trạng thái được cập nhật qua nghiệp vụ kho.</p>}
         {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label} href={href} />
         : inlineEnabled ? <InlineDataTable resource={resource} rows={result?.data ?? []} columns={listColumns} keys={meta.keys}

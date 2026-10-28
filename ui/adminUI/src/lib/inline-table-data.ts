@@ -3,9 +3,14 @@ export type DataColumn = { name: string; type: string; required: boolean; genera
 export const inlineStatusLabels: Record<number, string> = { 1: "Hoạt động", 2: "Tạm ngưng", 0: "Đã ẩn" };
 const choiceLabels: Record<string, Record<string, string>> = {
   trang_thai: { NHAP: "Nháp", DA_NHAP: "Đã nhập", HUY: "Đã hủy", DANG_CHUYEN: "Đang chuyển", DA_NHAN: "Đã nhận",
+    MOI: "Mới", XAC_NHAN: "Đã xác nhận", DANG_CHUAN_BI: "Đang chuẩn bị", DA_XUAT_KHO: "Đã xuất kho", HOAN_THANH: "Hoàn thành",
+    CHO_XU_LY: "Chờ xử lý", THANH_CONG: "Thành công", THAT_BAI: "Thất bại", DA_AP_DUNG: "Đã áp dụng", DA_HUY: "Đã hủy",
     HOAT_DONG: "Hoạt động", TAM_DUNG: "Tạm dừng", KET_THUC: "Kết thúc", "0": "Đã ẩn", "1": "Hoạt động", "2": "Tạm ngưng" },
-  loai_nhan_vien: { ADMIN: "Quản trị viên", THU_KHO: "Nhân viên kho" },
+  loai_nhan_vien: { ADMIN: "Quản trị viên", NHAN_VIEN: "Nhân viên kho" },
   loai_giam: { PHAN_TRAM: "Phần trăm", SO_TIEN: "Số tiền" },
+  kenh_ban: { ONLINE: "Trực tuyến", TAI_QUAY: "Tại quầy" },
+  phuong_thuc: { TIEN_MAT: "Tiền mặt", CHUYEN_KHOAN: "Chuyển khoản", THE: "Thẻ", VI_DIEN_TU: "Ví điện tử" },
+  loai_giao_dich: { THU: "Thu tiền", HOAN_TIEN: "Hoàn tiền" },
 };
 export function inlineChoiceLabel(field: string, value: DataRow[string]) {
   return value === null || value === undefined ? "—" : choiceLabels[field]?.[String(value)] ?? String(value);

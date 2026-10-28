@@ -20,7 +20,6 @@ import {
   UserRound,
   Users,
   Warehouse,
-  Waypoints,
   X,
 } from "lucide-react";
 import type { ModuleKey } from "@/src/types/admin";
@@ -48,7 +47,6 @@ const navigation = [
     items: [
       ["inventory", "Tồn kho", Warehouse],
       ["receipts", "Phiếu nhập", FileInput],
-      ["transfers", "Chuyển kho", Waypoints],
       ["suppliers", "Nhà cung cấp", Truck],
     ],
   },

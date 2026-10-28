@@ -38,21 +38,24 @@ Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển 
 - Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.
 - `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.
 - PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.
-- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.
+- ADMIN xem tất cả bảng; NHAN_VIEN giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.
 - Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.
 
 ### Phạm vi hiện tại
 
 Đã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.
 **Chưa xác nhận kết nối live Supabase.** Không có DELETE.
-Các bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,
-nhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.
+Các bảng chứng từ/tồn kho/tài chính chỉ có GET qua API bảng. ADMIN thực hiện nghiệp vụ
+qua `/api/admin/operations`: đơn tại quầy, nhập/xuất/nhận kho, hóa đơn, ghi nhận thu/hoàn
+và kiểm kê bằng transaction. Cần migration admin_operations; chưa tự deploy database.
+Ghi nhận thu/hoàn thủ công không thay thế tích hợp cổng thanh toán hoặc webhook.
 Tài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.
 Đăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.
 Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.
 """
 
 TAGS = [
+    {"name": "Admin · Vận hành", "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key."},
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
     {"name": "Shared · Xác thực", "description": "Login/token/register/me/logout. JWT qua Bearer hoặc cookie HttpOnly, role lấy từ database."},
     {"name": "Shared · Hệ thống", "description": "Health chỉ kiểm tra API đang chạy; không kiểm tra database."},
@@ -61,11 +64,11 @@ TAGS = [
     {"name": "Admin · Khách hàng", "description": "ADMIN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình."},
     {"name": "Admin · Sản phẩm", "description": "Loại sản phẩm và sản phẩm PC/linh kiện. SKU không đổi sau khi tạo."},
     {"name": "Admin · Hình ảnh", "description": "ADMIN upload ảnh sản phẩm vào bucket media; giới hạn 5 MB, ảnh tĩnh JPG/PNG/WebP. Không sửa quyền public hoặc xóa file cũ tự động."},
-    {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Áp voucher cho đơn chưa có API ghi."},
+    {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Voucher của đơn tại quầy được chốt qua nghiệp vụ tạo đơn."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
-    {"name": "Kho · Nhà cung cấp", "description": "ADMIN và THU_KHO tạo/sửa nhà cung cấp."},
-    {"name": "Kho · Phiếu nhập", "description": "Phiếu và dòng hàng chỉ đọc. Xác nhận nhập cần transaction riêng."},
-    {"name": "Kho · Chuyển kho", "description": "Phiếu và dòng hàng chỉ đọc; thấy phiếu liên quan kho xuất hoặc kho nhận được gán."},
+    {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp."},
+    {"name": "Kho · Phiếu nhập", "description": "API bảng chỉ đọc; ADMIN lập phiếu/sửa dòng/xác nhận qua /api/admin/operations/receipts."},
+    {"name": "Kho · Chuyển kho", "description": "Chỉ tra cứu dữ liệu lịch sử. Hệ thống chỉ sử dụng một kho nên không còn chức năng tạo, sửa hoặc xử lý chuyển kho."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
     {"name": "Bán hàng · Tài chính", "description": "Hóa đơn, thanh toán chỉ đọc. Không ghi tiền qua CRUD tổng quát."},
     {"name": "Customer · Catalog", "description": "API công khai, không cần đăng nhập. Chỉ trả sản phẩm/loại đang hoạt động."},
@@ -84,7 +87,7 @@ NOTES = {
     "categories": "Danh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
     "subcategories": "Danh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau.",
-    "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
+    "employees": "Role ADMIN yêu cầu ma_kho=null; NHAN_VIEN yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
     "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
     "vouchers": "ma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
@@ -93,10 +96,10 @@ NOTES = {
 
 def roles_for(name: str, write: bool = False) -> list[str]:
     if write:
-        return ["ADMIN", "THU_KHO"] if name == "suppliers" else ["ADMIN"]
+        return ["ADMIN", "NHAN_VIEN"] if name == "suppliers" else ["ADMIN"]
     roles = ["ADMIN"]
     if RESOURCES[name].warehouse:
-        roles.append("THU_KHO")
+        roles.append("NHAN_VIEN")
     if name in CUSTOMER_READ:
         roles.append("KHACH_HANG")
     return roles
@@ -188,7 +191,7 @@ def add_table_paths(spec: dict) -> None:
             if method == "get":
                 description += "Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. "
                 if resource.warehouse:
-                    description += "THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. "
+                    description += "NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. "
                 if name in CUSTOMER_READ:
                     description += "KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). "
                 description += "GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. "
@@ -196,7 +199,7 @@ def add_table_paths(spec: dict) -> None:
                     description += "**Quản lý tài khoản dùng `/api/admin/accounts`, không dùng API ghi bảng chung.** "
                 elif not resource.writable:
                     description += (f"Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/{name}`; không thay đổi trạng thái/tồn kho. "
-                                    if name in {"receipts", "transfers"} else "**Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** ")
+                                    if name == "receipts" else "**Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** ")
             else:
                 description += "Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. "
                 description += "Không mở thao tác xóa. "

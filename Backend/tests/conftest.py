@@ -17,6 +17,9 @@ def forbid_live_http(monkeypatch):
     def blocked(*args, **kwargs):
         raise AssertionError("Live HTTP is forbidden in offline tests; override the database dependency or use MockTransport.")
     monkeypatch.setattr(httpx.HTTPTransport, "handle_request", blocked)
+    # Tests must not inherit a developer's cloud/local origin configuration.
+    from phub_api.config.runtime import DEFAULT_FRONTEND_ORIGINS
+    monkeypatch.setenv("FRONTEND_ORIGINS", DEFAULT_FRONTEND_ORIGINS)
 
 
 @pytest.fixture

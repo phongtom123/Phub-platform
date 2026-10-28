@@ -25,8 +25,9 @@ def read_rows(resource: ResourceName, response: Response, page: int = Query(1, g
               page_size: int = Query(20, ge=1, le=100), q: str = Query("", max_length=100),
               key: str | None = Query(None, max_length=6000),
               order_id: str | None = Query(None, min_length=1, max_length=100),
+              filters: str | None = Query(None, max_length=4000),
               service: TablesService = Depends(get_service)):
-    result = service.read(resource.value, page, page_size, q, key, order_id)
+    result = service.read(resource.value, page, page_size, q, key, order_id, filters)
     response.headers["Cache-Control"] = "no-store"
     return result
 

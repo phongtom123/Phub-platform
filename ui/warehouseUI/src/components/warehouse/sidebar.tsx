@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowDownToLine, ArrowLeftRight, Boxes, ClipboardCheck, Clock3, LayoutDashboard, LogOut, Package, Settings, UserRound, Warehouse } from "lucide-react";
+import { ArrowDownToLine, Boxes, ClipboardCheck, Clock3, LayoutDashboard, LogOut, Package, Settings, UserRound, Warehouse } from "lucide-react";
 import type { ModuleKey } from "@/src/types/warehouse";
 import type { WarehouseUser } from "@/src/types/warehouse-auth";
 
 const workNav: { key: ModuleKey; label: string; icon: typeof LayoutDashboard }[] = [
-  { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard }, { key: "inventory", label: "Tồn kho", icon: Boxes }, { key: "receipts", label: "Phiếu nhập", icon: ArrowDownToLine }, { key: "transfers", label: "Chuyển kho", icon: ArrowLeftRight }, { key: "stocktake", label: "Kiểm kê", icon: ClipboardCheck },
+  { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard }, { key: "inventory", label: "Tồn kho", icon: Boxes }, { key: "receipts", label: "Phiếu nhập", icon: ArrowDownToLine }, { key: "stocktake", label: "Kiểm kê", icon: ClipboardCheck },
 ];
 const lookupNav: { key: ModuleKey; label: string; icon: typeof Package }[] = [{ key: "products", label: "Sản phẩm", icon: Package }, { key: "history", label: "Lịch sử kho", icon: Clock3 }];
 

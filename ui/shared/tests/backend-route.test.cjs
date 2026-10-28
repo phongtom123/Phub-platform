@@ -9,23 +9,33 @@ const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, "../backend
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText;
 
+test("admin operations preserve idempotency and cannot open arbitrary methods or resources", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,key:options.headers.get("Idempotency-Key"),body:options.body});return Response.json({data:[{}],replayed:false});});
+  const body=JSON.stringify({action:"confirm",record_id:"DH1",data:{}}),key="a77a9370-caa8-48d8-a3dc-60f352cedee1";
+  for(let i=0;i<2;i++)assert.equal((await proxy(new Request("http://localhost/x",{method:"POST",headers:{Origin:"http://localhost:3000","Idempotency-Key":key},body}),["admin","operations","orders"])).status,200);
+  assert.deepEqual(calls[0],calls[1]);assert.equal(calls[0].key,key);assert.equal(calls[0].body,body);
+  for(const segments of [["admin","operations","transfers"],["admin","operations","accounts"],["admin","operations","read","passwords"],["admin","operations","orders","delete"]])assert.equal((await proxy(new Request("http://localhost/x",{method:"POST",body}),segments)).status,404);
+  assert.equal((await proxy(new Request("http://localhost/x",{method:"PATCH",body}),["admin","operations","orders"])).status,404);
+});
+
 function gateway(fetch, env = {}) {
   const sandbox = { exports: {}, process: { env }, URL, Request, Response, Headers, TextEncoder, AbortSignal, fetch };
   vm.runInNewContext(code, sandbox);
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
-test("draft header gateway forwards only PATCH for receipts/transfers with the original key and Origin", async () => {
+test("draft header gateway forwards only receipt edits; transfers stay disabled", async () => {
   const calls=[];
   const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,origin:options.headers.get("Origin")});return Response.json({data:[]});});
-  for(const resource of ["receipts","transfers"]){
+  for(const resource of ["receipts"]){
     assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x?key=%5B-5%5D",{method:"PATCH",headers:{Origin:"http://localhost:3000"},body:'{"ghi_chu":"test"}'}),["admin","warehouse-drafts",resource])).status,200);
   }
-  assert.equal(calls.length,2);assert.ok(calls.every(call=>call.method==="PATCH"&&call.url.endsWith("?key=%5B-5%5D")&&call.origin==="http://localhost:3000"));
-  for(const [method,resource] of [["POST","receipts"],["DELETE","transfers"],["GET","receipts"],["PATCH","inventory"]]){
+  assert.equal(calls.length,1);assert.ok(calls.every(call=>call.method==="PATCH"&&call.url.endsWith("?key=%5B-5%5D")&&call.origin==="http://localhost:3000"));
+  for(const [method,resource] of [["POST","receipts"],["DELETE","transfers"],["PATCH","transfers"],["GET","receipts"],["PATCH","inventory"]]){
     assert.equal((await proxy(new Request("http://localhost/x",{method}),["admin","warehouse-drafts",resource])).status,404);
   }
-  assert.equal(calls.length,2);
+  assert.equal(calls.length,1);
 });
 
 test("CRM profile and scoped orders pass the gateway; other CRM paths/methods stay closed", async () => {

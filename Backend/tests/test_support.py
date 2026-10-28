@@ -16,7 +16,7 @@ from phub_api.repositories.support import ticket_id_filter
 
 ADMIN = User('AD1', 'admin', 'ADMIN', 'Admin', employee_id='NV1')
 CUSTOMER = User('TK1', 'customer', 'KHACH_HANG', 'Khách', customer_id='KH1')
-WAREHOUSE = User('WK1', 'warehouse', 'THU_KHO', 'Kho', warehouse_id=1)
+WAREHOUSE = User('WK1', 'warehouse', 'NHAN_VIEN', 'Kho', warehouse_id=1)
 TICKET = 'a1111111-1111-4111-8111-111111111111'
 OTHER = 'b2222222-2222-4222-8222-222222222222'
 MISSING = 'c3333333-3333-4333-8333-333333333333'
@@ -39,7 +39,7 @@ def support_client(monkeypatch):
     def handle(request):
         state['requests'].append(request)
         endpoint = request.url.path.split('/')[-1]
-        if endpoint in {'customer_create_feedback_v1', 'admin_update_feedback_v1'}:
+        if endpoint in {'customer_create_feedback_v1', 'admin_update_feedback_thread_v1'}:
             if state['rpc_error']:
                 return httpx.Response(400, json={'code': state['rpc_error'], 'message': 'private SQL and credentials', 'details': None, 'hint': None})
             data = json.loads(request.content)
@@ -212,7 +212,7 @@ def test_admin_reply_status_and_claim_in_one_rpc(support_client):
     assert response.json()['nguoi_xu_ly'] == 'NV1'
     assert response.json()['phan_hoi_quan_ly'] == 'Đã tiếp nhận'
     assert len(state['requests']) == 1
-    assert state['requests'][0].url.path.endswith('/rpc/admin_update_feedback_v1')
+    assert state['requests'][0].url.path.endswith('/rpc/admin_update_feedback_thread_v1')
 
 
 @pytest.mark.parametrize('body', [{}, {'nhan_xu_ly': False}, {'nhan_xu_ly': 'yes'}, {'trang_thai': None},

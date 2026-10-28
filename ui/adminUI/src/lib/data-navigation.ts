@@ -10,12 +10,13 @@ export const resourceTitles: Record<string, string> = {
 };
 export const orderChildren = ["order-lines", "invoices", "payments", "voucher-uses"];
 
-export function dataHref(resource: string, options: { key?: string | null; orderId?: string | null; edit?: boolean; create?: boolean } = {}) {
+export function dataHref(resource: string, options: { key?: string | null; orderId?: string | null; edit?: boolean; create?: boolean; filters?: Record<string, unknown> } = {}) {
   const params = new URLSearchParams();
   if (options.orderId) params.set("order_id", options.orderId);
   if (options.key) params.set("key", options.key);
   if (options.edit) params.set("edit", "1");
   if (options.create) params.set("new", "1");
+  if (options.filters && Object.keys(options.filters).length) params.set("filters", JSON.stringify(options.filters));
   return `/data/${resource}${params.size ? "?" + params.toString() : ""}`;
 }
 

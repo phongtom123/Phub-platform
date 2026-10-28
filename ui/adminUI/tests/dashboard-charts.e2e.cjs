@@ -9,7 +9,7 @@ const inventoryRows = [{ ma_kho: -900003, sku: "SKU1", so_luong_ton: 20 }, { ma_
 const metadata = [{ name: "orders", title: "Đơn hàng", keys: ["ma_donhang"], writable: false, columns: [{ name: "ma_donhang", type: "varchar", required: true }] }];
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PHUB_CHROMIUM_EXECUTABLE });
   try {
     const page = await browser.newPage({ viewport: { width: 1500, height: 1000 } });
     let mode = "success";
@@ -25,6 +25,13 @@ async function main() {
       if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", role: "ADMIN", username: "test.admin", name: "Admin Test" });
       if (url.pathname === "/api/backend/data/resources") return respond(metadata);
       if (mode === "error") return respond({ detail: "Không kết nối được API thống kê." }, 503);
+      if (url.pathname === "/api/backend/admin/operations/read/summary") {
+        const empty = mode === "empty";
+        return respond({ counts: { orders: empty ? 0 : 105, products: empty ? 0 : 1, customers: empty ? 0 : 1, inventory: empty ? 0 : 3 },
+          orders: empty ? [] : [{day:today,value:105}], statuses: empty ? [] : [{label:"HOAN_THANH",value:60},{label:"MOI",value:35},{label:"HUY",value:10}],
+          channels: empty ? [] : [{label:"ONLINE",value:70},{label:"TAI_QUAY",value:35}], inventory: empty ? [] : [{label:"Kho chính",value:50},{label:"Kho phụ",value:4}],
+          revenue: empty ? "0" : "1000.00", collected: empty ? "0" : "900.00", top_products: [], start:url.searchParams.get("start"),end:today });
+      }
       const resource = url.pathname.split("/").pop();
       const rows = mode === "empty" ? [] : ({ orders, inventory: inventoryRows, warehouses: warehouseRows, products: [{ ma_sp: "SP1" }], customers: [{ ma_kh: "KH1" }] })[resource];
       assert.ok(rows, "Unexpected API endpoint: " + url.pathname);
@@ -36,7 +43,8 @@ async function main() {
     await chart("Trạng thái đơn hàng").getByText("105", { exact: true }).waitFor();
     assert.equal(await page.locator(".dashboard-chart-card").count(), 4);
     assert.equal(await page.getByRole("navigation", { name: "Breadcrumb", exact: true }).count(), 1);
-    assert.ok(calls.some(call => call.includes("/data/orders?page=2&page_size=100")));
+    assert.ok(calls.some(call => call.includes("/operations/read/summary?")));
+    assert.ok(!calls.some(call => call.includes("/data/orders?page=2")), "Dashboard must use aggregates rather than downloading every order");
     assert.ok((await chart("Tồn kho theo kho").innerText()).includes("50"));
     assert.ok((await chart("Đơn hàng theo kênh bán").innerText()).includes("70"));
     if (process.env.PHUB_CHART_SCREENSHOT) await page.screenshot({ path: process.env.PHUB_CHART_SCREENSHOT, fullPage: true });
@@ -46,6 +54,9 @@ async function main() {
     await chart("Đơn hàng theo ngày").getByText("Xem số liệu", { exact: true }).click();
     assert.equal(await chart("Đơn hàng theo ngày").locator("tbody tr").count(), 7);
     await page.getByLabel("Khoảng thời gian").selectOption("90");
+    await chart("Đơn hàng theo ngày").locator(".dashboard-trend-total strong").waitFor();
+    if (await chart("Đơn hàng theo ngày").locator("details").getAttribute("open") === null) await chart("Đơn hàng theo ngày").getByText("Xem số liệu", { exact: true }).click();
+    await chart("Đơn hàng theo ngày").locator("tbody tr").nth(89).waitFor();
     assert.equal(await chart("Đơn hàng theo ngày").locator("tbody tr").count(), 90);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForFunction(() => getComputedStyle(document.querySelector('.main')).paddingLeft === '0px');

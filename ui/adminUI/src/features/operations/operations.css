@@ -1,0 +1,232 @@
+.operation-panel {
+  margin: 0 0 20px;
+}
+.operation-form {
+  display: block;
+}
+.operation-form h2 {
+  margin: 0 0 22px;
+}
+.operation-wide,
+.operation-lines {
+  grid-column: 1/-1;
+}
+.operation-lines h3 {
+  margin-top: 0;
+}
+.operation-line {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(100px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px 0;
+  border-top: 1px solid #e2e8e0;
+}
+.reference-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.reference-pages {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.operation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.operation-summary article {
+  padding: 22px;
+  border: 1px solid #e0e5de;
+  border-radius: 12px;
+  background: white;
+}
+.operation-summary strong {
+  display: block;
+  font-size: 26px;
+  margin-top: 10px;
+}
+.operation-history {
+  margin: 20px 0;
+}
+.global-search-results {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: min(420px, 90vw);
+  padding: 10px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px #0002;
+  max-height: 65vh;
+  overflow: auto;
+}
+.global-search-results a {
+  display: block;
+  padding: 12px;
+  text-decoration: none;
+}
+.global-search-results a:hover {
+  background: #edf8eb;
+}
+.global-search-results small {
+  display: block;
+  color: #667085;
+}
+.operations-notifications {
+  max-height: 60vh;
+  overflow: auto;
+  padding: 12px;
+}
+.operations-notifications article {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+.operations-notifications article[data-read="true"] {
+  opacity: 0.65;
+}
+.operations-notifications a {
+  display: block;
+  margin-bottom: 8px;
+}
+.invoice-print {
+  padding: 24px;
+}
+.live-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.live-filters > label {
+  min-width: 150px;
+  max-width: 240px;
+  font-size: 14px;
+}
+.live-filters input,
+.live-filters select {
+  display: block;
+  width: 100%;
+}
+@media (max-width: 1000px) {
+  .operation-line {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .operation-line,
+  .operation-summary {
+    grid-template-columns: 1fr;
+  }
+  .live-filters > label {
+    max-width: 100%;
+  }
+}
+@media print {
+  .sidebar,
+  .topbar,
+  .live-page-actions,
+  .operation-panel,
+  .live-tools,
+  .invoice-related,
+  .dashboard-statistics {
+    display: none !important;
+  }
+  .main,
+  .content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  .shell {
+    display: block !important;
+  }
+  body {
+    background: white !important;
+  }
+  .invoice-print {
+    padding: 0;
+  }
+  a {
+    text-decoration: none !important;
+    color: black !important;
+  }
+}
+.invoice-store {
+  display: none;
+}
+.global-search {
+  min-width: 0;
+}
+.mobile-search-trigger {
+  display: none;
+}
+@media (max-width: 800px) {
+  .top-actions {
+    min-width: 0;
+  }
+  .global-search {
+    width: 38px;
+    flex-shrink: 0;
+  }
+  .global-search > label {
+    display: none;
+  }
+  .mobile-search-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+  }
+  .global-search.is-open > label {
+    display: flex;
+    position: fixed;
+    top: 78px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    background: white;
+    z-index: 60;
+  }
+  .global-search-results {
+    position: fixed;
+    top: 128px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    z-index: 60;
+  }
+}
+@media print {
+  .invoice-store {
+    display: block;
+  }
+  .invoice-detail nav {
+    display: none !important;
+  }
+  .nav,
+  .sidebar,
+  .hamb,
+  .session-warning {
+    display: none !important;
+  }
+  .invoice-detail {
+    break-inside: avoid;
+  }
+  .invoice-detail [data-table-scrollbar] {
+    display: none !important;
+  }
+  .invoice-detail [data-table-scroll-viewport] {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .invoice-detail table {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 11px;
+  }
+}

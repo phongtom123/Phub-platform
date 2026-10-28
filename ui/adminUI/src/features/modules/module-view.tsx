@@ -1,12 +1,12 @@
 "use client";
 
 import BackendDataView from "@/src/components/backend-data-view";
-import type { ModuleDefinition, ModuleKey } from "@/src/types/admin";
+import type { ModuleKey } from "@/src/types/admin";
 import { moduleResources } from "@/src/lib/backend-resources";
 import AccountsView from "@/src/features/accounts/accounts-view";
 
 export function ModuleView({ moduleKey }: {
-  moduleKey: ModuleKey; definition: ModuleDefinition; onCreate: () => void; onBack: () => void;
+  moduleKey: ModuleKey;
 }) {
   if (moduleKey === "accounts") return <AccountsView mode="list" />;
   const resource = moduleResources[moduleKey];

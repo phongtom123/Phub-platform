@@ -53,6 +53,12 @@ class SupportRepository:
         return self.db.rpc('customer_create_feedback_v1', {'p_actor_account_id': actor_id, 'p_payload': payload}).execute().data
 
     def update(self, actor_id, ticket_id, changes):
-        return self.db.rpc('admin_update_feedback_v1', {
+        return self.db.rpc('admin_update_feedback_thread_v1', {
             'p_actor_account_id': actor_id, 'p_feedback_id': str(ticket_id), 'p_changes': changes,
+        }).execute().data
+
+    def history(self, actor_id, ticket_id, page, text=None, key=None):
+        return self.db.rpc('customer_feedback_messages_v1', {
+            'p_actor': actor_id, 'p_ticket': str(ticket_id), 'p_page': page,
+            'p_text': text, 'p_key': str(key) if key else None,
         }).execute().data

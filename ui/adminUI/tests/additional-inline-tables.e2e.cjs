@@ -6,7 +6,7 @@ const column=(name,type="varchar",extra={})=>({name,type,required:false,generate
 const status=()=>column("trang_thai","int",{required:true});
 const resources=[
   {name:"suppliers",title:"Nhà cung cấp",keys:["ma_ncc"],writable:true,columns:[column("ma_ncc","int",{generated:true}),column("ten_ncc"),column("sdt"),status()]},
-  {name:"employees",title:"Nhân viên",keys:["ma_nhan_vien"],writable:true,columns:[column("ma_nhan_vien"),column("ho_ten"),column("ma_kho","int"),column("loai_nhan_vien","varchar",{choices:["ADMIN","THU_KHO"]}),status()]},
+  {name:"employees",title:"Nhân viên",keys:["ma_nhan_vien"],writable:true,columns:[column("ma_nhan_vien"),column("ho_ten"),column("ma_kho","int"),column("loai_nhan_vien","varchar",{choices:["ADMIN","NHAN_VIEN"]}),status()]},
   {name:"promotions",title:"Khuyến mãi",keys:["ma_ctkm"],writable:true,columns:[column("ma_ctkm","int"),column("ten_chuong_trinh"),column("ngay_bat_dau","datetime"),column("ngay_ket_thuc","datetime"),column("trang_thai","varchar",{choices:["NHAP","HOAT_DONG","TAM_DUNG","KET_THUC"]}),column("ngay_tao","datetime",{system:true})]},
   {name:"vouchers",title:"Voucher",keys:["ma_voucher"],writable:true,columns:[column("ma_voucher","int"),column("ma_code"),column("loai_giam","varchar",{choices:["PHAN_TRAM","SO_TIEN"]}),column("gia_tri_giam","decimal(18,2)"),column("trang_thai","varchar",{choices:["HOAT_DONG","TAM_DUNG"]}),column("ngay_tao","datetime",{system:true})]},
   {name:"receipts",title:"Phiếu nhập",keys:["ma_phieu_nhap"],writable:false,draft_update_path:"/api/admin/warehouse-drafts/receipts",draft_update_fields:["ma_phieu_code","ma_ncc","ma_kho","ghi_chu"],columns:[column("ma_phieu_nhap","int"),column("ma_phieu_code"),column("ma_ncc","int"),column("ma_kho","int"),column("trang_thai"),column("ghi_chu","text")]},
@@ -14,7 +14,7 @@ const resources=[
 ];
 const rows={
  suppliers:[{ma_ncc:-5,ten_ncc:"NCC thử",sdt:null,trang_thai:1}],
- employees:[{ma_nhan_vien:"NV1",ho_ten:"Nhân viên thử",ma_kho:7,loai_nhan_vien:"THU_KHO",trang_thai:1}],
+ employees:[{ma_nhan_vien:"NV1",ho_ten:"Nhân viên thử",ma_kho:7,loai_nhan_vien:"NHAN_VIEN",trang_thai:1}],
  promotions:[{ma_ctkm:1,ten_chuong_trinh:"Chương trình cũ",ngay_bat_dau:"2026-10-25T01:00:00Z",ngay_ket_thuc:"2026-10-27T01:00:00Z",trang_thai:"NHAP",ngay_tao:"2026-10-20T00:00:00Z"}],
  vouchers:[{ma_voucher:1,ma_code:"SAVE10",loai_giam:"PHAN_TRAM",gia_tri_giam:"10.00",trang_thai:"HOAT_DONG",ngay_tao:"2026-10-20T00:00:00Z"}],
  receipts:[{ma_phieu_nhap:-5,ma_phieu_code:"PN-NHAP",ma_ncc:1,ma_kho:-1,trang_thai:"NHAP",ghi_chu:"Ghi chú phiếu nhập"},{ma_phieu_nhap:-6,ma_phieu_code:"PN-XONG",ma_ncc:1,ma_kho:-1,trang_thai:"DA_NHAP",ghi_chu:"Đã nhập"}],
@@ -69,7 +69,9 @@ const rows={
   await edit(-5,"ma_phieu_code");await page.getByLabel("Mã phiếu -5",{exact:true}).fill("PN-MOI");conflict=true;await page.getByLabel("Mã phiếu -5",{exact:true}).press("Enter");await page.getByRole("alert").filter({hasText:"Phiếu vừa được xử lý"}).waitFor();assert.equal(await page.getByLabel("Mã phiếu -5",{exact:true}).inputValue(),"PN-MOI");await page.getByLabel("Mã phiếu -5",{exact:true}).press("Enter");await saved();assert.deepEqual(writes.at(-1).patch,{ma_phieu_code:"PN-MOI"});assert.deepEqual(writes.at(-1).key,[-5]);
 
   await open("transfers");assert.ok(!(await page.locator("thead").innerText()).includes("Ghi chú"));await edit(-8,"ma_kho_nhan");assert.equal(await page.locator("tbody input").count(),0);
-  await edit(-7,"ma_kho_nhan");await page.getByLabel("Kho nhận -7",{exact:true}).fill("-3");await page.getByLabel("Kho nhận -7",{exact:true}).press("Enter");await saved();assert.deepEqual(writes.at(-1).patch,{ma_kho_nhan:-3});
+  await edit(-7,"ma_kho_nhan");assert.equal(await page.locator("tbody input").count(),0,"Archived transfers cannot be edited");
+  assert.equal(await page.getByRole("link",{name:/Lập phiếu chuyển/}).count(),0);
+  assert.equal(await page.getByRole("button",{name:/Xác nhận xuất chuyển|Xác nhận nhận hàng/}).count(),0);
   assert.equal(await page.locator("tbody select").count(),0,"Document state must not be written as a table field");
   await row(-7).getByRole("link",{name:"Chi tiết",exact:true}).click();await page.locator(".live-field").filter({hasText:"Ghi chú chuyển kho"}).waitFor();
   assert.deepEqual(errors,[]);

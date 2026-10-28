@@ -45,7 +45,7 @@ export function CategoryDetail({ row, columns, label, related }: Props) {
             const info = links[item.name as keyof typeof links];
             if (!info) return null;
             const Icon = info.icon;
-            return <Link className={styles.link} key={item.name} href={dataHref(item.name)} aria-label={item.title}>
+            return <Link className={styles.link} key={item.name} href={dataHref(item.name, { filters: { ma_loai_sp: row.ma_loai_sp } })} aria-label={item.title}>
               <span className={styles.linkIcon}><Icon size={23} aria-hidden="true" /></span>
               <div><strong>{item.title}</strong><span>{info.description}</span></div>
               <ArrowUpRight size={19} aria-hidden="true" />

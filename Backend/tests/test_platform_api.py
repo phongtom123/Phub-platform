@@ -16,7 +16,7 @@ from phub_api.schemas.resources import payload_model
 from phub_api.config.database import get_supabase
 
 ADMIN = User("TK1", "admin", "ADMIN", "Quản trị", employee_id="NV1")
-WAREHOUSE = User("TK2", "kho", "THU_KHO", "Thủ kho", employee_id="NV2", warehouse_id=7)
+WAREHOUSE = User("TK2", "kho", "NHAN_VIEN", "Thủ kho", employee_id="NV2", warehouse_id=7)
 CUSTOMER = User("TK3", "khach", "KHACH_HANG", "Khách hàng", customer_id="KH3")
 ORIGIN = {"Origin": "http://localhost:3000"}
 
@@ -50,7 +50,6 @@ def test_health_is_offline():
 
 @pytest.mark.parametrize("resource,pk,patch", [
     ("receipts", "ma_phieu_nhap", {"ma_ncc": -3, "ma_phieu_code": "PN-MOI"}),
-    ("transfers", "ma_phieu_chuyen", {"ma_kho_nhan": -4}),
 ])
 def test_draft_header_edits_are_guarded_and_do_not_write_stock(platform_client, resource, pk, patch):
     client, state, requests = platform_client
@@ -74,7 +73,6 @@ def test_draft_header_edits_are_guarded_and_do_not_write_stock(platform_client, 
 
 @pytest.mark.parametrize("resource,pk,status", [
     ("receipts", "ma_phieu_nhap", "DA_NHAP"), ("receipts", "ma_phieu_nhap", "HUY"),
-    ("transfers", "ma_phieu_chuyen", "DANG_CHUYEN"), ("transfers", "ma_phieu_chuyen", "DA_NHAN"),
 ])
 def test_processed_documents_cannot_be_edited(platform_client, resource, pk, status):
     client, state, requests = platform_client
@@ -93,10 +91,10 @@ def test_confirmation_racing_with_draft_edit_returns_conflict(platform_client):
 
 
 @pytest.mark.parametrize("resource,payload", [
-    ("receipts", {"trang_thai": "DA_NHAP"}), ("transfers", {"trang_thai": "DA_NHAN"}),
-    ("receipts", {"nguoi_cap_nhat": "OTHER"}), ("transfers", {"nguoi_tao": "OTHER"}),
+    ("receipts", {"trang_thai": "DA_NHAP"}),
+    ("receipts", {"nguoi_cap_nhat": "OTHER"}),
     ("receipts", {"ma_kho": True}), ("receipts", {"ma_ncc": None}),
-    ("receipts", {}), ("transfers", {"ma_phieu_chuyen": 99}),
+    ("receipts", {}),
 ])
 def test_draft_edits_reject_workflow_audit_keys_and_invalid_fields(platform_client, resource, payload):
     client, _, requests = platform_client
@@ -112,14 +110,13 @@ def test_draft_updates_require_admin(platform_client, actor):
     assert requests == []
 
 
-def test_draft_transfers_require_distinct_warehouses_and_origin(platform_client):
+def test_transfer_edits_are_removed_without_database_calls(platform_client):
     client, state, requests = platform_client
     url = "/api/admin/warehouse-drafts/transfers?key=[1]"
-    assert client.patch(url, json={"ma_kho_nhan": 1}).status_code == 403
+    assert client.patch(url, json={"ma_kho_nhan": 1}).status_code == 404
     assert requests == []
-    state["rows"] = [{"ma_phieu_chuyen": 1, "ma_kho_xuat": -5, "ma_kho_nhan": -6, "trang_thai": "NHAP"}]
-    assert client.patch(url, json={"ma_kho_nhan": -5}, headers=ORIGIN).status_code == 422
-    assert len(requests) == 1
+    assert client.patch(url, json={"ma_kho_nhan": -5}, headers=ORIGIN).status_code == 404
+    assert requests == []
 
 
 def test_draft_metadata_grants_update_without_generic_create(platform_client):
@@ -130,8 +127,8 @@ def test_draft_metadata_grants_update_without_generic_create(platform_client):
         for item in resources:
             if item["name"] in {"receipts", "transfers"}:
                 assert item["writable"] is False and item["create_schema"] is None
-                assert bool(item["draft_update_path"]) == (actor == ADMIN)
-                if actor == ADMIN:
+                assert bool(item["draft_update_path"]) == (actor == ADMIN and item["name"] == "receipts")
+                if actor == ADMIN and item["name"] == "receipts":
                     assert "trang_thai" not in item["draft_update_fields"]
 
 
@@ -345,7 +342,7 @@ def test_negative_warehouse_key_can_be_edited(platform_client):
 
 def test_signed_keys_do_not_remove_warehouse_scope(platform_client):
     client, state, requests = platform_client
-    state["actor"] = User("TK2", "kho", "THU_KHO", "Warehouse", employee_id="NV2", warehouse_id=-900001)
+    state["actor"] = User("TK2", "kho", "NHAN_VIEN", "Warehouse", employee_id="NV2", warehouse_id=-900001)
     response = client.get("/api/data/inventory", params={"key": '[-900003,"SKU-TEST"]'})
     assert response.status_code == 200
     assert requests[-1].url.params.get_list("ma_kho") == ["eq.-900001", "eq.-900003"]
@@ -410,8 +407,8 @@ def test_role_reloaded_from_db_and_logout(platform_client):
     _, profile = configure_login(state)
     app.dependency_overrides.pop(current_user)
     client.post("/api/auth/login", json={"username": "admin", "password": "long-test-password"}, headers=ORIGIN)
-    profile["loai_nhan_vien"], profile["ma_kho"] = "THU_KHO", 7
-    assert client.get("/api/auth/me").json()["role"] == "THU_KHO"
+    profile["loai_nhan_vien"], profile["ma_kho"] = "NHAN_VIEN", 7
+    assert client.get("/api/auth/me").json()["role"] == "NHAN_VIEN"
     assert client.get("/api/data/accounts").status_code == 403
     assert client.post("/api/auth/logout", headers=ORIGIN).status_code == 204
     assert client.get("/api/auth/me").status_code == 401
@@ -478,7 +475,7 @@ def test_bearer_token_flow_and_live_account_checks(platform_client):
     client.cookies.set("phub_session", "invalid-cookie")
     assert client.get("/api/auth/me", headers=headers).status_code == 200
     client.cookies.clear()
-    profile["loai_nhan_vien"], profile["ma_kho"] = "THU_KHO", 7
+    profile["loai_nhan_vien"], profile["ma_kho"] = "NHAN_VIEN", 7
     assert client.get("/api/auth/me", headers=headers).json()["warehouse_id"] == 7
     assert client.get("/api/admin/accounts", headers=headers).status_code == 403
     account["trang_thai"] = 0

@@ -67,7 +67,7 @@ Ví dụ tạo tài khoản:
 
 1. `controllers/admin_accounts.py`: `POST /api/admin/accounts`, nhận schema.
 2. `dependencies/admin_accounts.py`: xác thực ADMIN/Origin và cung cấp service.
-3. `services/admin_accounts.py`: kiểm tra người sở hữu/role, hash mật khẩu,
+3. `services/admin_accounts.py`: kiểm tra người sở hữu/role và dữ liệu mật khẩu,
    xây tham số tạo mới và kiểm tra kết quả.
 4. `repositories/admin_accounts.py`: gọi đúng một RPC để tạo người + tài khoản.
 5. SQL RPC trong migration đảm bảo transaction, khóa và tính duy nhất.

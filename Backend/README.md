@@ -444,3 +444,8 @@ cần dọn theo quy trình lưu trữ riêng; chưa có tác vụ tự động 
 Tham khảo: [Supabase Upload](https://supabase.com/docs/reference/python/storage-from-upload),
 [public/private buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals).
 Kiểm thử offline: `python -m pytest tests/test_media.py -q` từ thư mục Backend.
+# Vận hành admin
+
+Luồng đơn hàng, phiếu nhập/chuyển kho, kiểm kê, hóa đơn và ghi nhận thu/hoàn tiền
+được bổ sung qua API transaction riêng. Xem [hợp đồng, migration và cách kiểm thử](docs/ADMIN_OPERATIONS.md).
+Các mô tả “chỉ đọc” bên dưới áp dụng cho CRUD bảng; không thay thế API vận hành mới.

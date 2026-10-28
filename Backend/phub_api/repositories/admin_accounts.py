@@ -29,7 +29,7 @@ class AccountsRepository:
         return self.client.table("KHO").select("ma_kho,trang_thai").eq("ma_kho", identifier).limit(1).execute().data
 
     def page(self, page, page_size, q, status, role):
-        employee_join = "!inner" if role in {"ADMIN", "THU_KHO"} else ""
+        employee_join = "!inner" if role in {"ADMIN", "NHAN_VIEN"} else ""
         projection = ACCOUNT_PROJECTION + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh)"
         query = self.client.table("TAI_KHOAN").select(projection, count="exact")
         if q.strip():

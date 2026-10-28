@@ -9,7 +9,6 @@ const moduleKeys: ModuleKey[] = [
   "categories",
   "inventory",
   "receipts",
-  "transfers",
   "suppliers",
   "branches",
   "employees",

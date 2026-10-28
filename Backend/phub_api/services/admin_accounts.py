@@ -70,11 +70,11 @@ class AccountsService:
         field = "ma_nhan_vien" if body.ma_nhan_vien else "ma_kh"
         if body.ma_nhan_vien:
             profile = self.employee(owner)
-            if profile["trang_thai"] != 1 or profile["loai_nhan_vien"] not in {"ADMIN", "THU_KHO"}:
+            if profile["trang_thai"] != 1 or profile["loai_nhan_vien"] not in {"ADMIN", "NHAN_VIEN"}:
                 raise HTTPException(422, "Nhân viên không hoạt động hoặc chưa có vai trò hợp lệ.")
             if (profile["loai_nhan_vien"] == "ADMIN") != (profile.get("ma_kho") is None):
                 raise HTTPException(422, "Phân công kho của nhân viên chưa hợp lệ.")
-            if profile["loai_nhan_vien"] == "THU_KHO":
+            if profile["loai_nhan_vien"] == "NHAN_VIEN":
                 warehouses = self.repository.warehouse(profile["ma_kho"])
                 if not warehouses or warehouses[0]["trang_thai"] != 1:
                     raise HTTPException(422, "Kho được phân công không hoạt động.")

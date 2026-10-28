@@ -24,7 +24,7 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
   }, [busy, password, confirmation, warehouseQuery, role, warehouse, account.role, account.ma_kho, onEditingChange]);
   useEffect(() => () => onEditingChange(false), [onEditingChange]);
   const canManageRole = Boolean(account.ma_nhan_vien) && !account.is_self;
-  const canAssignWarehouse = canManageRole && role === "THU_KHO";
+  const canAssignWarehouse = canManageRole && role === "NHAN_VIEN";
   const roleHelp = !account.ma_nhan_vien
     ? "Tài khoản khách hàng không áp dụng phân quyền nhân viên. Không thể nâng quyền khách hàng tại đây."
     : account.is_self
@@ -62,7 +62,7 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
   function changeRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canManageRole || busy) return;
-    if (window.confirm("Đổi quyền sẽ có hiệu lực ở yêu cầu API tiếp theo. Tiếp tục?")) void mutate("role", { role, ma_kho: role === "THU_KHO" ? Number(warehouse) : null }, "PUT");
+    if (window.confirm("Đổi quyền sẽ có hiệu lực ở yêu cầu API tiếp theo. Tiếp tục?")) void mutate("role", { role, ma_kho: role === "NHAN_VIEN" ? Number(warehouse) : null }, "PUT");
   }
 
   function resetPassword(event: FormEvent<HTMLFormElement>) {
@@ -91,7 +91,7 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
       <p className="account-wide account-help account-card-description" id="account-role-help">{roleHelp}</p>
       <fieldset className="live-form-fields" disabled={busy || !canManageRole} aria-describedby="account-role-help">
         <label>Vai trò<select value={role} onChange={e => setRole(e.target.value as Role)}>
-          {!account.ma_nhan_vien ? <option value="KHACH_HANG">Khách hàng</option> : <><option value="ADMIN">Quản trị viên</option><option value="THU_KHO">Nhân viên kho</option></>}
+          {!account.ma_nhan_vien ? <option value="KHACH_HANG">Khách hàng</option> : <><option value="ADMIN">Quản trị viên</option><option value="NHAN_VIEN">Nhân viên kho</option></>}
         </select></label>
         {canAssignWarehouse && <>
         <div className="account-warehouse-search">

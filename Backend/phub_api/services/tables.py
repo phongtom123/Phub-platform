@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 import json
+import re
 
 from fastapi import HTTPException
 from pydantic import ValidationError
@@ -20,11 +21,11 @@ from phub_api.schemas.warehouse_drafts import DRAFT_FIELDS
 
 
 def can_write(name: str, user: User) -> bool:
-    return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "THU_KHO" and name == "suppliers"))
+    return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "NHAN_VIEN" and name == "suppliers"))
 
 
 def access(name: str, user: User, write: bool = False) -> None:
-    readable = user.role == "ADMIN" or (user.role == "THU_KHO" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
+    readable = user.role == "ADMIN" or (user.role == "NHAN_VIEN" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
     if not readable or (write and not can_write(name, user)):
         raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này.")
 
@@ -78,7 +79,7 @@ def validate_combined(name: str, data: dict, user: User) -> None:
         raise HTTPException(422, "Tài khoản phải thuộc đúng một khách hàng hoặc một nhân viên.")
     if name == "employees":
         if (data["loai_nhan_vien"] == "ADMIN") != (data.get("ma_kho") is None):
-            raise HTTPException(422, "ADMIN không gán kho; THU_KHO phải gán một kho.")
+            raise HTTPException(422, "ADMIN không gán kho; NHAN_VIEN phải gán một kho.")
     if name == "promotions":
         try:
             valid = datetime.fromisoformat(data["ngay_ket_thuc"]) > datetime.fromisoformat(data["ngay_bat_dau"])
@@ -119,17 +120,59 @@ def resource_metadata(user: User):
     return result
 
 
+def table_filters(name: str, raw: str | None):
+    if not raw:
+        return []
+    try:
+        values = json.loads(raw)
+        if not isinstance(values, dict) or len(values) > 12:
+            raise ValueError
+        columns = {column['name']: column for column in public_columns(name)}
+        result = []
+        for key, value in values.items():
+            if value in ('', None):
+                continue
+            field, _, suffix = key.partition('__')
+            if field not in columns or suffix not in {'', 'from', 'to'} or isinstance(value, (list, dict, bool)):
+                raise ValueError
+            kind = columns[field]['type']
+            if suffix:
+                if kind not in {'date', 'datetime', 'timestamptz'}:
+                    raise ValueError
+                day = date.fromisoformat(str(value))
+                if suffix == 'to':
+                    day += timedelta(days=1)
+                value = day.isoformat() if kind == 'date' else datetime.combine(day, datetime.min.time(), timezone(timedelta(hours=7))).astimezone(timezone.utc).isoformat()
+                result.append((field, 'gte' if suffix == 'from' else 'lt', value))
+            else:
+                if kind == 'int':
+                    if not (type(value) is int or isinstance(value, str) and re.fullmatch(r'-?\d+', value)):
+                        raise ValueError
+                    value = int(value)
+                    if not -(2**31) <= value < 2**31:
+                        raise ValueError
+                elif not isinstance(value, str) or len(value) > 200:
+                    raise ValueError
+                result.append((field, 'eq', value))
+        return result
+    except (ValueError, TypeError, OverflowError):
+        raise HTTPException(422, 'Bộ lọc không hợp lệ. Chỉ lọc theo cột và kiểu dữ liệu được công bố.') from None
+
+
 class TablesService:
     def __init__(self, repository: TablesRepository, user: User):
         self.repository, self.user = repository, user
 
-    def read(self, name, page, page_size, q, key, order_id):
+    def read(self, name, page, page_size, q, key, order_id, filters=None):
         access(name, self.user)
         if order_id is not None and (name not in {"orders", *CUSTOMER_CHILDREN} or not order_id.strip()):
             raise HTTPException(422, "order_id chỉ dùng để lọc đơn hàng và các bảng liên quan đến đơn hàng.")
         keys = key_values(name, key) if key is not None else None
-        result = self.repository.page(name, self.user, page, page_size, q, keys, order_id)
+        selection = table_filters(name, filters)
+        result = self.repository.page(name, self.user, page, page_size, q, keys, order_id, selection) if selection else self.repository.page(name, self.user, page, page_size, q, keys, order_id)
         body = {"data": clean(result.data), "total": result.count or 0, "page": page, "page_size": page_size}
+        if filters:
+            body['filters'] = json.loads(filters)
         if order_id is not None:
             body["order_id"] = order_id
         return body
