@@ -12,6 +12,11 @@ import {
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { getProfile, ShoppingError } from "@/lib/shopping/client";
+import {
+  mergeStoredCarts,
+  restoreCart,
+  type StoredCartLine,
+} from "@/lib/shopping/cart-storage";
 import { readJson, validateProduct } from "@/lib/catalog/client";
 import { safeImageUrl } from "@/lib/catalog/types";
 import type { CartLine, CustomerProfile } from "@/lib/shopping/types";
@@ -31,7 +36,7 @@ interface ShoppingState {
   add: (
     product: { id: string; sku?: string },
     quantity?: number,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   update: (sku: string, quantity: number) => void;
   remove: (sku: string) => void;
   clear: () => void;
@@ -46,26 +51,17 @@ interface ShoppingState {
   setNotice: (value: string) => void;
 }
 const ShoppingContext = createContext<ShoppingState | null>(null);
-const keyFor = (id: string) => `phub-cart-v1:${id}`;
-function restored(
-  value: unknown,
-): { product_id: string; sku: string; quantity: number; selected?: boolean }[] {
-  if (!Array.isArray(value) || value.length > 100) return [];
-  const seen = new Set<string>();
-  return value.filter(
-    (item) =>
-      item &&
-      typeof item.product_id === "string" &&
-      item.product_id.length <= 100 &&
-      typeof item.sku === "string" &&
-      item.sku.length <= 100 &&
-      !seen.has(item.sku) &&
-      Number.isInteger(item.quantity) &&
-      item.quantity >= 1 &&
-      item.quantity <= 1000 &&
-      (item.selected === undefined || typeof item.selected === "boolean") &&
-      (seen.add(item.sku), true),
-  );
+const GUEST_CART_OWNER = "__guest__";
+const GUEST_CART_KEY = "phub-cart-guest-v1";
+const keyFor = (id: string) =>
+  id === GUEST_CART_OWNER ? GUEST_CART_KEY : `phub-cart-v1:${id}`;
+
+function readStoredCart(id: string): StoredCartLine[] {
+  try {
+    return restoreCart(JSON.parse(localStorage.getItem(keyFor(id)) || "[]"));
+  } catch {
+    return [];
+  }
 }
 
 export function ShoppingProvider({ children }: { children: ReactNode }) {
@@ -164,40 +160,62 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       setCustomer(profile);
       setAuthStatus("authenticated");
       setAuthMessage("");
-      if (owner.current !== profile.customer_id) {
+      const guestEntries = readStoredCart(GUEST_CART_OWNER);
+      if (owner.current !== profile.customer_id || guestEntries.length > 0) {
+        const accountEntries = readStoredCart(profile.customer_id);
+        const entries = mergeStoredCarts(accountEntries, guestEntries);
+        let guestTransferred = false;
+        if (guestEntries.length > 0) {
+          try {
+            localStorage.setItem(
+              keyFor(profile.customer_id),
+              JSON.stringify(entries),
+            );
+            localStorage.removeItem(GUEST_CART_KEY);
+            guestTransferred = true;
+          } catch {
+            setNotice(
+              "Không thể chuyển giỏ hàng khách vào tài khoản trên trình duyệt này.",
+            );
+          }
+        }
         owner.current = profile.customer_id;
         linesRef.current = [];
         setLines([]);
-        setNotice("");
-        let entries: { product_id: string; sku: string; quantity: number; selected?: boolean }[] =
-          [];
-        try {
-          entries = restored(
-            JSON.parse(
-              localStorage.getItem(keyFor(profile.customer_id)) || "[]",
-            ),
-          );
-        } catch {}
         await loadLines(entries, profile.customer_id);
+        if (guestTransferred) {
+          setNotice(
+            `Đã chuyển ${guestEntries.length} sản phẩm từ giỏ hàng khách vào tài khoản.`,
+          );
+        } else if (guestEntries.length === 0) {
+          setNotice("");
+        }
       }
     } catch (error) {
       if (generation !== sessionGeneration.current) return;
       setCustomer(null);
-      setAuthStatus(
-        error instanceof ShoppingError && error.status === 401
-          ? "guest"
-          : "unavailable",
-      );
+      const guest = error instanceof ShoppingError && error.status === 401;
+      setAuthStatus(guest ? "guest" : "unavailable");
       setAuthMessage(
         error instanceof Error
           ? error.message
           : "Không thể xác minh tài khoản. Vui lòng thử lại.",
       );
-      owner.current = null;
-      ++cartGeneration.current;
-      linesRef.current = [];
-      setLines([]);
-      setCartLoading(false);
+      if (guest) {
+        if (owner.current !== GUEST_CART_OWNER) {
+          owner.current = GUEST_CART_OWNER;
+          linesRef.current = [];
+          setLines([]);
+          setNotice("");
+          await loadLines(readStoredCart(GUEST_CART_OWNER), GUEST_CART_OWNER);
+        }
+      } else {
+        owner.current = null;
+        ++cartGeneration.current;
+        linesRef.current = [];
+        setLines([]);
+        setCartLoading(false);
+      }
     }
   }, [loadLines]);
   useEffect(() => {
@@ -212,20 +230,20 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener("focus", refresh);
     window.addEventListener("phub:session-changed", refresh);
+    window.addEventListener("phub-auth-session", refresh);
     return () => {
       window.removeEventListener("focus", refresh);
       window.removeEventListener("phub:session-changed", refresh);
+      window.removeEventListener("phub-auth-session", refresh);
     };
   }, [refreshSession]);
   const add = async (product: { id: string; sku?: string }, quantity = 1) => {
     const id = owner.current;
-    if (!id || authStatus !== "authenticated") {
+    if (!id || !["authenticated", "guest"].includes(authStatus)) {
       setNotice(
-        authStatus === "guest"
-          ? "Vui lòng đăng nhập để thêm sản phẩm vào giỏ."
-          : authMessage || "Đang xác minh tài khoản. Vui lòng thử lại.",
+        authMessage || "Đang xác minh tài khoản. Vui lòng thử lại.",
       );
-      return;
+      return false;
     }
     if (
       cartLoading ||
@@ -233,7 +251,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       quantity < 1 ||
       quantity > 1000
     )
-      return;
+      return false;
     setCartLoading(true);
     try {
       const actual = validateProduct(
@@ -244,7 +262,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           ),
         ),
       );
-      if (owner.current !== id) return;
+      if (owner.current !== id) return false;
       if (product.sku !== undefined && actual.sku !== product.sku)
         throw new Error("Sản phẩm đã thay đổi. Vui lòng chọn lại.");
       const current = linesRef.current;
@@ -285,10 +303,12 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
             ],
       );
       setNotice("Đã thêm sản phẩm vào giỏ hàng.");
+      return true;
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : "Không thể thêm sản phẩm.",
       );
+      return false;
     } finally {
       setCartLoading(false);
     }

@@ -89,3 +89,8 @@
   .paypalButton, .paypalButton img { width: 105px; height: 31px; }
   .supportLinks { margin-left: 20px; }
 }
+
+@media (max-width: 760px) {
+  .purchaseControls { display: block; }
+  .purchaseControls .cartButton { width: 100%; min-height: 46px; padding: 6px 16px 6px 7px; font-size: 13px; }
+}

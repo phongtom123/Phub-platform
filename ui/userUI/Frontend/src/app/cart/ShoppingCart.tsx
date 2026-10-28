@@ -34,6 +34,14 @@ export function ShoppingCart() {
     }
   };
 
+  const handleCheckout = () => {
+    if (shop.authStatus === "guest") {
+      router.push("/auth/login?redirect=%2Fcheckout");
+      return;
+    }
+    if (shop.authStatus === "authenticated") router.push("/checkout");
+  };
+
   return (
     <main className={styles.page}>
       <div className={styles.container}>
@@ -248,12 +256,18 @@ export function ShoppingCart() {
               <button
                 type="button"
                 className={styles.checkout}
-                disabled={shop.selectedLines.length === 0}
-                onClick={() => router.push("/checkout")}
+                disabled={
+                  shop.selectedLines.length === 0 ||
+                  shop.authStatus === "loading" ||
+                  shop.authStatus === "unavailable"
+                }
+                onClick={handleCheckout}
               >
                 {shop.selectedLines.length === 0
                   ? "Vui lòng chọn sản phẩm"
-                  : `Tiến hành đặt hàng (${shop.selectedLines.length})`}
+                  : shop.authStatus === "guest"
+                    ? `Đăng nhập để thanh toán (${shop.selectedLines.length})`
+                    : `Tiến hành đặt hàng (${shop.selectedLines.length})`}
               </button>
 
               {shop.authStatus === "guest" && (
@@ -268,12 +282,19 @@ export function ShoppingCart() {
                 >
                   💡 <strong>Gợi ý:</strong>{" "}
                   <Link
-                    href="/auth/login?redirect=/cart"
+                    href="/auth/login?redirect=/checkout"
                     style={{ color: "#0156ff", textDecoration: "underline" }}
                   >
                     Đăng nhập
                   </Link>{" "}
-                  để lưu trữ giỏ hàng và theo dõi hóa đơn dễ dàng hơn.
+                  hoặc{" "}
+                  <Link
+                    href="/auth/register?redirect=/checkout"
+                    style={{ color: "#0156ff", textDecoration: "underline" }}
+                  >
+                    đăng ký
+                  </Link>{" "}
+                  để chuyển giỏ hàng này vào tài khoản và thanh toán.
                 </p>
               )}
             </aside>

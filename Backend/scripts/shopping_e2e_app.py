@@ -129,9 +129,11 @@ def database(request):
                 rows = [row]
         elif table == "SAN_PHAM":
             if state["products_available"] and read_literal(request, "ma_sp") in ("", "P-A"):
-                rows = [{"ma_sp": "P-A", "sku": "SKU-A", "ten_sp": "Laptop thử nghiệm", "thuong_hieu": "PHUB", "gia_ban_hien_tai": state["price"], "mo_ta": "Mô tả từ API fixture", "thong_so_ky_thuat": "CPU: Core i5\nRAM: 16 GB", "don_vi": "Chiếc", "bao_hanh_thang": 12, "duong_dan_anh": "/images/catalog/product-placeholder.svg", "category": {"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop", "trang_thai": 1}}]
+                rows = [{"ma_sp": "P-A", "sku": "SKU-A", "ten_sp": "Laptop thử nghiệm", "thuong_hieu": "PHUB", "gia_ban_hien_tai": state["price"], "mo_ta": "Mô tả từ API fixture", "thong_so_ky_thuat": "CPU: Core i5\nRAM: 16 GB", "don_vi": "Chiếc", "bao_hanh_thang": 12, "duong_dan_anh": "/images/catalog/product-placeholder.svg", "category": {"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop", "trang_thai": 1}, "subcategory": {"ma_loai_sp_con": "LAPTOP-GAMING", "ten_loai_sp_con": "Laptop gaming", "trang_thai": 1}}]
         elif table == "LOAI_SP":
             rows = [{"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop"}]
+        elif table == "LOAI_SP_CON":
+            rows = [{"ma_loai_sp": "LAPTOP", "ma_loai_sp_con": "LAPTOP-GAMING", "ten_loai_sp_con": "Laptop gaming"}]
         elif table == "DON_HANG":
             order = state["orders"].get(read_literal(request, "ma_donhang"))
             if order and order["owner"] == read_literal(request, "ma_kh"):

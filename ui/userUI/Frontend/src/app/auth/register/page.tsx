@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
+import { authPageHref, safeAuthRedirect } from "@/lib/auth/redirect";
 import { registerCustomer } from "../../../../../../shared/auth-client";
 
 const fieldClass = "mt-2 h-12 w-full rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-950 outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { refreshSession } = useShopping();
+  const redirectTo = safeAuthRedirect(
+    searchParams.get("redirect") ?? searchParams.get("next"),
+    "/main/landing",
+  );
+  const loginHref = authPageHref("/auth/login", redirectTo, "/main/landing");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +41,8 @@ export default function RegisterPage() {
         phone: String(form.get("phone") ?? ""),
         password,
       });
-      router.push("/main/landing");
+      await refreshSession();
+      router.replace(redirectTo);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tạo tài khoản lúc này.");
@@ -102,9 +112,23 @@ export default function RegisterPage() {
           {loading ? "Đang tạo tài khoản…" : "Tạo tài khoản"}
         </button>
         <p className="mt-6 text-center text-sm text-zinc-500">
-          Đã có tài khoản?{" "}<Link href="/auth/login" className="font-semibold text-green-700 hover:underline">Đăng nhập</Link>
+          Đã có tài khoản?{" "}<Link href={loginHref} className="font-semibold text-green-700 hover:underline">Đăng nhập</Link>
         </p>
       </form>
     </section>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="grid min-h-[72vh] place-items-center px-6" aria-live="polite" aria-busy="true">
+          <p className="text-sm text-zinc-500" role="status">Đang mở trang đăng ký…</p>
+        </section>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }
