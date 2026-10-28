@@ -21,14 +21,14 @@ trong `FRONTEND_ORIGINS`. Response đọc không có mật khẩu, CCCD, lương
 | GET | `/api/admin/accounts/{id}` | Chi tiết |
 | PATCH | `/api/admin/accounts/{id}` | Sửa tên đăng nhập/email |
 | POST | `/api/admin/accounts/{id}/status` | `{ "trang_thai": 0/1/2 }` |
-| PUT | `/api/admin/accounts/{id}/role` | `{ "role": "ADMIN"/"NHAN_VIEN_KHO", "ma_kho": null/số }` |
+| PUT | `/api/admin/accounts/{id}/role` | `{ "role": "ADMIN"/"NHAN_VIEN", "ma_kho": null/số }` |
 | POST | `/api/admin/accounts/{id}/password` | Cấp lại mật khẩu tài khoản khác |
 | GET | `/api/admin/me` | Tài khoản đang đăng nhập |
 | PATCH | `/api/admin/me` | Sửa tên/email của mình |
 | POST | `/api/admin/me/password` | Mật khẩu hiện tại và mật khẩu mới |
 
 Query danh sách: `q` tìm literal mã/tên đăng nhập/email; `role` = ADMIN,
-NHAN_VIEN_KHO hoặc KHACH_HANG; `status` = 0/1/2; `page` từ 1, `page_size` 1–100.
+NHAN_VIEN hoặc KHACH_HANG; `status` = 0/1/2; `page` từ 1, `page_size` 1–100.
 Response `{data,total,page,page_size}`. Chi tiết/ghi trả một `AccountRead`.
 Tra cứu chủ tài khoản: `kind=employees|customers`, `q`, `page`, `page_size`.
 Endpoint tra cứu giữ để tương thích; form tạo tài khoản mới không dùng chọn hồ sơ.
@@ -47,16 +47,16 @@ Form mới gửi payload sau (ví dụ minh họa, không phải thông tin đă
 ## Quy tắc
 
 - Form tạo mới không gửi `ma_tk`. Database tự cấp mã theo loại tài khoản: ADMIN →
-  `AD000001`, NHAN_VIEN_KHO → `KHO000001`, KHACH_HANG → `KH000001`. Mỗi loại có sequence
+  `AD000001`, NHAN_VIEN → `KHO000001`, KHACH_HANG → `KH000001`. Mỗi loại có sequence
   riêng; phần số tối thiểu 6 chữ số, không bị cắt khi vượt 999999. Mã cũ giữ nguyên;
   mã đã tồn tại được bỏ qua. Số có thể nhảy khi giao dịch thất bại, không bảo đảm liên tục.
 - Đúng một `ma_nhan_vien` hoặc `ma_kh`, mỗi hồ sơ tối đa một tài khoản.
   Payload `new_owner` tạo người mới; mã nhân viên/khách do backend sinh bằng UUID.
   Payload cũ `ma_nhan_vien`/`ma_kh` chỉ cấp cho người có sẵn. Không trộn hai loại payload.
   PK/chủ sở hữu không sửa được sau khi tạo.
-- ADMIN chọn loại tài khoản mới: ADMIN, NHAN_VIEN_KHO hoặc KHACH_HANG. Họ tên bắt buộc,
+- ADMIN chọn loại tài khoản mới: ADMIN, NHAN_VIEN hoặc KHACH_HANG. Họ tên bắt buộc,
   tối đa 200 ký tự. Vai trò vẫn lưu trên NHAN_VIEN; khách không được nâng thành admin.
-- ADMIN không gán kho; NHAN_VIEN_KHO phải gán một kho đang hoạt động. Cập nhật quyền/kho
+- ADMIN không gán kho; NHAN_VIEN phải gán một kho đang hoạt động. Cập nhật quyền/kho
   cùng một dòng nhân viên; phiên đọc lại role ở request tiếp theo.
 - Username 3–80 ký tự ASCII chữ/số/._-, phân biệt hoa/thường. Không có `@`.
   Email tùy chọn, chuẩn hóa chữ thường. Chỉ payload cũ cấp tài khoản cho người có sẵn

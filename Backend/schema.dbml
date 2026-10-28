@@ -13,7 +13,7 @@ Table NHAN_VIEN {
   ma_nhan_vien varchar [pk]
   ma_kho int [note: 'Kho lam viec chinh; NULL neu la ADMIN hoac chua phan cong']
 
-  loai_nhan_vien varchar [not null, note: 'ADMIN, NHAN_VIEN_KHO']
+  loai_nhan_vien varchar [not null, note: 'ADMIN, NHAN_VIEN']
 
   ho_ten varchar [not null]
   cccd varchar [unique]
@@ -23,8 +23,8 @@ Table NHAN_VIEN {
   trang_thai int [not null, default: 1]
 
   checks {
-    `loai_nhan_vien IN ('ADMIN', 'NHAN_VIEN_KHO')`
-    `(loai_nhan_vien = 'ADMIN' AND ma_kho IS NULL) OR (loai_nhan_vien = 'NHAN_VIEN_KHO' AND ma_kho IS NOT NULL)`
+    `loai_nhan_vien IN ('ADMIN', 'NHAN_VIEN')`
+    `(loai_nhan_vien = 'ADMIN' AND ma_kho IS NULL) OR (loai_nhan_vien = 'NHAN_VIEN' AND ma_kho IS NOT NULL)`
   }
 }
 

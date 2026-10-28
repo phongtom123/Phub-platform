@@ -9,9 +9,9 @@ def selected_columns(name: str, user: User) -> str:
     parts = [c["name"] + ("::text" if c["type"].startswith("decimal") else "") for c in public_columns(name)]
     if user.role == "KHACH_HANG" and name in CUSTOMER_CHILDREN:
         parts.append("scope:DON_HANG!inner(ma_kh)")
-    if user.role == "NHAN_VIEN_KHO" and name == "receipt-lines":
+    if user.role == "NHAN_VIEN" and name == "receipt-lines":
         parts.append("scope:PHIEU_NHAP!inner(ma_kho)")
-    if user.role == "NHAN_VIEN_KHO" and name == "transfer-lines":
+    if user.role == "NHAN_VIEN" and name == "transfer-lines":
         parts.append("scope:PHIEU_CHUYEN_KHO!inner(ma_kho_xuat,ma_kho_nhan)")
     return ",".join(parts)
 
@@ -20,7 +20,7 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
     query = db.table(RESOURCES[name].table).select(selected_columns(name, user), count="exact")
     if user.role == "KHACH_HANG":
         query = query.eq("scope.ma_kh" if name in CUSTOMER_CHILDREN else "ma_kh", user.customer_id)
-    if user.role == "NHAN_VIEN_KHO":
+    if user.role == "NHAN_VIEN":
         if name in {"warehouses", "inventory", "receipts"}:
             query = query.eq("ma_kho", user.warehouse_id)
         elif name == "receipt-lines":
@@ -30,7 +30,7 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
             if name == "transfers" and search:
                 clause = f"and(or({clause}),or({search}))"
             query = query.or_(clause, reference_table="scope") if name == "transfer-lines" else query.or_(clause)
-    if search and not (user.role == "NHAN_VIEN_KHO" and name == "transfers"):
+    if search and not (user.role == "NHAN_VIEN" and name == "transfers"):
         query = query.or_(search)
     return query
 

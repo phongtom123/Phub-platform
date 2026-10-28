@@ -102,7 +102,7 @@ không có email/push notification hoặc lịch sử hội thoại nhiều lư�
 
 ## Quyền và bảo toàn dữ liệu
 
-- NHAN_VIEN_KHO không có quyền; khách không đọc được ticket của người khác, kể cả biết UUID.
+- NHAN_VIEN không có quyền; khách không đọc được ticket của người khác, kể cả biết UUID.
 - API kiểm tra role/ownership; RPC kiểm tra lại tài khoản/role hoạt động khi ghi.
 - Không giả lập ADMIN bằng query/body hoặc dùng `auth.uid()` của Supabase Auth.
 - Bảng bật RLS, chặn `anon`/`authenticated`; chỉ backend với service key được truy cập.

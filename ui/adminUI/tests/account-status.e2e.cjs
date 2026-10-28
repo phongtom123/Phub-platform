@@ -11,7 +11,7 @@ async function main() {
     const reads = { documents: 0, rsc: 0, session: 0, list: 0 };
     const records = [
       { ma_tk: "AD000001", ten_tai_khoan: "admin", role: "ADMIN", is_self: true, ma_nhan_vien: "NV1", ma_kh: null },
-      { ma_tk: "KHO000001", ten_tai_khoan: "warehouse", role: "NHAN_VIEN_KHO", is_self: false, ma_nhan_vien: "NV2", ma_kh: null },
+      { ma_tk: "KHO000001", ten_tai_khoan: "warehouse", role: "NHAN_VIEN", is_self: false, ma_nhan_vien: "NV2", ma_kh: null },
       { ma_tk: "KH000001", ten_tai_khoan: "customer", role: "KHACH_HANG", is_self: false, ma_nhan_vien: null, ma_kh: "KH1" },
     ].map(row => ({ ...row, email: "test@example.test", ho_ten: "Tên chủ tài khoản", ma_kho: null, trang_thai: 1, owner_active: true }));
     let confirm = true, failNext = false, holdNext = false, resolveHeld;

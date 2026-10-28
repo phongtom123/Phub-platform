@@ -63,7 +63,7 @@ def set_status(account_id: Identifier, body: StatusUpdate, service: Write):
     return service.status(account_id, body.trang_thai)
 
 
-@router.put("/accounts/{account_id}/role", response_model=AccountRead, responses=ERRORS, summary="Đổi quyền ADMIN/NHAN_VIEN_KHO và kho của nhân viên")
+@router.put("/accounts/{account_id}/role", response_model=AccountRead, responses=ERRORS, summary="Đổi quyền ADMIN/NHAN_VIEN và kho của nhân viên")
 def set_role(account_id: Identifier, body: RoleUpdate, service: Write):
     return service.role(account_id, body)
 

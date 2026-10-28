@@ -16,7 +16,7 @@ from phub_api.schemas.resources import payload_model
 from phub_api.config.database import get_supabase
 
 ADMIN = User("TK1", "admin", "ADMIN", "Quản trị", employee_id="NV1")
-WAREHOUSE = User("TK2", "kho", "NHAN_VIEN_KHO", "Nhân viên kho", employee_id="NV2", warehouse_id=7)
+WAREHOUSE = User("TK2", "kho", "NHAN_VIEN", "Nhân viên", employee_id="NV2", warehouse_id=7)
 CUSTOMER = User("TK3", "khach", "KHACH_HANG", "Khách hàng", customer_id="KH3")
 ORIGIN = {"Origin": "http://localhost:3000"}
 
@@ -345,7 +345,7 @@ def test_negative_warehouse_key_can_be_edited(platform_client):
 
 def test_signed_keys_do_not_remove_warehouse_scope(platform_client):
     client, state, requests = platform_client
-    state["actor"] = User("TK2", "kho", "NHAN_VIEN_KHO", "Warehouse", employee_id="NV2", warehouse_id=-900001)
+    state["actor"] = User("TK2", "kho", "NHAN_VIEN", "Warehouse", employee_id="NV2", warehouse_id=-900001)
     response = client.get("/api/data/inventory", params={"key": '[-900003,"SKU-TEST"]'})
     assert response.status_code == 200
     assert requests[-1].url.params.get_list("ma_kho") == ["eq.-900001", "eq.-900003"]
@@ -410,8 +410,8 @@ def test_role_reloaded_from_db_and_logout(platform_client):
     _, profile = configure_login(state)
     app.dependency_overrides.pop(current_user)
     client.post("/api/auth/login", json={"username": "admin", "password": "long-test-password"}, headers=ORIGIN)
-    profile["loai_nhan_vien"], profile["ma_kho"] = "NHAN_VIEN_KHO", 7
-    assert client.get("/api/auth/me").json()["role"] == "NHAN_VIEN_KHO"
+    profile["loai_nhan_vien"], profile["ma_kho"] = "NHAN_VIEN", 7
+    assert client.get("/api/auth/me").json()["role"] == "NHAN_VIEN"
     assert client.get("/api/data/accounts").status_code == 403
     assert client.post("/api/auth/logout", headers=ORIGIN).status_code == 204
     assert client.get("/api/auth/me").status_code == 401
@@ -478,7 +478,7 @@ def test_bearer_token_flow_and_live_account_checks(platform_client):
     client.cookies.set("phub_session", "invalid-cookie")
     assert client.get("/api/auth/me", headers=headers).status_code == 200
     client.cookies.clear()
-    profile["loai_nhan_vien"], profile["ma_kho"] = "NHAN_VIEN_KHO", 7
+    profile["loai_nhan_vien"], profile["ma_kho"] = "NHAN_VIEN", 7
     assert client.get("/api/auth/me", headers=headers).json()["warehouse_id"] == 7
     assert client.get("/api/admin/accounts", headers=headers).status_code == 403
     account["trang_thai"] = 0

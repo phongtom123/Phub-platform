@@ -62,7 +62,7 @@ def schema() -> dict[str, list[dict[str, Any]]]:
 
 
 ENUMS = {
-    ("employees", "loai_nhan_vien"): ["ADMIN", "NHAN_VIEN_KHO"],
+    ("employees", "loai_nhan_vien"): ["ADMIN", "NHAN_VIEN"],
     ("promotions", "trang_thai"): ["NHAP", "HOAT_DONG", "TAM_DUNG", "KET_THUC"],
     ("vouchers", "trang_thai"): ["HOAT_DONG", "TAM_DUNG"],
     ("vouchers", "loai_giam"): ["PHAN_TRAM", "SO_TIEN"],

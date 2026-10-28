@@ -145,7 +145,7 @@ API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua q
 | categories | LOAI_SP | ADMIN |
 | products | SAN_PHAM | ADMIN |
 | inventory | TON_KHO | Chỉ đọc |
-| suppliers | NHA_CUNG_CAP | ADMIN, NHAN_VIEN_KHO |
+| suppliers | NHA_CUNG_CAP | ADMIN, NHAN_VIEN |
 | receipts / receipt-lines | PHIEU_NHAP / CT_PHIEU_NHAP | Chỉ đọc |
 | transfers / transfer-lines | PHIEU_CHUYEN_KHO / CT_CHUYEN_KHO | Chỉ đọc |
 | orders / order-lines | DON_HANG / CT_DON_HANG | Chỉ đọc |
@@ -153,7 +153,7 @@ API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua q
 | promotions / vouchers | CHUONG_TRINH_KHUYEN_MAI / VOUCHER | ADMIN |
 | voucher-uses | SU_DUNG_VOUCHER | Chỉ đọc |
 
-ADMIN xem 20 tài nguyên qua API dữ liệu chung; media và hỗ trợ khách hàng có endpoint chuyên biệt. NHAN_VIEN_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
+ADMIN xem 20 tài nguyên qua API dữ liệu chung; media và hỗ trợ khách hàng có endpoint chuyên biệt. NHAN_VIEN chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
 
 Account payload dùng `password`, không nhận trường lưu trữ `mat_khau`/`mat_khau_hash`. Các API đọc không trả mật khẩu. Lưu ý database chủ ý lưu mật khẩu dạng chữ theo cấu hình dự án. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm upload qua API media; `duong_dan_anh` vẫn được đồng bộ sang ảnh chính trong `MEDIA` để tương thích form cũ. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
 

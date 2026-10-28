@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const redirectStaff = useCallback((nextUser: SessionUser) => {
     if (nextUser.role !== "ADMIN") {
-      window.location.replace(nextUser.role === "NHAN_VIEN_KHO"
+      window.location.replace(nextUser.role === "NHAN_VIEN"
         ? process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"
         : process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
     }

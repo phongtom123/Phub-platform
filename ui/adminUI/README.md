@@ -409,7 +409,7 @@ khoản của mình vẫn cập nhật phiên/header bằng sự kiện hồ sơ
 3. **Thêm tài khoản**: nhập họ tên, loại tài khoản, username và mật khẩu; chọn kho
    hoạt động nếu là nhân viên kho. Backend tạo mới người và tài khoản trong một
    transaction, không cần chọn hồ sơ cũ hoặc nhập mã tài khoản. Mã được cấp khi lưu:
-   ADMIN → `AD000001`, NHAN_VIEN_KHO → `KHO000001`, KHACH_HANG → `KH000001` (số tự tăng).
+   ADMIN → `AD000001`, NHAN_VIEN → `KHO000001`, KHACH_HANG → `KH000001` (số tự tăng).
    Username 3–80 ký tự chữ/số/._-; mật khẩu
    10–128 ký tự. Cần cài migration `Backend/migrations/20261010_admin_account_creation.sql`
    trên database của backend trước khi thử lưu; app không tự chạy migration.

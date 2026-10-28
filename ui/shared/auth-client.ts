@@ -1,5 +1,5 @@
 /** Shared browser client for the backend-owned JWT session. */
-export type UserRole = "ADMIN" | "NHAN_VIEN_KHO" | "KHACH_HANG";
+export type UserRole = "ADMIN" | "NHAN_VIEN" | "KHACH_HANG";
 
 export type SessionUser = {
   account_id: string;
@@ -41,7 +41,7 @@ function isSessionUser(value: unknown): value is SessionUser {
   if (!value || typeof value !== "object") return false;
   const user = value as Record<string, unknown>;
   return typeof user.account_id === "string" && typeof user.username === "string" &&
-    typeof user.name === "string" && ["ADMIN", "NHAN_VIEN_KHO", "KHACH_HANG"].includes(String(user.role));
+    typeof user.name === "string" && ["ADMIN", "NHAN_VIEN", "KHACH_HANG"].includes(String(user.role));
 }
 
 async function responseBody(response: Response): Promise<unknown> {

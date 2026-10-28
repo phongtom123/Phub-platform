@@ -3,7 +3,7 @@ import re
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, model_validator
 
-Role = Literal["ADMIN", "NHAN_VIEN_KHO", "KHACH_HANG"]
+Role = Literal["ADMIN", "NHAN_VIEN", "KHACH_HANG"]
 Status = Literal[0, 1, 2]
 def safe_identifier(value: str) -> str:
     if value in {".", ".."}:
@@ -70,7 +70,7 @@ class NewOwner(Input):
 
     @model_validator(mode="after")
     def warehouse_assignment(self):
-        if (self.role == "NHAN_VIEN_KHO") != (self.ma_kho is not None):
+        if (self.role == "NHAN_VIEN") != (self.ma_kho is not None):
             raise ValueError("Nhân viên kho phải chọn kho; quản trị viên và khách hàng không gán kho.")
         return self
 
@@ -116,13 +116,13 @@ class PasswordChange(PasswordReset):
 
 
 class RoleUpdate(Input):
-    role: Literal["ADMIN", "NHAN_VIEN_KHO"]
+    role: Literal["ADMIN", "NHAN_VIEN"]
     ma_kho: WarehouseId | None = None
 
     @model_validator(mode="after")
     def warehouse_assignment(self):
         if (self.role == "ADMIN") != (self.ma_kho is None):
-            raise ValueError("ADMIN không gán kho; NHAN_VIEN_KHO phải chọn một kho.")
+            raise ValueError("ADMIN không gán kho; NHAN_VIEN phải chọn một kho.")
         return self
 
 

@@ -145,7 +145,7 @@ npm.cmd run dev
 | Nhân viên kho | http://localhost:3002 |
 | API / Swagger | http://localhost:8000/docs |
 
-Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tài khoản ADMIN vào admin, NHAN_VIEN_KHO vào kho, KHACH_HANG vào storefront, kể cả khi đăng nhập nhầm cổng. Role do database quyết định, không lấy từ query string/localStorage. Không còn tài khoản demo `password123`.
+Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tài khoản ADMIN vào admin, NHAN_VIEN vào kho, KHACH_HANG vào storefront, kể cả khi đăng nhập nhầm cổng. Role do database quyết định, không lấy từ query string/localStorage. Không còn tài khoản demo `password123`.
 
 ## Những phần đã nối backend
 

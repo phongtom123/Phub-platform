@@ -20,8 +20,8 @@ create table public."NHAN_VIEN" (
   "sdt" varchar,
   "luong" decimal(18,2),
   "trang_thai" int not null default 1,
-  check (loai_nhan_vien IN ('ADMIN', 'NHAN_VIEN_KHO')),
-  check ((loai_nhan_vien = 'ADMIN' AND ma_kho IS NULL) OR (loai_nhan_vien = 'NHAN_VIEN_KHO' AND ma_kho IS NOT NULL))
+  check (loai_nhan_vien IN ('ADMIN', 'NHAN_VIEN')),
+  check ((loai_nhan_vien = 'ADMIN' AND ma_kho IS NULL) OR (loai_nhan_vien = 'NHAN_VIEN' AND ma_kho IS NOT NULL))
 );
 
 create table public."TAI_KHOAN" (

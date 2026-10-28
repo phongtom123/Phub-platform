@@ -26,7 +26,7 @@ def test_auth_rechecks_persisted_role_and_password_version(monkeypatch):
     service = AuthService(repository)
     claims = {"sub": "A", "ver": password_version(credential_state(account))}
     assert service.current_user(claims).role == "ADMIN"
-    profile.update(loai_nhan_vien="NHAN_VIEN_KHO", ma_kho=-7)
+    profile.update(loai_nhan_vien="NHAN_VIEN", ma_kho=-7)
     assert service.current_user(claims).warehouse_id == -7
     account["mat_khau"] = "changed"
     with pytest.raises(HTTPException) as error:

@@ -5,7 +5,7 @@ const base = process.env.PHUB_ADMIN_TEST_URL || "http://localhost:3000";
 const accounts = [
   { ma_tk: "AD000001", ten_tai_khoan: "self.admin", role: "ADMIN", is_self: true, ma_nhan_vien: "NV1", ma_kh: null, ma_kho: null, trang_thai: 1 },
   { ma_tk: "AD000002", ten_tai_khoan: "other.admin", role: "ADMIN", is_self: false, ma_nhan_vien: "NV2", ma_kh: null, ma_kho: null, trang_thai: 1 },
-  { ma_tk: "KHO000001", ten_tai_khoan: "warehouse", role: "NHAN_VIEN_KHO", is_self: false, ma_nhan_vien: "NV3", ma_kh: null, ma_kho: 7, trang_thai: 2 },
+  { ma_tk: "KHO000001", ten_tai_khoan: "warehouse", role: "NHAN_VIEN", is_self: false, ma_nhan_vien: "NV3", ma_kh: null, ma_kho: 7, trang_thai: 2 },
   { ma_tk: "KH000001", ten_tai_khoan: "customer", role: "KHACH_HANG", is_self: false, ma_nhan_vien: null, ma_kh: "KH_509c1d8c69b2470ea80d41d9bf26b04d", ma_kho: null, trang_thai: 0 },
 ].map(account => ({ ...account, email: "test@example.test", ho_ten: "Tài khoản kiểm thử", owner_active: true }));
 
@@ -70,7 +70,7 @@ async function main() {
         for (const [index, field] of layout.role.entries()) assert.ok(Math.abs(field.x - layout.info[index % columns].x) < 1, "Role/search/warehouse positions are shared across accounts");
         for (const [index, field] of layout.password.entries()) assert.ok(Math.abs(field.x - layout.info[index % columns].x) < 1, "Password fields use the common grid");
         const canRole = Boolean(account.ma_nhan_vien) && !account.is_self;
-        const canWarehouse = canRole && account.role === "NHAN_VIEN_KHO";
+        const canWarehouse = canRole && account.role === "NHAN_VIEN";
         assert.equal(await area.locator(".account-role-card select").first().inputValue(), account.role);
         assert.equal(await area.locator(".account-role-card select").first().isDisabled(), !canRole);
         assert.equal(await area.locator("#account-warehouse-query").count(), canWarehouse ? 1 : 0, "Hide warehouse search when it does not apply");
@@ -93,7 +93,7 @@ async function main() {
           const roles = area.locator(".account-role-card select").first();
           await roles.selectOption("ADMIN");
           assert.equal(await area.locator("#account-warehouse-query").count(), 0);
-          await roles.selectOption("NHAN_VIEN_KHO");
+          await roles.selectOption("NHAN_VIEN");
           await area.locator("#account-warehouse-query").waitFor();
           await area.locator(".account-role-card select").last().selectOption("7");
           // Each matrix case tests a new query; repeated queries may be cached.
