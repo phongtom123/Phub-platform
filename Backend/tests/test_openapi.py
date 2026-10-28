@@ -152,13 +152,13 @@ def test_permissions_and_errors_are_documented(spec):
             if method != "get":
                 assert "409" in operation["responses"]
                 assert any(p["name"] == "Origin" and p["required"] for p in operation["parameters"])
-                assert operation["x-roles"] == (["ADMIN", "THU_KHO"] if name == "suppliers" else ["ADMIN"])
+                assert operation["x-roles"] == (["ADMIN", "NHAN_VIEN"] if name == "suppliers" else ["ADMIN"])
             if method == "patch":
                 assert "404" in operation["responses"]
             if name == "accounts":
                 assert operation["x-roles"] == ["ADMIN"]
     assert "KHACH_HANG" in spec["paths"]["/api/data/orders"]["get"]["x-roles"]
-    assert "THU_KHO" in spec["paths"]["/api/data/inventory"]["get"]["x-roles"]
+    assert "NHAN_VIEN" in spec["paths"]["/api/data/inventory"]["get"]["x-roles"]
     error = spec["paths"]["/api/catalog/products"]["get"]["responses"]["422"]
     assert "error" in error["content"]["application/json"]["example"]
 

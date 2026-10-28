@@ -5,7 +5,7 @@ import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
 import { Logo } from "@/src/components/admin/ui";
 import { loginSession, type SessionUser, type UserRole } from "../../../../shared/auth-client";
 
-export type StaffRole = Extract<UserRole, "ADMIN" | "THU_KHO">;
+export type StaffRole = Extract<UserRole, "ADMIN" | "NHAN_VIEN">;
 
 export function LoginView({
   onLogin,

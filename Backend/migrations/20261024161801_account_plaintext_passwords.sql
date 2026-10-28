@@ -114,8 +114,8 @@ begin
         raise exception using errcode = '42501', message = 'ADMIN_REQUIRED';
     end if;
 
-    if p_role is null or p_role not in ('ADMIN', 'THU_KHO', 'KHACH_HANG')
-       or ((p_role = 'THU_KHO') <> (p_warehouse_id is not null))
+    if p_role is null or p_role not in ('ADMIN', 'NHAN_VIEN', 'KHACH_HANG')
+       or ((p_role = 'NHAN_VIEN') <> (p_warehouse_id is not null))
        or p_name is null or length(btrim(p_name)) not between 1 and 200
        or p_owner_id is null or p_owner_id !~ '^[A-Za-z0-9_.-]{1,100}$'
        or p_username is null or p_username !~ '^[A-Za-z0-9_.-]{3,80}$'
@@ -123,7 +123,7 @@ begin
         raise exception using errcode = '23514', message = 'INVALID_ACCOUNT_INPUT';
     end if;
 
-    if p_role = 'THU_KHO' then
+    if p_role = 'NHAN_VIEN' then
         perform 1 from public."KHO"
             where ma_kho = p_warehouse_id and trang_thai = 1 for share;
         if not found then
@@ -136,7 +136,7 @@ begin
     case p_role
         when 'ADMIN' then
             v_prefix := 'AD'; v_sequence := 'admin_account_private.admin_account_ids'::regclass;
-        when 'THU_KHO' then
+        when 'NHAN_VIEN' then
             v_prefix := 'KHO'; v_sequence := 'admin_account_private.warehouse_account_ids'::regclass;
         else
             v_prefix := 'KH'; v_sequence := 'admin_account_private.customer_account_ids'::regclass;

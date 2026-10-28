@@ -364,7 +364,7 @@ export const formFields: Partial<
   ],
   employees: [
     { name: "code", label: "Mã nhân viên", placeholder: "NV005" },
-    { name: "type", label: "Loại nhân viên", placeholder: "ADMIN / THU_KHO" },
+    { name: "type", label: "Loại nhân viên", placeholder: "ADMIN / NHAN_VIEN" },
     {
       name: "name",
       label: "Họ và tên",
@@ -399,7 +399,7 @@ export const formFields: Partial<
     {
       name: "role",
       label: "Vai trò",
-      placeholder: "ADMIN / THU_KHO / KHACH_HANG",
+      placeholder: "ADMIN / NHAN_VIEN / KHACH_HANG",
     },
     {
       name: "password",

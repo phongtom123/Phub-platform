@@ -9,7 +9,7 @@ import { accountHref, roleLabels, type Account, type Role } from "./types";
 
 type Warehouse = { ma_kho: number; ten_kho: string; trang_thai: number };
 type WarehousePage = { data: Warehouse[]; total: number; page: number; page_size: number };
-const accountPrefixes: Record<Role, string> = { ADMIN: "AD", THU_KHO: "KHO", KHACH_HANG: "KH" };
+const accountPrefixes: Record<Role, string> = { ADMIN: "AD", NHAN_VIEN: "KHO", KHACH_HANG: "KH" };
 
 export function AccountForm() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export function AccountForm() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (role !== "THU_KHO") return;
+    if (role !== "NHAN_VIEN") return;
     const controller = new AbortController();
     setLoading(true); setWarehouseError(""); setWarehouses([]);
     (async () => {
@@ -51,13 +51,13 @@ export function AccountForm() {
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
-    if (!name.trim() || !role || (role === "THU_KHO" && !warehouse) || password !== confirmation) {
+    if (!name.trim() || !role || (role === "NHAN_VIEN" && !warehouse) || password !== confirmation) {
       setError(password !== confirmation ? "Hai mật khẩu không khớp." : "Nhập họ tên, chọn loại tài khoản và kho nếu là nhân viên kho."); return;
     }
     setSaving(true);
     try {
       const body = { ten_tai_khoan: username.trim(), email: email.trim() || null, password,
-            new_owner: { ho_ten: name.trim(), role, ma_kho: role === "THU_KHO" ? Number(warehouse) : null } };
+            new_owner: { ho_ten: name.trim(), role, ma_kho: role === "NHAN_VIEN" ? Number(warehouse) : null } };
       const saved = await accountApi<Account>("accounts", jsonRequest("POST", body));
       setPassword(""); setConfirmation("");
       if (saved.is_self) window.dispatchEvent(new Event("phub-account-updated"));
@@ -75,7 +75,7 @@ export function AccountForm() {
       <label>Loại tài khoản *<select required value={role} onChange={e => {
         setRole(e.target.value as Role | ""); setWarehouse(""); setWarehouseError(""); setLoading(false);
       }}><option value="">Chọn loại tài khoản</option>{(Object.keys(roleLabels) as Role[]).map(item => <option key={item} value={item}>{roleLabels[item]}</option>)}</select></label>
-      {role === "THU_KHO" && <label>Kho phụ trách *<select required disabled={loading} value={warehouse} onChange={e => setWarehouse(e.target.value)}>
+      {role === "NHAN_VIEN" && <label>Kho phụ trách *<select required disabled={loading} value={warehouse} onChange={e => setWarehouse(e.target.value)}>
         <option value="">{loading ? "Đang tải kho…" : "Chọn kho hoạt động"}</option>
         {warehouses.map(item => <option key={item.ma_kho} value={item.ma_kho}>{item.ten_kho} · {item.ma_kho}</option>)}
       </select>{warehouseError && <small role="alert">{warehouseError}</small>}

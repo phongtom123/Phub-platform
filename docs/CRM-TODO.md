@@ -23,7 +23,7 @@ xác nhận toàn bộ ticket đã hoàn thành.
 Phát triển CRM chăm sóc khách hàng, phản hồi sản phẩm và khảo sát trên hệ thống
 bán hàng hiện tại. Không xây lại hệ thống bán hàng, kho hoặc xác thực.
 
-- Giữ ba vai trò `ADMIN`, `THU_KHO`, `KHACH_HANG` ở giai đoạn đầu.
+- Giữ ba vai trò `ADMIN`, `NHAN_VIEN`, `KHACH_HANG` ở giai đoạn đầu.
 - `ADMIN` đảm nhiệm quản lý CRM; khách thao tác trên website khách hàng.
 - CRM có nhóm màn hình/menu riêng trong ứng dụng hiện có; không bắt buộc thêm
   frontend, website hay tài khoản đăng nhập riêng.
@@ -241,7 +241,7 @@ nghĩa endpoint đã tồn tại.
 
 - [ ] Tách nghiệp vụ CRM vào các lớp trên; đăng ký router ở `phub_api/main.py`.
 - [ ] Dùng session hiện có, không tạo luồng đăng nhập riêng cho CRM.
-- [ ] API quản lý chỉ nhận ADMIN; THU_KHO không có quyền CRM.
+- [ ] API quản lý chỉ nhận ADMIN; NHAN_VIEN không có quyền CRM.
 - [ ] API khách lấy `ma_kh`/`ma_tk` từ phiên, không tin mã chủ sở hữu từ body/query.
 - [ ] Khách chỉ xem phản hồi, khảo sát và dữ liệu của mình; không lộ ghi chú nội bộ.
 - [ ] API danh sách có phân trang, lọc, sắp xếp được kiểm soát và giới hạn đầu vào.
@@ -337,7 +337,7 @@ này không thay thế các hướng dẫn áp dụng trong từng thư mục.
 
 - [ ] Migration DB có dữ liệu không làm mất khách, đơn, hóa đơn hoặc tài khoản.
 - [ ] UNIQUE/FK/CHECK, dữ liệu NULL cũ, rollback và phục hồi backup được kiểm thử.
-- [ ] ADMIN truy cập được CRM; THU_KHO bị từ chối; khách không xem dữ liệu người khác.
+- [ ] ADMIN truy cập được CRM; NHAN_VIEN bị từ chối; khách không xem dữ liệu người khác.
 - [ ] Khóa tài khoản chặn truy cập API theo cơ chế phiên backend, không chỉ ẩn menu.
 - [ ] Không giả chủ sở hữu, người tạo, người xử lý hoặc gửi khảo sát cho tài khoản kho.
 - [ ] Không trả lời khảo sát chưa được gửi, chưa mở, đã đóng hoặc nộp lần hai.

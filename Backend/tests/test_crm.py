@@ -78,7 +78,7 @@ def test_profile_old_nulls_and_safe_account(crm_client):
 
 
 @pytest.mark.parametrize("actor", [User("K", "k", "KHACH_HANG", "Khách", customer_id="KH1"),
-                                    User("W", "w", "THU_KHO", "Kho", warehouse_id=1)])
+                                    User("W", "w", "NHAN_VIEN", "Kho", warehouse_id=1)])
 @pytest.mark.parametrize("method,suffix,body", [("GET", "", None), ("GET", "/orders", None),
                                                 ("PATCH", "", {"ngay_sinh": "2000-01-01"})])
 def test_non_admin_denied_before_database(crm_client, actor, method, suffix, body):

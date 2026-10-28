@@ -99,7 +99,7 @@ def test_upload_normalizes_and_strips_metadata(media_client, kind, mime):
     assert response.headers["cache-control"] == "no-store"
 
 
-@pytest.mark.parametrize("role", ["THU_KHO", "KHACH_HANG"])
+@pytest.mark.parametrize("role", ["NHAN_VIEN", "KHACH_HANG"])
 def test_non_admin_cannot_upload(media_client, role):
     client, state, _ = media_client; state["role"] = role
     assert client.post("/api/admin/media/images", content=image_bytes(), headers={**ORIGIN, "Content-Type": "image/png"}).status_code == 403

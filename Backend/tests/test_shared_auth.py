@@ -41,7 +41,7 @@ def test_shared_role_guards_allow_only_the_matching_portal():
     assert admin.get("/customer").status_code == 403
 
     warehouse = build_client(User(
-        "TK2", "warehouse", "THU_KHO", "Warehouse",
+        "TK2", "warehouse", "NHAN_VIEN", "Warehouse",
         employee_id="NV2", warehouse_id=7,
     ))
     assert warehouse.get("/admin").status_code == 403
@@ -58,7 +58,7 @@ def test_shared_role_guards_allow_only_the_matching_portal():
 
 def test_warehouse_guard_requires_an_assigned_warehouse():
     client = build_client(User(
-        "TK2", "warehouse", "THU_KHO", "Warehouse", employee_id="NV2",
+        "TK2", "warehouse", "NHAN_VIEN", "Warehouse", employee_id="NV2",
     ))
     assert client.get("/warehouse").status_code == 403
 

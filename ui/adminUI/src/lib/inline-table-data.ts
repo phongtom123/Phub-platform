@@ -4,7 +4,7 @@ export const inlineStatusLabels: Record<number, string> = { 1: "Hoạt động",
 const choiceLabels: Record<string, Record<string, string>> = {
   trang_thai: { NHAP: "Nháp", DA_NHAP: "Đã nhập", HUY: "Đã hủy", DANG_CHUYEN: "Đang chuyển", DA_NHAN: "Đã nhận",
     HOAT_DONG: "Hoạt động", TAM_DUNG: "Tạm dừng", KET_THUC: "Kết thúc", "0": "Đã ẩn", "1": "Hoạt động", "2": "Tạm ngưng" },
-  loai_nhan_vien: { ADMIN: "Quản trị viên", THU_KHO: "Nhân viên kho" },
+  loai_nhan_vien: { ADMIN: "Quản trị viên", NHAN_VIEN: "Nhân viên" },
   loai_giam: { PHAN_TRAM: "Phần trăm", SO_TIEN: "Số tiền" },
 };
 export function inlineChoiceLabel(field: string, value: DataRow[string]) {

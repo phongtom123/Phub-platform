@@ -20,11 +20,11 @@ from phub_api.schemas.warehouse_drafts import DRAFT_FIELDS
 
 
 def can_write(name: str, user: User) -> bool:
-    return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "THU_KHO" and name == "suppliers"))
+    return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "NHAN_VIEN" and name == "suppliers"))
 
 
 def access(name: str, user: User, write: bool = False) -> None:
-    readable = user.role == "ADMIN" or (user.role == "THU_KHO" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
+    readable = user.role == "ADMIN" or (user.role == "NHAN_VIEN" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
     if not readable or (write and not can_write(name, user)):
         raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này.")
 
@@ -78,7 +78,7 @@ def validate_combined(name: str, data: dict, user: User) -> None:
         raise HTTPException(422, "Tài khoản phải thuộc đúng một khách hàng hoặc một nhân viên.")
     if name == "employees":
         if (data["loai_nhan_vien"] == "ADMIN") != (data.get("ma_kho") is None):
-            raise HTTPException(422, "ADMIN không gán kho; THU_KHO phải gán một kho.")
+            raise HTTPException(422, "ADMIN không gán kho; NHAN_VIEN phải gán một kho.")
     if name == "promotions":
         try:
             valid = datetime.fromisoformat(data["ngay_ket_thuc"]) > datetime.fromisoformat(data["ngay_bat_dau"])

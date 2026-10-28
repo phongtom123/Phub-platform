@@ -61,10 +61,10 @@ try {
   assert.equal(customer.role, "KHACH_HANG");
   pass("creates a new customer without an existing profile");
 
-  const warehouse = await rpc({ username: "new.warehouse", owner: "NV_WAREHOUSE", role: "THU_KHO", warehouse: -900003 });
+  const warehouse = await rpc({ username: "new.warehouse", owner: "NV_WAREHOUSE", role: "NHAN_VIEN", warehouse: -900003 });
   assert.equal(warehouse.ma_tk, "KHO000001");
   assert.equal(warehouse.ma_kho, -900003);
-  assert.equal(warehouse.role, "THU_KHO");
+  assert.equal(warehouse.role, "NHAN_VIEN");
   pass("new warehouse employee can be assigned a negative warehouse ID");
 
   pass("separate role prefixes each begin with six-digit account numbers");
@@ -92,9 +92,9 @@ try {
   const beforeFailures = await counts();
   await failsWithoutWrites({ owner: "NV_DUP_USER" }, "23505", "duplicate username rolls back the employee insert");
   await failsWithoutWrites({ username: "duplicate.email", email: "new@example.test", owner: "KH_DUP_EMAIL", role: "KHACH_HANG" }, "23505", "duplicate email rolls back the customer insert");
-  await failsWithoutWrites({ username: "inactive.warehouse", owner: "NV_INACTIVE", role: "THU_KHO", warehouse: 8 }, "23514", "inactive warehouse leaves no records");
-  await failsWithoutWrites({ username: "missing.warehouse", owner: "NV_MISSING", role: "THU_KHO", warehouse: 999 }, "23514", "missing warehouse leaves no records");
-  await failsWithoutWrites({ role: "THU_KHO" }, "23514", "warehouse role requires a warehouse");
+  await failsWithoutWrites({ username: "inactive.warehouse", owner: "NV_INACTIVE", role: "NHAN_VIEN", warehouse: 8 }, "23514", "inactive warehouse leaves no records");
+  await failsWithoutWrites({ username: "missing.warehouse", owner: "NV_MISSING", role: "NHAN_VIEN", warehouse: 999 }, "23514", "missing warehouse leaves no records");
+  await failsWithoutWrites({ role: "NHAN_VIEN" }, "23514", "warehouse role requires a warehouse");
   await failsWithoutWrites({ warehouse: -900003 }, "23514", "admin role cannot be assigned a warehouse");
   await failsWithoutWrites({ role: "ROOT" }, "23514", "unknown role cannot create records");
   await failsWithoutWrites({ name: "   " }, "23514", "blank name cannot create records");
