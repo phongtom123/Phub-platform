@@ -38,7 +38,7 @@ Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển 
 - Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.
 - `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.
 - PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.
-- ADMIN xem tất cả bảng; THU_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.
+- ADMIN xem tất cả bảng; NHAN_VIEN_KHO giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.
 - Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.
 
 ### Phạm vi hiện tại
@@ -63,7 +63,7 @@ TAGS = [
     {"name": "Admin · Hình ảnh", "description": "ADMIN upload ảnh sản phẩm vào bucket media; giới hạn 5 MB, ảnh tĩnh JPG/PNG/WebP. Không sửa quyền public hoặc xóa file cũ tự động."},
     {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Áp voucher cho đơn chưa có API ghi."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
-    {"name": "Kho · Nhà cung cấp", "description": "ADMIN và THU_KHO tạo/sửa nhà cung cấp."},
+    {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN_KHO tạo/sửa nhà cung cấp."},
     {"name": "Kho · Phiếu nhập", "description": "Phiếu và dòng hàng chỉ đọc. Xác nhận nhập cần transaction riêng."},
     {"name": "Kho · Chuyển kho", "description": "Phiếu và dòng hàng chỉ đọc; thấy phiếu liên quan kho xuất hoặc kho nhận được gán."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
@@ -84,7 +84,7 @@ NOTES = {
     "categories": "Danh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
     "subcategories": "Danh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau.",
-    "employees": "Role ADMIN yêu cầu ma_kho=null; THU_KHO yêu cầu ma_kho của một kho tồn tại.",
+    "employees": "Role ADMIN yêu cầu ma_kho=null; NHAN_VIEN_KHO yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
     "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
     "vouchers": "ma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
@@ -93,10 +93,10 @@ NOTES = {
 
 def roles_for(name: str, write: bool = False) -> list[str]:
     if write:
-        return ["ADMIN", "THU_KHO"] if name == "suppliers" else ["ADMIN"]
+        return ["ADMIN", "NHAN_VIEN_KHO"] if name == "suppliers" else ["ADMIN"]
     roles = ["ADMIN"]
     if RESOURCES[name].warehouse:
-        roles.append("THU_KHO")
+        roles.append("NHAN_VIEN_KHO")
     if name in CUSTOMER_READ:
         roles.append("KHACH_HANG")
     return roles
@@ -188,7 +188,7 @@ def add_table_paths(spec: dict) -> None:
             if method == "get":
                 description += "Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. "
                 if resource.warehouse:
-                    description += "THU_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. "
+                    description += "NHAN_VIEN_KHO chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. "
                 if name in CUSTOMER_READ:
                     description += "KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). "
                 description += "GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. "

@@ -29,7 +29,7 @@ def test_backend_has_no_legacy_app_package_or_imports():
 def test_real_customer_launcher_uses_phub_api_entrypoint():
     launcher = (PACKAGE.parent.parent / "scripts" / "start-customer.ps1").read_text(encoding="utf-8-sig")
     assert "$taskApp = 'phub_api.main:app'" in launcher
-    assert "$taskApp = 'app.main:app'" not in launcher
+    assert "$taskApp = 'phub_api.main:app'" not in launcher
 
 
 BOUNDARIES = {

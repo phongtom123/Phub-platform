@@ -35,7 +35,7 @@ export default function LoginPage() {
     try {
       const account = await loginSession(username, password);
       if (account.role === "ADMIN") { window.location.assign(process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000"); return; }
-      if (account.role === "THU_KHO") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
+      if (account.role === "NHAN_VIEN_KHO") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
       router.replace("/");
       router.refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Không kết nối được backend."); }

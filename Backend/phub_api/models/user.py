@@ -6,7 +6,7 @@ from typing import Literal
 class User:
     account_id: str
     username: str
-    role: Literal["ADMIN", "THU_KHO", "KHACH_HANG"]
+    role: Literal["ADMIN", "NHAN_VIEN_KHO", "KHACH_HANG"]
     name: str
     customer_id: str | None = None
     employee_id: str | None = None

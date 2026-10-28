@@ -118,7 +118,7 @@ Chỉ ADMIN có quyền. PATCH chỉ gửi trường thay đổi; PK và SKU b�
 [1, "INTEL-I5-14400F"]
 ```
 
-Thứ tự là `ma_kho` rồi `sku`; số phải là JSON number, mã là JSON string. THU_KHO chỉ xem kho được phân công. Không có API CRUD số lượng tồn.
+Thứ tự là `ma_kho` rồi `sku`; số phải là JSON number, mã là JSON string. NHAN_VIEN_KHO chỉ xem kho được phân công. Không có API CRUD số lượng tồn.
 
 ### Lọc dữ liệu liên quan đến một đơn hàng
 

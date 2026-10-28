@@ -31,7 +31,7 @@ def identity(account: dict, repository: AuthRepository) -> User:
             raise HTTPException(403, "Nhân viên không hoạt động.")
         profile = rows[0]
         role = profile["loai_nhan_vien"]
-        if role not in {"ADMIN", "THU_KHO"} or (role == "THU_KHO" and profile["ma_kho"] is None):
+        if role not in {"ADMIN", "NHAN_VIEN_KHO"} or (role == "NHAN_VIEN_KHO" and profile["ma_kho"] is None):
             raise HTTPException(403, "Chưa được phân quyền hoặc phân kho.")
         return User(account["ma_tk"], account["ten_tai_khoan"], role, profile["ho_ten"], employee_id=employee, warehouse_id=profile["ma_kho"])
     rows = repository.customer(customer)

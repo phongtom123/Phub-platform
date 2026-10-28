@@ -83,7 +83,7 @@ Vì Python dùng khóa đặc quyền bỏ qua RLS, toàn bộ quyền truy cậ
 
 Backend hiện đọc mật khẩu dạng chữ trong `TAI_KHOAN.mat_khau` theo lựa chọn của dự án. Trước khi dùng code này trên database cũ, xem [hướng dẫn chuyển đổi](docs/PLAINTEXT_PASSWORDS.md). Không xóa cột cũ trên Render/Supabase khi backend cũ còn phục vụ.
 
-Để tạo admin đầu tiên trên database đã chuyển đổi, tạo `NHAN_VIEN` có `loai_nhan_vien=ADMIN`, `ma_kho=NULL`, `trang_thai=1`; tạo tài khoản liên kết với `mat_khau` 10–128 ký tự, `ma_kh=NULL`, trạng thái 1. Admin sau đó tạo các tài khoản khác qua UI/API. Thủ kho phải được phân kho. Không còn dùng script `hash_password.py`.
+Để tạo admin đầu tiên trên database đã chuyển đổi, tạo `NHAN_VIEN` có `loai_nhan_vien=ADMIN`, `ma_kho=NULL`, `trang_thai=1`; tạo tài khoản liên kết với `mat_khau` 10–128 ký tự, `ma_kh=NULL`, trạng thái 1. Admin sau đó tạo các tài khoản khác qua UI/API. Nhân viên kho phải được phân kho. Không còn dùng script `hash_password.py`.
 
 ## API đã có
 
@@ -123,7 +123,7 @@ schema bảng cho module này nếu database đã khớp DBML và có các FK/un
 Form tạo mới cần cài sequence và hàm RPC bằng `migrations/20261010_admin_account_creation.sql`:
 tạo người mới và tài khoản trong một transaction, không chọn hồ sơ cũ, không để lại
 hồ sơ dở dang khi lỗi trùng username/email. Mã nhân viên/khách do backend tự sinh.
-Mã tài khoản do database tự cấp theo loại: `AD` (admin), `KHO` (thủ kho), `KH` (khách)
+Mã tài khoản do database tự cấp theo loại: `AD` (admin), `KHO` (nhân viên kho), `KH` (khách)
 cộng số tự tăng, tối thiểu 6 chữ số. UI không nhập mã; các mã tài khoản cũ giữ nguyên.
 Không có DELETE; tài khoản bắt buộc gắn với đúng một nhân viên/khách. Chỉ ADMIN truy cập.
 API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua quy tắc quản lý tài khoản.
@@ -145,7 +145,7 @@ API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua q
 | categories | LOAI_SP | ADMIN |
 | products | SAN_PHAM | ADMIN |
 | inventory | TON_KHO | Chỉ đọc |
-| suppliers | NHA_CUNG_CAP | ADMIN, THU_KHO |
+| suppliers | NHA_CUNG_CAP | ADMIN, NHAN_VIEN_KHO |
 | receipts / receipt-lines | PHIEU_NHAP / CT_PHIEU_NHAP | Chỉ đọc |
 | transfers / transfer-lines | PHIEU_CHUYEN_KHO / CT_CHUYEN_KHO | Chỉ đọc |
 | orders / order-lines | DON_HANG / CT_DON_HANG | Chỉ đọc |
@@ -153,7 +153,7 @@ API generic của accounts chỉ đọc, không thể dùng nó để bỏ qua q
 | promotions / vouchers | CHUONG_TRINH_KHUYEN_MAI / VOUCHER | ADMIN |
 | voucher-uses | SU_DUNG_VOUCHER | Chỉ đọc |
 
-ADMIN xem 20 tài nguyên qua API dữ liệu chung; media và hỗ trợ khách hàng có endpoint chuyên biệt. THU_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
+ADMIN xem 20 tài nguyên qua API dữ liệu chung; media và hỗ trợ khách hàng có endpoint chuyên biệt. NHAN_VIEN_KHO chỉ xem danh mục/sản phẩm/nhà cung cấp và kho, tồn, phiếu thuộc kho được gán. Khách chỉ xem thông tin/đơn/chi tiết đơn/hóa đơn/thanh toán/lượt voucher của mình. Bản ghi ngoài phạm vi không trả về dù truyền PK hợp lệ.
 
 Account payload dùng `password`, không nhận trường lưu trữ `mat_khau`/`mat_khau_hash`. Các API đọc không trả mật khẩu. Lưu ý database chủ ý lưu mật khẩu dạng chữ theo cấu hình dự án. Money trả dạng chuỗi decimal, không dùng float JavaScript để tính tổng. Người/ngày tạo khuyến mãi và ngày tạo voucher do backend gán. Chuẩn hóa code voucher uppercase. Ảnh sản phẩm upload qua API media; `duong_dan_anh` vẫn được đồng bộ sang ảnh chính trong `MEDIA` để tương thích form cũ. Schema chương trình khuyến mãi **không có cột ảnh**, nên chưa lưu ảnh chương trình vào DB.
 

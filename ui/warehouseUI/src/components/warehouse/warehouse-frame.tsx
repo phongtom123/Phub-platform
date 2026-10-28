@@ -15,7 +15,7 @@ export default function WarehouseFrame({ children }: { children: ReactNode }) {
   useEffect(() => {
     const controller = new AbortController();
     getSession(controller.signal).then(account => {
-      if (account.role !== "THU_KHO" || !account.employee_id || account.warehouse_id === null) {
+      if (account.role !== "NHAN_VIEN_KHO" || !account.employee_id || account.warehouse_id === null) {
         window.location.replace(adminLoginUrl);
         return;
       }

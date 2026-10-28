@@ -1,6 +1,6 @@
 # PHUB Warehouse UI
 
-Prototype giao diện nghiệp vụ thủ kho, được tổ chức theo cấu trúc của nhánh `adminUI`.
+Prototype giao diện nghiệp vụ nhân viên kho, được tổ chức theo cấu trúc của nhánh `adminUI`.
 
 ## Chạy trên máy
 
@@ -33,7 +33,7 @@ src/
   types/warehouse.ts            # Kiểu dữ liệu dùng chung
 ```
 
-Ngoài các nghiệp vụ kho, sidebar có trang **Tài khoản** (hồ sơ và phân công của thủ kho) và **Cài đặt** (kho mặc định, cảnh báo tồn và thông báo).
+Ngoài các nghiệp vụ kho, sidebar có trang **Tài khoản** (hồ sơ và phân công của nhân viên kho) và **Cài đặt** (kho mặc định, cảnh báo tồn và thông báo).
 
 Danh sách, dashboard và hồ sơ đọc API. Tạo/xác nhận chứng từ, cài đặt và thông báo chưa tích hợp đầy đủ: hiển thị trạng thái chưa khả dụng, không tạo dữ liệu hay báo thành công giả.
 

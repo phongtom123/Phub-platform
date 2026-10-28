@@ -185,7 +185,7 @@ function getConfig(section: string, id: string): DetailConfig {
       subtitle: `${id} · Hồ sơ nhân viên`,
       icon: UserRound,
       fields: [
-        ["Loại nhân viên", id === "NV001" ? "ADMIN" : "THU_KHO"],
+        ["Loại nhân viên", id === "NV001" ? "ADMIN" : "NHAN_VIEN_KHO"],
         ["Chi nhánh chính", id === "NV001" ? "Trung tâm" : "Chi nhánh Quận 1"],
         ["CCCD", "0792••••••42"],
         ["Email", "employee@phub.vn"],

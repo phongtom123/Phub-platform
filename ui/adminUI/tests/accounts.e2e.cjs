@@ -14,10 +14,10 @@ async function main() {
     let selfDetailId = null;
     const records = [
       { ma_tk: "TK1", ten_tai_khoan: "Admin.One", email: "admin@example.test", ma_nhan_vien: "NV1", ma_kh: null, trang_thai: 1, role: "ADMIN", ho_ten: "Admin Test", ma_kho: null, owner_active: true, is_self: true },
-      { ma_tk: "TK2", ten_tai_khoan: "warehouse", email: null, ma_nhan_vien: "NV2", ma_kh: null, trang_thai: 1, role: "THU_KHO", ho_ten: "Warehouse Test", ma_kho: 7, owner_active: true, is_self: false },
+      { ma_tk: "TK2", ten_tai_khoan: "warehouse", email: null, ma_nhan_vien: "NV2", ma_kh: null, trang_thai: 1, role: "NHAN_VIEN_KHO", ho_ten: "Warehouse Test", ma_kho: 7, owner_active: true, is_self: false },
     ];
     const mutations = [];
-    const accountNumbers = { ADMIN: 0, THU_KHO: 0, KHACH_HANG: 0 };
+    const accountNumbers = { ADMIN: 0, NHAN_VIEN_KHO: 0, KHACH_HANG: 0 };
     await page.route("**/api/backend/**", async route => {
       const request = route.request();
       const url = new URL(request.url());
@@ -47,7 +47,7 @@ async function main() {
         assert.equal("ma_kh" in body, false);
         assert.equal("ma_tk" in body, false, "Account code must be assigned by the backend");
         const customer = body.new_owner.role === "KHACH_HANG";
-        const prefix = { ADMIN: "AD", THU_KHO: "KHO", KHACH_HANG: "KH" }[body.new_owner.role];
+        const prefix = { ADMIN: "AD", NHAN_VIEN_KHO: "KHO", KHACH_HANG: "KH" }[body.new_owner.role];
         const id = prefix + String(++accountNumbers[body.new_owner.role]).padStart(6, "0");
         const row = { ...actor, ...body, ma_tk: id, ho_ten: body.new_owner.ho_ten, role: body.new_owner.role,
           ma_kho: body.new_owner.ma_kho, ma_nhan_vien: customer ? null : "NV_" + id,
@@ -136,7 +136,7 @@ async function main() {
     await area.getByRole("link", { name: "TK2", exact: true }).waitFor();
     await assertBreadcrumb(["Quản trị", "Tài khoản"]);
     assert.equal(await area.locator("tbody tr").count(), 2);
-    await area.getByLabel("Vai trò", { exact: true }).selectOption("THU_KHO");
+    await area.getByLabel("Vai trò", { exact: true }).selectOption("NHAN_VIEN_KHO");
     await area.getByRole("link", { name: "TK2", exact: true }).waitFor();
     assert.equal(await area.locator("tbody tr").count(), 1);
     await area.getByLabel("Vai trò", { exact: true }).selectOption("");
@@ -176,7 +176,7 @@ async function main() {
     await area.getByRole("button", { name: "Mở khóa / hiện lại", exact: true }).waitFor();
     await area.getByRole("button", { name: "Mở khóa / hiện lại", exact: true }).click();
     await area.getByRole("button", { name: "Ẩn tài khoản", exact: true }).waitFor();
-    await area.getByLabel(/^Vai trò/).selectOption("THU_KHO");
+    await area.getByLabel(/^Vai trò/).selectOption("NHAN_VIEN_KHO");
     await area.getByLabel(/^Kho phụ trách/).selectOption("7");
     await area.getByRole("button", { name: "Lưu phân quyền", exact: true }).click();
     await area.getByRole("status").waitFor();
@@ -185,13 +185,13 @@ async function main() {
     await area.getByRole("button", { name: "Cấp lại mật khẩu", exact: true }).click();
     await area.getByText("Đã cấp lại mật khẩu. Các phiên cũ không còn hợp lệ.").waitFor();
 
-    for (const [id, role] of [["KH000001", "KHACH_HANG"], ["KHO000001", "THU_KHO"]]) {
+    for (const [id, role] of [["KH000001", "KHACH_HANG"], ["KHO000001", "NHAN_VIEN_KHO"]]) {
       await page.goto(base + "/accounts/new");
       assert.equal(await area.getByLabel(/^Mã tài khoản/).count(), 0);
       await area.getByLabel(/^Tên đăng nhập/).fill("user." + role.toLowerCase());
       await area.getByLabel(/^Họ tên/).fill("New " + role);
       await area.getByLabel(/^Loại tài khoản/).selectOption(role);
-      if (role === "THU_KHO") {
+      if (role === "NHAN_VIEN_KHO") {
         const select = area.getByLabel(/^Kho phụ trách/);
         await select.selectOption("-900003");
         assert.equal(await select.locator('option[value="8"]').count(), 0);
@@ -202,7 +202,7 @@ async function main() {
       await page.waitForURL("**/accounts/" + id);
       const created = records.find(row => row.ma_tk === id);
       assert.equal(created.role, role);
-      assert.equal(created.ma_kho, role === "THU_KHO" ? -900003 : null);
+      assert.equal(created.ma_kho, role === "NHAN_VIEN_KHO" ? -900003 : null);
       if (role === "KHACH_HANG") {
         await page.setViewportSize({ width: 1920, height: 1080 });
         await assertCards(5);
