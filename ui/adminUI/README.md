@@ -504,3 +504,9 @@ Không ghi cookie, token, API key, request/response body hoặc nội dung excep
 Log chẩn đoán riêng này tắt trong production. Không tự retry ảnh; dùng nút
 **Thử tải lại ảnh** hoặc chọn URL/file khác, không tải lại toàn bộ trang.
 Kiểm thử route/log offline: `node --test ui/adminUI/tests/image-proxy.test.cjs`.
+# Bổ sung vận hành quản trị
+
+Admin có luồng xử lý đơn, nhập/chuyển kho, kiểm kê, hóa đơn/thu hoàn, lọc dữ liệu,
+tìm kiếm, thông báo, cấu hình, báo cáo CSV và in PDF. Cần backend cùng phiên bản
+và migration `20261028132157_admin_operations.sql`; không tự áp dụng lên cloud.
+Xem [hợp đồng và nghiệm thu](../../Backend/docs/ADMIN_OPERATIONS.md).

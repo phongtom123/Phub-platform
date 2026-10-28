@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { useState } from "react";
+import { InvoiceItems } from "../operations/invoice-items";
+import { InvoicePrint } from "../operations/invoice-print";
 import { ArrowUpRight, CalendarDays, CreditCard, FileText, ReceiptText, ShoppingBag, UserRound, Wallet } from "lucide-react";
 import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
@@ -32,11 +35,13 @@ function invoiceDate(value: DataRow[string]) {
 }
 
 export function InvoiceDetail({ row, columns, label }: Props) {
+  const [itemsReady, setItemsReady] = useState(false);
   const orderId = typeof row.ma_donhang === "string" && row.ma_donhang ? row.ma_donhang : null;
   const orderHref = orderId ? dataHref("orders", { key: JSON.stringify([orderId]) }) : null;
   const extraColumns = columns.filter(column => !handledFields.has(column.name));
 
   return <div className={`invoice-detail ${styles.detail}`}>
+    <InvoicePrint orderId={orderId} ready={itemsReady} />
     <header className={styles.header}>
       <div className={styles.titleGroup}>
         <span className={styles.invoiceIcon}><ReceiptText size={26} aria-hidden="true" /></span>
@@ -84,6 +89,7 @@ export function InvoiceDetail({ row, columns, label }: Props) {
       </section>
     </div>
 
+    {orderId && <InvoiceItems orderId={orderId} onReady={setItemsReady} />}
     {extraColumns.length > 0 && <section className={styles.card} aria-labelledby="invoice-extra-title">
       <h2 id="invoice-extra-title"><FileText size={20} aria-hidden="true" />Thông tin bổ sung</h2>
       <dl className={styles.fields}>{extraColumns.map(column => <div key={column.name} className={`live-field ${styles.field}`}>

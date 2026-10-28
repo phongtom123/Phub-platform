@@ -36,6 +36,8 @@ async function main() {
       const respond = body => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", name: "Admin Test", username: "test.admin", role: "ADMIN" });
       if (url.pathname === "/api/backend/data/resources") return respond(resources);
+      if (url.pathname === "/api/backend/admin/operations/read/settings") return respond({store_name:"PHUB",store_address:"",store_phone:"",low_stock_threshold:5});
+      if (url.pathname === "/api/backend/admin/operations/read/summary") return respond({counts:{orders:2,products:1,customers:1,inventory:1},orders:[],statuses:[],channels:[],inventory:[],revenue:"0",collected:"0",top_products:[],start:"2026-10-01",end:"2026-10-28"});
       const name = url.pathname.split("/").pop();
       const meta = resources.find(r => r.name === name);
       assert.ok(meta, "Unexpected endpoint: " + url.pathname);

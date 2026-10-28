@@ -11,3 +11,4 @@ __pycache__
 .customer-runtime/
 /TAI_KHOAN_TEST.local.txt
 /.password-migration-local/
+/Backend/supabase/.temp/

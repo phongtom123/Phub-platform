@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowDownToLine, ArrowLeftRight, Boxes, ClipboardCheck, Clock3, LayoutDashboard, LogOut, Package, Settings, UserRound, Warehouse } from "lucide-react";
+import { ArrowDownToLine, Boxes, ClipboardCheck, Clock3, LayoutDashboard, LogOut, Package, Settings, UserRound, Warehouse } from "lucide-react";
 import type { ModuleKey } from "@/src/types/warehouse";
 import type { WarehouseUser } from "@/src/types/warehouse-auth";
 
 const workNav: { key: ModuleKey; label: string; icon: typeof LayoutDashboard }[] = [
-  { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard }, { key: "inventory", label: "Tồn kho", icon: Boxes }, { key: "receipts", label: "Phiếu nhập", icon: ArrowDownToLine }, { key: "transfers", label: "Chuyển kho", icon: ArrowLeftRight }, { key: "stocktake", label: "Kiểm kê", icon: ClipboardCheck },
+  { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard }, { key: "inventory", label: "Tồn kho", icon: Boxes }, { key: "receipts", label: "Phiếu nhập", icon: ArrowDownToLine }, { key: "stocktake", label: "Kiểm kê", icon: ClipboardCheck },
 ];
 const lookupNav: { key: ModuleKey; label: string; icon: typeof Package }[] = [{ key: "products", label: "Sản phẩm", icon: Package }, { key: "history", label: "Lịch sử kho", icon: Clock3 }];
 
@@ -18,6 +18,6 @@ export default function Sidebar({ user, onLogout }: { user: WarehouseUser; onLog
     <div className="nav-label">LÀM VIỆC</div>{workNav.map(({ key, label, icon: Icon }) => <Link key={key} href={key === "dashboard" ? "/" : `/${key}`} className={`nav-item ${active === key ? "active" : ""}`}><Icon size={17}/><span>{label}</span></Link>)}
     <div className="nav-label lookup-label">TRA CỨU</div>{lookupNav.map(({ key, label, icon: Icon }) => <Link key={key} href={`/${key}`} className={`nav-item ${active === key ? "active" : ""}`}><Icon size={17}/><span>{label}</span></Link>)}
     <div className="nav-label lookup-label">CÁ NHÂN</div><Link href="/account" className={`nav-item ${active === "account" ? "active" : ""}`}><UserRound size={17}/><span>Tài khoản</span></Link><Link href="/settings" className={`nav-item ${active === "settings" ? "active" : ""}`}><Settings size={17}/><span>Cài đặt</span></Link>
-    <div className="sidebar-bottom"><div className="warehouse-card"><div className="warehouse-label">KHO ĐANG LÀM VIỆC</div><strong><Warehouse size={14}/> {user.warehouseId === null ? "Chưa phân công kho" : `Kho #${user.warehouseId}`}</strong></div><div className="sidebar-user"><span className="avatar">{user.initials}</span><span><strong>{user.name}</strong><small>Nhân viên kho · {user.employeeCode}</small></span><button type="button" className="user-logout" onClick={onLogout} aria-label="Đăng xuất" title="Đăng xuất"><LogOut size={16}/></button></div></div>
+    <div className="sidebar-bottom"><div className="warehouse-card"><div className="warehouse-label">KHO ĐANG LÀM VIỆC</div><strong><Warehouse size={14}/> {user.warehouseId === null ? "Chưa phân công kho" : `Kho #${user.warehouseId}`}</strong></div><div className="sidebar-user"><span className="avatar">{user.initials}</span><span><strong>{user.name}</strong><small>Thủ kho · {user.employeeCode}</small></span><button type="button" className="user-logout" onClick={onLogout} aria-label="Đăng xuất" title="Đăng xuất"><LogOut size={16}/></button></div></div>
   </aside>;
 }

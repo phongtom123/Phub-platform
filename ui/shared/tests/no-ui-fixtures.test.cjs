@@ -20,7 +20,11 @@ test("admin and warehouse module definitions contain no sample records", () => {
       ts.forEachChild(node, visit);
     }
     visit(tree);
-    assert.ok(collections > 0);
+    if (file.includes('adminUI')) {
+      const variables = tree.statements.filter(ts.isVariableStatement).flatMap(statement => statement.declarationList.declarations.map(declaration => declaration.name.getText(tree)));
+      assert.deepEqual(variables, ['moduleNames'], 'Admin data contains navigation labels only');
+      assert.equal(collections, 0);
+    } else assert.ok(collections > 0);
   }
 });
 

@@ -18,6 +18,7 @@ import { getModuleHref } from "@/src/lib/admin-navigation";
 import { DataBreadcrumb } from "./data-breadcrumb";
 import { AccountBreadcrumb } from "./account-breadcrumb";
 import type { AccountView } from "@/src/features/accounts/types";
+import { GlobalSearch, NotificationFeed } from "@/src/features/operations/header-tools";
 
 type Props = {
   accountsPage?: AccountView;
@@ -89,11 +90,7 @@ export function AdminHeader({
         </Link>
       </nav>}
       <div className="top-actions">
-        <label>
-          <Search />
-          <input placeholder="Tìm kiếm nhanh..." />
-          <kbd>⌘ K</kbd>
-        </label>
+        <GlobalSearch />
         <div className="header-popup-wrap">
           <button
             className={`bell ${panel === "notifications" ? "pressed" : ""}`}
@@ -142,7 +139,7 @@ export function AdminHeader({
 function NotificationPanel({ onClose }: { onClose: () => void; onGoAccounts: () => void }) {
   return <section className="header-popup notifications-popup">
     <header><b>Thông báo</b><button onClick={onClose} aria-label="Đóng thông báo"><X /></button></header>
-    <p style={{ padding: 16 }}>Chưa kết nối API thông báo.</p>
+    <NotificationFeed onClose={onClose} />
   </section>;
 }
 

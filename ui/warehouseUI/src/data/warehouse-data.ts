@@ -8,7 +8,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   inventory: {
     title: "Tồn kho", description: "Theo dõi số lượng sản phẩm tại Kho trung tâm.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Tình trạng", "Khu vực"],
     columns: [{ key: "name", label: "SẢN PHẨM", kind: "product" }, { key: "location", label: "VỊ TRÍ" }, { key: "quantity", label: "TỒN HIỆN TẠI", kind: "strong" }, { key: "minimum", label: "MỨC TỐI THIỂU" }, { key: "status", label: "TÌNH TRẠNG", kind: "status" }],
-    rows: [], note: "Tồn kho thay đổi qua phiếu nhập, xuất đơn, chuyển kho hoặc điều chỉnh đã duyệt.",
+    rows: [], note: "Tồn kho thay đổi qua phiếu nhập, đơn hàng hoặc điều chỉnh đã duyệt.",
   },
   receipts: {
     title: "Phiếu nhập", description: "Lập phiếu, tiếp nhận hàng và xác nhận số lượng thực nhận.", searchPlaceholder: "Tìm mã phiếu hoặc nhà cung cấp...", addLabel: "Tạo phiếu nhập", filters: ["Kho nhập", "Trạng thái"],
@@ -16,7 +16,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     rows: [], note: "Chỉ xác nhận nhập sau khi đối chiếu hàng thực nhận. Phiếu đã nhập không được cộng tồn lần nữa.",
   },
   transfers: {
-    title: "Chuyển kho", description: "Theo dõi hàng luân chuyển giữa các kho và xác nhận giao nhận.", searchPlaceholder: "Tìm mã phiếu hoặc kho...", addLabel: "Tạo phiếu chuyển", filters: ["Trạng thái", "Kho nhận"],
+    title: "Lịch sử chuyển kho", description: "Chỉ tra cứu phiếu cũ; chức năng chuyển kho đã ngừng sử dụng vì hệ thống chỉ còn một kho.", searchPlaceholder: "Tìm mã phiếu...", filters: ["Trạng thái", "Kho nhận"],
     columns: [{ key: "id", label: "MÃ PHIẾU", kind: "link" }, { key: "from", label: "KHO XUẤT", kind: "strong" }, { key: "to", label: "KHO NHẬN", kind: "strong" }, { key: "items", label: "SỐ SKU" }, { key: "created", label: "NGÀY TẠO" }, { key: "status", label: "TRẠNG THÁI", kind: "status" }],
     rows: [], note: "Kho xuất phải khác kho nhận. Tồn kho nhận chỉ tăng sau khi xác nhận nhận đủ hàng.",
   },
@@ -43,12 +43,6 @@ export const formFields: Partial<Record<ModuleKey, FormFieldDefinition[]>> = {
     { name: "warehouse", label: "Kho nhập", placeholder: "Kho trung tâm" },
     { name: "items", label: "Sản phẩm và số lượng", placeholder: "Tìm sản phẩm để thêm vào phiếu", wide: true },
     { name: "note", label: "Ghi chú giao nhận", placeholder: "Ghi chú nếu có", type: "textarea", wide: true },
-  ],
-  transfers: [
-    { name: "from", label: "Kho xuất", placeholder: "Chọn kho nguồn" },
-    { name: "to", label: "Kho nhận", placeholder: "Chọn kho nhận (khác kho xuất)" },
-    { name: "items", label: "Sản phẩm và số lượng", placeholder: "Tìm sản phẩm để thêm vào phiếu", wide: true },
-    { name: "note", label: "Ghi chú vận chuyển", placeholder: "Ghi chú nếu có", type: "textarea", wide: true },
   ],
   stocktake: [
     { name: "area", label: "Khu vực kiểm kê", placeholder: "Chọn khu vực" },

@@ -32,7 +32,11 @@ const resources = new Set([
 
 function validAdminPath(path: string[], method: string): boolean {
   if (path[0] !== "admin") return false;
-  if (path.length === 3 && path[1] === "warehouse-drafts" && ["receipts", "transfers"].includes(path[2])) return method === "PATCH";
+  if (path[1] === "operations") {
+    if (path.length === 4 && path[2] === "read" && ["summary", "search", "notifications", "settings", "history", "messages"].includes(path[3])) return method === "GET";
+    return path.length === 3 && ["orders", "receipts", "inventory", "settings", "notifications", "support"].includes(path[2]) && method === "POST";
+  }
+  if (path.length === 3 && path[1] === "warehouse-drafts" && path[2] === "receipts") return method === "PATCH";
   if (path.length === 3 && path[1] === "media" && path[2] === "images") return method === "POST";
   if (path.length === 2) {
     return (path[1] === "accounts" && ["GET", "POST"].includes(method)) ||
@@ -57,6 +61,7 @@ function validCustomerPath(path: string[], method: string): boolean {
   if (path[0] === "customer") {
     if (path[1] === "crm" && path[2] === "feedback") {
       if (path.length === 3) return ["GET", "POST"].includes(method);
+      if (path.length === 5 && path[4] === "messages" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3])) return ["GET", "POST"].includes(method);
       return path.length === 4 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3]) && method === "GET";
     }
     if (path.length === 2 && path[1] === "me") return ["GET", "PUT"].includes(method);
@@ -108,6 +113,8 @@ export async function proxyBackend(request: Request, context: Context): Promise<
     if (cookie) headers.set("Cookie", cookie);
     const origin = request.headers.get("origin");
     if (origin) headers.set("Origin", origin); // Python validates CSRF origins, not the caller's supplied role.
+    const operationKey = request.headers.get("Idempotency-Key");
+    if (operationKey) headers.set("Idempotency-Key", operationKey);
     const write = request.method !== "GET" && request.method !== "HEAD";
     const imageUpload = path.length === 3 && ["admin/media/images", "customer/me/avatar"].includes(path.join("/"));
     const contentType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() ?? "";

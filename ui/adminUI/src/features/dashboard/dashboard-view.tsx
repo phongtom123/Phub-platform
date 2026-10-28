@@ -4,6 +4,7 @@ import BackendDataView from "@/src/components/backend-data-view";
 import type { ModuleKey } from "@/src/types/admin";
 import { useDashboardData } from "./use-dashboard-data";
 import { DashboardCharts } from "./dashboard-charts";
+import { FinancialSummary } from "../operations/financial-summary";
 
 const metrics: { label: string; resource: string; target: ModuleKey }[] = [
   { label: "Đơn hàng", resource: "orders", target: "orders" },
@@ -22,6 +23,7 @@ export function DashboardView({ onNavigate }: { onNavigate: (key: ModuleKey) => 
       <p>{data.countErrors[metric.resource] ? "Không tải được dữ liệu" : "Tổng bản ghi trên Supabase"}</p>
     </article>)}</div>
     <DashboardCharts data={data} onNavigate={onNavigate} />
+    <FinancialSummary summary={data.summary} disabled={data.orders.loading || Boolean(data.orders.error || data.pollError)} />
     <BackendDataView resource="orders" embedded />
   </>;
 }

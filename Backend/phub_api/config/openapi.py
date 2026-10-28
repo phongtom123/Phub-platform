@@ -45,14 +45,17 @@ Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển 
 
 Đã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.
 **Chưa xác nhận kết nối live Supabase.** Không có DELETE.
-Các bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,
-nhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.
+Các bảng chứng từ/tồn kho/tài chính chỉ có GET qua API bảng. ADMIN thực hiện nghiệp vụ
+qua `/api/admin/operations`: đơn tại quầy, nhập/xuất/nhận kho, hóa đơn, ghi nhận thu/hoàn
+và kiểm kê bằng transaction. Cần migration admin_operations; chưa tự deploy database.
+Ghi nhận thu/hoàn thủ công không thay thế tích hợp cổng thanh toán hoặc webhook.
 Tài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.
 Đăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.
 Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.
 """
 
 TAGS = [
+    {"name": "Admin · Vận hành", "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key."},
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
     {"name": "Shared · Xác thực", "description": "Login/token/register/me/logout. JWT qua Bearer hoặc cookie HttpOnly, role lấy từ database."},
     {"name": "Shared · Hệ thống", "description": "Health chỉ kiểm tra API đang chạy; không kiểm tra database."},
@@ -61,11 +64,11 @@ TAGS = [
     {"name": "Admin · Khách hàng", "description": "ADMIN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình."},
     {"name": "Admin · Sản phẩm", "description": "Loại sản phẩm và sản phẩm PC/linh kiện. SKU không đổi sau khi tạo."},
     {"name": "Admin · Hình ảnh", "description": "ADMIN upload ảnh sản phẩm vào bucket media; giới hạn 5 MB, ảnh tĩnh JPG/PNG/WebP. Không sửa quyền public hoặc xóa file cũ tự động."},
-    {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Áp voucher cho đơn chưa có API ghi."},
+    {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Voucher của đơn tại quầy được chốt qua nghiệp vụ tạo đơn."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
     {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp."},
-    {"name": "Kho · Phiếu nhập", "description": "Phiếu và dòng hàng chỉ đọc. Xác nhận nhập cần transaction riêng."},
-    {"name": "Kho · Chuyển kho", "description": "Phiếu và dòng hàng chỉ đọc; thấy phiếu liên quan kho xuất hoặc kho nhận được gán."},
+    {"name": "Kho · Phiếu nhập", "description": "API bảng chỉ đọc; ADMIN lập phiếu/sửa dòng/xác nhận qua /api/admin/operations/receipts."},
+    {"name": "Kho · Chuyển kho", "description": "Chỉ tra cứu dữ liệu lịch sử. Hệ thống chỉ sử dụng một kho nên không còn chức năng tạo, sửa hoặc xử lý chuyển kho."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
     {"name": "Bán hàng · Tài chính", "description": "Hóa đơn, thanh toán chỉ đọc. Không ghi tiền qua CRUD tổng quát."},
     {"name": "Customer · Catalog", "description": "API công khai, không cần đăng nhập. Chỉ trả sản phẩm/loại đang hoạt động."},
@@ -196,7 +199,7 @@ def add_table_paths(spec: dict) -> None:
                     description += "**Quản lý tài khoản dùng `/api/admin/accounts`, không dùng API ghi bảng chung.** "
                 elif not resource.writable:
                     description += (f"Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/{name}`; không thay đổi trạng thái/tồn kho. "
-                                    if name in {"receipts", "transfers"} else "**Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** ")
+                                    if name == "receipts" else "**Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** ")
             else:
                 description += "Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. "
                 description += "Không mở thao tác xóa. "

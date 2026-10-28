@@ -1400,6 +1400,74 @@
         "title": "ColorOption",
         "type": "object"
       },
+      "Command": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Action",
+            "type": "string"
+          },
+          "data": {
+            "additionalProperties": true,
+            "title": "Data",
+            "type": "object"
+          },
+          "expected_status": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Status"
+          },
+          "record_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Id"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "Command",
+        "type": "object"
+      },
+      "CommandResult": {
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "CommandResult",
+        "type": "object"
+      },
       "CreateOrder": {
         "additionalProperties": false,
         "examples": [
@@ -2350,6 +2418,19 @@
           "nguoi_lap"
         ],
         "title": "HOA_DONRead",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
         "type": "object"
       },
       "HealthResponse": {
@@ -3315,6 +3396,22 @@
           "password"
         ],
         "title": "LoginBody",
+        "type": "object"
+      },
+      "Message": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "Message",
         "type": "object"
       },
       "NHAN_VIENCreate": {
@@ -6644,51 +6741,6 @@
         "title": "TransactionPage",
         "type": "object"
       },
-      "TransferDraftUpdate": {
-        "additionalProperties": false,
-        "properties": {
-          "ghi_chu": {
-            "anyOf": [
-              {
-                "maxLength": 20000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ghi Chu"
-          },
-          "ma_kho_nhan": {
-            "anyOf": [
-              {
-                "maximum": 2147483647.0,
-                "minimum": -2147483648.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ma Kho Nhan"
-          },
-          "ma_kho_xuat": {
-            "anyOf": [
-              {
-                "maximum": 2147483647.0,
-                "minimum": -2147483648.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ma Kho Xuat"
-          }
-        },
-        "title": "TransferDraftUpdate",
-        "type": "object"
-      },
       "UploadedImage": {
         "properties": {
           "bucket": {
@@ -7115,6 +7167,46 @@
         "title": "VOUCHERUpdate",
         "type": "object"
       },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
       "ValidationIssue": {
         "properties": {
           "loc": {
@@ -7359,7 +7451,7 @@
     }
   },
   "info": {
-    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, gọi `POST /api/auth/token` với username/email và password thật.\n3. Sao chép `access_token`, bấm **Authorize → BearerAuth** và dán riêng token (không thêm `Bearer`).\n4. Thử `GET /api/auth/me`, sau đó các API theo role. Swagger tự gửi `Authorization: Bearer <token>`.\n\nUI vẫn dùng `POST /api/auth/login` để lưu JWT trong cookie HttpOnly `phub_session`; login không trả token JSON.\nCookie có sẵn trên cùng host được trình duyệt gửi tự động; dùng cùng hostname, không trộn localhost với 127.0.0.1.\n**Không nhập Supabase key vào Authorize.** Ô SessionCookie không tự đặt được cookie HttpOnly.\nBearer được ưu tiên khi có Authorization; token sai không chuyển sang cookie. JWT có hạn 8 giờ.\nLogout chỉ xóa cookie; khi thử Bearer hãy xóa token ở Authorize. Chưa có thu hồi từng token phía server.\nCác API ghi đang yêu cầu Origin vẫn kiểm tra Origin kể cả khi dùng Bearer. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; NHAN_VIEN giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET: chưa triển khai ghi đơn, checkout,\nnhập/xuất/nhận kho, chốt hóa đơn, webhook/hoàn tiền và áp voucher bằng transaction.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
+    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, gọi `POST /api/auth/token` với username/email và password thật.\n3. Sao chép `access_token`, bấm **Authorize → BearerAuth** và dán riêng token (không thêm `Bearer`).\n4. Thử `GET /api/auth/me`, sau đó các API theo role. Swagger tự gửi `Authorization: Bearer <token>`.\n\nUI vẫn dùng `POST /api/auth/login` để lưu JWT trong cookie HttpOnly `phub_session`; login không trả token JSON.\nCookie có sẵn trên cùng host được trình duyệt gửi tự động; dùng cùng hostname, không trộn localhost với 127.0.0.1.\n**Không nhập Supabase key vào Authorize.** Ô SessionCookie không tự đặt được cookie HttpOnly.\nBearer được ưu tiên khi có Authorization; token sai không chuyển sang cookie. JWT có hạn 8 giờ.\nLogout chỉ xóa cookie; khi thử Bearer hãy xóa token ở Authorize. Chưa có thu hồi từng token phía server.\nCác API ghi đang yêu cầu Origin vẫn kiểm tra Origin kể cả khi dùng Bearer. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; NHAN_VIEN giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET qua API bảng. ADMIN thực hiện nghiệp vụ\nqua `/api/admin/operations`: đơn tại quầy, nhập/xuất/nhận kho, hóa đơn, ghi nhận thu/hoàn\nvà kiểm kê bằng transaction. Cần migration admin_operations; chưa tự deploy database.\nGhi nhận thu/hoàn thủ công không thay thế tích hợp cổng thanh toán hoặc webhook.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
     "title": "Phub Platform API",
     "version": "0.3.0"
   },
@@ -9153,6 +9245,249 @@
         ]
       }
     },
+    "/api/admin/operations/read/{kind}": {
+      "get": {
+        "operationId": "read_api_admin_operations_read__kind__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "summary",
+                "search",
+                "notifications",
+                "settings",
+                "history",
+                "messages"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "record_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Record Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resource",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 30,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resource"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Thống kê, tìm kiếm, thông báo, cài đặt và lịch sử quản trị",
+        "tags": [
+          "Admin · Vận hành"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/operations/{resource}": {
+      "post": {
+        "operationId": "command_api_admin_operations__resource__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resource",
+            "required": true,
+            "schema": {
+              "enum": [
+                "orders",
+                "receipts",
+                "inventory",
+                "settings",
+                "notifications",
+                "support"
+              ],
+              "title": "Resource",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Thực hiện nghiệp vụ quản trị trong một transaction",
+        "tags": [
+          "Admin · Vận hành"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
     "/api/admin/warehouse-drafts/receipts": {
       "patch": {
         "description": "Chỉ ADMIN. Cập nhật mã phiếu, nhà cung cấp, kho và ghi chú khi trạng thái còn NHAP; không chuyển trạng thái hoặc ghi tồn kho.",
@@ -9298,158 +9633,6 @@
         "summary": "Chỉnh sửa thông tin phiếu nhập nháp",
         "tags": [
           "Kho · Phiếu nhập"
-        ],
-        "x-implementation-status": "implemented-live-unverified",
-        "x-roles": [
-          "ADMIN"
-        ]
-      }
-    },
-    "/api/admin/warehouse-drafts/transfers": {
-      "patch": {
-        "description": "Chỉ ADMIN. Cập nhật kho xuất, kho nhận và ghi chú khi trạng thái còn NHAP; không chuyển trạng thái hoặc ghi tồn kho.",
-        "operationId": "update_transfer_api_admin_warehouse_drafts_transfers_patch",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "key",
-            "required": true,
-            "schema": {
-              "maxLength": 6000,
-              "title": "Key",
-              "type": "string"
-            }
-          },
-          {
-            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
-            "example": "http://localhost:8000",
-            "in": "header",
-            "name": "Origin",
-            "required": true,
-            "schema": {
-              "format": "uri",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TransferDraftUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Không tìm thấy phiếu."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Không tìm thấy phiếu."
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Phiếu không còn ở trạng thái nháp."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Phiếu không còn ở trạng thái nháp."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": [
-                    {
-                      "loc": [
-                        "body",
-                        "ten_sp"
-                      ],
-                      "msg": "Field required",
-                      "type": "missing"
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SessionCookie": []
-          }
-        ],
-        "summary": "Chỉnh sửa thông tin phiếu chuyển kho nháp",
-        "tags": [
-          "Kho · Chuyển kho"
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
@@ -11996,6 +12179,135 @@
         ]
       }
     },
+    "/api/customer/crm/feedback/{ticket_id}/messages": {
+      "get": {
+        "operationId": "customer_messages_api_customer_crm_feedback__ticket_id__messages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Lịch sử trao đổi của ticket thuộc khách đang đăng nhập",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng",
+          "Customer · Hỗ trợ"
+        ]
+      },
+      "post": {
+        "operationId": "customer_message_api_customer_crm_feedback__ticket_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ticket_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ticket Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Message"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Khách gửi thêm tin nhắn vào ticket của chính mình",
+        "tags": [
+          "Admin · Hỗ trợ khách hàng",
+          "Customer · Hỗ trợ"
+        ]
+      }
+    },
     "/api/customer/me": {
       "get": {
         "operationId": "current_profile_api_customer_me_get",
@@ -13180,6 +13492,23 @@
               ],
               "title": "Key"
             }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
+            }
           }
         ],
         "responses": {
@@ -13366,6 +13695,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -13900,6 +14246,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -14460,6 +14823,23 @@
               ],
               "title": "Key"
             }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
+            }
           }
         ],
         "responses": {
@@ -14954,7 +15334,7 @@
     },
     "/api/data/inventory": {
       "get": {
-        "description": "Bảng `TON_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_kho, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `TON_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_kho, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_inventory",
         "parameters": [
           {
@@ -15016,6 +15396,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -15140,7 +15537,7 @@
     },
     "/api/data/invoices": {
       "get": {
-        "description": "Bảng `HOA_DON`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_hoadon`. Ví dụ query `key=[\"HD001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `HOA_DON`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_hoadon`. Ví dụ query `key=[\"HD001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_invoices",
         "parameters": [
           {
@@ -15221,6 +15618,23 @@
                 }
               ],
               "title": "Order Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -15351,7 +15765,7 @@
     },
     "/api/data/order-lines": {
       "get": {
-        "description": "Bảng `CT_DON_HANG`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_ct_donhang`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `CT_DON_HANG`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_ct_donhang`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_order_lines",
         "parameters": [
           {
@@ -15432,6 +15846,23 @@
                 }
               ],
               "title": "Order Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -15564,7 +15995,7 @@
     },
     "/api/data/orders": {
       "get": {
-        "description": "Bảng `DON_HANG`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_donhang`. Ví dụ query `key=[\"DH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `DON_HANG`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_donhang`. Ví dụ query `key=[\"DH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_orders",
         "parameters": [
           {
@@ -15645,6 +16076,23 @@
                 }
               ],
               "title": "Order Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -15778,7 +16226,7 @@
     },
     "/api/data/payments": {
       "get": {
-        "description": "Bảng `THANH_TOAN`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_thanh_toan`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `THANH_TOAN`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_thanh_toan`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_payments",
         "parameters": [
           {
@@ -15859,6 +16307,23 @@
                 }
               ],
               "title": "Order Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -16048,6 +16513,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -16623,6 +17105,23 @@
               ],
               "title": "Key"
             }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
+            }
           }
         ],
         "responses": {
@@ -17110,7 +17609,7 @@
     },
     "/api/data/receipt-lines": {
       "get": {
-        "description": "Bảng `CT_PHIEU_NHAP`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_nhap, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `CT_PHIEU_NHAP`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_nhap, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_receipt_lines",
         "parameters": [
           {
@@ -17172,6 +17671,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -17358,6 +17874,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -17645,6 +18178,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -18184,6 +18734,23 @@
               ],
               "title": "Key"
             }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
+            }
           }
         ],
         "responses": {
@@ -18668,7 +19235,7 @@
     },
     "/api/data/transfer-lines": {
       "get": {
-        "description": "Bảng `CT_CHUYEN_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `CT_CHUYEN_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_transfer_lines",
         "parameters": [
           {
@@ -18730,6 +19297,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -18853,7 +19437,7 @@
     },
     "/api/data/transfers": {
       "get": {
-        "description": "Bảng `PHIEU_CHUYEN_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/transfers`; không thay đổi trạng thái/tồn kho. \n\nKhóa chính: `ma_phieu_chuyen`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `PHIEU_CHUYEN_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_transfers",
         "parameters": [
           {
@@ -18915,6 +19499,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -19027,7 +19628,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Danh sách / chi tiết · Chuyển kho",
+        "summary": "Danh sách / chi tiết · Lịch sử chuyển kho",
         "tags": [
           "Kho · Chuyển kho"
         ],
@@ -19045,7 +19646,7 @@
     },
     "/api/data/voucher-uses": {
       "get": {
-        "description": "Bảng `SU_DUNG_VOUCHER`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc: chưa có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_su_dung`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `SU_DUNG_VOUCHER`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_su_dung`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_voucher_uses",
         "parameters": [
           {
@@ -19126,6 +19727,23 @@
                 }
               ],
               "title": "Order Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -19314,6 +19932,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -19877,6 +20512,23 @@
                 }
               ],
               "title": "Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 4000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
             }
           }
         ],
@@ -21085,6 +21737,10 @@
   ],
   "tags": [
     {
+      "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key.",
+      "name": "Admin · Vận hành"
+    },
+    {
       "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu.",
       "name": "Admin · Tài khoản"
     },
@@ -21117,7 +21773,7 @@
       "name": "Admin · Hình ảnh"
     },
     {
-      "description": "Chương trình, voucher và lịch sử sử dụng. Áp voucher cho đơn chưa có API ghi.",
+      "description": "Chương trình, voucher và lịch sử sử dụng. Voucher của đơn tại quầy được chốt qua nghiệp vụ tạo đơn.",
       "name": "Admin · Khuyến mãi"
     },
     {
@@ -21129,11 +21785,11 @@
       "name": "Kho · Nhà cung cấp"
     },
     {
-      "description": "Phiếu và dòng hàng chỉ đọc. Xác nhận nhập cần transaction riêng.",
+      "description": "API bảng chỉ đọc; ADMIN lập phiếu/sửa dòng/xác nhận qua /api/admin/operations/receipts.",
       "name": "Kho · Phiếu nhập"
     },
     {
-      "description": "Phiếu và dòng hàng chỉ đọc; thấy phiếu liên quan kho xuất hoặc kho nhận được gán.",
+      "description": "Chỉ tra cứu dữ liệu lịch sử. Hệ thống chỉ sử dụng một kho nên không còn chức năng tạo, sửa hoặc xử lý chuyển kho.",
       "name": "Kho · Chuyển kho"
     },
     {

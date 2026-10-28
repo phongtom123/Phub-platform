@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
+import { authPageHref, safeAuthRedirect } from "@/lib/auth/redirect";
 import { getSession, loginSession } from "../../../../../../shared/auth-client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { refreshSession } = useShopping();
+  const redirectTo = safeAuthRedirect(
+    searchParams.get("redirect") ?? searchParams.get("next"),
+    "/",
+  );
+  const registerHref = authPageHref("/auth/register", redirectTo, "/");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -14,9 +23,10 @@ export default function LoginPage() {
   useEffect(() => {
     const controller = new AbortController();
     getSession(controller.signal)
-      .then(() => {
+      .then(async (account) => {
         if (!controller.signal.aborted) {
-          router.replace("/");
+          if (account.role === "KHACH_HANG") await refreshSession();
+          router.replace(account.role === "KHACH_HANG" ? redirectTo : "/");
           router.refresh();
         }
       })
@@ -24,7 +34,7 @@ export default function LoginPage() {
         if (!controller.signal.aborted) setCheckingSession(false);
       });
     return () => controller.abort();
-  }, [router]);
+  }, [redirectTo, refreshSession, router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -36,7 +46,8 @@ export default function LoginPage() {
       const account = await loginSession(username, password);
       if (account.role === "ADMIN") { window.location.assign(process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000"); return; }
       if (account.role === "NHAN_VIEN") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
-      router.replace("/");
+      await refreshSession();
+      router.replace(redirectTo);
       router.refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Không kết nối được backend."); }
     finally { setLoading(false); }
@@ -115,11 +126,25 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-zinc-500">
           Chưa có tài khoản?{" "}
-          <Link href="/auth/register" className="font-semibold text-green-700 hover:underline">
+          <Link href={registerHref} className="font-semibold text-green-700 hover:underline">
             Đăng ký ngay
           </Link>
         </p>
       </form>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="grid min-h-[68vh] place-items-center px-6" aria-live="polite" aria-busy="true">
+          <p className="text-sm text-zinc-500" role="status">Đang kiểm tra phiên đăng nhập…</p>
+        </section>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

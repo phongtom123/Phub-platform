@@ -1,7 +1,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from phub_api.schemas.admin_operations import Message
 
 from phub_api.dependencies.support import admin_read, admin_write, customer_read, customer_write
 from phub_api.schemas.api_contracts import READ_ERRORS, WRITE_ERRORS, error_response
@@ -46,3 +47,15 @@ def customer_tickets(service: CustomerRead, page: int = Query(1, ge=1), page_siz
 @router.get('/api/customer/crm/feedback/{ticket_id}', response_model=CustomerTicket, tags=['Customer · Hỗ trợ'], responses={**READ_ERRORS, **NOT_FOUND}, summary='Khách xem ticket và phản hồi của chính mình')
 def customer_ticket(ticket_id: UUID, service: CustomerRead):
     return service.detail(ticket_id, True)
+
+
+@router.get('/api/customer/crm/feedback/{ticket_id}/messages', tags=['Customer · Hỗ trợ'], summary='Lịch sử trao đổi của ticket thuộc khách đang đăng nhập')
+def customer_messages(ticket_id: UUID, service: CustomerRead, page: int = Query(1, ge=1)):
+    return service.history(ticket_id, page)
+
+
+@router.post('/api/customer/crm/feedback/{ticket_id}/messages', tags=['Customer · Hỗ trợ'], summary='Khách gửi thêm tin nhắn vào ticket của chính mình')
+def customer_message(ticket_id: UUID, body: Message, service: CustomerWrite, key: UUID = Header(alias='Idempotency-Key')):
+    if key.version != 4:
+        raise HTTPException(422, 'Idempotency-Key phải là UUID v4.')
+    return service.history(ticket_id, 1, body.text, key)

@@ -7,6 +7,7 @@ import { adminFetch, sameAdminData } from "@/src/lib/admin-fetch";
 import { useAdminPolling } from "@/src/lib/use-admin-polling";
 import { dataHref } from "@/src/lib/data-navigation";
 import "./support.css";
+import { SupportThread } from "../operations/support-thread";
 
 const statuses: Record<string, string> = { MOI: "Mới tiếp nhận", DANG_XU_LY: "Đang xử lý", DA_GIAI_QUYET: "Đã giải quyết", DA_DONG: "Đã đóng" };
 const priorities: Record<string, string> = { THAP: "Thấp", BINH_THUONG: "Bình thường", CAO: "Cao", KHAN_CAP: "Khẩn cấp" };
@@ -144,12 +145,13 @@ export default function SupportView() {
               {ticket.ma_donhang && <div><dt>Đơn hàng</dt><dd><Link href={dataHref("orders", { key: JSON.stringify([ticket.ma_donhang]) })}>{ticket.ma_donhang}</Link></dd></div>}
             </dl>
             <section className="support-content"><h3>Nội dung khách gửi</h3><p>{ticket.noi_dung}</p></section>
+            <SupportThread key={ticket.ma_phan_hoi} ticketId={ticket.ma_phan_hoi} version={ticket.cap_nhat_luc} />
             <form className="support-response" onSubmit={save}>
               <fieldset disabled={saving}><div className="support-control-grid">
                 <label>Trạng thái xử lý<select aria-label="Trạng thái xử lý" value={draftStatus} onChange={e => setDraftStatus(e.target.value)}>{Object.entries(statuses).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
                 <label>Mức độ ưu tiên<select aria-label="Mức độ ưu tiên" value={draftPriority} onChange={e => setDraftPriority(e.target.value)}>{Object.entries(priorities).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
               </div><label>Phản hồi gửi khách<textarea aria-label="Phản hồi gửi khách" value={reply} maxLength={10000} rows={6} placeholder="Nhập kết quả tư vấn hoặc hướng xử lý…" onChange={e => setReply(e.target.value)} /></label>
-                <p className="support-help">Nội dung này được khách xem qua API ticket của họ, không phải ghi chú nội bộ. Bản đầu lưu một phản hồi hiện tại, chưa có hội thoại nhiều lượt.</p>
+                <p className="support-help">Phản hồi mới được lưu vào lịch sử trao đổi và hiển thị cho khách. Phần này hiển thị phản hồi quản trị gần nhất.</p>
                 {ticket.ngay_phan_hoi && <p className="support-help">Lần phản hồi gần nhất: {time(ticket.ngay_phan_hoi)}</p>}
               </fieldset>
               {saveError && <p className="live-error" role="alert">{saveError}</p>}{notice && <p className="live-note" role="status">{notice}</p>}

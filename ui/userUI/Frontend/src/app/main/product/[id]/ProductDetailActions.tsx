@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
+import { AddToCartButton } from "@/components/shopping/AddToCartButton";
 import type { DetailProduct } from "@/data/product-details";
 import styles from "./detail.module.css";
 
@@ -18,7 +19,6 @@ export function ProductDetailActions({
   const router = useRouter();
   const shop = useShopping();
   const [quantity, setQuantity] = useState(1);
-  const [addedNotice, setAddedNotice] = useState(false);
 
   const actualPrice = product?.price ?? price ?? 0;
   const actualCurrency = product?.currency ?? currency ?? "VND";
@@ -27,25 +27,10 @@ export function ProductDetailActions({
     currency: actualCurrency,
   }).format(actualPrice);
 
-  const handleAddToCart = async () => {
-    if (!product) return;
-    try {
-      await shop.add({ id: product.id, sku: product.sku }, quantity);
-      setAddedNotice(true);
-      setTimeout(() => setAddedNotice(false), 3000);
-    } catch {
-      // Handled by shop notice
-    }
-  };
-
   const handleBuyNow = async () => {
     if (!product) return;
-    try {
-      await shop.add({ id: product.id, sku: product.sku }, quantity);
-      router.push("/cart");
-    } catch {
-      router.push("/cart");
-    }
+    const added = await shop.add({ id: product.id, sku: product.sku }, quantity);
+    if (added) router.push("/cart");
   };
 
   return (
@@ -99,40 +84,28 @@ export function ProductDetailActions({
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <button
-          className={styles.cartButton}
-          type="button"
-          disabled={shop.cartLoading || !product}
-          onClick={handleAddToCart}
-        >
-          {shop.cartLoading ? "Đang xử lý..." : "Thêm vào giỏ"}
-        </button>
+      <div className={styles.purchaseActions}>
+        {product ? (
+          <AddToCartButton
+            className={styles.cartButton}
+            product={{ id: product.id, sku: product.sku }}
+            quantity={quantity}
+          />
+        ) : (
+          <button className={styles.cartButton} type="button" disabled>
+            Sản phẩm chưa khả dụng
+          </button>
+        )}
         <button
           type="button"
           onClick={handleBuyNow}
           disabled={shop.cartLoading || !product}
-          style={{
-            height: 44,
-            padding: "0 20px",
-            background: "#0156ff",
-            color: "#fff",
-            border: 0,
-            borderRadius: 22,
-            fontWeight: 600,
-            fontSize: 14,
-            cursor: "pointer",
-          }}
+          className={styles.buyNowButton}
         >
-          Mua ngay
+          <span aria-hidden="true">⚡</span>
+          <span>Mua ngay</span>
         </button>
       </div>
-
-      {addedNotice && (
-        <p style={{ color: "#187b34", fontSize: 13, margin: "6px 0 0", fontWeight: 500 }}>
-          ✓ Đã thêm sản phẩm vào giỏ hàng!
-        </p>
-      )}
     </div>
   );
 }

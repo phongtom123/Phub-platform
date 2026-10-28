@@ -47,7 +47,7 @@ test("enum labels remain Vietnamese while requests preserve backend string codes
   const status=column("trang_thai",{choices:["NHAP","HOAT_DONG","TAM_DUNG","KET_THUC"]});
   assert.deepEqual(patch([status],[],{trang_thai:"NHAP"},{trang_thai:"TAM_DUNG"}),{trang_thai:"TAM_DUNG"});
   assert.equal(inlineChoiceLabel("trang_thai","DA_NHAP"),"Đã nhập");
-  assert.equal(inlineChoiceLabel("loai_nhan_vien","NHAN_VIEN"),"Nhân viên");
+  assert.equal(inlineChoiceLabel("loai_nhan_vien","NHAN_VIEN"),"Nhân viên kho");
   assert.equal(inlineChoiceLabel("loai_giam","PHAN_TRAM"),"Phần trăm");
   assert.equal(inlineOptions(status)[1].label,"Hoạt động");
   assert.throws(()=>patch([status],[],{}, {trang_thai:"1"}),/không hợp lệ/);

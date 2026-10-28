@@ -91,7 +91,7 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
       <p className="account-wide account-help account-card-description" id="account-role-help">{roleHelp}</p>
       <fieldset className="live-form-fields" disabled={busy || !canManageRole} aria-describedby="account-role-help">
         <label>Vai trò<select value={role} onChange={e => setRole(e.target.value as Role)}>
-          {!account.ma_nhan_vien ? <option value="KHACH_HANG">Khách hàng</option> : <><option value="ADMIN">Quản trị viên</option><option value="NHAN_VIEN">Nhân viên</option></>}
+          {!account.ma_nhan_vien ? <option value="KHACH_HANG">Khách hàng</option> : <><option value="ADMIN">Quản trị viên</option><option value="NHAN_VIEN">Nhân viên kho</option></>}
         </select></label>
         {canAssignWarehouse && <>
         <div className="account-warehouse-search">

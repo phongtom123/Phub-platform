@@ -10,14 +10,6 @@ class ReceiptDraftUpdate(BaseModel):
     ghi_chu: str | None = Field(None, max_length=20000)
 
 
-class TransferDraftUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    ma_kho_xuat: int | None = Field(None, strict=True, ge=-(2**31), le=2**31 - 1)
-    ma_kho_nhan: int | None = Field(None, strict=True, ge=-(2**31), le=2**31 - 1)
-    ghi_chu: str | None = Field(None, max_length=20000)
-
-
 DRAFT_FIELDS = {
     "receipts": list(ReceiptDraftUpdate.model_fields),
-    "transfers": list(TransferDraftUpdate.model_fields),
 }

@@ -49,7 +49,7 @@ class TablesRepository:
     def __init__(self, client):
         self.client = client
 
-    def page(self, name, user, page, page_size, q, keys, order_id):
+    def page(self, name, user, page, page_size, q, keys, order_id, filters=None):
         search = None
         if q.strip():
             pattern = json.dumps(re.escape(q.strip()), ensure_ascii=False)
@@ -61,6 +61,8 @@ class TablesRepository:
             query = query.eq("ma_donhang", order_id)
         if keys is not None:
             query = apply_keys(query, name, keys)
+        for field, operator, value in filters or []:
+            query = getattr(query, operator)(field, value)
         for field in RESOURCES[name].keys:
             query = query.order(field)
         return query.range((page - 1) * page_size, page * page_size - 1).execute()

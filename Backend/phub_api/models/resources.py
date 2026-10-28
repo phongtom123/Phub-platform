@@ -29,7 +29,7 @@ RESOURCES = {
     "suppliers": Resource("NHA_CUNG_CAP", "Nhà cung cấp", ("ma_ncc",), True, True),
     "receipts": Resource("PHIEU_NHAP", "Phiếu nhập", ("ma_phieu_nhap",), warehouse=True),
     "receipt-lines": Resource("CT_PHIEU_NHAP", "Chi tiết phiếu nhập", ("ma_phieu_nhap", "sku"), warehouse=True),
-    "transfers": Resource("PHIEU_CHUYEN_KHO", "Chuyển kho", ("ma_phieu_chuyen",), warehouse=True),
+    "transfers": Resource("PHIEU_CHUYEN_KHO", "Lịch sử chuyển kho", ("ma_phieu_chuyen",), warehouse=True),
     "transfer-lines": Resource("CT_CHUYEN_KHO", "Chi tiết chuyển kho", ("ma_phieu_chuyen", "sku"), warehouse=True),
     "orders": Resource("DON_HANG", "Đơn hàng", ("ma_donhang",)),
     "order-lines": Resource("CT_DON_HANG", "Chi tiết đơn hàng", ("ma_ct_donhang",)),
@@ -62,6 +62,13 @@ def schema() -> dict[str, list[dict[str, Any]]]:
 
 
 ENUMS = {
+    ("orders", "trang_thai"): ["MOI", "XAC_NHAN", "DANG_CHUAN_BI", "DA_XUAT_KHO", "HOAN_THANH", "HUY"],
+    ("orders", "kenh_ban"): ["ONLINE", "TAI_QUAY"],
+    ("receipts", "trang_thai"): ["NHAP", "DA_NHAP", "HUY"],
+    ("transfers", "trang_thai"): ["NHAP", "DANG_CHUYEN", "DA_NHAN", "HUY"],
+    ("payments", "trang_thai"): ["CHO_XU_LY", "THANH_CONG", "THAT_BAI"],
+    ("payments", "phuong_thuc"): ["TIEN_MAT", "CHUYEN_KHOAN", "THE", "VI_DIEN_TU"],
+    ("voucher-uses", "trang_thai"): ["DA_AP_DUNG", "DA_HUY"],
     ("employees", "loai_nhan_vien"): ["ADMIN", "NHAN_VIEN"],
     ("promotions", "trang_thai"): ["NHAP", "HOAT_DONG", "TAM_DUNG", "KET_THUC"],
     ("vouchers", "trang_thai"): ["HOAT_DONG", "TAM_DUNG"],

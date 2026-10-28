@@ -22,6 +22,9 @@ class SupportService:
         try:
             return operation(*args)
         except APIError as exc:
+            if exc.message in {'NOT_FOUND', 'ADMIN_FORBIDDEN', 'STATE_CONFLICT', 'IDEMPOTENCY_CONFLICT', 'VALIDATION_ERROR'}:
+                status = {'NOT_FOUND': 404, 'ADMIN_FORBIDDEN': 403, 'STATE_CONFLICT': 409, 'IDEMPOTENCY_CONFLICT': 409, 'VALIDATION_ERROR': 422}[exc.message]
+                raise HTTPException(status, 'Không thể gửi tin nhắn: ticket không thuộc tài khoản, đã đóng hoặc yêu cầu không hợp lệ.') from None
             if str(exc.code) in {'PGRST202', 'PGRST205', '42P01', '42883', '42703'}:
                 raise HTTPException(503, 'Chưa có cấu trúc hỗ trợ khách hàng. Cần chạy migration 20261023_customer_support.sql và cập nhật backend.') from None
             if str(exc.code) == '42501':
@@ -54,3 +57,7 @@ class SupportService:
     def update(self, ticket_id, body):
         self.scope(False)
         return self.call(self.repository.update, self.actor.account_id, ticket_id, body.model_dump(mode='json', exclude_unset=True))
+
+    def history(self, ticket_id, page, text=None, key=None):
+        self.scope(True)
+        return self.call(self.repository.history, self.actor.account_id, ticket_id, page, text, key)

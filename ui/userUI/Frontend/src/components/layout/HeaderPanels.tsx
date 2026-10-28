@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/common/Button";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import type { SessionUser } from "../../../../../shared/auth-client";
 import { guestAccountItems, storeInfo } from "./headerData";
@@ -129,58 +128,107 @@ export function GuestAvatar({ name, avatarUrl }: { name?: string; avatarUrl?: st
 
 export function CartPreview({ onNavigate }: { onNavigate?: () => void }) {
   const shop = useShopping();
+  const subtotal = shop.lines.reduce(
+    (sum, line) => {
+      const price = Number.parseFloat(line.unit_price || "0");
+      return sum + (Number.isFinite(price) ? price * line.quantity : 0);
+    },
+    0,
+  );
+  const formattedSubtotal = new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: shop.lines[0]?.currency || "VND",
+  }).format(subtotal);
+  const checkoutDisabled =
+    shop.lines.length === 0 ||
+    shop.authStatus === "loading" ||
+    shop.authStatus === "unavailable";
+  const checkoutHref =
+    shop.authStatus === "guest"
+      ? "/auth/login?redirect=/checkout"
+      : "/checkout";
+
+  const checkoutContent = (
+    <>
+      <span className={styles.checkoutIcon} aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 4h2l1.6 9.1a2 2 0 0 0 2 1.65h7.8a2 2 0 0 0 1.94-1.5L20 7H6" />
+          <circle cx="9" cy="19" r="1.25" />
+          <circle cx="17" cy="19" r="1.25" />
+        </svg>
+      </span>
+      <span>
+        {checkoutDisabled
+          ? shop.lines.length === 0
+            ? "Giỏ hàng đang trống"
+            : shop.authStatus === "loading"
+              ? "Đang kiểm tra tài khoản"
+              : "Thanh toán chưa sẵn sàng"
+          : shop.authStatus === "guest"
+            ? "Đăng nhập để thanh toán"
+            : "Thanh toán"}
+      </span>
+      {!checkoutDisabled && <span className={styles.checkoutArrow} aria-hidden="true">→</span>}
+    </>
+  );
+
   return (
     <div className={styles.cartPreview}>
       <div className={styles.cartHead}>
-        <h2>Giỏ hàng của tôi</h2>
-        <p>{shop.count} sản phẩm trong giỏ</p>
+        <div>
+          <h2>Giỏ hàng của tôi</h2>
+          <p>{shop.count} sản phẩm trong giỏ</p>
+        </div>
+        <Link href="/cart" className={styles.cartEdit} onClick={onNavigate}>
+          Chỉnh sửa <span aria-hidden="true">→</span>
+        </Link>
       </div>
-      <Link href="/cart" className={styles.cartEdit} onClick={onNavigate}>
-        Xem và Chỉnh Sửa Giỏ Hàng
-      </Link>
       <div className={styles.cartItems}>
         {shop.lines.length === 0 ? (
-          <p>Giỏ hàng đang trống.</p>
+          <div className={styles.emptyCart}>
+            <span aria-hidden="true">🛒</span>
+            <p>Giỏ hàng đang trống.</p>
+          </div>
         ) : (
           shop.lines.slice(0, 3).map((line) => (
-            <div
-              key={line.sku}
-              style={{
-                display: "flex",
-                gap: 8,
-                alignItems: "center",
-                padding: "6px 0",
-                borderBottom: "1px solid #eee",
-                fontSize: 12,
-              }}
-            >
-              <span style={{ fontWeight: 600 }}>{line.quantity}x</span>
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {line.name || line.sku}
-              </span>
+            <div key={line.sku} className={styles.cartLine}>
+              <div className={styles.cartLineImage}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={line.image || "/images/catalog/product-placeholder.svg"} alt="" />
+                <span>{line.quantity}</span>
+              </div>
+              <div className={styles.cartLineCopy}>
+                <strong>{line.name || line.sku}</strong>
+                <small>{line.sku}</small>
+              </div>
+              <button
+                type="button"
+                className={styles.cartLineRemove}
+                onClick={() => shop.remove(line.sku)}
+                aria-label={`Xóa ${line.name || line.sku} khỏi giỏ hàng`}
+              >
+                ×
+              </button>
             </div>
           ))
         )}
       </div>
       <div className={styles.cartFoot}>
-        <Link
-          href="/checkout"
-          className={styles.checkout}
-          onClick={onNavigate}
-          style={{
-            display: "grid",
-            placeItems: "center",
-            textDecoration: "none",
-            borderRadius: 20,
-            background: "#0156ff",
-            color: "#fff",
-            height: 40,
-            fontWeight: 600,
-            fontSize: 13,
-          }}
-        >
-          Tiến Hành Thanh Toán
-        </Link>
+        {shop.lines.length > 0 && (
+          <p className={styles.subtotal}>
+            <span>Tạm tính</span>
+            <strong>{formattedSubtotal}</strong>
+          </p>
+        )}
+        {checkoutDisabled ? (
+          <span className={`${styles.checkout} ${styles.checkoutDisabled}`}>
+            {checkoutContent}
+          </span>
+        ) : (
+          <Link href={checkoutHref} className={styles.checkout} onClick={onNavigate}>
+            {checkoutContent}
+          </Link>
+        )}
       </div>
     </div>
   );

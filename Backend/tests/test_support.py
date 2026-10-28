@@ -39,7 +39,7 @@ def support_client(monkeypatch):
     def handle(request):
         state['requests'].append(request)
         endpoint = request.url.path.split('/')[-1]
-        if endpoint in {'customer_create_feedback_v1', 'admin_update_feedback_v1'}:
+        if endpoint in {'customer_create_feedback_v1', 'admin_update_feedback_thread_v1'}:
             if state['rpc_error']:
                 return httpx.Response(400, json={'code': state['rpc_error'], 'message': 'private SQL and credentials', 'details': None, 'hint': None})
             data = json.loads(request.content)
@@ -212,7 +212,7 @@ def test_admin_reply_status_and_claim_in_one_rpc(support_client):
     assert response.json()['nguoi_xu_ly'] == 'NV1'
     assert response.json()['phan_hoi_quan_ly'] == 'Đã tiếp nhận'
     assert len(state['requests']) == 1
-    assert state['requests'][0].url.path.endswith('/rpc/admin_update_feedback_v1')
+    assert state['requests'][0].url.path.endswith('/rpc/admin_update_feedback_thread_v1')
 
 
 @pytest.mark.parametrize('body', [{}, {'nhan_xu_ly': False}, {'nhan_xu_ly': 'yes'}, {'trang_thai': None},

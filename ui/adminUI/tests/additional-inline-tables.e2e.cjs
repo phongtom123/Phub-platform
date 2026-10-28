@@ -69,7 +69,9 @@ const rows={
   await edit(-5,"ma_phieu_code");await page.getByLabel("Mã phiếu -5",{exact:true}).fill("PN-MOI");conflict=true;await page.getByLabel("Mã phiếu -5",{exact:true}).press("Enter");await page.getByRole("alert").filter({hasText:"Phiếu vừa được xử lý"}).waitFor();assert.equal(await page.getByLabel("Mã phiếu -5",{exact:true}).inputValue(),"PN-MOI");await page.getByLabel("Mã phiếu -5",{exact:true}).press("Enter");await saved();assert.deepEqual(writes.at(-1).patch,{ma_phieu_code:"PN-MOI"});assert.deepEqual(writes.at(-1).key,[-5]);
 
   await open("transfers");assert.ok(!(await page.locator("thead").innerText()).includes("Ghi chú"));await edit(-8,"ma_kho_nhan");assert.equal(await page.locator("tbody input").count(),0);
-  await edit(-7,"ma_kho_nhan");await page.getByLabel("Kho nhận -7",{exact:true}).fill("-3");await page.getByLabel("Kho nhận -7",{exact:true}).press("Enter");await saved();assert.deepEqual(writes.at(-1).patch,{ma_kho_nhan:-3});
+  await edit(-7,"ma_kho_nhan");assert.equal(await page.locator("tbody input").count(),0,"Archived transfers cannot be edited");
+  assert.equal(await page.getByRole("link",{name:/Lập phiếu chuyển/}).count(),0);
+  assert.equal(await page.getByRole("button",{name:/Xác nhận xuất chuyển|Xác nhận nhận hàng/}).count(),0);
   assert.equal(await page.locator("tbody select").count(),0,"Document state must not be written as a table field");
   await row(-7).getByRole("link",{name:"Chi tiết",exact:true}).click();await page.locator(".live-field").filter({hasText:"Ghi chú chuyển kho"}).waitFor();
   assert.deepEqual(errors,[]);

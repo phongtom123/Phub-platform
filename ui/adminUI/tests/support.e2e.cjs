@@ -23,6 +23,7 @@ async function main() {
       if (url.origin !== new URL(base).origin) return route.abort();
       if (!url.pathname.startsWith('/api/')) return route.continue();
       const respond = (body, status = 200) => route.fulfill({ status, contentType:'application/json',body:JSON.stringify(body) });
+      if (url.pathname === '/api/backend/admin/operations/read/messages') return respond({data:[],total:0});
       if (url.pathname === '/api/backend/crm/feedback') {
         assert.equal(req.method(),'GET');
         const q = url.searchParams.get('q') || '';

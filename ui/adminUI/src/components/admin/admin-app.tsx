@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminAuth } from "./auth-provider";
 import type { ModuleKey } from "@/src/types/admin";
-import { moduleNames, modules } from "@/src/data/admin-data";
+import { moduleNames } from "@/src/data/admin-data";
 import {
   getModuleFromSearch,
   getModuleHref,
@@ -49,8 +49,6 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
     window.innerWidth <= 800
       ? setMobileSidebarOpen(true)
       : setSidebarCollapsed((value) => !value);
-  const openCreate = () =>
-    setDrawer({ moduleKey: activeModule, mode: "create" });
   const openSettings = () =>
     setDrawer({ moduleKey: "settings", mode: "settings" });
   const logout = async () => {
@@ -62,7 +60,6 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
     }
     router.replace("/");
   };
-  const definition = modules[activeModule];
 
   return (
     <div className={`shell ${sidebarCollapsed ? "nav-collapsed" : ""}`}>
@@ -96,12 +93,9 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
           </div>}
           {activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
-          ) : definition ? (
+          ) : moduleResources[activeModule] ? (
             <ModuleView
               moduleKey={activeModule}
-              definition={definition}
-              onCreate={openCreate}
-              onBack={() => window.history.back()}
             />
           ) : null}
         </main>
