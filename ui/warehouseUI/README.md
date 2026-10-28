@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Warehouse UI được render trong app quản trị sau khi đăng nhập bằng tài khoản có role `THU_KHO` tại `http://localhost:3000`. Dự án Next.js không chạy bằng Live Server.
+Mở `http://localhost:3002` để xem giao diện. Dự án Next.js không chạy bằng Live Server.
 
 ## Cấu trúc
 

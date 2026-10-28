@@ -12,10 +12,13 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from app.payments.auth import CurrentCustomer, require_customer
-from app.payments.errors import PaymentError
-from app.payments.repository import PaymentRepository
-from app.payments.router import get_repository, router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.services.payments import PaymentService
+from phub_api.dependencies.payments import get_repository
+from phub_api.controllers.payments import router
 
 
 ORDER_ID = "ORDER-A"
@@ -29,7 +32,6 @@ def payments_client():
         "so_tien": "100000.10", "loai_giao_dich": "THU", "phuong_thuc": "CHUYEN_KHOAN",
         "trang_thai": "CHO_XU_LY", "thoi_gian": "2026-10-06T10:00:00",
         "owned_order": {"ma_donhang": ORDER_ID, "ma_kh": CUSTOMER_ID},
-        # Inject extra internal data to ensure it cannot accidentally be returned.
         "ma_thanh_toan": "PRIVATE-PAYMENT", "ma_giao_dich": "PRIVATE-PROVIDER",
         "token": "PRIVATE-TOKEN", "bank_account": "PRIVATE-BANK", "payload": {"secret": "PRIVATE-PAYLOAD"},
     }
@@ -66,14 +68,14 @@ def payments_client():
 
 @pytest.mark.parametrize("endpoint", ["payments", "transactions"])
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer forged-token", "X-Customer-Id": CUSTOMER_ID, "Cookie": "ma_kh=CUSTOMER-A"}])
-def test_unconnected_auth_blocks_every_request_before_database(payments_client, endpoint, headers):
+def test_shared_auth_blocks_every_request_without_session_before_database(payments_client, endpoint, headers):
     client, _, requests, _, app = payments_client
     app.dependency_overrides.pop(require_customer)
     response = client.get(f"{BASE}/{endpoint}", headers=headers)
-    assert response.status_code == 503
+    assert response.status_code == 401
     assert response.json() == {"error": {
-        "code": "AUTH_INTEGRATION_REQUIRED",
-        "message": "Chưa kết nối phần xác thực khách hàng. Không thể sử dụng chức năng mua hàng lúc này.", "details": [],
+        "code": "AUTHENTICATION_REQUIRED",
+        "message": "Bạn cần đăng nhập để tra cứu thanh toán.", "details": [],
     }}
     assert response.headers["Cache-Control"] == "no-store"
     assert requests == []
@@ -118,7 +120,7 @@ def test_paginated_history_filters_owner_and_counts_all_types(payments_client):
     assert params["offset"] == "10" and params["limit"] == "10"
     assert params["owned_order.ma_kh"] == 'eq.CUSTOMER-A'
     assert "count=exact" in requests[-1].headers["prefer"]
-    assert "loai_giao_dich" not in params  # includes both collections and refunds
+    assert "loai_giao_dich" not in params
 
 
 @pytest.mark.parametrize("endpoint", ["payments", "transactions"])
@@ -250,7 +252,7 @@ def test_equality_identifiers_are_encoded_as_single_query_values(payments_client
     customer = CurrentCustomer(customer_id=customer_id)
     state["orders"] = [{"ma_donhang": order_id, "ma_kh": customer_id}]
     state["rows"] = []
-    result = repository.overview(order_id, customer)
+    result = PaymentService(repository).overview(order_id, customer)
     assert result.latest_transaction is None
     for request in requests:
         assert request.url.params["ma_donhang"] == "eq." + order_id
@@ -260,10 +262,10 @@ def test_equality_identifiers_are_encoded_as_single_query_values(payments_client
     assert "or" not in requests[-1].url.params
 
 
-def test_repository_rejects_unverified_customer_dict_before_reading(payments_client):
+def test_service_rejects_unverified_customer_dict_before_reading(payments_client):
     _, _, requests, repository, _ = payments_client
     with pytest.raises(PaymentError) as error:
-        repository.overview(ORDER_ID, {"customer_id": CUSTOMER_ID})
+        PaymentService(repository).overview(ORDER_ID, {"customer_id": CUSTOMER_ID})
     assert error.value.code == "AUTH_INTEGRATION_REQUIRED" and requests == []
 
 
@@ -319,10 +321,9 @@ def test_all_payment_paths_and_contracts_are_in_swagger(payments_client):
     for suffix, schema in [("payments", "PaymentOverview"), ("transactions", "TransactionPage")]:
         operation = spec["paths"][f"/api/orders/{{order_id}}/{suffix}"]["get"]
         assert operation["tags"] == ["Customer Payments"]
-        assert "AUTH_INTEGRATION_REQUIRED" in operation["description"] or "503" in operation["description"]
         assert set(operation["responses"]) == {"200", "401", "403", "404", "422", "500", "503"}
         assert operation["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith(schema)
-        assert operation["responses"]["503"]["content"]["application/json"]["example"]["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+        assert operation["responses"]["503"]["content"]["application/json"]["example"]["error"]["code"] == "PAYMENT_SCHEMA_NOT_READY"
     fields = spec["components"]["schemas"]["PaymentTransaction"]["properties"]
     assert set(fields) == {"type", "method", "amount", "status", "occurred_at", "message"}
     assert fields["amount"]["type"] == "string"
@@ -353,22 +354,23 @@ def test_payment_request_foreign_order_and_invalid_idempotency_are_blocked(payme
     assert result.status_code == 404
     app.dependency_overrides.pop(require_customer)
     requests.clear()
-    assert client.post(f"{BASE}/payment-request", json={"method":"cash"}, headers={"Idempotency-Key":str(uuid4())}).status_code == 503
+    assert client.post(f"{BASE}/payment-request", json={"method":"cash"}, headers={"Idempotency-Key":str(uuid4())}).status_code == 401
     assert requests == []
 
 
 def test_main_registers_payments_without_requiring_auth_at_startup(monkeypatch):
-    stub = ModuleType("app.supabase")
+    stub = ModuleType("phub_api.config.database")
     stub.supabase = SimpleNamespace()
     stub.get_supabase = lambda: stub.supabase
-    monkeypatch.setitem(sys.modules, "app.supabase", stub)
-    location = Path(__file__).resolve().parents[1] / "app" / "main.py"
-    spec = importlib.util.spec_from_file_location("app.payment_main_check", location)
+    stub.close_supabase = lambda: None
+    monkeypatch.setitem(sys.modules, "phub_api.config.database", stub)
+    location = Path(__file__).resolve().parents[1] / "phub_api" / "main.py"
+    spec = importlib.util.spec_from_file_location("phub_api.payment_main_check", location)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     with TestClient(module.app) as client:
         assert client.get("/docs").status_code == 200
-        assert client.get(f"{BASE}/payments").json()["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+        assert client.get(f"{BASE}/payments").json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
         paths = client.get("/openapi.json").json()["paths"]
         assert "/api/catalog/products" in paths and "/api/orders" in paths
         assert "/api/orders/{order_id}/transactions" in paths

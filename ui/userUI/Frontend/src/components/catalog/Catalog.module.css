@@ -21,6 +21,9 @@
 .filterGroup > div { padding: 0 16px 12px; }
 .filterGroup button { font-size: 12px; line-height: 27px; gap: 8px; }
 .filterGroup button[aria-pressed=true] { color: #000; font-weight: 600; }
+.categoryTree + .categoryTree { margin-top: 5px; }
+.categoryChildren { padding-left: 16px; border-left: 1px solid #d9e1ee; }
+.categoryChildren button { color: #596579; }
 .colors { display: flex; gap: 4px; padding-block: 3px; }
 .stockCheck { display: flex; gap: 8px; align-items: center; font-size: 12px; }
 .stockCheck input { accent-color: var(--blue); }
@@ -59,8 +62,8 @@
 .productList > article:first-child { box-shadow: 0 4px 12px #00000021; }
 .savedItems { list-style: none; padding: 0; margin: 14px 0; }
 .savedItems li { display: flex; align-items: start; gap: 6px; padding-block: 8px; border-bottom: 1px solid var(--border); }
-.savedItems button { border: 0; background: none; padding: 2px; font-size: 11px; text-align: left; color: #0156ff; }
-.savedItems button:first-child { flex: 1; }
+.savedItems button, .savedItems a { border: 0; background: none; padding: 2px; font-size: 11px; text-align: left; color: #0156ff; }
+.savedItems a { flex: 1; }
 .savedItems button:last-child { font-size: 20px; line-height: 20px; color: #666; }
 .savedPanel small { font-size: 10px; color: #666; }
 .actionNotice { position: fixed; z-index: 40; bottom: 24px; right: 24px; display: flex; align-items: center; gap: 16px; width: min(430px, calc(100% - 32px)); padding: 16px; background: #f5f7ff; color: #163059; border: 1px solid #cad6ee; border-radius: 8px; box-shadow: 0 4px 18px #0002; font-size: 12px; line-height: 1.7; }

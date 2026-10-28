@@ -10,11 +10,11 @@ export function DesktopProductDetail({ product, activeTab }: { product: DetailPr
   return <article className={styles.page}>
     <div className={styles.purchaseBar}><div className={styles.purchaseInner}>
       <nav className={styles.tabs} aria-label="Product information tabs">{desktopProductDetailTabs.map(tab => <Link key={tab.id} className={activeTab === tab.id ? styles.activeTab : undefined} href={productHref(product.id) + "?tab=" + tab.id}>{tab.label}</Link>)}</nav>
-      <ProductDetailActions price={product.price} currency={product.currency} />
+      <ProductDetailActions product={product} />
     </div></div>
     <section className={styles.productHero}>
       <div className={styles.productCopy}><div className={styles.copyInner}>
-        <p className={styles.breadcrumb}><Link href="/">Trang chủ</Link><span>›</span><Link href={"/main/product?" + new URLSearchParams({ category_id: product.categoryId })}>{product.category}</Link>{product.brand && <><span>›</span>{product.brand}</>}</p>
+        <p className={styles.breadcrumb}><Link href="/">Trang chủ</Link><span>›</span><Link href={"/main/product?" + new URLSearchParams({ category_id: product.categoryId })}>{product.category}</Link>{product.subcategory && product.subcategoryId && <><span>›</span><Link href={"/main/product?" + new URLSearchParams({ subcategory_id: product.subcategoryId })}>{product.subcategory}</Link></>}{product.brand && <><span>›</span>{product.brand}</>}</p>
         <h1>{product.name}</h1>
         {activeTab === "about" && <p className={styles.summary} style={{ whiteSpace: "pre-line" }}>{product.description || "Chưa có mô tả sản phẩm."}</p>}
         {activeTab === "details" && <ul className={styles.detailList}>

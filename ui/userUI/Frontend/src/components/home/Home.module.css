@@ -1,4 +1,4 @@
-.home { color: #000; background: #fff; font-family: var(--font-poppins), Arial, sans-serif; padding-bottom: clamp(180px, 74vw, 1420px); }
+.home { color: #000; background: #fff; font-family: var(--font-poppins), Arial, sans-serif; padding-bottom: clamp(180px, 74vw, 72px); }
 .home *, .home *::before, .home *::after { box-sizing: border-box; }
 .container { width: min(1398px, calc(100% - 40px)); margin-inline: auto; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

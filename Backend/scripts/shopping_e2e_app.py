@@ -1,9 +1,3 @@
-"""Isolated browser fixture server. Never imported by app.main or connected to Supabase.
-
-Requires an explicit mode and a local control key; bind ONLY to 127.0.0.1.
-Real routers/repositories use a MockTransport. Authentication is simulated here
-and cannot certify the other member's password/session implementation.
-"""
 import json
 import os
 import secrets
@@ -15,16 +9,20 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from postgrest import SyncPostgrestClient
 
-from app.catalog.repository import CatalogRepository
-from app.catalog.router import get_repository as catalog_repository, router as catalog_router
-from app.commerce.repository import CommerceRepository
-from app.commerce.router import get_repository as commerce_repository, router as commerce_router
-from app.payments.auth import CurrentCustomer, require_customer
-from app.payments.repository import PaymentRepository
-from app.payments.repository import public_transaction
-from app.payments.errors import PaymentError
-from app.payments.requests import get_payment_requests
-from app.payments.router import get_repository as payment_repository, router as payment_router
+from phub_api.repositories.catalog import CatalogRepository
+from phub_api.dependencies.catalog import get_repository as catalog_repository
+from phub_api.controllers.catalog import router as catalog_router
+from phub_api.repositories.commerce import CommerceRepository
+from phub_api.dependencies.commerce import get_repository as commerce_repository
+from phub_api.controllers.commerce import router as commerce_router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.services.payments import public_transaction
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.dependencies.payments import get_payment_requests
+from phub_api.dependencies.payments import get_repository as payment_repository
+from phub_api.controllers.payments import router as payment_router
 
 CONTROL_KEY = os.getenv("PHUB_E2E_CONTROL_KEY", "")
 if os.getenv("PHUB_E2E_MODE") != "isolated-fixtures" or len(CONTROL_KEY) < 32:
@@ -260,7 +258,6 @@ class FixturePaymentRequests:
             total = subtotal + tax
             if paid >= total:
                 raise PaymentError(409, "ORDER_ALREADY_PAID", "Đơn đã được thanh toán đủ.")
-            # Invoice and pending transaction exist only in this in-memory fixture.
             state["invoices"][order_id] = {"thoi_gian_lap": "2026-10-07T12:00:00", "tong_tien_giam": order["discount_total"],
                 "tong_tien_truoc_thue": str(subtotal), "tong_tien_thue": str(tax), "tong_tien_sau_thue": str(total),
                 "owned_order": {"ma_donhang": order_id, "ma_kh": owner}}

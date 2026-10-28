@@ -3,14 +3,23 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 
-from app.health import router
-from app.runtime import frontend_origins
+from phub_api.controllers.health import router
+from phub_api.config.runtime import frontend_origins
 
 
-def test_existing_localhost_default_is_preserved(monkeypatch):
+def test_default_origins_cover_all_local_portal_hosts(monkeypatch):
     monkeypatch.delenv("FRONTEND_URL", raising=False)
     monkeypatch.delenv("FRONTEND_ORIGINS", raising=False)
-    assert frontend_origins() == ["http://localhost:3000"]
+    assert frontend_origins() == [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:3002",
+        "http://127.0.0.1:8000",
+    ]
 
 
 def test_explicit_origins_override_legacy_setting_and_deduplicate(monkeypatch):

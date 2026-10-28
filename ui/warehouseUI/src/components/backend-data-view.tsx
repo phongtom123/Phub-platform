@@ -17,7 +17,6 @@ const labels: Record<string, string> = {
   ma_nhan_vien: "Mã nhân viên", ho_ten: "Họ tên", loai_nhan_vien: "Vai trò", luong: "Lương", sdt: "Số điện thoại",
   ma_ncc: "Mã nhà cung cấp", ten_ncc: "Tên nhà cung cấp", ma_donhang: "Mã đơn hàng", kenh_ban: "Kênh bán",
   so_luong_ton: "Số lượng tồn", ma_phieu_nhap: "Mã phiếu nhập", ma_phieu_code: "Mã phiếu", ma_phieu_chuyen: "Mã chuyển kho",
-  ma_lich_su: "Mã lịch sử", loai_giao_dich: "Loại giao dịch", so_luong_thay_doi: "Số lượng thay đổi", so_luong_truoc: "Tồn trước", so_luong_sau: "Tồn sau", ma_tham_chieu: "Mã tham chiếu", nguoi_thuc_hien: "Người thực hiện", tao_luc: "Thời gian",
   ma_ctkm: "Mã chương trình", ten_chuong_trinh: "Tên chương trình", ngay_bat_dau: "Ngày bắt đầu", ngay_ket_thuc: "Ngày kết thúc",
   ma_voucher: "Mã voucher", ma_code: "Mã giảm giá", loai_giam: "Loại giảm", gia_tri_giam: "Giá trị giảm",
   giam_toi_da: "Giảm tối đa", gia_tri_don_toi_thieu: "Giá trị đơn tối thiểu", gioi_han_tong_luot: "Tổng lượt tối đa", gioi_han_moi_khach: "Lượt mỗi khách",
@@ -83,8 +82,6 @@ export default function BackendDataView({ resource }: { resource: string }) {
   }, [resource, view, page, search, version]);
 
   const href = (row?: Row, edit = false) => "/data/" + resource + (row && meta ? "?key=" + encodeURIComponent(JSON.stringify(meta.keys.map(key => row[key]))) + (edit ? "&edit=1" : "") : "");
-  const workflowEditHref = (row: Row) => `/${resource}/${encodeURIComponent(String(row[meta?.keys[0] ?? ""]))}/edit`;
-  const canEditWorkflow = (row?: Row) => !!row && ["receipts", "transfers"].includes(resource) && String(row.trang_thai ?? "") === "NHAP";
   const change = (name: string, value: string) => { setValues(current => ({ ...current, [name]: value })); setDirty(current => current.includes(name) ? current : [...current, name]); };
   const formColumns = meta?.columns.filter(c => !c.generated && !c.system && (view.create || !c.immutable)) ?? [];
 
@@ -111,22 +108,6 @@ export default function BackendDataView({ resource }: { resource: string }) {
     finally { setSaving(false); }
   }
 
-  async function workflow(action: "confirm" | "cancel" | "dispatch" | "receive") {
-    if (!view.key) return;
-    let id: number;
-    try { id = Number(JSON.parse(view.key)[0]); } catch { setError("Mã phiếu không hợp lệ."); return; }
-    if (!Number.isInteger(id)) { setError("Mã phiếu không hợp lệ."); return; }
-    const group = resource === "receipts" ? "receipts" : "transfers";
-    setSaving(true); setError("");
-    try {
-      const response = await fetch(`/api/backend/warehouse/${group}/${id}/${action}`, { method: "POST", cache: "no-store" });
-      const body = response.status === 204 ? null : await response.json();
-      if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không thể cập nhật trạng thái phiếu.");
-      setVersion(value => value + 1);
-    } catch (err) { setError(err instanceof Error ? err.message : "Không thể cập nhật trạng thái phiếu."); }
-    finally { setSaving(false); }
-  }
-
   return <section className="live-data">
     <nav aria-label="Breadcrumb" className="live-tools"><a href="/">Tổng quan</a><span>›</span><a href={"/data/" + resource}>{meta?.title ?? resource}</a>{view.key && <><span>›</span><a href={"/data/" + resource + "?key=" + encodeURIComponent(view.key)}>Chi tiết</a></>}{(view.edit || view.create) && <span>› {view.create ? "Thêm mới" : "Chỉnh sửa"}</span>}</nav>
     {(view.key || view.create) && <button type="button" onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/data/" + resource)}>← Quay lại</button>}
@@ -145,14 +126,11 @@ export default function BackendDataView({ resource }: { resource: string }) {
         {resource === "accounts" && <label>{view.create ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu giữ nguyên)"}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} required={view.create} value={values.password ?? ""} onChange={e => change("password", e.target.value)} /></label>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving}>{saving ? "Đang lưu…" : "Lưu dữ liệu"}</button><a href={view.key ? "/data/" + resource + "?key=" + encodeURIComponent(view.key) : "/data/" + resource}>Hủy</a></div>
       </form> : view.key && result?.data[0] ? <>
-        <div className="live-tools">{meta.writable && <a className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</a>}{canEditWorkflow(result.data[0]) && <a className="live-primary" href={workflowEditHref(result.data[0])}>Sửa phiếu nháp</a>}
-          {resource === "receipts" && <><button className="live-primary" disabled={saving} onClick={() => void workflow("confirm")}>Xác nhận nhập</button><button disabled={saving} onClick={() => void workflow("cancel")}>Hủy phiếu</button></>}
-          {resource === "transfers" && <><button className="live-primary" disabled={saving} onClick={() => void workflow("dispatch")}>Giao chuyển</button><button className="live-primary" disabled={saving} onClick={() => void workflow("receive")}>Nhận chuyển</button><button disabled={saving} onClick={() => void workflow("cancel")}>Hủy phiếu</button></>}
-        </div>
+        <div className="live-tools">{meta.writable && <a className="live-primary" href={href(result.data[0], true)}>Chỉnh sửa</a>}</div>
         <div className="live-form">{meta.columns.map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{String(result.data[0][column.name] ?? "—")}{column.name === "duong_dan_anh" && /^https?:\/\//.test(String(result.data[0][column.name] ?? "")) && <img src={String(result.data[0][column.name])} alt="Ảnh sản phẩm" />}</div>)}</div>
       </> : <>
         <form className="live-tools" onSubmit={e => { e.preventDefault(); setSearch(query); setPage(1); }}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={() => setVersion(v => v + 1)}>Làm mới</button>{meta.writable && <a className="live-primary" href={"/data/" + resource + "?new=1"}>+ Thêm {meta.title.toLowerCase()}</a>}</form>
-        <div className="live-table"><table><thead><tr>{meta.columns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{meta.columns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <a href={href(row)}>{String(row[column.name] ?? "—")}</a> : String(row[column.name] ?? "—")}</td>)}<td><a href={href(row)}>Chi tiết</a>{meta.writable && <> · <a href={href(row, true)}>Sửa</a></>}{canEditWorkflow(row) && <> · <a href={workflowEditHref(row)}>Sửa nháp</a></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</div>
+        <div className="live-table"><table><thead><tr>{meta.columns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{meta.columns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <a href={href(row)}>{String(row[column.name] ?? "—")}</a> : String(row[column.name] ?? "—")}</td>)}<td><a href={href(row)}>Chi tiết</a>{meta.writable && <> · <a href={href(row, true)}>Sửa</a></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</div>
         <div className="live-tools"><span>{result?.total ?? 0} kết quả · Trang {page}</span><button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={page * 20 >= (result?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Sau</button></div>
       </>}
       <p className="live-note">Nguồn: API Python / Supabase · Không sử dụng dữ liệu mẫu thay thế khi lỗi kết nối.</p>

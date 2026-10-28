@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import "../../warehouseUI/app/globals.css";
+import { Suspense } from "react";
+import { AuthProvider } from "@/src/components/admin/auth-provider";
 import "./globals.css";
 import "../../shared/data-manager.css";
 import "@/src/features/accounts/accounts.css";
@@ -14,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body>{children}</body>
+      <body><AuthProvider><Suspense fallback={<main className="session-gate">Đang tải trang…</main>}>{children}</Suspense></AuthProvider></body>
     </html>
   );
 }

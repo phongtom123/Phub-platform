@@ -16,8 +16,11 @@ import {
 import type { ModuleKey } from "@/src/types/admin";
 import { getModuleHref } from "@/src/lib/admin-navigation";
 import { DataBreadcrumb } from "./data-breadcrumb";
+import { AccountBreadcrumb } from "./account-breadcrumb";
+import type { AccountView } from "@/src/features/accounts/types";
 
 type Props = {
+  accountsPage?: AccountView;
   dataResource?: string;
   user: { name: string; username: string } | null;
   onGoProfile: () => void;
@@ -31,6 +34,7 @@ type Props = {
 };
 
 export function AdminHeader({
+  accountsPage,
   dataResource,
   user,
   onGoProfile,
@@ -64,10 +68,10 @@ export function AdminHeader({
 
   return (
     <header className="topbar">
-      <button className="hamb" onClick={onToggleSidebar}>
+      <button className="hamb" aria-label="Đóng mở thanh điều hướng" onClick={onToggleSidebar}>
         <Menu />
       </button>
-      {dataResource ? <DataBreadcrumb resource={dataResource} /> : <nav className="crumb" aria-label="Breadcrumb">
+      {accountsPage ? <AccountBreadcrumb {...accountsPage} /> : dataResource ? <DataBreadcrumb resource={dataResource} /> : <nav className="crumb" aria-label="Breadcrumb">
         <Link
           href={getModuleHref("dashboard")}
           onClick={(event) => followModuleLink(event, "dashboard")}

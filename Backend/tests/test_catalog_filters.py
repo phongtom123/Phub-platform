@@ -4,7 +4,7 @@ from decimal import Decimal
 import httpx
 import pytest
 
-from app.catalog.repository import product_color
+from phub_api.services.catalog import product_color
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def filtered_catalog(catalog_client, product_row):
     stocks = [
         {"sku": "SKU1", "ma_kho": 1, "so_luong_ton": 2},
         {"sku": "SKU2", "ma_kho": 1, "so_luong_ton": 2},
-        {"sku": "SKU3", "ma_kho": 3, "so_luong_ton": 99},  # inactive warehouse
+        {"sku": "SKU3", "ma_kho": 3, "so_luong_ton": 99},
         {"sku": "SKU4", "ma_kho": 2, "so_luong_ton": 4},
         {"sku": "SKU5", "ma_kho": 1, "so_luong_ton": -3},
         {"sku": "SKU5", "ma_kho": 2, "so_luong_ton": 1},
@@ -35,8 +35,8 @@ def filtered_catalog(catalog_client, product_row):
         if table == "SAN_PHAM":
             data = list(products)
             assert params["trang_thai"] == "eq.1" and params["category.trang_thai"] == "eq.1"
+            assert params["subcategory.trang_thai"] == "eq.1"
             if "gia_ban_hien_tai" in params:
-                # SDK merges gte/lte filters on the same column into repeated keys.
                 for condition in params.get_list("gia_ban_hien_tai"):
                     op, value = condition.split(".", 1)
                     data = [row for row in data if (Decimal(row["gia_ban_hien_tai"]) >= Decimal(value) if op == "gte" else Decimal(row["gia_ban_hien_tai"]) <= Decimal(value))]
@@ -119,6 +119,6 @@ def test_combined_color_price_stock_and_empty_page_preserve_total(filtered_catal
 
 def test_color_scan_does_not_stop_at_first_supabase_page(filtered_catalog, monkeypatch):
     web, _, _, _ = filtered_catalog
-    monkeypatch.setattr("app.catalog.availability.BATCH_SIZE", 2)
+    monkeypatch.setattr("phub_api.repositories.pagination.BATCH_SIZE", 2)
     body = web.get("/api/catalog/products?color=Đen&page_size=100").json()
     assert [product["id"] for product in body["items"]] == ["P1", "P2", "P5"]

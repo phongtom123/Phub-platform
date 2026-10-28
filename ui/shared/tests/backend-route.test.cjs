@@ -15,13 +15,124 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("draft header gateway forwards only PATCH for receipts/transfers with the original key and Origin", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,origin:options.headers.get("Origin")});return Response.json({data:[]});});
+  for(const resource of ["receipts","transfers"]){
+    assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x?key=%5B-5%5D",{method:"PATCH",headers:{Origin:"http://localhost:3000"},body:'{"ghi_chu":"test"}'}),["admin","warehouse-drafts",resource])).status,200);
+  }
+  assert.equal(calls.length,2);assert.ok(calls.every(call=>call.method==="PATCH"&&call.url.endsWith("?key=%5B-5%5D")&&call.origin==="http://localhost:3000"));
+  for(const [method,resource] of [["POST","receipts"],["DELETE","transfers"],["GET","receipts"],["PATCH","inventory"]]){
+    assert.equal((await proxy(new Request("http://localhost/x",{method}),["admin","warehouse-drafts",resource])).status,404);
+  }
+  assert.equal(calls.length,2);
+});
+
+test("CRM profile and scoped orders pass the gateway; other CRM paths/methods stay closed", async () => {
+  const calls = [];
+  const proxy = gateway(async (url, options) => {
+    calls.push({ url: String(url), method: options.method, origin: options.headers.get("Origin"), cookie: options.headers.get("Cookie") });
+    return Response.json({ ok: true });
+  });
+  for (const [method, segments] of [
+    ["GET", ["crm", "customers", "KH_123"]],
+    ["PATCH", ["crm", "customers", "KH_123"]],
+    ["GET", ["crm", "customers", "KH_123", "orders"]],
+  ]) {
+    const request = new Request("http://localhost:3000/api/backend/x?page=2", { method,
+      headers: { Origin: "http://localhost:3000", Cookie: "other=hidden; phub_session=test" },
+      ...(method === "PATCH" ? { body: JSON.stringify({ ngay_sinh: "2000-02-29" }) } : {}),
+    });
+    assert.equal((await proxy(request, segments)).status, 200);
+  }
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0].url, "http://127.0.0.1:8000/api/crm/customers/KH_123?page=2");
+  assert.equal(calls[1].origin, "http://localhost:3000");
+  assert.equal(calls[1].cookie, "phub_session=test");
+  for (const [method, segments] of [
+    ["DELETE", ["crm", "customers", "KH_123"]], ["POST", ["crm", "customers", "KH_123", "orders"]],
+    ["GET", ["crm", "customers", ".."]], ["GET", ["crm", "customers", "KH/secret"]],
+    ["GET", ["crm", "customers", "%2e%2e"]], ["GET", ["crm", "customers", "KH1", "secret"]],
+  ]) assert.equal((await proxy(new Request("http://localhost/x", { method }), segments)).status, 404);
+  assert.equal(calls.length, 3);
+});
+
+test("support gateway permits only the admin inbox/read/update and customer create/own-read contracts", async () => {
+  const calls = [];
+  const proxy = gateway(async (url, options) => { calls.push([String(url), options.method]); return Response.json({}); });
+  const id = 'a1111111-1111-4111-8111-111111111111';
+  for (const [method, parts] of [
+    ['GET', ['crm','feedback']], ['GET',['crm','feedback',id]], ['PATCH',['crm','feedback',id]],
+    ['GET',['customer','crm','feedback']], ['POST',['customer','crm','feedback']], ['GET',['customer','crm','feedback',id]],
+  ]) {
+    assert.equal((await proxy(new Request('http://localhost/api/backend/x', {method}), parts)).status, 200);
+  }
+  assert.equal(calls.length, 6);
+  for (const [method, parts] of [
+    ['POST',['crm','feedback']], ['DELETE',['crm','feedback',id]], ['PATCH',['customer','crm','feedback',id]],
+    ['GET',['crm','feedback','..']], ['GET',['crm','feedback','%2e%2e']], ['GET',['crm','feedback',id,'secret']],
+  ]) assert.equal((await proxy(new Request('http://localhost/api/backend/x', {method}), parts)).status, 404);
+  assert.equal(calls.length, 6);
+});
+
+test("media upload forwards binary bytes, content type and only the session cookie", async () => {
+  const bytes = Uint8Array.from([137, 80, 78, 71, 0, 255, 128, 1]);
+  const proxy = gateway(async (url, options) => {
+    assert.equal(url.pathname, "/api/admin/media/images");
+    assert.equal(options.headers.get("Content-Type"), "image/png");
+    assert.equal(options.headers.get("Origin"), "http://localhost:3000");
+    assert.equal(options.headers.get("Cookie"), "phub_session=test");
+    assert.equal(options.headers.get("Authorization"), null);
+    assert.deepEqual(Buffer.from(options.body), Buffer.from(bytes));
+    return Response.json({ url: "https://example.test/image.webp" }, { status: 201 });
+  });
+  const response = await proxy(new Request("http://localhost:3000/api/backend/admin/media/images", {
+    method: "POST", headers: { "Content-Type": "image/png", Origin: "http://localhost:3000", Cookie: "other=secret; phub_session=test" }, body: bytes,
+  }), ["admin", "media", "images"]);
+  assert.equal(response.status, 201);
+});
+
+test("media rejects unsupported types, excessive bodies and arbitrary methods/paths before forwarding", async () => {
+  let calls = 0;
+  const proxy = gateway(async () => { calls++; return Response.json({}); });
+  for (const type of ["application/json", "image/svg+xml", "text/html", "multipart/form-data"]) {
+    const request = new Request("http://localhost/upload", { method: "POST", headers: { "Content-Type": type }, body: "fake" });
+    assert.equal((await proxy(request, ["admin", "media", "images"])).status, 415);
+  }
+  const oversized = new Request("http://localhost/upload", { method: "POST", headers: { "Content-Type": "image/png" }, body: new Uint8Array(5 * 1024 * 1024 + 1) });
+  assert.equal((await proxy(oversized, ["admin", "media", "images"])).status, 413);
+  for (const [method, parts] of [["GET", ["admin", "media", "images"]], ["DELETE", ["admin", "media", "images"]], ["POST", ["admin", "media", "images", "extra"]]]) {
+    assert.equal((await proxy(new Request("http://localhost/upload", { method }), parts)).status, 404);
+  }
+  assert.equal(calls, 0);
+});
+
 test("allowlist rejects traversal and arbitrary backend endpoints", async () => {
   let called = false;
   const proxy = gateway(() => { called = true; });
   for (const segments of [["..", "secret"], ["data", "pg_authid"], ["auth", "me", "extra"], ["catalog", "products"]]) {
     assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x"), segments)).status, 404);
   }
+  for (const [method, segments] of [
+    ["GET", ["auth", "login"]], ["GET", ["auth", "register"]],
+    ["POST", ["auth", "me"]], ["GET", ["auth", "logout"]],
+  ]) assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x", { method }), segments)).status, 404);
   assert.equal(called, false);
+});
+
+test("registration is forwarded only through the server gateway", async () => {
+  const proxy = gateway(async (url, options) => {
+    assert.equal(String(url), "http://127.0.0.1:8000/api/auth/register");
+    assert.equal(options.method, "POST");
+    assert.equal(options.headers.get("Origin"), "http://localhost:3001");
+    assert.equal(options.headers.get("Authorization"), null);
+    return Response.json({ role: "KHACH_HANG" }, { status: 201 });
+  });
+  const response = await proxy(new Request("http://localhost:3001/api/backend/auth/register", {
+    method: "POST", headers: { Origin: "http://localhost:3001" },
+    body: JSON.stringify({ username: "customer", password: "customer-password" }),
+  }), ["auth", "register"]);
+  assert.equal(response.status, 201);
 });
 
 test("forwards only session cookie and real Origin; keeps response cookie HttpOnly", async () => {
@@ -122,5 +233,31 @@ test("admin gateway rejects wrong verbs, arbitrary actions and encoded traversal
     ["GET", ["admin", "me", "password"]], ["PATCH", ["admin", "accounts", "TK1", "role"]],
     ["POST", ["admin", "account-owners"]],
   ]) assert.equal((await proxy(new Request("http://localhost:3000/api/backend/x", { method }), segments)).status, 404);
+  assert.equal(calls, 0);
+});
+
+test("customer gateway exposes only authenticated commerce contracts", async () => {
+  const allowed = [
+    ["GET", ["customer", "me"]], ["PUT", ["customer", "me"]],
+    ["POST", ["customer", "checkout", "quote"]],
+    ["GET", ["customer", "orders"]], ["POST", ["customer", "orders"]],
+    ["GET", ["customer", "orders", "ORDER-1"]],
+    ["GET", ["customer", "orders", "ORDER-1", "invoice"]],
+    ["POST", ["orders"]], ["GET", ["orders", "ORDER-1", "payments"]],
+    ["GET", ["orders", "ORDER-1", "transactions"]],
+    ["POST", ["orders", "ORDER-1", "payment-request"]],
+  ];
+  for (const [method, segments] of allowed) {
+    const proxy = gateway(async () => Response.json({ ok: true }));
+    assert.equal((await proxy(new Request("http://localhost:3001/api/backend/x", { method }), segments)).status, 200);
+  }
+
+  let calls = 0;
+  const proxy = gateway(async () => { calls++; return Response.json({}); });
+  for (const [method, segments] of [
+    ["DELETE", ["customer", "me"]], ["GET", ["customer", "checkout", "quote"]],
+    ["GET", ["customer", "orders", ".."]], ["POST", ["customer", "orders", "ORDER-1"]],
+    ["GET", ["orders", "ORDER-1", "payment-request"]], ["GET", ["orders", "ORDER-1", "private"]],
+  ]) assert.equal((await proxy(new Request("http://localhost:3001/api/backend/x", { method }), segments)).status, 404);
   assert.equal(calls, 0);
 });

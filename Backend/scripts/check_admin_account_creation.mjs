@@ -1,4 +1,6 @@
 // Isolated, in-memory PostgreSQL tests. Never accepts a Supabase/database URL.
+// Historical v1 migration contract. Current plaintext/v2 contract is covered by
+// Backend/tests/plaintext-passwords-sql.test.cjs after applying migration history.
 // Install @electric-sql/pglite outside the repo and set PHUB_PGLITE_MODULE
 // to its dist/index.js file URL, or make the package resolvable locally.
 import assert from "node:assert/strict";
@@ -30,7 +32,7 @@ async function failsWithoutWrites(overrides, code, message) {
 
 try {
   await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");
-  await db.exec(await readFile(new URL("../../database/migrations/001_initial_schema.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../migrations/001_initial_schema.sql", import.meta.url), "utf8"));
   const migration = await readFile(new URL("../migrations/20261010_admin_account_creation.sql", import.meta.url), "utf8");
   await db.exec(migration);
   await db.exec(migration);

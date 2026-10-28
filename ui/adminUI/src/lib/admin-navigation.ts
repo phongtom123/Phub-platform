@@ -16,6 +16,7 @@ const moduleKeys: ModuleKey[] = [
   "accounts",
   "promotions",
   "vouchers",
+  "support",
 ];
 
 const sectionToModule: Record<string, ModuleKey> = {
@@ -34,10 +35,12 @@ const sectionToModule: Record<string, ModuleKey> = {
   transfers: "transfers",
   payments: "billing",
   invoices: "billing",
+  support: "support",
 };
 
 export function getModuleHref(moduleKey: ModuleKey) {
   if (moduleKey === "accounts") return "/accounts";
+  if (moduleKey === "support") return "/support";
   return moduleKey === "dashboard" ? "/" : `/?module=${moduleKey}`;
 }
 

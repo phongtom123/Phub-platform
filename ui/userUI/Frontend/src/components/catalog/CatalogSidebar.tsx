@@ -11,19 +11,24 @@ import styles from "./Catalog.module.css";
 
 interface Props {
   draft: CatalogFilters; onChange: (value: CatalogFilters) => void; onApply: () => void; onClear: () => void; onBrand: (brand: string) => void; activeBrand: string;
-  compared: CatalogProduct[]; wished: CatalogProduct[]; onCompare: (product: CatalogProduct) => void; onWish: (product: CatalogProduct) => void; onSelect: (product: CatalogProduct) => void;
+  compared: CatalogProduct[]; wished: CatalogProduct[]; onCompare: (product: CatalogProduct) => void; onWish: (product: CatalogProduct) => void;
   metadata: CatalogController["metadata"]; locale?: "en" | "vi"; filtersOnly?: boolean;
 }
 const logos: Record<string, string> = { msi: "msi", hp: "hp", "hewlett packard": "hp", adata: "adata", gigabyte: "gigabyte", thermaltake: "thermaltake", roccat: "roccat" };
 
-export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, activeBrand, compared, wished, onCompare, onWish, onSelect, metadata, filtersOnly = false }: Props) {
+export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, activeBrand, compared, wished, onCompare, onWish, metadata, filtersOnly = false }: Props) {
   return <>
     <section className={styles.filters} aria-labelledby="filters-heading">
       <div className={styles.filterHeading}><h2 id="filters-heading">Bộ lọc</h2><Button variant="outline" onClick={onClear}>Xóa bộ lọc</Button></div>
       {metadata.loading && <p role="status">Đang tải bộ lọc…</p>}
       {metadata.error && <div role="alert"><p>{metadata.error}</p><Button onClick={metadata.retry}>Thử lại bộ lọc</Button></div>}
       <Accordion title="Danh mục" open className={styles.filterGroup}>
-        {metadata.data.categories.map(option => <FilterOption key={option.id} label={option.label} selected={draft.categories.includes(option.id)} onClick={() => onChange({ ...draft, categories: draft.categories.includes(option.id) ? draft.categories.filter(id => id !== option.id) : [...draft.categories, option.id] })} />)}
+        {metadata.data.categories.map(option => <div key={option.id} className={styles.categoryTree}>
+          <FilterOption label={option.label} selected={draft.categories.includes(option.id)} onClick={() => onChange({ ...draft, categories: draft.categories.includes(option.id) ? draft.categories.filter(id => id !== option.id) : [...draft.categories, option.id] })} />
+          <div className={styles.categoryChildren}>
+            {option.children.map(child => <FilterOption key={child.id} label={child.label} selected={draft.subcategories.includes(child.id)} onClick={() => onChange({ ...draft, subcategories: draft.subcategories.includes(child.id) ? draft.subcategories.filter(id => id !== child.id) : [...draft.subcategories, child.id] })} />)}
+          </div>
+        </div>)}
       </Accordion>
       {["Khoảng giá", "Màu sắc", "Tình trạng tồn kho"].map(title => <Accordion key={title} title={title} className={styles.filterGroup}><FilterOption label="Chưa khả dụng" disabled /></Accordion>)}
       <div className={styles.apply}><Button onClick={onApply} disabled={metadata.loading}>Áp dụng ({filterCount(draft)})</Button></div>
@@ -38,8 +43,8 @@ export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, act
           </button>;
         })}</div>
       </section>
-      <CatalogSelectionPanel locale="vi" title="So sánh sản phẩm" emptyText="Bạn chưa có sản phẩm để so sánh." products={compared} onRemove={onCompare} onSelect={onSelect} />
-      <CatalogSelectionPanel locale="vi" title="Danh sách yêu thích" emptyText="Bạn chưa có sản phẩm yêu thích." products={wished} onRemove={onWish} onSelect={onSelect} />
+      <CatalogSelectionPanel locale="vi" title="So sánh sản phẩm" emptyText="Bạn chưa có sản phẩm để so sánh." products={compared} onRemove={onCompare} />
+      <CatalogSelectionPanel locale="vi" title="Danh sách yêu thích" emptyText="Bạn chưa có sản phẩm yêu thích." products={wished} onRemove={onWish} />
     </>}
   </>;
 }

@@ -13,12 +13,16 @@ const resources = [
   ["customers", "Khách hàng", "ma_kh", "varchar"],
   ["inventory", "Tồn kho", "ma_kho", "int"],
   ["warehouses", "Kho", "ma_kho", "int"],
+  ["employees", "Nhân viên", "ma_nhan_vien", "varchar"],
 ].map(([name, title, key, type]) => ({ name, title, keys: [key], writable: false,
   columns: [{ name: key, type, required: true }, ...(name !== "orders" ? [{ name: "ma_donhang", type: "varchar", required: true }] : [])],
 }));
+resources.find(item => item.name === "orders").columns.push(...[
+  "ma_kh", "ma_nhan_vien", "kenh_ban", "trang_thai", "thoi_gian_dat", "ten_nguoi_nhan", "sdt_nguoi_nhan",
+].map(name => ({ name, type: "varchar", required: false })));
 
 async function main() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, executablePath: process.env.PHUB_CHROME_PATH });
   try {
     const page = await browser.newPage();
     const errors = [], filters = [];
@@ -30,7 +34,7 @@ async function main() {
       if (!url.pathname.startsWith("/api/")) return route.continue();
       assert.equal(request.method(), "GET");
       const respond = body => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
-      if (url.pathname === "/api/backend/auth/me") return respond({ name: "Admin Test", username: "test.admin", role: "ADMIN" });
+      if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", name: "Admin Test", username: "test.admin", role: "ADMIN" });
       if (url.pathname === "/api/backend/data/resources") return respond(resources);
       const name = url.pathname.split("/").pop();
       const meta = resources.find(r => r.name === name);
@@ -38,13 +42,29 @@ async function main() {
       const parent = url.searchParams.get("order_id");
       if (parent) { assert.equal(parent, order); filters.push(name); }
       const key = meta.keys[0], id = meta.columns[0].type === "int" ? -5 : name === "orders" ? order : "INV-1";
-      const row = { [key]: id, ma_donhang: oldBackend ? "ORDER-OTHER" : order };
+      if (["customers", "employees"].includes(name) && url.searchParams.has("key")) {
+        const [personId] = JSON.parse(url.searchParams.get("key"));
+        return respond({ data: [{ [key]: personId, [name === "customers" ? "ten_kh" : "ho_ten"]: name === "customers" ? "Nguyễn Văn Khách" : "Trần Thị Nhân Viên" }] });
+      }
+      const row = { [key]: id, ma_donhang: oldBackend ? "ORDER-OTHER" : order,
+        ...(name === "orders" ? { ma_kh: "CUST-1", ma_nhan_vien: "EMP-1", kenh_ban: "ONLINE", trang_thai: "HOAN_THANH",
+          thoi_gian_dat: "2026-10-25T08:30:00", ten_nguoi_nhan: "Người nhận đơn", sdt_nguoi_nhan: "0901234567" } : {}) };
       const rows = name === "orders" ? [row, { ma_donhang: "ORDER-10" }] : [row];
       return respond({ data: url.searchParams.has("key") ? [row] : rows, total: rows.length, page: Number(url.searchParams.get("page") || 1), page_size: Number(url.searchParams.get("page_size") || 20), ...(parent && !oldBackend ? { order_id: parent } : {}) });
     });
     await page.goto(base);
     await page.getByRole("heading", { name: "Danh sách đơn hàng" }).waitFor();
     await page.locator(".live-table").getByRole("link", { name: order, exact: true }).waitFor();
+    const table = page.locator(".live-table");
+    await table.getByRole("link", { name: "Nguyễn Văn Khách", exact: true }).waitFor();
+    await table.getByRole("link", { name: "Trần Thị Nhân Viên", exact: true }).waitFor();
+    assert.match(await table.innerText(), /Hoàn thành/);
+    assert.match(await table.innerText(), /Trực tuyến/);
+    assert.match(await table.innerText(), /Chưa phân công/);
+    assert.match(await table.innerText(), /Khách vãng lai/);
+    for (const raw of ["CUST-1", "EMP-1", "HOAN_THANH", "2026-10-25T08:30:00", "0901234567", "Người nhận đơn"]) {
+      assert.ok(!(await table.innerText()).includes(raw), `List must not show raw/detail-only value: ${raw}`);
+    }
     assert.equal(await page.getByRole("navigation", { name: "Breadcrumb", exact: true }).count(), 1);
     assert.equal(await page.getByRole("navigation", { name: "Thông tin đơn hàng" }).count(), 0);
     assert.equal(await page.getByRole("navigation", { name: "Bảng liên quan" }).count(), 0);
@@ -55,6 +75,9 @@ async function main() {
     await page.locator(".live-table").getByRole("link", { name: order, exact: true }).click();
     const related = page.getByRole("navigation", { name: "Thông tin đơn hàng" });
     await related.waitFor();
+    await page.locator(".live-field").getByRole("link", { name: "Nguyễn Văn Khách", exact: true }).waitFor();
+    const detailText = await page.locator(".order-detail").innerText();
+    for (const full of ["CUST-1", "EMP-1", "Hoàn thành", "Người nhận đơn", "0901234567"]) assert.ok(detailText.includes(full));
     assert.equal(await related.getByRole("link").count(), 4);
     const detailUrl = page.url();
     for (const resource of resources.slice(1, 5)) {

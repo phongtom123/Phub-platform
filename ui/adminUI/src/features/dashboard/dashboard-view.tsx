@@ -15,6 +15,7 @@ const metrics: { label: string; resource: string; target: ModuleKey }[] = [
 export function DashboardView({ onNavigate }: { onNavigate: (key: ModuleKey) => void }) {
   const data = useDashboardData();
   return <>
+    {data.pollError && <p className="live-error" role="alert">Chưa tự cập nhật được thống kê; đang giữ số liệu lần tải trước. {data.pollError}</p>}
     <div className="metrics">{metrics.map(metric => <article className="metric" key={metric.resource}>
       <button className="metric-link" aria-label={`Mở ${metric.label}`} onClick={() => onNavigate(metric.target)}>↗</button>
       <span>{metric.label}</span><strong>{data.counts[metric.resource]?.toLocaleString("vi-VN") ?? "—"}</strong>

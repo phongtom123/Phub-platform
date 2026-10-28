@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   Building2,
-  ClipboardCheck,
   ChevronDown,
   CreditCard,
   FileInput,
@@ -15,6 +14,7 @@ import {
   ShoppingBag,
   Sparkles,
   TicketPercent,
+  MessageSquare,
   Truck,
   UserCog,
   UserRound,
@@ -49,7 +49,6 @@ const navigation = [
       ["inventory", "Tồn kho", Warehouse],
       ["receipts", "Phiếu nhập", FileInput],
       ["transfers", "Chuyển kho", Waypoints],
-      ["stocktakes", "Kiểm kê", ClipboardCheck],
       ["suppliers", "Nhà cung cấp", Truck],
     ],
   },
@@ -66,6 +65,7 @@ const navigation = [
     items: [
       ["promotions", "Khuyến mãi", Sparkles],
       ["vouchers", "Voucher", TicketPercent],
+      ["support", "Hỗ trợ khách hàng", MessageSquare],
     ],
   },
 ] as const;

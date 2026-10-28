@@ -21,13 +21,13 @@ Nguồn commit: `ui/userUI/Frontend`. Đích: `Frontend`. Bản trong `ui`, Back
 
 | Phần | Cách gộp |
 | --- | --- |
-| `/auth/login` | Lấy form demo của commit vào route trước đây rỗng. Bổ sung thông báo chưa xác thực; submit chỉ chuyển sang Home. |
-| `/auth/register` | Lấy trang placeholder của commit; **chưa phải form đăng ký hoàn chỉnh**. |
+| `/auth/login` | Form gọi gateway/backend thật, tạo cookie HttpOnly và điều hướng theo role. |
+| `/auth/register` | Form khách hàng thật: kiểm tra dữ liệu, gọi API tạo hồ sơ+tài khoản nguyên tử và tự đăng nhập. |
 | `/main/landing` | Alias Home hiện tại, không chép đè bằng storefront cũ. |
 | `/main/product/[id]` | Lấy bố cục detail từ commit, kết nối sản phẩm đúng ID, ảnh và đơn vị tiền của Home/Catalog hiện tại. ID lạ trả not-found, không tự thay bằng sản phẩm đầu tiên. |
 | Legacy product IDs | Giữ dữ liệu `storefront-data.ts` làm fallback cho link PC/linh kiện cũ. Không đưa collection này vào thay thế Home/Catalog. |
 | Xem nhanh | Thêm link `View product details` trong hộp xem nhanh Home và Catalog. |
-| Menu tài khoản | Đổi nút placeholder thành link tới đăng nhập/đăng ký, giữ hình thức menu hiện tại. |
+| Menu tài khoản | Khách chưa đăng nhập thấy login/register; khách đã đăng nhập thấy tên, hồ sơ và đăng xuất. |
 | Quantity / mua hàng | Component UI mẫu, điều chỉnh số lượng và phản hồi tại chỗ; không gọi API, gửi đơn, thu tiền hay đồng bộ giỏ hàng thật. |
 | Type checking | Loại `types/` generated cũ ra khỏi TypeScript/ESLint; Next tự sinh type hợp lệ trong `.next`. Không xóa dữ liệu cũ. |
 
