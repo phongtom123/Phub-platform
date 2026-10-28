@@ -154,7 +154,7 @@ Hai terminal riêng từ thư mục gốc; giữ terminal chạy khi mở trình
 ```powershell
 # Terminal 1
 cd Backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001
+.\.venv\Scripts\python.exe -m uvicorn phub_api.main:app --host 127.0.0.1 --port 8001
 ```
 
 ```powershell

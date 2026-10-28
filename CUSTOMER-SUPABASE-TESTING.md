@@ -125,7 +125,7 @@ Hướng dẫn connection string:
 - `scripts/start-customer.ps1`, `stop-customer.ps1`: thêm `-Mode SupabaseTest`,
   log/PID riêng tại `.customer-runtime`. Dừng/start lại sau sửa backend.
 
-Render vẫn chạy **app.main:app**, không import app test/nhận cookie test.
+Render vẫn chạy **phub_api.main:app**, không import app test/nhận cookie test.
 Đăng nhập thật vẫn cần nhóm nối `require_customer`; không deploy khách cố
 định. Không đổi code admin/kho/auth hoặc tự deploy.
 

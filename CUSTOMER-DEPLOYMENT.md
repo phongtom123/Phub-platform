@@ -124,7 +124,7 @@ Nếu đổi nhánh, cập nhật `branch` ở cả hai service. Tên service c�
 | Type | Web Service, Python | Web Service, Node (có SSR/API proxy) |
 | Root Directory | `Backend` | `ui/userUI/Frontend` |
 | Build | `pip install -r requirements.txt -c constraints-render.txt` | `npm ci --include=dev && npm run build -- --webpack` |
-| Start | `python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT` | `npm run start -- --hostname 0.0.0.0 --port $PORT` |
+| Start | `python -m uvicorn phub_api.main:app --host 0.0.0.0 --port $PORT` | `npm run start -- --hostname 0.0.0.0 --port $PORT` |
 | Health Check Path | `/api/health` | `/api/health` |
 | Runtime version | `PYTHON_VERSION=3.14.6` | `NODE_VERSION=24.21.0` |
 

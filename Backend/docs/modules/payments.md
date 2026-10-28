@@ -14,7 +14,7 @@ giao dịch, hóa đơn, tài khoản, UI đăng nhập, UI admin hay phần kho
 ## Xác thực khách hàng dùng chung
 
 Điểm nối nằm ở `phub_api/dependencies/customer.py`. `require_customer()` phụ thuộc vào
-guard khách hàng trong `phub_api/services/auth.py`, nên dùng cùng cơ chế với admin và thủ kho:
+guard khách hàng trong `phub_api/services/auth.py`, nên dùng cùng cơ chế với admin và nhân viên kho:
 
 - JWT chỉ nằm trong cookie HttpOnly `phub_session`; UI không đọc hoặc lưu token.
 - Backend xác minh chữ ký, issuer, audience, hạn dùng và phiên bản mật khẩu.

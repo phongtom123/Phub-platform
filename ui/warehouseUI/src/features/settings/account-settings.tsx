@@ -19,6 +19,6 @@ export default function AccountSettings({ section }: { section: "account" | "set
     {error && <p role="alert">{error}</p>}
     {!session && !error && <p role="status">Đang tải tài khoản…</p>}
     {session && <dl><dt>Họ tên</dt><dd>{session.name}</dd><dt>Tên đăng nhập</dt><dd>{session.username}</dd><dt>Mã nhân viên</dt><dd>{session.employee_id ?? "Chưa được gán"}</dd><dt>Vai trò</dt><dd>{session.role}</dd><dt>Mã kho được phân công</dt><dd>{session.warehouse_id ?? "Chưa được phân công"}</dd></dl>}
-    <p>Quyền và kho do quản trị viên cấp. Chức năng sửa hồ sơ/mật khẩu cho thủ kho chưa có API riêng.</p>
+    <p>Quyền và kho do quản trị viên cấp. Chức năng sửa hồ sơ/mật khẩu cho nhân viên kho chưa có API riêng.</p>
   </Panel>;
 }

@@ -7,7 +7,8 @@ Phần admin mới được phát triển từ main `a96294f`, chuẩn bị trê
 
 ## Kết quả đã xác nhận
 
-- 1.038 pytest đạt trên bản xuất mã sạch, bao gồm kiểm tra kiến trúc 3 lớp.
+- 1.037 pytest đạt trên bản xuất mã sạch sau khi đồng bộ main và bỏ chuyển kho,
+  bao gồm kiểm tra kiến trúc 3 lớp.
 - 84 test Node admin/gateway đạt. TypeScript và production build đạt.
 - PostgreSQL thật, database test riêng: nhập/chuyển/xuất kho, hóa đơn, thu/hoàn,
   kiểm kê, idempotency, rollback, voucher không tái dùng sau hủy, RLS/quyền và

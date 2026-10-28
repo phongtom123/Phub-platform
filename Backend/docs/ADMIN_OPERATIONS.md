@@ -1,6 +1,6 @@
 # Vận hành quản trị
 
-Triển khai trên nhánh `feat/admin-operations`, từ `main` a96294f. Migration đã cài
+Triển khai trên nhánh `feat/backend-middleware-api`, đã đồng bộ main d6d7781. Migration đã cài
 trên Supabase ngày 28/10/2026; backend/UI mới chưa deploy Render. Không có API
 DELETE hoặc sửa trực tiếp tiền/tồn.
 
