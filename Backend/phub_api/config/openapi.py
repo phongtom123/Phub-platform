@@ -89,7 +89,7 @@ NOTES = {
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau.",
     "employees": "Role ADMIN yêu cầu ma_kho=null; NHAN_VIEN yêu cầu ma_kho của một kho tồn tại.",
     "products": "Ảnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
-    "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
+    "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
     "vouchers": "ma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
 }
 
@@ -115,6 +115,8 @@ def row_schema(name: str) -> dict:
             prop["format"] = "date-time"
         if kind == "date":
             prop["format"] = "date"
+        if kind == "uuid":
+            prop["format"] = "uuid"
         if kind.startswith("decimal"):
             prop["pattern"] = r"^-?\d+(\.\d{1,2})?$"
             description += " · chuỗi decimal, không phải JSON number"

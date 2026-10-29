@@ -15,6 +15,13 @@ class UploadedImage(BaseModel):
     height: int
 
 
+class StoredImage(BaseModel):
+    media_id: UUID
+    url: str
+    width: int | None = None
+    height: int | None = None
+
+
 class GalleryItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
     media_id: UUID | None = None

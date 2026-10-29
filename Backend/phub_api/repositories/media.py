@@ -44,3 +44,7 @@ class MediaRepository:
             "p_expected_ids": values["expected_ids"],
             "p_expected_legacy_url": values["expected_legacy_url"],
         }).execute().data
+
+    def image(self, media_id: str) -> list[dict]:
+        return (self.client.table("MEDIA").select("ma_media,url,chieu_rong,chieu_cao")
+                .eq("ma_media", media_id).limit(1).execute().data)

@@ -8,7 +8,6 @@ import {
   ChevronRight,
   LogOut,
   Menu,
-  Search,
   Settings,
   UserRound,
   X,
@@ -18,7 +17,7 @@ import { getModuleHref } from "@/src/lib/admin-navigation";
 import { DataBreadcrumb } from "./data-breadcrumb";
 import { AccountBreadcrumb } from "./account-breadcrumb";
 import type { AccountView } from "@/src/features/accounts/types";
-import { GlobalSearch, NotificationFeed } from "@/src/features/operations/header-tools";
+import { NotificationFeed } from "@/src/features/operations/header-tools";
 
 type Props = {
   accountsPage?: AccountView;
@@ -90,7 +89,6 @@ export function AdminHeader({
         </Link>
       </nav>}
       <div className="top-actions">
-        <GlobalSearch />
         <div className="header-popup-wrap">
           <button
             className={`bell ${panel === "notifications" ? "pressed" : ""}`}

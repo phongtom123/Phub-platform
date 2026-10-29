@@ -356,6 +356,7 @@ Table CHUONG_TRINH_KHUYEN_MAI {
   ma_ctkm int [pk, increment]
   ten_chuong_trinh varchar [not null]
   mo_ta text
+  ma_media_banner uuid [note: 'Mot banner tuy chon, lien ket MEDIA; NULL neu chua co banner']
 
   ngay_bat_dau datetime [not null]
   ngay_ket_thuc datetime [not null]
@@ -440,6 +441,7 @@ Ref: SAN_PHAM.ma_loai_sp > LOAI_SP.ma_loai_sp
 Ref: LOAI_SP_CON.ma_loai_sp > LOAI_SP.ma_loai_sp
 Ref: SAN_PHAM.(ma_loai_sp, ma_loai_sp_con) > LOAI_SP_CON.(ma_loai_sp, ma_loai_sp_con)
 Ref: MEDIA.ma_sp > SAN_PHAM.ma_sp
+Ref: CHUONG_TRINH_KHUYEN_MAI.ma_media_banner > MEDIA.ma_media
 Ref: TON_KHO.ma_kho > KHO.ma_kho
 Ref: TON_KHO.sku > SAN_PHAM.sku
 
