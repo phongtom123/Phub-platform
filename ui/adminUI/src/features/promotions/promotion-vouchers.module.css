@@ -1,0 +1,14 @@
+.card { min-width: 0; margin-top: 24px; padding: 24px; border: 1px solid #e0e5dc; border-radius: 10px; background: #fff; }
+.header, .actions, .pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.header { justify-content: space-between; margin-bottom: 16px; }
+.header h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 20px; }
+.header p { margin: 0; color: #6f7969; font-size: 14px; }
+.actions a { display: inline-flex; align-items: center; gap: 6px; }
+.status { display: inline-block; padding: 5px 10px; border-radius: 20px; background: #f1f2ef; color: #596151; font-size: 14px; }
+.active { background: #edf8e9; color: #267313; }
+.muted { display: block; margin-top: 5px; color: #6f7969; font-size: 13px; }
+.empty { padding: 24px 16px; border: 1px dashed #dce4d7; border-radius: 8px; text-align: center; }
+.empty p { margin: 0 0 8px; }
+.pagination { justify-content: flex-end; margin-top: 16px; font-size: 14px; }
+.pagination span { margin-right: auto; }
+@media (max-width: 560px) { .card { padding: 18px; } }

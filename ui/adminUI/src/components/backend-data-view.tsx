@@ -9,6 +9,7 @@ import { dataHref, orderChildren } from "@/src/lib/data-navigation";
 import { ProductGalleryEditor, type GalleryEditorHandle } from "@/src/features/forms/product-gallery-editor";
 import { ProductGalleryPreview } from "@/src/features/forms/product-gallery-preview";
 import { PromotionBannerEditor, PromotionBannerPreview, type BannerEditorHandle } from "@/src/features/forms/promotion-banner";
+import { PromotionVouchers } from "@/src/features/promotions/promotion-vouchers";
 import { InlineDataTable } from "@/src/features/tables/inline-data-table";
 import { ScrollableTable } from "@/src/features/tables/scrollable-table";
 import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
@@ -170,7 +171,11 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       setMeta(metadata);
       if (view.create) {
         if (!metadata.writable) throw new Error("Bảng này chưa hỗ trợ tạo trực tiếp.");
-        setValues(Object.fromEntries(metadata.columns.filter(c => !c.generated).map(c => [c.name, String(c.default ?? "")])));
+        const defaults = Object.fromEntries(metadata.columns.filter(c => !c.generated).map(c => [c.name, String(c.default ?? "")]));
+        // A voucher created from a promotion's related card starts in that promotion.
+        const promotion = filters.ma_ctkm;
+        if (resource === "vouchers" && promotion != null && /^-?\d+$/.test(String(promotion)) && Number.isSafeInteger(Number(promotion))) defaults.ma_ctkm = String(promotion);
+        setValues(defaults);
         return;
       }
       const params = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
@@ -308,7 +313,8 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {resource === "products" && ["receipt-lines", "receipts", "suppliers"].every(name => available.some(item => item.name === name)) &&
           <ProductSuppliers key={`suppliers:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} />}
         {resource === "inventory" && <StockHistory sku={String(result.data[0].sku)} />}
-        {!["orders", "invoices", "categories"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], promotions: ["vouchers"], vouchers: ["voucher-uses"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={relatedHref(item.name)}>{item.title}</Link>)}</nav>}
+        {resource === "promotions" && available.some(item => item.name === "vouchers") && <PromotionVouchers key={`vouchers:${result.data[0].ma_ctkm}`} promotionId={Number(result.data[0].ma_ctkm)} writable={Boolean(available.find(item => item.name === "vouchers")?.writable)} />}
+        {!["orders", "invoices", "categories", "promotions"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], vouchers: ["voucher-uses"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={relatedHref(item.name)}>{item.title}</Link>)}</nav>}
       </> : <>
         {["invoices", "payments"].includes(resource) && <nav className="live-tools" aria-label="Hóa đơn và thanh toán"><Link href={dataHref("invoices")}>Hóa đơn</Link><Link href={dataHref("payments")}>Giao dịch thanh toán</Link></nav>}
         <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : "+ Lập phiếu nhập"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
