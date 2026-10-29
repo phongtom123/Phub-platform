@@ -8,6 +8,7 @@ import { useAdminPolling } from "@/src/lib/use-admin-polling";
 import { dataHref, orderChildren } from "@/src/lib/data-navigation";
 import { ProductGalleryEditor, type GalleryEditorHandle } from "@/src/features/forms/product-gallery-editor";
 import { ProductGalleryPreview } from "@/src/features/forms/product-gallery-preview";
+import { PromotionBannerEditor, PromotionBannerPreview, type BannerEditorHandle } from "@/src/features/forms/promotion-banner";
 import { InlineDataTable } from "@/src/features/tables/inline-data-table";
 import { ScrollableTable } from "@/src/features/tables/scrollable-table";
 import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
@@ -32,6 +33,7 @@ type Page = { data: Row[]; total: number; page: number; page_size: number; order
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
 
 const labels: Record<string, string> = {
+  ma_media_banner: "Banner khuyến mãi",
   ma_kho: "Mã kho", ten_kho: "Tên kho", dia_chi: "Địa chỉ", trang_thai: "Trạng thái",
   ma_sp: "Mã sản phẩm", sku: "SKU", ten_sp: "Tên sản phẩm", ma_loai_sp: "Mã loại sản phẩm", ma_loai_sp_con: "Mã loại sản phẩm con", ten_loai_sp: "Tên loại sản phẩm",
   thuong_hieu: "Thương hiệu", gia_ban_hien_tai: "Giá bán", mo_ta: "Mô tả", thong_so_ky_thuat: "Thông số kỹ thuật",
@@ -119,6 +121,8 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const galleryEditor = useRef<GalleryEditorHandle | null>(null);
   const [galleryDirty, setGalleryDirty] = useState(false);
   const [galleryReady, setGalleryReady] = useState(false);
+  const bannerEditor = useRef<BannerEditorHandle | null>(null);
+  const [bannerDirty, setBannerDirty] = useState(false);
   const [uploading, setUploading] = useState(false);
   const saveController = useRef<AbortController | null>(null);
   const reuseSavedRoute = useRef<string | null>(null);
@@ -147,7 +151,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     saveController.current?.abort(); saveController.current = null;
     setSaving(false); setUploading(false);
     setPage(1); setQuery(""); setSearch("");
-    setGalleryDirty(false); setGalleryReady(false); setSaveError("");
+    setGalleryDirty(false); setGalleryReady(false); setBannerDirty(false); setSaveError("");
   }, [routeIdentity]);
 
   useEffect(() => {
@@ -218,6 +222,12 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         data[column.name] = column.type === "int" ? Number(value) : column.type === "datetime" ? new Date(value).toISOString() : value;
       }
       if (resource === "accounts" && values.password) data.password = values.password;
+      if (resource === "promotions" && bannerDirty) {
+        if (!bannerEditor.current) throw new Error("Banner chưa sẵn sàng. Hãy thử lại.");
+        setUploading(true);
+        data.ma_media_banner = await bannerEditor.current.prepare(controller.signal);
+        if (controller.signal.aborted) return;
+      }
       if (!Object.keys(data).length && !galleryDirty) throw new Error("Chưa có thay đổi.");
       const saved = Object.keys(data).length ? await api<{ data: Row[] }>((draftPath ? draftPath.slice(5) : "data/" + resource) + (recordKey ? "?key=" + encodeURIComponent(recordKey) : ""), {
         method: creating ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data), signal: controller.signal,
@@ -266,7 +276,9 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         <fieldset disabled={saving} className="live-form-fields">
         {resource === "products" && <ProductGalleryEditor ref={galleryEditor} productId={result?.data[0]?.ma_sp ? String(result.data[0].ma_sp) : undefined}
           disabled={saving} onDirty={setGalleryDirty} onReady={setGalleryReady} />}
-        {formColumns.map(column => <label key={column.name}>{label(column.name)}{column.required && " *"}
+        {resource === "promotions" && !formColumns.some(column => column.name === "ma_media_banner") && <p className="live-note image-save-error">Cần deploy backend mới để hỗ trợ banner khuyến mãi.</p>}
+        {formColumns.map(column => resource === "promotions" && column.name === "ma_media_banner" ? <PromotionBannerEditor key={`${routeIdentity}:banner`} ref={bannerEditor}
+          value={values.ma_media_banner ?? ""} disabled={saving} onChange={id => change("ma_media_banner", id)} onDirty={setBannerDirty} /> : <label key={column.name}>{label(column.name)}{column.required && " *"}
           {column.name === "trang_thai" && column.type === "int" ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}>
             <option value="">Chọn trạng thái</option>{[1, 2, 0].map(value => <option key={value} value={value}>{inlineStatusLabels[value]}</option>)}
           </select> : column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice} value={choice}>{inlineChoiceLabel(column.name, choice)}</option>)}</select>
@@ -280,6 +292,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         <div className="live-form-actions"><button className="live-primary" disabled={saving || (resource === "products" && (!galleryReady || ((!view.create || persistedKey.current !== null) && !galleryDirty && !dirty.length)))}>{uploading ? "Đang lưu ảnh…" : saving ? "Đang lưu…" : "Lưu dữ liệu"}</button>{!saving && <Link href={dataHref(resource, { key: persistedKey.current ?? view.key, orderId: view.orderId })}>Hủy</Link>}</div>
       </form> : view.key && result?.data[0] ? <>
         {["orders", "receipts", "inventory"].includes(resource) && <OperationPanel key={`${resource}:${view.key}`} resource={resource} row={result.data[0]} onChanged={refresh} onEditingChange={setInlineEditing} />}
+        {resource === "promotions" && <PromotionBannerPreview mediaId={String(result.data[0].ma_media_banner ?? "")} name={String(result.data[0].ten_chuong_trinh ?? "")} />}
         <div className={resource === "products" ? "product-detail-layout" : undefined}>
         {resource === "products" && <ProductGalleryPreview key={String(result.data[0].ma_sp)} productId={String(result.data[0].ma_sp)}
           legacyUrl={String(result.data[0].duong_dan_anh ?? "")} name={String(result.data[0].ten_sp ?? "")} />}
@@ -288,7 +301,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         : resource === "invoices" ? <InvoiceDetail row={result.data[0]} columns={meta.columns} label={label} />
         : resource === "categories" ? <CategoryDetail row={result.data[0]} columns={meta.columns} label={label}
           related={available.filter(item => ["subcategories", "products"].includes(item.name))} />
-        : <div className="live-form">{meta.columns.map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{displayValue(result.data[0], column)}</div>)}</div>}
+        : <div className="live-form">{meta.columns.filter(column => !(resource === "promotions" && column.name === "ma_media_banner")).map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{displayValue(result.data[0], column)}</div>)}</div>}
         </div>
         {resource === "products" && available.some(item => item.name === "inventory") && <ProductStock
           key={`stock:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} unit={String(result.data[0].don_vi ?? "")} />}

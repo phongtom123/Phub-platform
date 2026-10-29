@@ -10,7 +10,7 @@ from postgrest.exceptions import APIError
 from storage3.utils import StorageException
 
 from phub_api.repositories.media import MediaRepository
-from phub_api.schemas.media import GalleryUpdate, ProductGallery, UploadedImage
+from phub_api.schemas.media import GalleryUpdate, ProductGallery, StoredImage, UploadedImage
 
 logger = logging.getLogger(__name__)
 MAX_BYTES = 5 * 1024 * 1024
@@ -81,6 +81,16 @@ class MediaService:
 
     def store_image(self, data: bytes, content_type: str) -> UploadedImage:
         return store_image(data, content_type, self.repository)
+
+    def store_banner(self, data: bytes, content_type: str) -> UploadedImage:
+        return store_image(data, content_type, self.repository, "promotions")
+
+    def image(self, media_id: str) -> StoredImage:
+        rows = self.repository.image(media_id)
+        if not rows:
+            raise HTTPException(404, "Không tìm thấy hình ảnh.")
+        row = rows[0]
+        return StoredImage(media_id=row["ma_media"], url=row["url"], width=row.get("chieu_rong"), height=row.get("chieu_cao"))
 
     def gallery(self, product_id: str) -> ProductGallery:
         try:

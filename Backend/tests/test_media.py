@@ -51,7 +51,10 @@ def media_client(monkeypatch):
         def __init__(self, table, operation, values=None):
             self.table, self.operation, self.values, self.filters = table, operation, values, {}
         def eq(self, field, value): self.filters[field] = value; return self
+        def limit(self, count): assert count == 1; return self
         def execute(self):
+            if self.table == "MEDIA" and self.operation == "select":
+                return SimpleNamespace(data=[row for row in state["media"] if row["ma_media"] == self.filters["ma_media"]][:1])
             if self.table == "MEDIA" and self.operation == "insert":
                 row = {"ma_media": "00000000-0000-0000-0000-000000000001", **self.values}
                 state["media"].append(row)
@@ -64,6 +67,9 @@ def media_client(monkeypatch):
         def __init__(self, name): self.name = name
         def insert(self, values): return Query(self.name, "insert", values)
         def update(self, values): return Query(self.name, "update", values)
+        def select(self, fields):
+            assert fields == "ma_media,url,chieu_rong,chieu_cao"
+            return Query(self.name, "select")
     class Database:
         storage = Storage()
         def table(self, name):
@@ -97,6 +103,39 @@ def test_upload_normalizes_and_strips_metadata(media_client, kind, mime):
     assert body["size"] == len(upload["file"])
     assert state["media"][0]["storage_path"] == body["path"]
     assert response.headers["cache-control"] == "no-store"
+
+
+def test_promotion_banner_upload_and_read(media_client):
+    client, state, _ = media_client
+    response = client.post("/api/admin/media/images?purpose=promotion_banner", content=image_bytes(),
+                           headers={**ORIGIN, "Content-Type": "image/png"})
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert re.fullmatch(r"promotions/[0-9a-f]{32}\.webp", body["path"])
+    image = client.get(f'/api/admin/media/images/{body["media_id"]}')
+    assert image.status_code == 200, image.text
+    assert image.json() == {"media_id": body["media_id"], "url": body["url"], "width": 8, "height": 6}
+    assert image.headers["cache-control"] == "no-store"
+    assert client.get("/api/admin/media/images/not-a-uuid").status_code == 422
+    assert client.get("/api/admin/media/images/00000000-0000-0000-0000-000000000002").status_code == 404
+    state["role"] = "KHACH_HANG"
+    assert client.get(f'/api/admin/media/images/{body["media_id"]}').status_code == 403
+
+
+def test_promotion_banner_payload_and_invalid_purpose(media_client):
+    from fastapi import HTTPException
+    from phub_api.services.tables import read_payload
+
+    media_id = "00000000-0000-0000-0000-000000000001"
+    assert read_payload({"ma_media_banner": media_id}, "promotions", True) == {"ma_media_banner": media_id}
+    assert read_payload({"ma_media_banner": None}, "promotions", True) == {"ma_media_banner": None}
+    with pytest.raises(HTTPException) as exc:
+        read_payload({"ma_media_banner": "not-a-uuid"}, "promotions", True)
+    assert exc.value.status_code == 422
+    client, state, _ = media_client
+    response = client.post("/api/admin/media/images?purpose=other", content=image_bytes(),
+                           headers={**ORIGIN, "Content-Type": "image/png"})
+    assert response.status_code == 422 and not state["uploads"]
 
 
 @pytest.mark.parametrize("role", ["NHAN_VIEN", "KHACH_HANG"])

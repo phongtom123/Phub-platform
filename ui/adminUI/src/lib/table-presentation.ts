@@ -5,7 +5,7 @@ const hiddenColumns: Record<string, string[]> = {
   products: ["mo_ta", "duong_dan_anh"],
   invoices: ["tong_tien_giam"],
   receipts: ["ghi_chu"], transfers: ["ghi_chu"],
-  promotions: ["ngay_tao"], vouchers: ["ngay_tao"],
+  promotions: ["ngay_tao", "ma_media_banner"], vouchers: ["ngay_tao"],
 };
 
 export function listDataColumns(resource: string, columns: DataColumn[]): DataColumn[] {

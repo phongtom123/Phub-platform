@@ -476,6 +476,7 @@
       "CHUONG_TRINH_KHUYEN_MAICreate": {
         "additionalProperties": false,
         "example": {
+          "ma_media_banner": null,
           "mo_ta": "Nội dung minh họa",
           "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
           "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -483,6 +484,20 @@
           "trang_thai": "NHAP"
         },
         "properties": {
+          "ma_media_banner": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ma_media_banner",
+            "title": "Ma Media Banner"
+          },
           "mo_ta": {
             "anyOf": [
               {
@@ -575,6 +590,7 @@
         "additionalProperties": false,
         "example": {
           "ma_ctkm": 1,
+          "ma_media_banner": null,
           "mo_ta": "Nội dung minh họa",
           "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
           "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -587,6 +603,18 @@
           "ma_ctkm": {
             "description": "ma_ctkm · database tự sinh",
             "type": "integer"
+          },
+          "ma_media_banner": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_media_banner"
           },
           "mo_ta": {
             "anyOf": [
@@ -631,6 +659,7 @@
           "ma_ctkm",
           "ten_chuong_trinh",
           "mo_ta",
+          "ma_media_banner",
           "ngay_bat_dau",
           "ngay_ket_thuc",
           "trang_thai",
@@ -663,6 +692,19 @@
         },
         "minProperties": 1,
         "properties": {
+          "ma_media_banner": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_media_banner",
+            "title": "Ma Media Banner"
+          },
           "mo_ta": {
             "anyOf": [
               {
@@ -6303,6 +6345,47 @@
         "title": "StockStatus",
         "type": "string"
       },
+      "StoredImage": {
+        "properties": {
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "media_id": {
+            "format": "uuid",
+            "title": "Media Id",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "media_id",
+          "url"
+        ],
+        "title": "StoredImage",
+        "type": "object"
+      },
       "StoredLine": {
         "additionalProperties": false,
         "properties": {
@@ -6517,6 +6600,7 @@
           "ma_media_anh_dai_dien": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
@@ -9239,6 +9323,20 @@
         "operationId": "upload_image_api_admin_media_images_post",
         "parameters": [
           {
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "default": "product",
+              "enum": [
+                "product",
+                "promotion_banner"
+              ],
+              "title": "Purpose",
+              "type": "string"
+            }
+          },
+          {
             "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
             "example": "http://localhost:8000",
             "in": "header",
@@ -9381,7 +9479,113 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Tải ảnh sản phẩm lên Supabase Storage (ADMIN)",
+        "summary": "Tải ảnh sản phẩm hoặc banner khuyến mãi lên Storage (ADMIN)",
+        "tags": [
+          "Admin · Hình ảnh"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/media/images/{media_id}": {
+      "get": {
+        "operationId": "read_image_api_admin_media_images__media_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "media_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Media Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredImage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Đọc thông tin ảnh media (ADMIN)",
         "tags": [
           "Admin · Hình ảnh"
         ],
@@ -17434,7 +17638,7 @@
     },
     "/api/data/promotions": {
       "get": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "get_promotions",
         "parameters": [
           {
@@ -17524,6 +17728,7 @@
                   "data": [
                     {
                       "ma_ctkm": 1,
+                      "ma_media_banner": null,
                       "mo_ta": "Nội dung minh họa",
                       "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                       "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -17637,7 +17842,7 @@
         "x-table": "CHUONG_TRINH_KHUYEN_MAI"
       },
       "patch": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "patch_promotions",
         "parameters": [
           {
@@ -17695,6 +17900,7 @@
                   "data": [
                     {
                       "ma_ctkm": 1,
+                      "ma_media_banner": null,
                       "mo_ta": "Nội dung minh họa",
                       "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                       "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -17831,7 +18037,7 @@
         "x-table": "CHUONG_TRINH_KHUYEN_MAI"
       },
       "post": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "post_promotions",
         "parameters": [
           {
@@ -17853,6 +18059,7 @@
                 "illustration": {
                   "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
                   "value": {
+                    "ma_media_banner": null,
                     "mo_ta": "Nội dung minh họa",
                     "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                     "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -17876,6 +18083,7 @@
                   "data": [
                     {
                       "ma_ctkm": 1,
+                      "ma_media_banner": null,
                       "mo_ta": "Nội dung minh họa",
                       "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                       "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
