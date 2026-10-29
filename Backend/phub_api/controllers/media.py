@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from starlette.concurrency import run_in_threadpool
 
 from phub_api.dependencies.auth import require_admin, require_customer_user
 from phub_api.dependencies.media import get_service
 from phub_api.dependencies.origin import check_origin
 from phub_api.schemas.api_contracts import READ_ERRORS, error_response
-from phub_api.schemas.media import UploadedImage
+from phub_api.schemas.media import GalleryUpdate, ProductGallery, UploadedImage
 from phub_api.services import media
 from phub_api.services.media import MIME_FORMATS
 
@@ -13,6 +15,26 @@ from phub_api.services.media import MIME_FORMATS
 customer_router = APIRouter(prefix="/api/customer", tags=["Customer Shopping"])
 
 router = APIRouter(prefix="/api/admin/media", tags=["Admin · Hình ảnh"])
+
+ProductId = Annotated[str, Path(min_length=1, max_length=200)]
+
+
+@router.get("/products/{product_id}/images", response_model=ProductGallery,
+            summary="Xem toàn bộ ảnh sản phẩm (ADMIN)", responses=READ_ERRORS)
+def product_gallery(product_id: ProductId, response: Response, user=Depends(require_admin),
+                    service: media.MediaService = Depends(get_service)):
+    response.headers["Cache-Control"] = "no-store"
+    return service.gallery(product_id)
+
+
+@router.put("/products/{product_id}/images", response_model=ProductGallery,
+            summary="Lưu gallery; ảnh đầu tiên là ảnh chính (ADMIN)",
+            responses={**READ_ERRORS, 409: error_response(409, "Gallery đã được sửa bởi yêu cầu khác; tải lại trước khi lưu.")})
+def save_product_gallery(product_id: ProductId, body: GalleryUpdate, request: Request, response: Response,
+                         user=Depends(require_admin), service: media.MediaService = Depends(get_service)):
+    check_origin(request)
+    response.headers["Cache-Control"] = "no-store"
+    return service.save_gallery(product_id, body)
 
 @router.post("/images", status_code=201, response_model=UploadedImage,
              summary="Tải ảnh sản phẩm lên Supabase Storage (ADMIN)",

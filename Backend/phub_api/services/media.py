@@ -10,7 +10,7 @@ from postgrest.exceptions import APIError
 from storage3.utils import StorageException
 
 from phub_api.repositories.media import MediaRepository
-from phub_api.schemas.media import UploadedImage
+from phub_api.schemas.media import GalleryUpdate, ProductGallery, UploadedImage
 
 logger = logging.getLogger(__name__)
 MAX_BYTES = 5 * 1024 * 1024
@@ -81,6 +81,38 @@ class MediaService:
 
     def store_image(self, data: bytes, content_type: str) -> UploadedImage:
         return store_image(data, content_type, self.repository)
+
+    def gallery(self, product_id: str) -> ProductGallery:
+        try:
+            rows = self.repository.product_gallery(product_id)
+        except APIError as exc:
+            if str(exc.code) in {"PGRST200", "42P01", "42703"}:
+                raise HTTPException(503, "Chưa có cấu trúc MEDIA. Cần chạy migration shared_media.") from None
+            raise
+        if not rows:
+            raise HTTPException(404, "Không tìm thấy sản phẩm.")
+        row = rows[0]
+        images = sorted(row.get("images") or [], key=lambda image: (
+            not bool(image["la_anh_chinh"]), image["thu_tu"], str(image["ma_media"])))
+        return ProductGallery(product_id=row["ma_sp"], legacy_url=row.get("duong_dan_anh"), images=[{
+            "media_id": image["ma_media"], "url": image["url"], "alt_text": image.get("alt_text"),
+            "position": image["thu_tu"], "primary": image["la_anh_chinh"],
+        } for image in images])
+
+    def save_gallery(self, product_id: str, body: GalleryUpdate) -> ProductGallery:
+        try:
+            result = self.repository.save_gallery(product_id, body.model_dump(mode="json"))
+        except APIError as exc:
+            if str(exc.code) == "PGRST202":
+                raise HTTPException(503, "Backend/database chưa hỗ trợ lưu nhiều ảnh. Cần chạy migration product_gallery.") from None
+            if str(exc.code) == "PT404":
+                raise HTTPException(404, "Không tìm thấy sản phẩm.") from None
+            if str(exc.code) == "PT409":
+                raise HTTPException(409, "Gallery đã thay đổi ở nơi khác. Hãy tải lại ảnh trước khi lưu.") from None
+            if str(exc.code) == "PT422":
+                raise HTTPException(422, "Ảnh bị trùng, không tồn tại, là avatar hoặc thuộc sản phẩm khác.") from None
+            raise
+        return ProductGallery.model_validate(result)
 
     def store_avatar(self, data: bytes, content_type: str, account_id: str) -> UploadedImage:
         uploaded = store_image(data, content_type, self.repository, "avatars")
