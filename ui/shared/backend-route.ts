@@ -30,6 +30,12 @@ const resources = new Set([
   "order-lines", "invoices", "payments", "promotions", "vouchers", "voucher-uses",
 ]);
 
+function validProductId(value: string | undefined): boolean {
+  return Boolean(value && value.trim() && [...value].length <= 200 &&
+    !/[\/\\\u0000-\u001f\u007f]/.test(value) &&
+    !/^(?:\.|%2e){1,2}$/i.test(value));
+}
+
 function validAdminPath(path: string[], method: string): boolean {
   if (path[0] !== "admin") return false;
   if (path[1] === "operations") {
@@ -40,7 +46,7 @@ function validAdminPath(path: string[], method: string): boolean {
   if (path.length === 3 && path[1] === "media" && path[2] === "images") return method === "POST";
   if (path.length === 4 && path[1] === "media" && path[2] === "images" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3])) return method === "GET";
   if (path.length === 5 && path[1] === "media" && path[2] === "products" && path[4] === "images") {
-    return Boolean(path[3] && /^[A-Za-z0-9_.-]{1,200}$/.test(path[3]) && ![".", ".."].includes(path[3])) && ["GET", "PUT"].includes(method);
+    return validProductId(path[3]) && ["GET", "PUT"].includes(method);
   }
   if (path.length === 2) {
     return (path[1] === "accounts" && ["GET", "POST"].includes(method)) ||
@@ -86,8 +92,18 @@ function validCustomerPath(path: string[], method: string): boolean {
 
 function validAuthPath(path: string[], method: string): boolean {
   if (path.length !== 2 || path[0] !== "auth") return false;
-  if (["login", "register", "logout"].includes(path[1])) return method === "POST";
+  if (["login", "register", "logout", "handoff"].includes(path[1])) return method === "POST";
   return path[1] === "me" && method === "GET";
+}
+
+function validWarehousePath(path: string[], method: string): boolean {
+  if (path[0] !== "warehouse") return false;
+  if (path.length === 2 && path[1] === "history") return method === "GET";
+  if (path[1] !== "receipts") return false;
+  if (path.length === 2) return ["GET", "POST"].includes(method);
+  if (!/^-?(0|[1-9]\d*)$/.test(path[2] ?? "") || !Number.isSafeInteger(Number(path[2])) || Number(path[2]) < -(2 ** 31) || Number(path[2]) > 2 ** 31 - 1) return false;
+  if (path.length === 3) return ["GET", "PATCH"].includes(method);
+  return path.length === 4 && ["confirm", "cancel"].includes(path[3]) && method === "POST";
 }
 
 function validCrmPath(path: string[], method: string): boolean {
@@ -104,13 +120,13 @@ function validCrmPath(path: string[], method: string): boolean {
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {
   const { path } = await context.params;
   const valid = validAdminPath(path, request.method) || validCustomerPath(path, request.method) || validCrmPath(path, request.method) ||
-    validAuthPath(path, request.method) ||
+    validAuthPath(path, request.method) || validWarehousePath(path, request.method) ||
     (path.length === 2 && path[0] === "data" && resources.has(path[1]));
   if (!valid) return Response.json({ detail: "Endpoint không tồn tại." }, { status: 404 });
   try {
     const base = new URL(process.env.PHUB_API_BASE_URL || "http://127.0.0.1:8000");
     if (!["http:", "https:"].includes(base.protocol)) throw new Error("Invalid backend URL");
-    const url = new URL(`${base.pathname.replace(/\/$/, "")}/api/${path.join("/")}`, base.origin);
+    const url = new URL(`${base.pathname.replace(/\/$/, "")}/api/${path.map(encodeURIComponent).join("/")}`, base.origin);
     url.search = new URL(request.url).search;
     const headers = new Headers({ Accept: "application/json" });
     const cookie = request.headers.get("cookie")?.split(";").map(item => item.trim()).find(item => item.startsWith("phub_session="));

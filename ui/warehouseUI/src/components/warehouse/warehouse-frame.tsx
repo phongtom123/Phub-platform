@@ -33,7 +33,7 @@ export default function WarehouseFrame({ children }: { children: ReactNode }) {
   const logout = async () => {
     try { await logoutSession(); }
     catch { window.alert("Không đăng xuất được. Thử lại sau."); return; }
-    window.location.assign(adminLoginUrl);
+    window.location.assign(new URL("/auth/logout", adminLoginUrl).href);
   };
   return <div className="app-shell"><Sidebar user={user} onLogout={logout} /><div className="main-shell"><Header user={user} /><main className="main-content">{children}<footer className="app-footer">PHUB Warehouse · Dữ liệu theo kho được phân công</footer></main></div></div>;
 }

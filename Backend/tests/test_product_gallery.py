@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 from uuid import uuid4
+from urllib.parse import quote
 
 import pytest
 from fastapi import FastAPI, HTTPException
@@ -66,6 +67,19 @@ def test_save_gallery_uses_snapshot_and_rpc(gallery_client):
     assert response.status_code == 200
     assert state["calls"] == [("SP1", payload(items=[]))]
     assert response.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.parametrize("product_id", ["SP 001", "Sản phẩm 01", "SP #1?code=2%+"])
+def test_gallery_preserves_encoded_product_ids(gallery_client, product_id):
+    client, state = gallery_client
+    state["rows"][0]["ma_sp"] = product_id
+    url = f"/api/admin/media/products/{quote(product_id, safe='')}/images"
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.json()["product_id"] == product_id
+    response = client.put(url, json=payload(items=[]), headers=ORIGIN)
+    assert response.status_code == 200
+    assert state["calls"][-1][0] == product_id
 
 
 @pytest.mark.parametrize("role,status", [(None, 401), ("NHAN_VIEN", 403), ("KHACH_HANG", 403)])

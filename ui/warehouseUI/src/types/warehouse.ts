@@ -1,4 +1,4 @@
-export type ModuleKey = "dashboard" | "inventory" | "receipts" | "transfers" | "stocktake" | "products" | "history" | "account" | "settings";
+export type ModuleKey = "dashboard" | "inventory" | "receipts" | "transfers" | "stocktake" | "products" | "suppliers" | "history" | "account" | "settings";
 export type Status = "Còn hàng" | "Sắp hết" | "Hết hàng" | "Nháp" | "Chờ xác nhận" | "Đã nhập" | "Đang chuyển" | "Đã nhận" | "Đang kiểm kê" | "Hoàn tất";
 export type DataRow = Record<string, string | number> & { id: string };
 export type ColumnDefinition = { key: string; label: string; kind?: "link" | "strong" | "status" | "product" };

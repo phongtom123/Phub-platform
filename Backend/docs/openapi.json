@@ -2588,6 +2588,71 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HandoffCode": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "expires_in": {
+            "default": 60,
+            "title": "Expires In",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "HandoffCode",
+        "type": "object"
+      },
+      "HandoffExchange": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Za-z0-9_-]{43}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "ADMIN",
+              "NHAN_VIEN"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "target_origin": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Target Origin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_origin",
+          "code",
+          "role"
+        ],
+        "title": "HandoffExchange",
+        "type": "object"
+      },
+      "HandoffRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "target_origin": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Target Origin",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_origin"
+        ],
+        "title": "HandoffRequest",
+        "type": "object"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -5251,6 +5316,44 @@
         "title": "QuoteRequest",
         "type": "object"
       },
+      "ReceiptCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptLine"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Lines",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "supplier_id": {
+            "maximum": 2147483647.0,
+            "minimum": -2147483648.0,
+            "title": "Supplier Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "supplier_id",
+          "lines"
+        ],
+        "title": "ReceiptCreate",
+        "type": "object"
+      },
       "ReceiptDraftUpdate": {
         "additionalProperties": false,
         "properties": {
@@ -5307,6 +5410,350 @@
           }
         },
         "title": "ReceiptDraftUpdate",
+        "type": "object"
+      },
+      "ReceiptHeader": {
+        "properties": {
+          "ghi_chu": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ghi Chu"
+          },
+          "ma_kho": {
+            "title": "Ma Kho",
+            "type": "integer"
+          },
+          "ma_ncc": {
+            "title": "Ma Ncc",
+            "type": "integer"
+          },
+          "ma_phieu_code": {
+            "title": "Ma Phieu Code",
+            "type": "string"
+          },
+          "ma_phieu_nhap": {
+            "title": "Ma Phieu Nhap",
+            "type": "integer"
+          },
+          "ngay_nhap": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Nhap"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "nguoi_cap_nhat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nguoi Cap Nhat"
+          },
+          "nguoi_tao": {
+            "title": "Nguoi Tao",
+            "type": "string"
+          },
+          "nguoi_xac_nhan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nguoi Xac Nhan"
+          },
+          "supplier_name": {
+            "title": "Supplier Name",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "NHAP",
+              "DA_NHAP",
+              "HUY"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_phieu_nhap",
+          "ma_phieu_code",
+          "ma_ncc",
+          "ma_kho",
+          "ngay_tao",
+          "trang_thai",
+          "nguoi_tao",
+          "supplier_name"
+        ],
+        "title": "ReceiptHeader",
+        "type": "object"
+      },
+      "ReceiptLine": {
+        "additionalProperties": false,
+        "properties": {
+          "quantity": {
+            "maximum": 1000000.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Sku",
+            "type": "string"
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Unit Price"
+          }
+        },
+        "required": [
+          "sku",
+          "quantity",
+          "unit_price"
+        ],
+        "title": "ReceiptLine",
+        "type": "object"
+      },
+      "ReceiptLineRead": {
+        "properties": {
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unit_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Unit Price",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "product_name",
+          "quantity",
+          "unit_price",
+          "unit"
+        ],
+        "title": "ReceiptLineRead",
+        "type": "object"
+      },
+      "ReceiptListItem": {
+        "properties": {
+          "creator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creator Name"
+          },
+          "ghi_chu": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ghi Chu"
+          },
+          "line_count": {
+            "title": "Line Count",
+            "type": "integer"
+          },
+          "ma_kho": {
+            "title": "Ma Kho",
+            "type": "integer"
+          },
+          "ma_ncc": {
+            "title": "Ma Ncc",
+            "type": "integer"
+          },
+          "ma_phieu_code": {
+            "title": "Ma Phieu Code",
+            "type": "string"
+          },
+          "ma_phieu_nhap": {
+            "title": "Ma Phieu Nhap",
+            "type": "integer"
+          },
+          "ngay_nhap": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Nhap"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "nguoi_cap_nhat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nguoi Cap Nhat"
+          },
+          "nguoi_tao": {
+            "title": "Nguoi Tao",
+            "type": "string"
+          },
+          "nguoi_xac_nhan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nguoi Xac Nhan"
+          },
+          "supplier_name": {
+            "title": "Supplier Name",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "NHAP",
+              "DA_NHAP",
+              "HUY"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_phieu_nhap",
+          "ma_phieu_code",
+          "ma_ncc",
+          "ma_kho",
+          "ngay_tao",
+          "trang_thai",
+          "nguoi_tao",
+          "supplier_name",
+          "line_count"
+        ],
+        "title": "ReceiptListItem",
+        "type": "object"
+      },
+      "ReceiptUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Expected Version",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptLine"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Lines",
+            "type": "array"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "supplier_id": {
+            "maximum": 2147483647.0,
+            "minimum": -2147483648.0,
+            "title": "Supplier Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_version",
+          "supplier_id",
+          "lines"
+        ],
+        "title": "ReceiptUpdate",
+        "type": "object"
+      },
+      "ReceiptVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Expected Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "ReceiptVersion",
         "type": "object"
       },
       "Recipient": {
@@ -6335,6 +6782,94 @@
           "trang_thai"
         ],
         "title": "StatusUpdate",
+        "type": "object"
+      },
+      "StockEvent": {
+        "properties": {
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "after_quantity": {
+            "title": "After Quantity",
+            "type": "integer"
+          },
+          "before_quantity": {
+            "title": "Before Quantity",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "warehouse_id",
+          "sku",
+          "before_quantity",
+          "after_quantity",
+          "reason",
+          "created_at"
+        ],
+        "title": "StockEvent",
         "type": "object"
       },
       "StockStatus": {
@@ -7474,6 +8009,108 @@
           "msg"
         ],
         "title": "ValidationIssue",
+        "type": "object"
+      },
+      "WarehouseHistoryPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/StockEvent"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size",
+          "warehouse_id"
+        ],
+        "title": "WarehouseHistoryPage",
+        "type": "object"
+      },
+      "WarehouseReceiptPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptListItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size",
+          "warehouse_id"
+        ],
+        "title": "WarehouseReceiptPage",
+        "type": "object"
+      },
+      "WarehouseReceiptRead": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptLineRead"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/ReceiptHeader"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "receipt",
+          "lines",
+          "version"
+        ],
+        "title": "WarehouseReceiptRead",
         "type": "object"
       },
       "phub_api__schemas__commerce__CustomerProfile": {
@@ -10234,6 +10871,263 @@
         "x-roles": [
           "ADMIN"
         ]
+      }
+    },
+    "/api/auth/handoff": {
+      "post": {
+        "description": "Chỉ ADMIN/NHAN_VIEN đã đăng nhập. Tạo mã ngẫu nhiên dùng một lần trong 60 giây, gắn với origin nguồn, origin đích và role; database chỉ lưu SHA-256 của mã. Cần migration staff_portal_handoff. Không trả JWT hoặc mật khẩu.",
+        "operationId": "create_handoff_api_auth_handoff_post",
+        "parameters": [
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandoffCode"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Tạo mã chuyển phiên nội bộ, một lần, 60 giây",
+        "tags": [
+          "Shared · Xác thực"
+        ],
+        "x-implementation-status": "implemented-live-unverified"
+      }
+    },
+    "/api/auth/handoff/exchange": {
+      "post": {
+        "description": "Callback server của cổng đích đổi mã qua POST, kiểm tra lại tài khoản/quyền/phiên bản mật khẩu rồi đặt cookie HttpOnly riêng cho domain đích. Cần Origin nguồn và target_origin khớp mã đã cấp. Mã hết hạn hoặc đã dùng trả 401. Không tự gửi lại yêu cầu này khi mất kết nối.",
+        "operationId": "exchange_handoff_api_auth_handoff_exchange_post",
+        "parameters": [
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandoffExchange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionUser"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Cookie phiên HttpOnly của cổng đích.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Đổi mã một lần lấy cookie tại cổng đích",
+        "tags": [
+          "Shared · Xác thực"
+        ],
+        "x-implementation-status": "implemented-live-unverified"
       }
     },
     "/api/auth/login": {
@@ -22327,6 +23221,1097 @@
           "Customer · Catalog"
         ]
       }
+    },
+    "/api/warehouse/history": {
+      "get": {
+        "operationId": "history_api_warehouse_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseHistoryPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Lịch sử biến động tồn trong kho được phân công",
+        "tags": [
+          "Kho · Nghiệp vụ"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/warehouse/receipts": {
+      "get": {
+        "operationId": "receipts_api_warehouse_receipts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "NHAP",
+                    "DA_NHAP",
+                    "HUY"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseReceiptPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Danh sách phiếu nhập trong kho được phân công",
+        "tags": [
+          "Kho · Nghiệp vụ"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      },
+      "post": {
+        "operationId": "create_receipt_api_warehouse_receipts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseReceiptRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không có phiếu trong kho được phân công."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không có phiếu trong kho được phân công."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Tạo phiếu nhập nháp tại kho được phân công",
+        "tags": [
+          "Kho · Nghiệp vụ"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/warehouse/receipts/{receipt_id}": {
+      "get": {
+        "operationId": "receipt_api_warehouse_receipts__receipt_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "title": "Receipt Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseReceiptRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không có phiếu trong kho được phân công."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không có phiếu trong kho được phân công."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Phiếu nhập, các dòng hàng và phiên bản hiện tại",
+        "tags": [
+          "Kho · Nghiệp vụ"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      },
+      "patch": {
+        "operationId": "update_receipt_api_warehouse_receipts__receipt_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "title": "Receipt Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseReceiptRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không có phiếu trong kho được phân công."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không có phiếu trong kho được phân công."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sửa nhà cung cấp, ghi chú và các dòng của phiếu nháp",
+        "tags": [
+          "Kho · Nghiệp vụ"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/warehouse/receipts/{receipt_id}/cancel": {
+      "post": {
+        "operationId": "cancel_receipt_api_warehouse_receipts__receipt_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "title": "Receipt Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptVersion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseReceiptRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không có phiếu trong kho được phân công."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không có phiếu trong kho được phân công."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Hủy phiếu nháp, giữ nguyên tồn kho",
+        "tags": [
+          "Kho · Nghiệp vụ"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/warehouse/receipts/{receipt_id}/confirm": {
+      "post": {
+        "operationId": "confirm_receipt_api_warehouse_receipts__receipt_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "title": "Receipt Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptVersion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarehouseReceiptRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không có phiếu trong kho được phân công."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không có phiếu trong kho được phân công."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xác nhận nhập, cộng tồn và ghi lịch sử trong một transaction",
+        "tags": [
+          "Kho · Nghiệp vụ"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
     }
   },
   "servers": [
@@ -22336,6 +24321,10 @@
     }
   ],
   "tags": [
+    {
+      "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trong kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu.",
+      "name": "Kho · Nghiệp vụ"
+    },
     {
       "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key.",
       "name": "Admin · Vận hành"
@@ -22385,7 +24374,7 @@
       "name": "Kho · Nhà cung cấp"
     },
     {
-      "description": "API bảng chỉ đọc; ADMIN lập phiếu/sửa dòng/xác nhận qua /api/admin/operations/receipts.",
+      "description": "CRUD bảng chỉ đọc. ADMIN dùng /api/admin/operations/receipts; NHAN_VIEN dùng /api/warehouse/receipts trong kho được phân công.",
       "name": "Kho · Phiếu nhập"
     },
     {

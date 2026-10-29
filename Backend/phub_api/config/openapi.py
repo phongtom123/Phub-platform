@@ -55,6 +55,7 @@ Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkou
 """
 
 TAGS = [
+    {"name": "Kho · Nghiệp vụ", "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trong kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu."},
     {"name": "Admin · Vận hành", "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key."},
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
     {"name": "Shared · Xác thực", "description": "Login/token/register/me/logout. JWT qua Bearer hoặc cookie HttpOnly, role lấy từ database."},
@@ -67,7 +68,7 @@ TAGS = [
     {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Voucher của đơn tại quầy được chốt qua nghiệp vụ tạo đơn."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
     {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp."},
-    {"name": "Kho · Phiếu nhập", "description": "API bảng chỉ đọc; ADMIN lập phiếu/sửa dòng/xác nhận qua /api/admin/operations/receipts."},
+    {"name": "Kho · Phiếu nhập", "description": "CRUD bảng chỉ đọc. ADMIN dùng /api/admin/operations/receipts; NHAN_VIEN dùng /api/warehouse/receipts trong kho được phân công."},
     {"name": "Kho · Chuyển kho", "description": "Chỉ tra cứu dữ liệu lịch sử. Hệ thống chỉ sử dụng một kho nên không còn chức năng tạo, sửa hoặc xử lý chuyển kho."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
     {"name": "Bán hàng · Tài chính", "description": "Hóa đơn, thanh toán chỉ đọc. Không ghi tiền qua CRUD tổng quát."},
@@ -249,7 +250,13 @@ def describe_auth_and_public(spec: dict) -> None:
         for method, operation in operations.items():
             if method not in {"get", "post", "patch", "put"}:
                 continue
-            if path.startswith("/api/admin/"):
+            if path.startswith("/api/warehouse/"):
+                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
+                operation["x-roles"] = ["NHAN_VIEN"]
+                operation["x-implementation-status"] = "implemented-live-unverified"
+                if method != "get":
+                    operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
+            elif path.startswith("/api/admin/"):
                 operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
                 operation["x-roles"] = ["ADMIN"]
                 operation["x-implementation-status"] = "implemented-live-unverified"
@@ -257,7 +264,7 @@ def describe_auth_and_public(spec: dict) -> None:
                     operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
             elif path.startswith("/api/auth/"):
                 operation["tags"] = ["Shared · Xác thực"]
-                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}] if path.endswith("/me") else []
+                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}] if path.endswith("/me") or path == "/api/auth/handoff" else []
                 operation["x-implementation-status"] = "implemented-live-unverified"
             elif path == "/api/data/resources":
                 operation["tags"] = ["Shared · Metadata"]
@@ -309,6 +316,13 @@ def describe_auth_and_public(spec: dict) -> None:
     }
     paths["/api/auth/me"]["get"]["responses"]["200"]["content"]["application/json"]["example"] = SESSION_EXAMPLE
     paths["/api/auth/logout"]["post"]["description"] = "Xóa cookie phub_session. Không yêu cầu phiên còn hiệu lực; vẫn kiểm tra Origin. Thành công trả 204 không có body. Chưa có blacklist token/refresh token."
+    for path in ["/api/auth/handoff", "/api/auth/handoff/exchange"]:
+        operation = paths[path]["post"]
+        operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
+    paths["/api/auth/handoff"]["post"]["description"] = "Chỉ ADMIN/NHAN_VIEN đã đăng nhập. Tạo mã ngẫu nhiên dùng một lần trong 60 giây, gắn với origin nguồn, origin đích và role; database chỉ lưu SHA-256 của mã. Cần migration staff_portal_handoff. Không trả JWT hoặc mật khẩu."
+    exchange = paths["/api/auth/handoff/exchange"]["post"]
+    exchange["description"] = "Callback server của cổng đích đổi mã qua POST, kiểm tra lại tài khoản/quyền/phiên bản mật khẩu rồi đặt cookie HttpOnly riêng cho domain đích. Cần Origin nguồn và target_origin khớp mã đã cấp. Mã hết hạn hoặc đã dùng trả 401. Không tự gửi lại yêu cầu này khi mất kết nối."
+    exchange["responses"]["200"]["headers"] = {"Set-Cookie": {"schema": {"type": "string"}, "description": "Cookie phiên HttpOnly của cổng đích."}}
 
 
 def install_openapi(app: FastAPI) -> None:

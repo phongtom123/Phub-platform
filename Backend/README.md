@@ -446,6 +446,9 @@ Tham khảo: [Supabase Upload](https://supabase.com/docs/reference/python/storag
 Kiểm thử offline: `python -m pytest tests/test_media.py -q` từ thư mục Backend.
 # Vận hành admin
 
+Nhân viên kho đã có luồng phiếu nhập riêng, giới hạn theo kho được phân công:
+[API, migration và kiểm thử nhập hàng](docs/WAREHOUSE_OPERATIONS.md).
+
 Luồng đơn hàng, phiếu nhập/chuyển kho, kiểm kê, hóa đơn và ghi nhận thu/hoàn tiền
 được bổ sung qua API transaction riêng. Xem [hợp đồng, migration và cách kiểm thử](docs/ADMIN_OPERATIONS.md).
 Các mô tả “chỉ đọc” bên dưới áp dụng cho CRUD bảng; không thay thế API vận hành mới.

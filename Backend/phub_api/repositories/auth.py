@@ -20,3 +20,9 @@ class AuthRepository:
 
     def register_customer(self, parameters):
         return self.client.rpc("customer_register_v2", parameters).execute().data
+
+    def create_handoff(self, parameters):
+        return self.client.rpc("auth_create_portal_handoff_v1", parameters).execute().data
+
+    def consume_handoff(self, parameters):
+        return self.client.rpc("auth_consume_portal_handoff_v1", parameters).execute().data

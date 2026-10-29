@@ -2,16 +2,38 @@ from dataclasses import asdict
 
 from fastapi import APIRouter, Depends, Request, Response
 
-from phub_api.dependencies.auth import current_user, get_auth_service
+from phub_api.dependencies.auth import current_user, get_auth_service, get_handoff_service, session_claims
 from phub_api.dependencies.origin import check_origin
 from phub_api.middleware.session import clear_session_cookie, set_session_cookie
 from phub_api.models.user import User
 from phub_api.schemas.api_contracts import READ_ERRORS, SessionUser, WRITE_ERRORS, error_response
 from phub_api.schemas.auth import LoginBody, RegisterBody, TokenResponse
-from phub_api.services.auth import AuthService, create_access_token, registration_attempts, throttle
+from phub_api.schemas.portal_handoff import HandoffCode, HandoffExchange, HandoffRequest
+from phub_api.services.auth import AuthService, create_access_token, create_access_token_from_version, registration_attempts, throttle
+from phub_api.services.portal_handoff import PortalHandoffService
 
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+
+@router.post("/handoff", response_model=HandoffCode, responses=WRITE_ERRORS,
+             summary="Tạo mã chuyển phiên nội bộ, một lần, 60 giây")
+def create_handoff(body: HandoffRequest, request: Request, response: Response,
+                   user: User = Depends(current_user), claims: dict = Depends(session_claims),
+                   service: PortalHandoffService = Depends(get_handoff_service)):
+    check_origin(request)
+    response.headers["Cache-Control"] = "no-store"
+    return service.create(user, claims["ver"], request.headers["origin"], body.target_origin)
+
+
+@router.post("/handoff/exchange", response_model=SessionUser, responses=WRITE_ERRORS,
+             summary="Đổi mã một lần lấy cookie tại cổng đích")
+def exchange_handoff(body: HandoffExchange, request: Request, response: Response,
+                     service: PortalHandoffService = Depends(get_handoff_service)):
+    check_origin(request)
+    user, version = service.exchange(body, request.headers["origin"])
+    set_session_cookie(response, create_access_token_from_version(user, version))
+    return asdict(user)
 
 def issue_session(response: Response, user: User, password: str) -> None:
     set_session_cookie(response, create_access_token(user, password))
