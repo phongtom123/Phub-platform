@@ -1,4 +1,4 @@
-"""Supabase Storage adapter. No image processing or HTTP response decisions."""
+"""Storage and media persistence adapter; no image processing or HTTP decisions."""
 
 
 class MediaRepository:
@@ -31,3 +31,20 @@ class MediaRepository:
 
     def unregister(self, media_id: str) -> None:
         self.client.table("MEDIA").delete().eq("ma_media", media_id).execute()
+
+    def product_gallery(self, product_id: str) -> list[dict]:
+        return (self.client.table("SAN_PHAM").select(
+            "ma_sp,duong_dan_anh,images:MEDIA!MEDIA_product_fkey(ma_media,url,alt_text,thu_tu,la_anh_chinh)"
+        ).eq("ma_sp", product_id).limit(1).execute().data)
+
+    def save_gallery(self, product_id: str, values: dict) -> dict:
+        return self.client.rpc("admin_product_gallery_v1", {
+            "p_product_id": product_id,
+            "p_items": values["items"],
+            "p_expected_ids": values["expected_ids"],
+            "p_expected_legacy_url": values["expected_legacy_url"],
+        }).execute().data
+
+    def image(self, media_id: str) -> list[dict]:
+        return (self.client.table("MEDIA").select("ma_media,url,chieu_rong,chieu_cao")
+                .eq("ma_media", media_id).limit(1).execute().data)

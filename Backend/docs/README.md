@@ -38,6 +38,10 @@ URL service được đối chiếu với [cấu hình Render](../../render.yaml
 
 ## Nhóm API
 
+Quản lý nhiều ảnh sản phẩm: xem [Gallery sản phẩm trong admin](PRODUCT_GALLERY.md), gồm API, migration cần triển khai và quy tắc giữ ảnh cũ.
+
+Mỗi chương trình khuyến mãi có một banner tùy chọn: xem [Banner khuyến mãi](PROMOTION_BANNER.md).
+
 - **Shared**: xác thực, health và metadata.
 - **Admin**: tổ chức (kho/nhân viên/tài khoản), khách hàng, sản phẩm, khuyến mãi.
 - **Kho**: tồn kho, nhà cung cấp, phiếu nhập, chuyển kho.

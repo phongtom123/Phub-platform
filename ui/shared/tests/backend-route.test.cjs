@@ -25,6 +25,19 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("product gallery gateway forwards only GET/PUT and rejects traversal and arbitrary media paths", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,body:options.body});return Response.json({images:[]});});
+  for(const method of ['GET','PUT']) {
+    const response=await proxy(new Request('http://localhost/x',{method,...(method==='PUT'?{body:'{"items":[]}'}:{})}),['admin','media','products','SP1','images']);
+    assert.equal(response.status,200);
+  }
+  assert.equal(calls.length,2); assert.equal(calls[1].body,'{"items":[]}');
+  for(const method of ['POST','DELETE','PATCH'])assert.equal((await proxy(new Request('http://localhost/x',{method}),['admin','media','products','SP1','images'])).status,404);
+  for(const id of ['..','%2e%2e','SP/1','SP\\1'])assert.equal((await proxy(new Request('http://localhost/x'),['admin','media','products',id,'images'])).status,404);
+  assert.equal(calls.length,2);
+});
+
 test("draft header gateway forwards only receipt edits; transfers stay disabled", async () => {
   const calls=[];
   const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,origin:options.headers.get("Origin")});return Response.json({data:[]});});

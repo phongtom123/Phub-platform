@@ -38,6 +38,10 @@ function validAdminPath(path: string[], method: string): boolean {
   }
   if (path.length === 3 && path[1] === "warehouse-drafts" && path[2] === "receipts") return method === "PATCH";
   if (path.length === 3 && path[1] === "media" && path[2] === "images") return method === "POST";
+  if (path.length === 4 && path[1] === "media" && path[2] === "images" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3])) return method === "GET";
+  if (path.length === 5 && path[1] === "media" && path[2] === "products" && path[4] === "images") {
+    return Boolean(path[3] && /^[A-Za-z0-9_.-]{1,200}$/.test(path[3]) && ![".", ".."].includes(path[3])) && ["GET", "PUT"].includes(method);
+  }
   if (path.length === 2) {
     return (path[1] === "accounts" && ["GET", "POST"].includes(method)) ||
       (path[1] === "account-owners" && method === "GET") ||

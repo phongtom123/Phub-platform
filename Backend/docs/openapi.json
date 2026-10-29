@@ -476,6 +476,7 @@
       "CHUONG_TRINH_KHUYEN_MAICreate": {
         "additionalProperties": false,
         "example": {
+          "ma_media_banner": null,
           "mo_ta": "Nội dung minh họa",
           "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
           "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -483,6 +484,20 @@
           "trang_thai": "NHAP"
         },
         "properties": {
+          "ma_media_banner": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ma_media_banner",
+            "title": "Ma Media Banner"
+          },
           "mo_ta": {
             "anyOf": [
               {
@@ -575,6 +590,7 @@
         "additionalProperties": false,
         "example": {
           "ma_ctkm": 1,
+          "ma_media_banner": null,
           "mo_ta": "Nội dung minh họa",
           "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
           "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -587,6 +603,18 @@
           "ma_ctkm": {
             "description": "ma_ctkm · database tự sinh",
             "type": "integer"
+          },
+          "ma_media_banner": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_media_banner"
           },
           "mo_ta": {
             "anyOf": [
@@ -631,6 +659,7 @@
           "ma_ctkm",
           "ten_chuong_trinh",
           "mo_ta",
+          "ma_media_banner",
           "ngay_bat_dau",
           "ngay_ket_thuc",
           "trang_thai",
@@ -663,6 +692,19 @@
         },
         "minProperties": 1,
         "properties": {
+          "ma_media_banner": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_media_banner",
+            "title": "Ma Media Banner"
+          },
           "mo_ta": {
             "anyOf": [
               {
@@ -2280,6 +2322,119 @@
           "error"
         ],
         "title": "ErrorResponse",
+        "type": "object"
+      },
+      "GalleryImage": {
+        "properties": {
+          "alt_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alt Text"
+          },
+          "media_id": {
+            "format": "uuid",
+            "title": "Media Id",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "primary": {
+            "title": "Primary",
+            "type": "boolean"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "media_id",
+          "url",
+          "position",
+          "primary"
+        ],
+        "title": "GalleryImage",
+        "type": "object"
+      },
+      "GalleryItem": {
+        "additionalProperties": false,
+        "properties": {
+          "media_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "title": "GalleryItem",
+        "type": "object"
+      },
+      "GalleryUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "title": "Expected Ids",
+            "type": "array"
+          },
+          "expected_legacy_url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Legacy Url"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GalleryItem"
+            },
+            "maxItems": 20,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "expected_ids",
+          "expected_legacy_url"
+        ],
+        "title": "GalleryUpdate",
         "type": "object"
       },
       "HOA_DONPage": {
@@ -4983,6 +5138,39 @@
         "title": "PaymentTransaction",
         "type": "object"
       },
+      "ProductGallery": {
+        "properties": {
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/GalleryImage"
+            },
+            "title": "Images",
+            "type": "array"
+          },
+          "legacy_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legacy Url"
+          },
+          "product_id": {
+            "title": "Product Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "legacy_url",
+          "images"
+        ],
+        "title": "ProductGallery",
+        "type": "object"
+      },
       "ProductImage": {
         "properties": {
           "alt": {
@@ -6157,6 +6345,47 @@
         "title": "StockStatus",
         "type": "string"
       },
+      "StoredImage": {
+        "properties": {
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "media_id": {
+            "format": "uuid",
+            "title": "Media Id",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "media_id",
+          "url"
+        ],
+        "title": "StoredImage",
+        "type": "object"
+      },
       "StoredLine": {
         "additionalProperties": false,
         "properties": {
@@ -6371,6 +6600,7 @@
           "ma_media_anh_dai_dien": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
@@ -9093,6 +9323,20 @@
         "operationId": "upload_image_api_admin_media_images_post",
         "parameters": [
           {
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "default": "product",
+              "enum": [
+                "product",
+                "promotion_banner"
+              ],
+              "title": "Purpose",
+              "type": "string"
+            }
+          },
+          {
             "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
             "example": "http://localhost:8000",
             "in": "header",
@@ -9235,7 +9479,359 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Tải ảnh sản phẩm lên Supabase Storage (ADMIN)",
+        "summary": "Tải ảnh sản phẩm hoặc banner khuyến mãi lên Storage (ADMIN)",
+        "tags": [
+          "Admin · Hình ảnh"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/media/images/{media_id}": {
+      "get": {
+        "operationId": "read_image_api_admin_media_images__media_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "media_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Media Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredImage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Đọc thông tin ảnh media (ADMIN)",
+        "tags": [
+          "Admin · Hình ảnh"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/media/products/{product_id}/images": {
+      "get": {
+        "operationId": "product_gallery_api_admin_media_products__product_id__images_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductGallery"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xem toàn bộ ảnh sản phẩm (ADMIN)",
+        "tags": [
+          "Admin · Hình ảnh"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      },
+      "put": {
+        "operationId": "save_product_gallery_api_admin_media_products__product_id__images_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductGallery"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Gallery đã được sửa bởi yêu cầu khác; tải lại trước khi lưu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Gallery đã được sửa bởi yêu cầu khác; tải lại trước khi lưu."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Lưu gallery; ảnh đầu tiên là ảnh chính (ADMIN)",
         "tags": [
           "Admin · Hình ảnh"
         ],
@@ -17042,7 +17638,7 @@
     },
     "/api/data/promotions": {
       "get": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "get_promotions",
         "parameters": [
           {
@@ -17132,6 +17728,7 @@
                   "data": [
                     {
                       "ma_ctkm": 1,
+                      "ma_media_banner": null,
                       "mo_ta": "Nội dung minh họa",
                       "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                       "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -17245,7 +17842,7 @@
         "x-table": "CHUONG_TRINH_KHUYEN_MAI"
       },
       "patch": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "patch_promotions",
         "parameters": [
           {
@@ -17303,6 +17900,7 @@
                   "data": [
                     {
                       "ma_ctkm": 1,
+                      "ma_media_banner": null,
                       "mo_ta": "Nội dung minh họa",
                       "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                       "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -17439,7 +18037,7 @@
         "x-table": "CHUONG_TRINH_KHUYEN_MAI"
       },
       "post": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán, không gửi trong body. Schema hiện tại chưa có cột ảnh chương trình.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "post_promotions",
         "parameters": [
           {
@@ -17461,6 +18059,7 @@
                 "illustration": {
                   "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
                   "value": {
+                    "ma_media_banner": null,
                     "mo_ta": "Nội dung minh họa",
                     "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                     "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -17484,6 +18083,7 @@
                   "data": [
                     {
                       "ma_ctkm": 1,
+                      "ma_media_banner": null,
                       "mo_ta": "Nội dung minh họa",
                       "ngay_bat_dau": "2026-10-05T00:00:00+07:00",
                       "ngay_ket_thuc": "2026-11-05T00:00:00+07:00",
@@ -21769,7 +22369,7 @@
       "name": "Admin · Sản phẩm"
     },
     {
-      "description": "ADMIN upload ảnh sản phẩm vào bucket media; giới hạn 5 MB, ảnh tĩnh JPG/PNG/WebP. Không sửa quyền public hoặc xóa file cũ tự động.",
+      "description": "ADMIN upload và quản lý gallery tối đa 20 ảnh/sản phẩm. JPG/PNG/WebP tĩnh, 5 MB/ảnh. Lưu ảnh chính/thứ tự bằng transaction và kiểm tra snapshot; gỡ liên kết không xóa file Storage.",
       "name": "Admin · Hình ảnh"
     },
     {
