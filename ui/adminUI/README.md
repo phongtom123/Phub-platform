@@ -447,13 +447,13 @@ sau khi push/merge; code local không tự cập nhật cloud.
 
 ## Kéo thả/chọn ảnh sản phẩm
 
-Trang thêm/sửa sản phẩm (`/data/products?...`) dùng `ImageEditor` cho trường
-`duong_dan_anh`: kéo thả một file hoặc chọn JPG/PNG/WebP, xem trước, gỡ ảnh hay
-nhập URL. Chỉ khi bấm **Lưu dữ liệu** mới upload qua
-`/api/backend/admin/media/images`; gateway chuyển file nhị phân sang backend.
-Đã có URL thì không phải upload lại. Backend kiểm tra quyền/file thật và lưu vào
-Supabase Storage, sau đó form lưu URL vào sản phẩm. Không hiển thị thành công
-chỉ dựa vào preview local.
+Trang thêm/sửa sản phẩm (`/data/products?...`) dùng `ProductGalleryEditor`:
+kéo thả/chọn nhiều file JPG/PNG/WebP, tối đa 20 ảnh, xem trước, chọn ảnh chính,
+chuyển thứ tự, gỡ từng ảnh hoặc thêm URL. Chỉ khi bấm **Lưu dữ liệu** mới upload
+từng file qua `/api/backend/admin/media/images`, rồi lưu liên kết bằng
+`PUT /api/backend/admin/media/products/{product_id}/images` trong một transaction.
+Đã có `media_id` thì không phải upload lại. Backend kiểm tra quyền/file thật và
+lưu vào Supabase Storage; không hiển thị thành công chỉ dựa vào preview local.
 
 Sau khi lưu thành công, form sản phẩm ở nguyên trang và áp dụng bản ghi do API
 trả về: chỉ cập nhật ảnh/giá trị đã thay đổi, không remount form, không gọi lại
@@ -464,18 +464,21 @@ thêm sản phẩm. Nút lưu khóa khi không có thay đổi. Rời form khi r
 sẽ hủy phần xử lý UI của request đó để response cũ không ghi đè trang mới;
 không coi hủy request ở trình duyệt là rollback một thao tác server đã thực hiện.
 
-Lỗi upload giữ form và file đã chọn; lỗi ghi sản phẩm sau khi upload giữ URL để
-người dùng thử lưu lại. Không tự lặp POST. Gỡ ảnh chỉ gỡ liên kết khỏi sản phẩm,
-không xóa file cũ trên bucket. Hiện schema chỉ có một ảnh cho mỗi sản phẩm.
+Lỗi upload giữ form và những file chưa tải; file tải thành công giữ `media_id`
+để thử lại mà không upload trùng. Thông tin sản phẩm và gallery được lưu riêng;
+nếu gallery lỗi sau khi tạo sản phẩm, UI giữ mã vừa tạo và báo rõ để retry không
+tạo trùng sản phẩm. Gỡ ảnh chỉ bỏ liên kết, không xóa metadata/file trên bucket.
+Gallery dùng `MEDIA.ma_sp`; ảnh chính vẫn đồng bộ vào `duong_dan_anh` cho mã cũ.
 
 Backend trên `PHUB_API_BASE_URL` phải được deploy bản có API media; nếu chưa có,
 UI báo rõ cần deploy backend mới, không thay bằng ảnh/dữ liệu giả. Cấu hình bucket
 public và key server-only xem [Backend README](../../Backend/README.md#upload-ảnh-sản-phẩm-vào-supabase-storage).
-Browser test mock, không ghi Storage thật: `node ui/adminUI/tests/media-upload.e2e.cjs`
+Cần thêm migration RPC [hướng dẫn gallery](../../Backend/docs/PRODUCT_GALLERY.md).
+Browser test mock, không ghi Storage thật: `node ui/adminUI/tests/product-gallery.e2e.cjs`
 (từ root, đặt biến môi trường Playwright như phần kiểm thử trên).
 
 Trang chi tiết sản phẩm (trước khi bấm **Chỉnh sửa**) có khung ảnh gọn 340 px bên
-trái, thông tin bên phải; mobile xếp dọc. Ảnh căn giữa, giữ tỷ lệ và không cắt.
+trái kèm danh sách thumbnail, thông tin bên phải; mobile xếp dọc. Ảnh căn giữa, giữ tỷ lệ và không cắt.
 Nút **Xem ảnh gốc**/bấm ảnh mở dialog ngay trong trang, không mở tab hoặc đổi URL.
 Đóng bằng Esc/nút X/bấm backdrop; dialog giữ focus và trả focus khi đóng, khóa
 cuộn trang nền trong lúc mở. Có thông báo khi chưa có ảnh/tải lỗi và nút thử lại. URL ảnh

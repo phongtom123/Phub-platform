@@ -6,9 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { adminFetch, invalidateAdminCache, sameAdminData } from "@/src/lib/admin-fetch";
 import { useAdminPolling } from "@/src/lib/use-admin-polling";
 import { dataHref, orderChildren } from "@/src/lib/data-navigation";
-import { ImageEditor } from "@/src/features/forms/image-editor";
-import { uploadProductImage } from "@/src/lib/media-upload";
-import { ProductImagePreview } from "@/src/features/forms/product-image-preview";
+import { ProductGalleryEditor, type GalleryEditorHandle } from "@/src/features/forms/product-gallery-editor";
+import { ProductGalleryPreview } from "@/src/features/forms/product-gallery-preview";
 import { InlineDataTable } from "@/src/features/tables/inline-data-table";
 import { ScrollableTable } from "@/src/features/tables/scrollable-table";
 import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
@@ -117,7 +116,9 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     setResult(current => current && ({ ...current, data: current.data.map(item =>
       dataRowKey(item, meta?.keys ?? []) === dataRowKey(row, meta?.keys ?? []) ? row : item) }));
   }, [meta?.keys]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const galleryEditor = useRef<GalleryEditorHandle | null>(null);
+  const [galleryDirty, setGalleryDirty] = useState(false);
+  const [galleryReady, setGalleryReady] = useState(false);
   const [uploading, setUploading] = useState(false);
   const saveController = useRef<AbortController | null>(null);
   const reuseSavedRoute = useRef<string | null>(null);
@@ -126,7 +127,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   useEffect(() => () => { saveController.current?.abort(); }, []);
 
   const pollError = useAdminPolling(JSON.stringify([routeIdentity, page, search, version]),
-    !loading && !error && Boolean(result) && !view.edit && !view.create && !inlineEditing && !saving && !uploading && !dirty.length && !imageFile,
+    !loading && !error && Boolean(result) && !view.edit && !view.create && !inlineEditing && !saving && !uploading && !dirty.length && !galleryDirty,
     async (signal, canApply) => {
       const params = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
       params.set("filters", filterQuery);
@@ -146,7 +147,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     saveController.current?.abort(); saveController.current = null;
     setSaving(false); setUploading(false);
     setPage(1); setQuery(""); setSearch("");
-    setImageFile(null); setSaveError("");
+    setGalleryDirty(false); setGalleryReady(false); setSaveError("");
   }, [routeIdentity]);
 
   useEffect(() => {
@@ -190,7 +191,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const href = (row?: Row, edit = false) => dataHref(resource, { orderId: view.orderId,
     key: row && meta ? JSON.stringify(meta.keys.map(key => row[key])) : null, edit });
   const change = (name: string, value: string) => { setNotice(""); setValues(current => ({ ...current, [name]: value })); setDirty(current => current.includes(name) ? current : [...current, name]); };
-  const formColumns = meta?.columns.filter(c => !c.generated && !c.system && (view.create || !c.immutable) && (!draftPath || meta.draft_update_fields?.includes(c.name))) ?? [];
+  const formColumns = meta?.columns.filter(c => !c.generated && !c.system && (view.create || !c.immutable) && (!draftPath || meta.draft_update_fields?.includes(c.name)) && !(resource === "products" && c.name === "duong_dan_anh")) ?? [];
   const detailMode = Boolean(view.key && !view.edit && !view.create);
   const listColumns = listDataColumns(resource, meta?.columns ?? []);
   const relatedHref = (target: string) => {
@@ -204,7 +205,9 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     const controller = new AbortController();
     saveController.current = controller;
     setSaving(true); setSaveError(""); setNotice("");
+    let productSaved = false;
     try {
+      if (resource === "products" && (!galleryReady || !galleryEditor.current)) throw new Error("Gallery chưa sẵn sàng. Hãy tải lại ảnh trước khi lưu.");
       const recordKey = resource === "products" ? persistedKey.current ?? view.key : view.key;
       const creating = view.create && !recordKey;
       const data: Record<string, string | number | null> = {};
@@ -215,34 +218,37 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         data[column.name] = column.type === "int" ? Number(value) : column.type === "datetime" ? new Date(value).toISOString() : value;
       }
       if (resource === "accounts" && values.password) data.password = values.password;
-      if (imageFile && formColumns.some(column => column.name === "duong_dan_anh")) {
-        setUploading(true);
-        const url = await uploadProductImage(imageFile, controller.signal);
-        if (controller.signal.aborted) return;
-        data.duong_dan_anh = url;
-        // Retry a failed product save using the uploaded URL, not another upload.
-        change("duong_dan_anh", url); setImageFile(null); setUploading(false);
-      }
-      if (!Object.keys(data).length) throw new Error("Chưa có thay đổi.");
-      const saved = await api<{ data: Row[] }>((draftPath ? draftPath.slice(5) : "data/" + resource) + (recordKey ? "?key=" + encodeURIComponent(recordKey) : ""), {
+      if (!Object.keys(data).length && !galleryDirty) throw new Error("Chưa có thay đổi.");
+      const saved = Object.keys(data).length ? await api<{ data: Row[] }>((draftPath ? draftPath.slice(5) : "data/" + resource) + (recordKey ? "?key=" + encodeURIComponent(recordKey) : ""), {
         method: creating ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data), signal: controller.signal,
-      });
+      }) : { data: result?.data ?? [] };
       if (!saved.data.length) throw new Error("Backend chưa trả về dữ liệu đã lưu.");
       if (controller.signal.aborted) return;
       if (resource === "products") {
         const row = saved.data[0];
         const key = JSON.stringify(meta.keys.map(name => row[name]));
         persistedKey.current = key;
+        productSaved = true;
         setResult({ data: [row], total: 1, page: 1, page_size: 20 });
         setValues(Object.fromEntries(Object.entries(row).map(([key, value]) => [key, value === null ? "" : String(value)])));
-        setDirty([]); setImageFile(null);
+        setDirty([]);
+        // The product may already be committed if gallery upload fails. Retain
+        // its key above so retry updates this product rather than creating two.
+        if (galleryDirty) {
+          setUploading(true);
+          const gallery = await galleryEditor.current!.save(String(row.ma_sp), controller.signal);
+          if (controller.signal.aborted) return;
+          const updated = { ...row, duong_dan_anh: gallery.legacy_url };
+          setResult({ data: [updated], total: 1, page: 1, page_size: 20 });
+          setValues(current => ({ ...current, duong_dan_anh: gallery.legacy_url ?? "" }));
+        }
         setNotice(creating ? "Đã tạo sản phẩm. Bạn có thể tiếp tục chỉnh sửa." : "Đã lưu thay đổi.");
-        if (creating) {
+        if (view.create) {
           reuseSavedRoute.current = JSON.stringify([resource, embedded, key, true, false, view.orderId, filterQuery]);
           window.history.replaceState(null, "", dataHref(resource, { key, edit: true, orderId: view.orderId }));
         }
       } else router.push(href(saved.data[0]));
-    } catch (err) { if (!controller.signal.aborted) setSaveError(err instanceof Error ? err.message : "Không lưu được dữ liệu."); }
+    } catch (err) { if (!controller.signal.aborted) setSaveError((productSaved && galleryDirty ? "Thông tin sản phẩm đã lưu; gallery chưa được xác nhận. " : "") + (err instanceof Error ? err.message : "Không lưu được dữ liệu.")); }
     finally { if (!controller.signal.aborted) { setSaving(false); setUploading(false); } }
   }
 
@@ -258,9 +264,9 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       {workflowCreate ? <OperationPanel resource={resource} create onChanged={refresh} onEditingChange={setInlineEditing} /> : ((view.create && meta.writable || view.edit && canUpdate && result?.data[0] && canEditRow(result.data[0]))) ? <form className="live-form" onSubmit={save}>
         {saveError && <p className="live-error image-save-error" role="alert">{saveError}</p>}
         <fieldset disabled={saving} className="live-form-fields">
-        {formColumns.map(column => column.name === "duong_dan_anh" ? <ImageEditor key={column.name} inputId={`image-${resource}`}
-          value={values[column.name] ?? ""} file={imageFile} disabled={saving}
-          onChange={value => change(column.name, value)} onFileChange={file => { setImageFile(file); setSaveError(""); setNotice(""); }} /> : <label key={column.name}>{label(column.name)}{column.required && " *"}
+        {resource === "products" && <ProductGalleryEditor ref={galleryEditor} productId={result?.data[0]?.ma_sp ? String(result.data[0].ma_sp) : undefined}
+          disabled={saving} onDirty={setGalleryDirty} onReady={setGalleryReady} />}
+        {formColumns.map(column => <label key={column.name}>{label(column.name)}{column.required && " *"}
           {column.name === "trang_thai" && column.type === "int" ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}>
             <option value="">Chọn trạng thái</option>{[1, 2, 0].map(value => <option key={value} value={value}>{inlineStatusLabels[value]}</option>)}
           </select> : column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice} value={choice}>{inlineChoiceLabel(column.name, choice)}</option>)}</select>
@@ -271,12 +277,12 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {resource === "accounts" && <label>{view.create ? "Mật khẩu *" : "Mật khẩu mới (để trống nếu giữ nguyên)"}<input type="password" autoComplete="new-password" minLength={10} maxLength={128} required={view.create} value={values.password ?? ""} onChange={e => change("password", e.target.value)} /></label>}
         </fieldset>
         {notice && <p className="live-note image-save-error" role="status">{notice} {result?.data[0] && <Link prefetch={false} href={href(result.data[0])}>Xem chi tiết</Link>}</p>}
-        <div className="live-form-actions"><button className="live-primary" disabled={saving || (resource === "products" && (!view.create || persistedKey.current !== null) && !imageFile && !dirty.length)}>{uploading ? "Đang tải ảnh…" : saving ? "Đang lưu…" : "Lưu dữ liệu"}</button>{!saving && <Link href={dataHref(resource, { key: view.key, orderId: view.orderId })}>Hủy</Link>}</div>
+        <div className="live-form-actions"><button className="live-primary" disabled={saving || (resource === "products" && (!galleryReady || ((!view.create || persistedKey.current !== null) && !galleryDirty && !dirty.length)))}>{uploading ? "Đang lưu ảnh…" : saving ? "Đang lưu…" : "Lưu dữ liệu"}</button>{!saving && <Link href={dataHref(resource, { key: persistedKey.current ?? view.key, orderId: view.orderId })}>Hủy</Link>}</div>
       </form> : view.key && result?.data[0] ? <>
         {["orders", "receipts", "inventory"].includes(resource) && <OperationPanel key={`${resource}:${view.key}`} resource={resource} row={result.data[0]} onChanged={refresh} onEditingChange={setInlineEditing} />}
         <div className={resource === "products" ? "product-detail-layout" : undefined}>
-        {resource === "products" && <ProductImagePreview key={String(result.data[0].duong_dan_anh ?? "")}
-          url={String(result.data[0].duong_dan_anh ?? "")} name={String(result.data[0].ten_sp ?? "")} />}
+        {resource === "products" && <ProductGalleryPreview key={String(result.data[0].ma_sp)} productId={String(result.data[0].ma_sp)}
+          legacyUrl={String(result.data[0].duong_dan_anh ?? "")} name={String(result.data[0].ten_sp ?? "")} />}
         {resource === "orders" ? <OrderData rows={result.data} columns={meta.columns} keys={meta.keys} detail version={version} label={label} href={href}
           related={available.filter(item => orderChildren.includes(item.name))} />
         : resource === "invoices" ? <InvoiceDetail row={result.data[0]} columns={meta.columns} label={label} />

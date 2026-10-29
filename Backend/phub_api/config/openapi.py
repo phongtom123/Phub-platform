@@ -63,7 +63,7 @@ TAGS = [
     {"name": "Admin · Tổ chức", "description": "Kho, nhân viên, tài khoản. Mật khẩu chỉ có trong request, không có trong response."},
     {"name": "Admin · Khách hàng", "description": "ADMIN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình."},
     {"name": "Admin · Sản phẩm", "description": "Loại sản phẩm và sản phẩm PC/linh kiện. SKU không đổi sau khi tạo."},
-    {"name": "Admin · Hình ảnh", "description": "ADMIN upload ảnh sản phẩm vào bucket media; giới hạn 5 MB, ảnh tĩnh JPG/PNG/WebP. Không sửa quyền public hoặc xóa file cũ tự động."},
+    {"name": "Admin · Hình ảnh", "description": "ADMIN upload và quản lý gallery tối đa 20 ảnh/sản phẩm. JPG/PNG/WebP tĩnh, 5 MB/ảnh. Lưu ảnh chính/thứ tự bằng transaction và kiểm tra snapshot; gỡ liên kết không xóa file Storage."},
     {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Voucher của đơn tại quầy được chốt qua nghiệp vụ tạo đơn."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
     {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp."},
