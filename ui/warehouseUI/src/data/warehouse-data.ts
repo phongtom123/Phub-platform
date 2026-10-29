@@ -1,10 +1,11 @@
 import type { FormFieldDefinition, ModuleDefinition, ModuleKey } from "@/src/types/warehouse";
 
 export const moduleNames: Record<ModuleKey, string> = {
-  dashboard: "Tổng quan", inventory: "Tồn kho", receipts: "Phiếu nhập", transfers: "Chuyển kho", stocktake: "Kiểm kê", products: "Sản phẩm", history: "Lịch sử kho", account: "Tài khoản", settings: "Cài đặt",
+  dashboard: "Tổng quan", inventory: "Tồn kho", receipts: "Phiếu nhập", transfers: "Chuyển kho", stocktake: "Kiểm kê", products: "Sản phẩm", suppliers: "Nhà cung cấp", history: "Lịch sử kho", account: "Tài khoản", settings: "Cài đặt",
 };
 
 export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
+  suppliers: { title: "Nhà cung cấp", description: "Thông tin nhà cung cấp hàng nhập.", searchPlaceholder: "Tìm nhà cung cấp…", rows: [], columns: [] },
   inventory: {
     title: "Tồn kho", description: "Theo dõi số lượng sản phẩm tại Kho trung tâm.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Tình trạng", "Khu vực"],
     columns: [{ key: "name", label: "SẢN PHẨM", kind: "product" }, { key: "location", label: "VỊ TRÍ" }, { key: "quantity", label: "TỒN HIỆN TẠI", kind: "strong" }, { key: "minimum", label: "MỨC TỐI THIỂU" }, { key: "status", label: "TÌNH TRẠNG", kind: "status" }],

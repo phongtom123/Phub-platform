@@ -81,9 +81,14 @@ def throttle(host: str, attempts: dict[str, tuple[float, int]] = login_attempts,
 
 
 def create_access_token(user: User, password: str) -> str:
+    return create_access_token_from_version(user, password_version(password))
+
+
+def create_access_token_from_version(user: User, version: str) -> str:
+    """Used only after a password login or a consumed, revalidated portal handoff."""
     now = datetime.now(timezone.utc)
     return jwt.encode({"sub": user.account_id, "iat": now, "exp": now + timedelta(seconds=TOKEN_TTL_SECONDS),
-                        "iss": "phub-backend", "aud": "phub-ui", "ver": password_version(password)},
+                        "iss": "phub-backend", "aud": "phub-ui", "ver": version},
                        jwt_secret(), algorithm="HS256")
 
 

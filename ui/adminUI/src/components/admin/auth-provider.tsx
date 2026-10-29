@@ -4,13 +4,14 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { AuthRequestError, getSession, logoutSession, type SessionUser } from "../../../../shared/auth-client";
 import { ADMIN_SESSION_EXPIRED, advanceSessionEpoch, getSessionEpoch } from "@/src/lib/admin-fetch";
 import { AdminDataPreloader } from "./data-preloader";
+import { enterStaffPortal } from "../../../../shared/staff-portal";
 
 type AuthState = {
   user: SessionUser | null | undefined;
   checking: boolean;
   error: string;
   checkSession: () => Promise<void>;
-  acceptLogin: (user: SessionUser) => void;
+  acceptLogin: (user: SessionUser) => Promise<void>;
   logout: () => Promise<void>;
 };
 const AuthContext = createContext<AuthState | null>(null);
@@ -30,42 +31,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userRef.current = null; setUser(null); setError(""); setChecking(false);
   }, []);
 
-  const redirectStaff = useCallback((nextUser: SessionUser) => {
-    if (nextUser.role !== "ADMIN") {
-      window.location.replace(nextUser.role === "NHAN_VIEN"
-        ? process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"
-        : process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
+  const redirectStaff = useCallback(async (nextUser: SessionUser, signal?: AbortSignal) => {
+    if (nextUser.role === "NHAN_VIEN") {
+      await enterStaffPortal(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002", signal);
+    } else if (nextUser.role === "KHACH_HANG") {
+      window.location.replace(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
     }
   }, []);
 
   // Only called with the validated response from loginSession, never browser storage.
-  const acceptLogin = useCallback((nextUser: SessionUser) => {
+  const acceptLogin = useCallback(async (nextUser: SessionUser) => {
     advanceSessionEpoch();
     controller.current?.abort(); controller.current = null; flight.current = null;
-    userRef.current = nextUser; setUser(nextUser); setError(""); setChecking(false);
-    redirectStaff(nextUser);
+    userRef.current = nextUser; setUser(nextUser); setError(""); setChecking(nextUser.role !== "ADMIN");
+    try {
+      await redirectStaff(nextUser);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Không chuyển được phiên đăng nhập.");
+      setChecking(false);
+    }
   }, [redirectStaff]);
 
   const checkSession = useCallback((): Promise<void> => {
     if (flight.current) return flight.current;
-    const epoch = getSessionEpoch();
+    let epoch = getSessionEpoch();
     const request = new AbortController();
     controller.current = request;
     setChecking(true); setError("");
-    const pending = getSession(request.signal).then(nextUser => {
+    const pending = getSession(request.signal).then(async nextUser => {
       if (request.signal.aborted || epoch !== getSessionEpoch()) return;
       const previous = userRef.current;
       if (!previous || previous.account_id !== nextUser.account_id || previous.role !== nextUser.role || previous.warehouse_id !== nextUser.warehouse_id) {
         advanceSessionEpoch();
+        epoch = getSessionEpoch();
       }
       userRef.current = nextUser; setUser(nextUser);
-      redirectStaff(nextUser);
+      await redirectStaff(nextUser, request.signal);
     }).catch(reason => {
       if (request.signal.aborted || epoch !== getSessionEpoch()) return;
       if (reason instanceof AuthRequestError && (reason.status === 401 || reason.status === 403)) {
         invalidate(); return;
       }
-      setError("Chưa kiểm tra được phiên đăng nhập. API tạm thời không khả dụng; phiên chưa bị xóa.");
+      setError(userRef.current?.role === "NHAN_VIEN" && reason instanceof Error
+        ? reason.message
+        : "Chưa kiểm tra được phiên đăng nhập. API tạm thời không khả dụng; phiên chưa bị xóa.");
     }).finally(() => {
       if (controller.current !== request) return;
       controller.current = null; flight.current = null; setChecking(false);
@@ -106,6 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {checking ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : <>
         <p role="alert">{error}</p>
         <button type="button" className="btn primary" onClick={() => { void checkSession(); }}>Thử kết nối lại</button>
+        {user && <button type="button" className="btn" onClick={() => {
+          void logout().catch(() => setError("Không đăng xuất được. Vui lòng thử lại."));
+        }}>Đăng xuất</button>}
       </>}
     </main> : children}
   </AuthContext.Provider>;

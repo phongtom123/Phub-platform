@@ -17,6 +17,7 @@ from phub_api.controllers.media import customer_router as customer_media_router
 from phub_api.controllers.crm import router as crm_router
 from phub_api.controllers.support import router as support_router
 from phub_api.controllers.warehouse_drafts import router as warehouse_drafts_router
+from phub_api.controllers.warehouse import router as warehouse_router
 from phub_api.middleware.errors import register_errors
 from phub_api.config.database import close_supabase
 from phub_api.config.openapi import DESCRIPTION, TAGS, install_openapi
@@ -63,6 +64,7 @@ app.include_router(customer_media_router)
 app.include_router(crm_router)
 app.include_router(support_router)
 app.include_router(warehouse_drafts_router)
+app.include_router(warehouse_router)
 app.include_router(legacy_router)
 register_errors(app)
 

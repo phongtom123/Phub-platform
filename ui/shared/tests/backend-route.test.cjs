@@ -25,6 +25,32 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("warehouse gateway permits scoped receipt/history operations and rejects arbitrary actions", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),key:options.headers.get('Idempotency-Key'),origin:options.headers.get('Origin')});return Response.json({});});
+  const key='a77a9370-caa8-48d8-a3dc-60f352cedee1';
+  for(const [method,segments] of [['GET',['warehouse','receipts']],['GET',['warehouse','history']],['POST',['warehouse','receipts']],['GET',['warehouse','receipts','-5']],['PATCH',['warehouse','receipts','0']],['POST',['warehouse','receipts','2','confirm']],['POST',['warehouse','receipts','2','cancel']]]) {
+    assert.equal((await proxy(new Request('http://localhost/x',{method,headers:{Origin:'http://localhost:3002','Idempotency-Key':key}}),segments)).status,200);
+  }
+  assert.ok(calls.every(call=>call.key===key&&call.origin==='http://localhost:3002'));
+  for(const [method,segments] of [['DELETE',['warehouse','receipts','1']],['POST',['warehouse','receipts','1','dispatch']],['PATCH',['warehouse','inventory']],['GET',['warehouse','receipts','2147483648']],['GET',['warehouse','receipts','../1']],['GET',['warehouse','receipts','1','confirm']]]) {
+    assert.equal((await proxy(new Request('http://localhost/x',{method}),segments)).status,404);
+  }
+});
+
+test("staff handoff forwards issuance with the source cookie, keeping exchange server-only", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),cookie:options.headers.get('Cookie'),origin:options.headers.get('Origin'),body:options.body});return Response.json({code:'A'.repeat(43),expires_in:60});});
+  const body=JSON.stringify({target_origin:'https://warehouse.example.test'});
+  const request=new Request('https://admin.example.test/api/backend/auth/handoff',{method:'POST',headers:{Origin:'https://admin.example.test',Cookie:'phub_session=fixture'},body});
+  assert.equal((await proxy(request,['auth','handoff'])).status,200);
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].cookie,'phub_session=fixture');
+  assert.equal(calls[0].origin,'https://admin.example.test');
+  assert.equal(calls[0].body,body);
+  assert.equal((await proxy(request,['auth','handoff','exchange'])).status,404);
+});
+
 test("product gallery gateway forwards only GET/PUT and rejects traversal and arbitrary media paths", async () => {
   const calls=[];
   const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,body:options.body});return Response.json({images:[]});});
@@ -36,6 +62,31 @@ test("product gallery gateway forwards only GET/PUT and rejects traversal and ar
   for(const method of ['POST','DELETE','PATCH'])assert.equal((await proxy(new Request('http://localhost/x',{method}),['admin','media','products','SP1','images'])).status,404);
   for(const id of ['..','%2e%2e','SP/1','SP\\1'])assert.equal((await proxy(new Request('http://localhost/x'),['admin','media','products',id,'images'])).status,404);
   assert.equal(calls.length,2);
+});
+
+test("gallery product IDs preserve spaces, Vietnamese and URL punctuation through GET/PUT", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{
+    calls.push({url:new URL(url),method:options.method,body:options.body});
+    return Response.json({images:[]});
+  });
+  const ids=['SP 001','Sản phẩm 01','SP #1?code=2%+','Ắ'.repeat(200)];
+  for(const id of ids) for(const method of ['GET','PUT']) {
+    const body=JSON.stringify({items:[],expected_ids:[],expected_legacy_url:null});
+    const request=new Request('http://localhost/x?keep=1',{method,...(method==='PUT'?{body}:{})});
+    assert.equal((await proxy(request,['admin','media','products',id,'images'])).status,200);
+    const sent=calls.at(-1);
+    assert.equal(decodeURIComponent(sent.url.pathname.split('/')[5]),id);
+    assert.equal(sent.url.search,'?keep=1');
+    assert.equal(sent.url.hash,'');
+    assert.equal(sent.method,method);
+    if(method==='PUT') assert.equal(sent.body,body);
+  }
+  const before=calls.length;
+  for(const id of ['', ' ', '.', '..', '%2e%2e', '.%2E', 'SP/1', 'SP\\1', 'SP\n1', 'SP\u00001', 'A'.repeat(201)]) {
+    assert.equal((await proxy(new Request('http://localhost/x'),['admin','media','products',id,'images'])).status,404);
+  }
+  assert.equal(calls.length,before,'invalid IDs must not reach the backend');
 });
 
 test("draft header gateway forwards only receipt edits; transfers stay disabled", async () => {

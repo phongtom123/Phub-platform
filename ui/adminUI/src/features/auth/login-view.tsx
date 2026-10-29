@@ -10,7 +10,7 @@ export type StaffRole = Extract<UserRole, "ADMIN" | "NHAN_VIEN">;
 export function LoginView({
   onLogin,
 }: {
-  onLogin: (result: SessionUser) => void;
+  onLogin: (result: SessionUser) => void | Promise<void>;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,7 +34,7 @@ export function LoginView({
         window.location.assign(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
         return;
       }
-      onLogin(result);
+      await onLogin(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không kết nối được backend.");
     } finally { setLoading(false); }

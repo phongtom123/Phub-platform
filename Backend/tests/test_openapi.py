@@ -54,7 +54,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
 def test_operation_ids_are_unique_and_tags_exist(spec):
     operations = [operation for path in spec["paths"].values() for operation in path.values()]
     identifiers = [operation["operationId"] for operation in operations]
-    assert len(identifiers) == len(set(identifiers)) == 92
+    assert len(identifiers) == len(set(identifiers)) == 101
     tags = {tag["name"] for tag in spec["tags"]}
     for operation in operations:
         assert set(operation["tags"]).issubset(tags)
@@ -88,6 +88,8 @@ def test_cookie_auth_and_public_operations(spec):
     bearer = spec["components"]["securitySchemes"]["BearerAuth"]
     assert (bearer["type"], bearer["scheme"], bearer["bearerFormat"]) == ("http", "bearer", "JWT")
     assert spec["paths"]["/api/auth/me"]["get"]["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
+    assert spec["paths"]["/api/auth/handoff"]["post"]["security"] == [{"BearerAuth": []}, {"SessionCookie": []}]
+    assert spec["paths"]["/api/auth/handoff/exchange"]["post"]["security"] == []
     for path in ["/api/auth/login", "/api/auth/token", "/api/auth/register", "/api/auth/logout", "/api/health", "/api/products", "/api/catalog/products"]:
         for operation in spec["paths"][path].values():
             assert operation["security"] == []

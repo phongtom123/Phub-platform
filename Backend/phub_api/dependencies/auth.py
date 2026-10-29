@@ -6,6 +6,7 @@ from phub_api.config.settings import COOKIE_NAME
 from phub_api.models.user import User
 from phub_api.repositories.auth import AuthRepository
 from phub_api.services.auth import AuthService, verify_access_token
+from phub_api.services.portal_handoff import PortalHandoffService
 
 bearer_auth = HTTPBearer(
     scheme_name="BearerAuth", bearerFormat="JWT", auto_error=False,
@@ -32,6 +33,10 @@ def session_claims(
 
 def get_auth_service(db=Depends(get_supabase)) -> AuthService:
     return AuthService(AuthRepository(db))
+
+
+def get_handoff_service(db=Depends(get_supabase)) -> PortalHandoffService:
+    return PortalHandoffService(AuthRepository(db))
 
 
 def current_user(claims: dict = Depends(session_claims), service: AuthService = Depends(get_auth_service)) -> User:

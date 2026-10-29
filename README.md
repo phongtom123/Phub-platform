@@ -145,7 +145,18 @@ npm.cmd run dev
 | Nhân viên kho | http://localhost:3002 |
 | API / Swagger | http://localhost:8000/docs |
 
-Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tài khoản ADMIN vào admin, NHAN_VIEN vào kho, KHACH_HANG vào storefront, kể cả khi đăng nhập nhầm cổng. Role do database quyết định, không lấy từ query string/localStorage. Không còn tài khoản demo `password123`.
+Trang admin là cổng đăng nhập chung cho nhân sự: `ADMIN` vào admin, `NHAN_VIEN` vào kho được phân công. Role do database quyết định, không lấy từ query string/localStorage. Không còn tài khoản demo `password123`.
+
+Admin và kho có thể chạy trên hai domain độc lập. Admin gửi mã chuyển phiên dùng một lần (hết hạn sau 60 giây) bằng POST đến `/auth/complete` của kho; kho đổi mã qua backend rồi đặt cookie HttpOnly riêng. Không truyền JWT/mật khẩu qua URL. Khi đăng xuất ở kho, cookie của cả hai cổng được xóa qua lần lượt hai domain.
+
+Để triển khai luồng đăng nhập chung:
+
+1. Chạy nội dung [migration staff_portal_handoff](Backend/migrations/20261029155128_staff_portal_handoff.sql) trong Supabase SQL Editor. Migration chỉ thêm nơi lưu mã chuyển phiên tạm thời và hai RPC; không đổi tài khoản hoặc dữ liệu nghiệp vụ.
+2. Deploy backend có hai endpoint `POST /api/auth/handoff` và `POST /api/auth/handoff/exchange`, sau đó deploy cả admin và kho.
+3. Hai UI phải dùng cùng `PHUB_API_BASE_URL`. Admin đặt `NEXT_PUBLIC_WAREHOUSE_URL=https://phub-warehouse.onrender.com`; kho đặt `NEXT_PUBLIC_ADMIN_URL=https://phub-platform-admin.onrender.com`. Các biến `NEXT_PUBLIC_*` cần được đặt trước khi build UI.
+4. `FRONTEND_ORIGINS` của backend phải có chính xác cả hai origin trên (không thêm đường dẫn hoặc dấu `/` cuối); production dùng `COOKIE_SECURE=true`. Giữ lại các origin khách/local đang cần dùng. Không đặt cookie domain chung cho `onrender.com`.
+
+Local dùng URL admin `http://localhost:3000`, kho `http://localhost:3002` và cùng backend. Để kiểm tra riêng cookie của hai host, có thể dùng `localhost` cho admin và `127.0.0.1` cho kho; khi đó cập nhật URL cổng và thêm cả hai origin tương ứng vào `FRONTEND_ORIGINS`.
 
 ## Những phần đã nối backend
 
@@ -167,7 +178,7 @@ Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hìn
 
 Chi tiết endpoint, payload, quyền và backlog: [Backend/README.md](Backend/README.md).
 
-Quản lý đặc tả, đăng nhập bằng Bearer/cookie trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot 70 thao tác trên 49 đường dẫn: [Backend/docs/openapi.json](Backend/docs/openapi.json).
+Quản lý đặc tả, đăng nhập bằng Bearer/cookie trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot API: [Backend/docs/openapi.json](Backend/docs/openapi.json). Luồng nhập hàng nhân viên kho: [API, migration và kiểm thử](Backend/docs/WAREHOUSE_OPERATIONS.md).
 
 ## Kiểm tra mã
 

@@ -9,7 +9,7 @@ import type { WarehouseUser } from "@/src/types/warehouse-auth";
 const workNav: { key: ModuleKey; label: string; icon: typeof LayoutDashboard }[] = [
   { key: "dashboard", label: "Tổng quan", icon: LayoutDashboard }, { key: "inventory", label: "Tồn kho", icon: Boxes }, { key: "receipts", label: "Phiếu nhập", icon: ArrowDownToLine }, { key: "stocktake", label: "Kiểm kê", icon: ClipboardCheck },
 ];
-const lookupNav: { key: ModuleKey; label: string; icon: typeof Package }[] = [{ key: "products", label: "Sản phẩm", icon: Package }, { key: "history", label: "Lịch sử kho", icon: Clock3 }];
+const lookupNav: { key: ModuleKey; label: string; icon: typeof Package }[] = [{ key: "products", label: "Sản phẩm", icon: Package }, { key: "suppliers", label: "Nhà cung cấp", icon: Warehouse }, { key: "history", label: "Lịch sử kho", icon: Clock3 }];
 
 export default function Sidebar({ user, onLogout }: { user: WarehouseUser; onLogout: () => void }) {
   const pathname = usePathname();
