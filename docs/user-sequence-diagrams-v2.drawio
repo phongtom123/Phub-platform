@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e" compressed="false">
     <diagram id="auth" name="01 - Xác thực tài khoản">
-        <mxGraphModel dx="4360" dy="3023" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="3105" math="0" shadow="0">
+        <mxGraphModel dx="2845" dy="3085" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="3105" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -909,311 +909,311 @@
         </mxGraphModel>
     </diagram>
     <diagram id="checkout" name="04 - Checkout &amp; Thanh toán">
-        <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="3105" math="0" shadow="0">
+        <mxGraphModel dx="2845" dy="3085" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="3105" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="checkout_title" value="Sequence Diagram — 04 - Checkout &amp; Thanh toán" style="text;html=1;fontSize=24;fontStyle=1;align=left;" vertex="1" parent="1">
-                    <mxGeometry x="30" y="15" width="1100" height="40" as="geometry"/>
+                <mxCell id="checkout_title" parent="1" style="text;html=1;fontSize=24;fontStyle=1;align=left;" value="Sequence Diagram — 04 - Checkout &amp; Thanh toán" vertex="1">
+                    <mxGeometry height="40" width="1100" x="30" y="15" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_note" value="DON_HANG.ma_kh hiện bắt buộc: sequence chọn checkout sau đăng nhập. Tổng tiền luôn được tính lại ở server." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
-                    <mxGeometry x="1160" y="15" width="590" height="65" as="geometry"/>
+                <mxCell id="checkout_note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" value="DON_HANG.ma_kh hiện bắt buộc: sequence chọn checkout sau đăng nhập. Tổng tiền luôn được tính lại ở server." vertex="1">
+                    <mxGeometry height="65" width="590" x="1160" y="15" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_p_user" value="Khách hàng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#666666;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-                    <mxGeometry x="35" y="100" width="170" height="60" as="geometry"/>
+                <mxCell id="checkout_p_user" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#666666;fontStyle=1;fontSize=13;" value="Khách hàng" vertex="1">
+                    <mxGeometry height="60" width="170" x="35" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_p_ui" value="Checkout UI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#666666;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-                    <mxGeometry x="347" y="100" width="170" height="60" as="geometry"/>
+                <mxCell id="checkout_p_ui" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#666666;fontStyle=1;fontSize=13;" value="Checkout UI" vertex="1">
+                    <mxGeometry height="60" width="170" x="347" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_p_api" value="Order API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#666666;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-                    <mxGeometry x="659" y="100" width="170" height="60" as="geometry"/>
+                <mxCell id="checkout_p_api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#666666;fontStyle=1;fontSize=13;" value="Order API" vertex="1">
+                    <mxGeometry height="60" width="170" x="659" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_p_db" value="Supabase DB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#666666;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-                    <mxGeometry x="971" y="100" width="170" height="60" as="geometry"/>
+                <mxCell id="checkout_p_db" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#666666;fontStyle=1;fontSize=13;" value="Supabase DB" vertex="1">
+                    <mxGeometry height="60" width="170" x="971" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_p_pay" value="Cổng thanh toán" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#666666;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-                    <mxGeometry x="1283" y="100" width="170" height="60" as="geometry"/>
+                <mxCell id="checkout_p_pay" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#666666;fontStyle=1;fontSize=13;" value="Cổng thanh toán" vertex="1">
+                    <mxGeometry height="60" width="170" x="1283" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_p_email" value="Email Service" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#666666;fontStyle=1;fontSize=13;" vertex="1" parent="1">
-                    <mxGeometry x="1595" y="100" width="170" height="60" as="geometry"/>
+                <mxCell id="checkout_p_email" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#666666;fontStyle=1;fontSize=13;" value="Email Service" vertex="1">
+                    <mxGeometry height="60" width="170" x="1595" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_life_user" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+                <mxCell id="checkout_life_user" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#999999;">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="120" y="160" as="sourcePoint"/>
                         <mxPoint x="120" y="3025" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_life_ui" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+                <mxCell id="checkout_life_ui" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#999999;">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="160" as="sourcePoint"/>
                         <mxPoint x="432" y="3025" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_life_api" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+                <mxCell id="checkout_life_api" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#999999;">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="160" as="sourcePoint"/>
                         <mxPoint x="744" y="3025" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_life_db" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+                <mxCell id="checkout_life_db" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#999999;">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1056" y="160" as="sourcePoint"/>
                         <mxPoint x="1056" y="3025" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_life_pay" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+                <mxCell id="checkout_life_pay" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#999999;">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1368" y="160" as="sourcePoint"/>
                         <mxPoint x="1368" y="3025" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_life_email" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
+                <mxCell id="checkout_life_email" edge="1" parent="1" style="endArrow=none;dashed=1;strokeColor=#999999;">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1680" y="160" as="sourcePoint"/>
                         <mxPoint x="1680" y="3025" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_sec_1" value="Kiểm tra phiên và nhập thông tin" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" vertex="1" parent="1">
-                    <mxGeometry x="45" y="175" width="1710" height="34" as="geometry"/>
+                <mxCell id="checkout_sec_1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" value="Kiểm tra phiên và nhập thông tin" vertex="1">
+                    <mxGeometry height="34" width="1710" x="45" y="175" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_msg_2" value="Mở Checkout" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Mở Checkout">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="120" y="245" as="sourcePoint"/>
                         <mxPoint x="432" y="245" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_3" value="GET /api/me hoặc kiểm tra session" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="GET /api/me hoặc kiểm tra session">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="310" as="sourcePoint"/>
                         <mxPoint x="744" y="310" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_4" value="Xác định tài khoản và ma_kh" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_4" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Xác định tài khoản và ma_kh">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="375" as="sourcePoint"/>
                         <mxPoint x="1056" y="375" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_5" value="Khách hàng / không có phiên" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_5" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Khách hàng / không có phiên">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1056" y="440" as="sourcePoint"/>
                         <mxPoint x="744" y="440" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_6" value="200 hoặc 401" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_6" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="200 hoặc 401">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="505" as="sourcePoint"/>
                         <mxPoint x="432" y="505" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_7" value="[alt 401] Yêu cầu đăng nhập rồi quay lại Checkout" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt 401] Yêu cầu đăng nhập rồi quay lại Checkout">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="570" as="sourcePoint"/>
                         <mxPoint x="120" y="570" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_8" value="[alt hợp lệ] Hiển thị sản phẩm, địa chỉ, vận chuyển, thanh toán" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt hợp lệ] Hiển thị sản phẩm, địa chỉ, vận chuyển, thanh toán">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="635" as="sourcePoint"/>
                         <mxPoint x="120" y="635" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_9" value="Nhập/chọn thông tin và bấm Đặt hàng" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_9" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Nhập/chọn thông tin và bấm Đặt hàng">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="120" y="700" as="sourcePoint"/>
                         <mxPoint x="432" y="700" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_10" value="Validate trường bắt buộc" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_10" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Validate trường bắt buộc">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="765" as="sourcePoint"/>
                         <mxPoint x="120" y="765" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_sec_11" value="Tạo đơn hàng trong transaction" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" vertex="1" parent="1">
-                    <mxGeometry x="45" y="815" width="1710" height="34" as="geometry"/>
+                <mxCell id="checkout_sec_11" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" value="Tạo đơn hàng trong transaction" vertex="1">
+                    <mxGeometry height="34" width="1710" x="45" y="815" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_msg_12" value="POST /api/orders {items,address,shipping,payment,voucher}" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="POST /api/orders {items,address,shipping,payment,voucher}">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="885" as="sourcePoint"/>
                         <mxPoint x="744" y="885" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_13" value="BEGIN; khóa TON_KHO bằng SELECT FOR UPDATE" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_13" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="BEGIN; khóa TON_KHO bằng SELECT FOR UPDATE">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="950" as="sourcePoint"/>
                         <mxPoint x="1056" y="950" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_14" value="Tồn khả dụng từng SKU" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_14" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Tồn khả dụng từng SKU">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1056" y="1015" as="sourcePoint"/>
                         <mxPoint x="744" y="1015" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_15" value="[alt thiếu hàng] Rollback + sản phẩm cần cập nhật" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt thiếu hàng] Rollback + sản phẩm cần cập nhật">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1080" as="sourcePoint"/>
                         <mxPoint x="432" y="1080" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_16" value="[opt voucher] Kiểm tra CTKM/VOUCHER/lượt sử dụng" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_16" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="[opt voucher] Kiểm tra CTKM/VOUCHER/lượt sử dụng">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1145" as="sourcePoint"/>
                         <mxPoint x="1056" y="1145" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_17" value="Hợp lệ + mức giảm / không hợp lệ" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_17" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Hợp lệ + mức giảm / không hợp lệ">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1056" y="1210" as="sourcePoint"/>
                         <mxPoint x="744" y="1210" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_18" value="[alt voucher lỗi] Rollback + lý do" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt voucher lỗi] Rollback + lý do">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1275" as="sourcePoint"/>
                         <mxPoint x="432" y="1275" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_19" value="Tính giá server; tạo DON_HANG + CT_DON_HANG" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_19" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Tính giá server; tạo DON_HANG + CT_DON_HANG">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1340" as="sourcePoint"/>
                         <mxPoint x="1056" y="1340" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_20" value="Ghi SU_DUNG_VOUCHER; trừ/giữ TON_KHO; chọn ma_kho_xuat" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_20" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Ghi SU_DUNG_VOUCHER; trừ/giữ TON_KHO; chọn ma_kho_xuat">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1405" as="sourcePoint"/>
                         <mxPoint x="1056" y="1405" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_21" value="ma_donhang + tổng tiền" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_21" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="ma_donhang + tổng tiền">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1056" y="1470" as="sourcePoint"/>
                         <mxPoint x="744" y="1470" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_sec_22" value="Thanh toán COD/TIỀN_MẶT" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" vertex="1" parent="1">
-                    <mxGeometry x="45" y="1520" width="1710" height="34" as="geometry"/>
+                <mxCell id="checkout_sec_22" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" value="Thanh toán COD/TIỀN_MẶT" vertex="1">
+                    <mxGeometry height="34" width="1710" x="45" y="1520" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_msg_23" value="[alt TIEN_MAT] Đặt đơn = MOI/XAC_NHAN và COMMIT" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_23" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt TIEN_MAT] Đặt đơn = MOI/XAC_NHAN và COMMIT">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1590" as="sourcePoint"/>
                         <mxPoint x="1056" y="1590" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_24" value="Đã tạo đơn" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_24" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Đã tạo đơn">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1056" y="1655" as="sourcePoint"/>
                         <mxPoint x="744" y="1655" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_25" value="Gửi email xác nhận đơn" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_25" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Gửi email xác nhận đơn">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1720" as="sourcePoint"/>
                         <mxPoint x="1680" y="1720" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_26" value="201 {ma_donhang, trang_thai}" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_26" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="201 {ma_donhang, trang_thai}">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1785" as="sourcePoint"/>
                         <mxPoint x="432" y="1785" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_27" value="Hiển thị đặt hàng thành công" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_27" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Hiển thị đặt hàng thành công">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="1850" as="sourcePoint"/>
                         <mxPoint x="120" y="1850" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_sec_28" value="Thanh toán online" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" vertex="1" parent="1">
-                    <mxGeometry x="45" y="1900" width="1710" height="34" as="geometry"/>
+                <mxCell id="checkout_sec_28" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=14;align=left;spacingLeft=10;" value="Thanh toán online" vertex="1">
+                    <mxGeometry height="34" width="1710" x="45" y="1900" as="geometry"/>
                 </mxCell>
-                <mxCell id="checkout_msg_29" value="[alt online] INSERT THANH_TOAN = CHO_XU_LY" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_29" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt online] INSERT THANH_TOAN = CHO_XU_LY">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="1970" as="sourcePoint"/>
                         <mxPoint x="1056" y="1970" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_30" value="Tạo giao dịch với amount + ma_donhang + return URL" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_30" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Tạo giao dịch với amount + ma_donhang + return URL">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="2035" as="sourcePoint"/>
                         <mxPoint x="1368" y="2035" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_31" value="Payment URL + transaction id" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_31" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Payment URL + transaction id">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1368" y="2100" as="sourcePoint"/>
                         <mxPoint x="744" y="2100" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_32" value="Trả Payment URL" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_32" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Trả Payment URL">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="2165" as="sourcePoint"/>
                         <mxPoint x="432" y="2165" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_33" value="Chuyển sang cổng thanh toán" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_33" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Chuyển sang cổng thanh toán">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="2230" as="sourcePoint"/>
                         <mxPoint x="120" y="2230" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_34" value="Xác nhận thanh toán" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_34" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Xác nhận thanh toán">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="120" y="2295" as="sourcePoint"/>
                         <mxPoint x="1368" y="2295" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_35" value="Webhook/callback kết quả" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_35" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Webhook/callback kết quả">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1368" y="2360" as="sourcePoint"/>
                         <mxPoint x="744" y="2360" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_36" value="Xác minh chữ ký, số tiền và idempotency" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_36" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="Xác minh chữ ký, số tiền và idempotency">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="2425" as="sourcePoint"/>
                         <mxPoint x="1368" y="2425" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_37" value="Kết quả xác minh" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_37" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Kết quả xác minh">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1368" y="2490" as="sourcePoint"/>
                         <mxPoint x="744" y="2490" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_38" value="[alt thành công] THANH_TOAN=THANH_CONG; DON_HANG=XAC_NHAN" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_38" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt thành công] THANH_TOAN=THANH_CONG; DON_HANG=XAC_NHAN">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="2555" as="sourcePoint"/>
                         <mxPoint x="1056" y="2555" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_39" value="[alt thất bại] THANH_TOAN=THAT_BAI" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_39" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="[alt thất bại] THANH_TOAN=THAT_BAI">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="2620" as="sourcePoint"/>
                         <mxPoint x="1056" y="2620" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_40" value="Cập nhật trạng thái" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_40" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Cập nhật trạng thái">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1056" y="2685" as="sourcePoint"/>
                         <mxPoint x="744" y="2685" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_41" value="[opt thành công] Gửi email xác nhận" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_41" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;strokeColor=#1a1a1a;fontSize=12;labelBackgroundColor=#ffffff;" value="[opt thành công] Gửi email xác nhận">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="2750" as="sourcePoint"/>
                         <mxPoint x="1680" y="2750" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_42" value="Trạng thái thanh toán và đơn hàng" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_42" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Trạng thái thanh toán và đơn hàng">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="744" y="2815" as="sourcePoint"/>
                         <mxPoint x="432" y="2815" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="checkout_msg_43" value="Thành công hoặc cho phép Thanh toán lại" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" edge="1" parent="1">
+                <mxCell id="checkout_msg_43" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;labelBackgroundColor=#ffffff;" value="Thành công hoặc cho phép Thanh toán lại">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="432" y="2880" as="sourcePoint"/>
                         <mxPoint x="120" y="2880" as="targetPoint"/>

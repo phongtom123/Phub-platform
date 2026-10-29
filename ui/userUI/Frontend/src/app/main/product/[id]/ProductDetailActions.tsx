@@ -39,10 +39,11 @@ export function ProductDetailActions({
         Giá bán <strong>{formattedPrice}</strong>
       </p>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
+      <div className={styles.quantityControls}>
         <span style={{ fontSize: 13, color: "#666" }}>Số lượng:</span>
         <button
           type="button"
+          aria-label="Giảm số lượng"
           onClick={() => setQuantity((q) => Math.max(1, q - 1))}
           style={{
             width: 28,
@@ -69,6 +70,7 @@ export function ProductDetailActions({
         </span>
         <button
           type="button"
+          aria-label="Tăng số lượng"
           onClick={() => setQuantity((q) => Math.min(99, q + 1))}
           style={{
             width: 28,
