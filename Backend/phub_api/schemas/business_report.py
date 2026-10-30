@@ -22,6 +22,7 @@ class DailyProfit(BaseModel):
 
 
 class BusinessReport(BaseModel):
+    warehouse_id: Literal[2]
     start: date
     end: date
     method: Literal['MOVING_WEIGHTED_AVERAGE']
