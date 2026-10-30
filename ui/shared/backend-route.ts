@@ -121,6 +121,10 @@ function validCrmPath(path: string[], method: string): boolean {
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {
   const { path } = await context.params;
   const valid = validAdminPath(path, request.method) || validCustomerPath(path, request.method) || validCrmPath(path, request.method) ||
+    (path[0] === "pricing" && ((path.length === 2 && path[1] === "config" && ["GET", "PUT"].includes(request.method)) ||
+      (path.length === 2 && ["preview", "taxes"].includes(path[1]) && request.method === "POST") ||
+      (path.length === 3 && path[1] === "taxes" && /^[A-Z][A-Z0-9_]{0,29}$/.test(path[2]) && request.method === "PATCH") ||
+      (path.length === 3 && path[1] === "receipts" && /^-?\d+$/.test(path[2]) && request.method === "GET"))) ||
     validAuthPath(path, request.method) || validWarehousePath(path, request.method) ||
     (path.length === 2 && path[0] === "data" && resources.has(path[1]));
   if (!valid) return Response.json({ detail: "Endpoint không tồn tại." }, { status: 404 });

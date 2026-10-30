@@ -3,6 +3,7 @@ from fastapi.security import APIKeyCookie, HTTPAuthorizationCredentials, HTTPBea
 
 from phub_api.config.database import get_supabase
 from phub_api.config.settings import COOKIE_NAME
+from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID, WAREHOUSE_SCOPE_MESSAGE
 from phub_api.models.user import User
 from phub_api.repositories.auth import AuthRepository
 from phub_api.services.auth import AuthService, verify_access_token
@@ -52,6 +53,8 @@ def require_admin(user: User = Depends(current_user)) -> User:
 def require_warehouse(user: User = Depends(current_user)) -> User:
     if user.role != "NHAN_VIEN" or user.warehouse_id is None:
         raise HTTPException(403, "Chỉ thủ kho đã được phân kho mới được truy cập chức năng này.")
+    if user.warehouse_id != OPERATING_WAREHOUSE_ID:
+        raise HTTPException(403, WAREHOUSE_SCOPE_MESSAGE + ' Liên hệ ADMIN để đổi phân công kho.')
     return user
 
 

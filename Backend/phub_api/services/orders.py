@@ -6,6 +6,7 @@ from phub_api.services.checkout import checkout_parameters
 
 
 PUBLIC_ERRORS = {
+    'SINGLE_WAREHOUSE': (422, 'Hệ thống chỉ bán hàng từ kho cố định 2. Vui lòng lấy lại báo giá.'),
     "VALIDATION_ERROR": (422, "Thông tin đặt hàng không hợp lệ."),
     "PRODUCT_NOT_AVAILABLE": (404, "Sản phẩm không tồn tại hoặc không còn được bán."),
     "WAREHOUSE_NOT_AVAILABLE": (404, "Kho không tồn tại hoặc không hoạt động."),

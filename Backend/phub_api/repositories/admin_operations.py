@@ -4,6 +4,9 @@ class AdminOperationsRepository:
         self.db = db
 
     def command(self, actor, resource, action, key, record_id, body):
+        if resource == 'receipts':
+            return self.db.rpc('priced_receipt_v1', {'p_actor': actor, 'p_portal': 'ADMIN', 'p_action': action,
+                'p_key': str(key), 'p_id': int(record_id) if record_id is not None else None, 'p_body': body}).execute().data
         return self.db.rpc('admin_operation_v1', {
             'p_actor': actor, 'p_resource': resource, 'p_action': action,
             'p_key': str(key), 'p_id': record_id, 'p_body': body,

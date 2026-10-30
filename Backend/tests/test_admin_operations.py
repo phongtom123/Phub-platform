@@ -92,6 +92,9 @@ def test_signed_ids_exact_money_and_idempotency_header(client):
     assert state['calls'][0][1]['p_body']['amount'] == '99999999999999.99'
     response = http.post('/api/admin/operations/receipts', headers={'Origin': 'http://localhost:3000', 'Idempotency-Key': str(uuid4())},
                          json={'action': 'create', 'data': {'warehouse_id': -1, 'supplier_id': 0, 'lines': [{'sku': 'CPU', 'quantity': 2, 'unit_price': '10.25'}]}})
+    assert response.status_code == 422  # Fixed warehouse policy rejects other warehouses.
+    response = http.post('/api/admin/operations/receipts', headers={'Origin': 'http://localhost:3000', 'Idempotency-Key': str(uuid4())},
+                         json={'action': 'create', 'data': {'warehouse_id': 2, 'supplier_id': 0, 'lines': [{'sku': 'CPU', 'quantity': 2, 'unit_price': '10.25'}]}})
     assert response.status_code == 200
     assert state['calls'][-1][1]['p_body']['supplier_id'] == 0
     assert post(http, **{'Idempotency-Key': 'invalid'}).status_code == 422

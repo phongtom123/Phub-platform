@@ -55,6 +55,7 @@ Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkou
 """
 
 TAGS = [
+    {"name": "Admin · Định giá nhập hàng", "description": "Markup/thuế, preview Decimal và snapshot phiếu; ADMIN sửa, kho chỉ xem."},
     {"name": "Kho · Nghiệp vụ", "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trong kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu."},
     {"name": "Admin · Vận hành", "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key."},
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
@@ -110,7 +111,7 @@ def row_schema(name: str) -> dict:
     properties = {}
     for column in public_columns(name):
         field, kind = column["name"], column["type"]
-        prop = {"type": "integer"} if kind == "int" else {"type": "string"}
+        prop = {"type": "integer"} if kind == "int" else {"type": "boolean"} if kind == "boolean" else {"type": "string"}
         description = field
         if kind in {"datetime", "timestamptz"}:
             prop["format"] = "date-time"
@@ -119,7 +120,8 @@ def row_schema(name: str) -> dict:
         if kind == "uuid":
             prop["format"] = "uuid"
         if kind.startswith("decimal"):
-            prop["pattern"] = r"^-?\d+(\.\d{1,2})?$"
+            scale = int(kind.rstrip(")").split(",")[1])
+            prop["pattern"] = rf"^-?\d+(\.\d{{1,{scale}}})?$"
             description += " · chuỗi decimal, không phải JSON number"
         if column["generated"]:
             description += " · database tự sinh"

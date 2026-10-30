@@ -48,7 +48,7 @@ export function SettingsForm() {
     }
   }
   return (
-    <form onSubmit={save}>
+    <><form onSubmit={save}>
       {error && (
         <p className="live-error" role="alert">
           {error}
@@ -124,6 +124,6 @@ export function SettingsForm() {
           </button>
         </>
       )}
-    </form>
+    </form></>
   );
 }

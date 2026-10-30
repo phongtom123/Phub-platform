@@ -44,13 +44,15 @@ Mỗi chương trình khuyến mãi có một banner tùy chọn: xem [Banner kh
 
 Báo cáo doanh thu/giá vốn/lợi nhuận gộp: xem [Báo cáo kinh doanh](../../docs/BUSINESS-REPORTS.md), gồm phương pháp bình quân liên hoàn và cách xử lý dữ liệu thiếu.
 
+Định giá bán từ giá nhập, markup và nhiều loại thuế: xem [Định giá phiếu nhập](RECEIPT_PRICING.md), gồm công thức, API, snapshot và thứ tự triển khai.
+
 - **Shared**: xác thực, health và metadata.
 - **Admin**: tổ chức (kho/nhân viên/tài khoản), khách hàng, sản phẩm, khuyến mãi.
-- **Kho**: tồn kho, nhà cung cấp, phiếu nhập, chuyển kho.
+- **Kho**: vận hành kho cố định 2, tồn kho, nhà cung cấp và phiếu nhập. Chuyển kho ngừng sử dụng; xem [phạm vi một kho](../../docs/SINGLE-WAREHOUSE.md).
 - **Bán hàng**: đơn hàng, hóa đơn, thanh toán.
 - **Customer**: catalog công khai và alias sản phẩm cũ (deprecated).
 
-Có **49 đường dẫn, 70 thao tác**, gồm 19 GET bảng, 16 POST/PATCH trên 8 bảng dữ liệu nền, 11 thao tác tài khoản admin và các module xác thực/catalog/mua hàng. Đây là đặc tả chức năng **đã có code**, không phải xác nhận database thật đã chạy.
+Danh sách đường dẫn/thao tác hiện tại lấy trực tiếp từ snapshot OpenAPI và Swagger đang chạy. Đây là đặc tả chức năng **đã có code**, không phải xác nhận mọi API đã được nghiệm thu trên database thật.
 
 Quản lý tài khoản dùng nhóm **Admin · Tài khoản**, prefix `/api/admin`.
 Xem [hợp đồng và các quy tắc tài khoản](modules/admin-accounts.md).

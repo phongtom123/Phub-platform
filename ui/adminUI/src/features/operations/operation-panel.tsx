@@ -14,6 +14,8 @@ import {
 } from "./api";
 import "./operations.css";
 import { useAdminAuth } from "../../components/admin/auth-provider";
+import { ReceiptPricing, ReceiptPricingSummary } from "../pricing/pricing-editor";
+import { pricingRequest, confirmationMessage, type PriceInputs, type ReceiptPriceQuote } from "../../../../shared/pricing";
 
 const actions: Record<
   string,
@@ -41,6 +43,7 @@ const actions: Record<
   ],
 };
 type Line = {
+  pricing?: PriceInputs;
   sku: string;
   quantity: string;
   warehouse_id: string;
@@ -49,7 +52,7 @@ type Line = {
 const blankLine = (): Line => ({
   sku: "",
   quantity: "1",
-  warehouse_id: "",
+  warehouse_id: "2",
   unit_price: "",
 });
 const ids: Record<string, string> = {
@@ -77,7 +80,7 @@ export function OperationPanel({
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [lines, setLines] = useState<Line[]>([blankLine()]);
-  const [warehouse, setWarehouse] = useState(""),
+  const [warehouse, setWarehouse] = useState("2"),
     [supplier, setSupplier] = useState("");
   const [customer, setCustomer] = useState(""),
     [recipient, setRecipient] = useState(""),
@@ -229,14 +232,21 @@ export function OperationPanel({
         throw new Error(
           "Phiếu có hơn 100 dòng. Chưa thể chỉnh sửa bằng biểu mẫu này.",
         );
+      // Generic table metadata omits JSON snapshots. Use the pricing API so
+      // reopening a draft cannot silently replace its tax list with [].
+      const quote = await pricingRequest<ReceiptPriceQuote>(`receipts/${id}`);
+      if (quote.status !== "NHAP") throw new Error("Phiếu đã được xử lý. Hãy làm mới.");
       setLines(
         body.data.length
-          ? body.data.map((l: DataRow) => ({
+          ? body.data.map((l: DataRow) => {
+            const price = quote.lines.find(line => line.sku === l.sku)?.price;
+            return ({
               sku: String(l.sku),
               quantity: String(l.so_luong_nhap ?? l.so_luong),
               warehouse_id: "",
               unit_price: String(l.gia_nhap ?? ""),
-            }))
+              pricing: price ? { markup_rate: price.markup_rate, taxes: price.taxes.map(tax => ({ code: tax.code, name: tax.name, rate: tax.rate })) } : undefined,
+            }); })
           : [blankLine()],
       );
       setMode("lines");
@@ -275,6 +285,7 @@ export function OperationPanel({
         ? { warehouse_id: Number(l.warehouse_id) }
         : {}),
       unit_price: l.unit_price,
+      ...(resource === "receipts" ? l.pricing ?? {} : {}),
     }));
     if (mode === "lines") {
       void run(mode, { lines: values });
@@ -314,7 +325,13 @@ export function OperationPanel({
               key={a.action}
               disabled={busy || Boolean(pending.current)}
               onClick={() => {
-                if (window.confirm(`${a.label}?`)) void run(a.action);
+                if (resource === "receipts" && a.action === "confirm") {
+                  setBusy(true); setError("");
+                  pricingRequest<ReceiptPriceQuote>(`receipts/${id}`).then(quote => {
+                    const approved = window.confirm(confirmationMessage(quote));
+                    setBusy(false); if (approved) void run(a.action, { pricing_version: quote.version });
+                  }).catch(reason => { setBusy(false); setError(reason.message); });
+                } else if (window.confirm(`${a.label}?`)) void run(a.action);
               }}
             >
               {a.label}
@@ -363,6 +380,7 @@ export function OperationPanel({
           </button>
         )}
       </div>
+      {resource === "receipts" && id && <ReceiptPricingSummary receiptId={Number(id)} status={status} />}
       {error && (
         <p className="live-error" role="alert">
           {error}{" "}
@@ -447,12 +465,14 @@ export function OperationPanel({
             {mode === "create" && resource === "receipts" && (
               <>
                 <label>
-                  Kho nhập *
+                  Kho nhập cố định
                   <ReferenceInput
                     field="ma_kho"
                     value={warehouse}
                     required
                     label="Chọn kho"
+                    disabled
+                    searchable={false}
                     onChange={setWarehouse}
                   />
                 </label>
@@ -483,6 +503,7 @@ export function OperationPanel({
                         onChange={(v, r) =>
                           setLine(index, {
                             sku: v,
+                            pricing: undefined,
                             ...(resource === "orders" && r
                               ? { unit_price: String(r.gia_ban_hien_tai) }
                               : {}),
@@ -492,10 +513,12 @@ export function OperationPanel({
                     </label>
                     {resource === "orders" && (
                       <label>
-                        Kho xuất *
+                        Kho xuất cố định
                         <ReferenceInput
                           field="ma_kho"
                           label={`Kho xuất dòng ${index + 1}`}
+                          disabled
+                          searchable={false}
                           required
                           value={l.warehouse_id}
                           onChange={(v) => setLine(index, { warehouse_id: v })}
@@ -546,6 +569,7 @@ export function OperationPanel({
                     >
                       Bỏ dòng
                     </button>
+                    {resource === "receipts" && <ReceiptPricing sku={l.sku} cost={l.unit_price} value={l.pricing} disabled={busy || Boolean(pending.current)} onChange={pricing => setLine(index, { pricing })} />}
                   </div>
                 ))}
                 <button

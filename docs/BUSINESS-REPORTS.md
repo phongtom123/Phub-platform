@@ -1,5 +1,7 @@
 # Báo cáo kinh doanh trong admin
 
+**Cập nhật 30/10/2026:** phạm vi mới chỉ **kho 2 — Kho trung tâm**. Xem [quy tắc một kho cố định](SINGLE-WAREHOUSE.md); migration `20261030034222_fixed_operating_warehouse.sql` thay thế hàm báo cáo cũ mà không sửa số liệu nghiệp vụ. Các giới hạn chuyển kho/hoàn tiền bên dưới mô tả phiên bản đầu; phiên bản mới đọc xuất chuyển kho cũ để tái dựng tồn và tách hoàn tiền đơn hủy trước xuất khỏi hoàn tiền hàng bán.
+
 ## Đã triển khai
 
 - Trang `/reports`, menu **Tổng quan → Báo cáo kinh doanh**.

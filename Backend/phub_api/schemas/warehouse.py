@@ -4,9 +4,10 @@ from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
+from phub_api.schemas.pricing import PricingModel
 
 
-class ReceiptLine(BaseModel):
+class ReceiptLine(PricingModel):
     model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
     sku: str = Field(min_length=1, max_length=100)
     quantity: int = Field(strict=True, ge=1, le=1000000)
@@ -34,6 +35,9 @@ class ReceiptVersion(BaseModel):
     model_config = ConfigDict(extra='forbid')
     expected_version: str = Field(pattern=r'^[a-f0-9]{64}$')
 
+class ReceiptConfirmVersion(ReceiptVersion):
+    pricing_version: str = Field(pattern=r'^[a-f0-9]{64}$')
+
 
 class ReceiptUpdate(ReceiptCreate, ReceiptVersion):
     pass
@@ -47,6 +51,7 @@ class ReceiptHeader(BaseModel):
     ngay_tao: datetime
     ngay_nhap: datetime | None = None
     trang_thai: Literal['NHAP', 'DA_NHAP', 'HUY']
+    dinh_gia_da_ap_dung: bool = False
     nguoi_tao: str
     nguoi_cap_nhat: str | None = None
     nguoi_xac_nhan: str | None = None
@@ -65,6 +70,7 @@ class ReceiptLineRead(BaseModel):
     quantity: int
     unit_price: Decimal
     unit: str
+    pricing: dict | None = None
 
 
 class WarehouseReceiptRead(BaseModel):

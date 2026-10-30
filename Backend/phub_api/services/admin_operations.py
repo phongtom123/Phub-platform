@@ -4,8 +4,13 @@ from pydantic import ValidationError
 from uuid import UUID
 
 from phub_api.schemas.admin_operations import COMMANDS
+from phub_api.services.pricing import PRICING_ERRORS
+from phub_api.config.warehouse import WAREHOUSE_SCOPE_MESSAGE
+from phub_api.services.warehouse_scope import require_operating_warehouse
 
 ERRORS = {
+    'SINGLE_WAREHOUSE': (422, WAREHOUSE_SCOPE_MESSAGE),
+    **PRICING_ERRORS,
     'REPORT_TOO_LARGE': (422, 'Lịch sử vượt 20.000 dòng nhập/xuất. Cần tối ưu hoặc chốt kỳ trước khi tính, không trả báo cáo bị cắt thiếu.'),
     'TRANSFER_DISABLED': (410, 'Hệ thống chỉ sử dụng một kho; chức năng chuyển kho đã ngừng sử dụng.'),
     'ADMIN_FORBIDDEN': (403, 'Chỉ quản trị viên đang hoạt động được thực hiện.'),
@@ -36,8 +41,8 @@ class AdminOperationsService:
             for code, (status, detail) in ERRORS.items():
                 if message == code:
                     raise HTTPException(status, detail) from None
-            if exc.code in {'42883', 'PGRST202', '42P01'}:
-                raise HTTPException(503, 'Database chưa cài migration admin_operations. Không có thao tác nào được ghi.') from None
+            if exc.code in {'42883', 'PGRST202', '42P01', '42703'}:
+                raise HTTPException(503, 'Database thiếu cấu trúc nghiệp vụ. Cần áp dụng migration admin_operations và receipt_sale_pricing; không có thao tác nào được ghi.') from None
             if exc.code == '23505':
                 raise HTTPException(409, 'Mã phiếu hoặc mã đối soát đã tồn tại.') from None
             if exc.code in {'23503', '23514', '22003', '22P02'}:
@@ -52,6 +57,11 @@ class AdminOperationsService:
             data = schema.model_validate(command.data).model_dump(mode='json', exclude_none=True)
         except ValidationError as exc:
             raise HTTPException(422, [{'loc': ['data', *e['loc']], 'msg': e['msg']} for e in exc.errors()]) from None
+        if (command.action == 'create' and resource == 'receipts') or resource == 'inventory':
+            require_operating_warehouse(data.get('warehouse_id'))
+        if command.action == 'create' and resource == 'orders':
+            for line in data['lines']:
+                require_operating_warehouse(line.get('warehouse_id'))
         if resource == 'receipts':
             if command.action == 'create':
                 if resource == 'receipts' and (data.get('supplier_id') is None or any('unit_price' not in l for l in data['lines'])):

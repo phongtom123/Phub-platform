@@ -65,7 +65,7 @@ export function ReportsView() {
 
   return <section className={`live-data ${styles.page}`}>
     <header className={styles.heading}>
-      <div><h1><BarChart3 size={25} aria-hidden="true" />Báo cáo kinh doanh</h1><p>Doanh thu, giá vốn và lợi nhuận gộp · bình quân gia quyền liên hoàn.</p></div>
+      <div><h1><BarChart3 size={25} aria-hidden="true" />Báo cáo kinh doanh</h1><p>Kho cố định 2 — Kho trung tâm · doanh thu, giá vốn và lợi nhuận gộp.</p></div>
       <button type="button" disabled={loading || Boolean(periodError)} onClick={() => setVersion(v => v + 1)}><RefreshCw size={15} aria-hidden="true" /> Làm mới báo cáo</button>
     </header>
     <div className={styles.presets} aria-label="Chọn nhanh kỳ báo cáo">{[7, 30, 90].map(days => <button type="button" key={days} onClick={() => apply(recentRange(days))}>{days} ngày gần đây</button>)}</div>
@@ -87,7 +87,7 @@ export function ReportsView() {
         <article>Lợi nhuận gộp<strong>{amount(visible.gross_profit)}</strong><small>Không phải lợi nhuận ròng.</small></article>
         <article>Biên lợi nhuận gộp<strong>{percent(visible.margin)}</strong><small>Doanh thu bằng 0: không xác định.</small></article>
       </div>
-      <div className={styles.cash}><span>{visible.order_count} đơn hoàn thành · {visible.quantity} sản phẩm</span><span>Thuế: {amount(visible.tax)}</span><span>Thu trừ hoàn: {amount(visible.collected)}</span><span>Hoàn tiền trong kỳ: {amount(visible.refunds)}</span></div>
+      <div className={styles.cash}><span>{visible.order_count} đơn hoàn thành · {visible.quantity} sản phẩm</span><span>Thuế: {amount(visible.tax)}</span><span>Thu trừ hoàn (đơn chỉ thuộc kho 2): {amount(visible.collected)}</span><span>Hoàn trong kỳ (đơn chỉ thuộc kho 2): {amount(visible.refunds)}</span></div>
       <p className={styles.basis}>Giá vốn tái dựng tại thời điểm xuất kho từ phiếu đã nhập, tính cả lịch sử trước kỳ; không dùng giá nhập tương lai. Doanh thu và giá vốn cùng ghi nhận theo ngày hoàn thành đơn. Khác chỉ tiêu hóa đơn gồm thuế ở Tổng quan. Dòng tiền theo ngày thanh toán, không dùng để suy ra lợi nhuận.</p>
       <section className={styles.details} aria-label="Chi tiết báo cáo">
         <div className="live-tools"><button type="button" aria-pressed={tab === "products"} onClick={() => { setTab("products"); setPage(1); }}>Theo sản phẩm</button><button type="button" aria-pressed={tab === "daily"} onClick={() => { setTab("daily"); setPage(1); }}>Theo ngày</button>
