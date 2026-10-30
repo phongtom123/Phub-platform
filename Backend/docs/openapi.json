@@ -473,6 +473,157 @@
         "title": "BrandList",
         "type": "object"
       },
+      "BusinessReport": {
+        "properties": {
+          "basis": {
+            "const": "COMPLETED_ORDERS",
+            "title": "Basis",
+            "type": "string"
+          },
+          "collected": {
+            "title": "Collected",
+            "type": "string"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "costed_lines": {
+            "title": "Costed Lines",
+            "type": "integer"
+          },
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/DailyProfit"
+            },
+            "title": "Daily",
+            "type": "array"
+          },
+          "discounts": {
+            "title": "Discounts",
+            "type": "string"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "gross_profit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Profit"
+          },
+          "gross_revenue": {
+            "title": "Gross Revenue",
+            "type": "string"
+          },
+          "known_cost": {
+            "title": "Known Cost",
+            "type": "string"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin"
+          },
+          "method": {
+            "const": "MOVING_WEIGHTED_AVERAGE",
+            "title": "Method",
+            "type": "string"
+          },
+          "net_revenue": {
+            "title": "Net Revenue",
+            "type": "string"
+          },
+          "order_count": {
+            "title": "Order Count",
+            "type": "integer"
+          },
+          "products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductProfit"
+            },
+            "title": "Products",
+            "type": "array"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "refunds": {
+            "title": "Refunds",
+            "type": "string"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          },
+          "tax": {
+            "title": "Tax",
+            "type": "string"
+          },
+          "total_lines": {
+            "title": "Total Lines",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "enum": [
+                "INCOMPLETE_COST_HISTORY",
+                "UNALLOCATED_REFUNDS"
+              ],
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "method",
+          "basis",
+          "net_revenue",
+          "tax",
+          "discounts",
+          "gross_revenue",
+          "collected",
+          "refunds",
+          "order_count",
+          "quantity",
+          "cost",
+          "known_cost",
+          "gross_profit",
+          "margin",
+          "costed_lines",
+          "total_lines",
+          "warnings",
+          "products",
+          "daily"
+        ],
+        "title": "BusinessReport",
+        "type": "object"
+      },
       "CHUONG_TRINH_KHUYEN_MAICreate": {
         "additionalProperties": false,
         "example": {
@@ -2267,6 +2418,37 @@
           "ghi_chu"
         ],
         "title": "DON_HANGRead",
+        "type": "object"
+      },
+      "DailyProfit": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "gross_profit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Profit"
+          },
+          "net_revenue": {
+            "title": "Net Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "day",
+          "net_revenue",
+          "gross_profit"
+        ],
+        "title": "DailyProfit",
         "type": "object"
       },
       "ErrorBody": {
@@ -5283,6 +5465,75 @@
           "pagination"
         ],
         "title": "ProductPage",
+        "type": "object"
+      },
+      "ProductProfit": {
+        "properties": {
+          "cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "gross_profit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Profit"
+          },
+          "margin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "net_revenue": {
+            "title": "Net Revenue",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "unpriced_lines": {
+            "title": "Unpriced Lines",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sku",
+          "name",
+          "quantity",
+          "net_revenue",
+          "cost",
+          "gross_profit",
+          "margin",
+          "unpriced_lines"
+        ],
+        "title": "ProductProfit",
         "type": "object"
       },
       "QuoteRequest": {
@@ -10471,6 +10722,122 @@
         "summary": "Lưu gallery; ảnh đầu tiên là ảnh chính (ADMIN)",
         "tags": [
           "Admin · Hình ảnh"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/operations/business-report": {
+      "get": {
+        "operationId": "business_report_api_admin_operations_business_report_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "End",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Doanh thu, giá vốn bình quân liên hoàn và lợi nhuận từ đơn hoàn thành (ADMIN)",
+        "tags": [
+          "Admin · Vận hành"
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [

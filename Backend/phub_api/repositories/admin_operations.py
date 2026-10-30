@@ -11,3 +11,6 @@ class AdminOperationsRepository:
 
     def read(self, actor, kind, query):
         return self.db.rpc('admin_read_v1', {'p_actor': actor, 'p_kind': kind, 'p_query': query}).execute().data
+
+    def business_report(self, actor, start, end):
+        return self.db.rpc('admin_business_report_v1', {'p_actor': actor, 'p_start': start, 'p_end': end}).execute().data

@@ -6,6 +6,7 @@ from uuid import UUID
 from phub_api.schemas.admin_operations import COMMANDS
 
 ERRORS = {
+    'REPORT_TOO_LARGE': (422, 'Lịch sử vượt 20.000 dòng nhập/xuất. Cần tối ưu hoặc chốt kỳ trước khi tính, không trả báo cáo bị cắt thiếu.'),
     'TRANSFER_DISABLED': (410, 'Hệ thống chỉ sử dụng một kho; chức năng chuyển kho đã ngừng sử dụng.'),
     'ADMIN_FORBIDDEN': (403, 'Chỉ quản trị viên đang hoạt động được thực hiện.'),
     'NOT_FOUND': (404, 'Không tìm thấy bản ghi.'),
@@ -76,3 +77,13 @@ class AdminOperationsService:
             except ValueError:
                 raise HTTPException(422, 'Mã ticket không hợp lệ.') from None
         return self.call(self.repository.read, self.user.account_id, kind, query)
+
+    def business_report(self, start, end):
+        if start > end or (end - start).days >= 366 or end.isoformat() == '9999-12-31':
+            raise HTTPException(422, 'Chọn kỳ báo cáo hợp lệ, tối đa 366 ngày.')
+        try:
+            return self.call(self.repository.business_report, self.user.account_id, start.isoformat(), end.isoformat())
+        except HTTPException as error:
+            if error.status_code == 503:
+                raise HTTPException(503, 'Database chưa có hàm business_report. Cần áp dụng migration business_report.') from None
+            raise
