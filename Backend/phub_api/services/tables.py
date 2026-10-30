@@ -18,13 +18,19 @@ from phub_api.repositories.tables import TablesRepository, clean
 from phub_api.schemas.resources import payload_model
 from phub_api.schemas.crm import vietnam_today
 from phub_api.schemas.warehouse_drafts import DRAFT_FIELDS
+from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID, WAREHOUSE_SCOPE_MESSAGE
+from phub_api.services.warehouse_scope import require_operating_warehouse
 
 
 def can_write(name: str, user: User) -> bool:
+    if name == 'warehouses':
+        return False  # One fixed warehouse; archived warehouse records remain in the DB.
     return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "NHAN_VIEN" and name == "suppliers"))
 
 
 def access(name: str, user: User, write: bool = False) -> None:
+    if user.role == 'NHAN_VIEN' and user.warehouse_id != OPERATING_WAREHOUSE_ID:
+        raise HTTPException(403, WAREHOUSE_SCOPE_MESSAGE)
     readable = user.role == "ADMIN" or (user.role == "NHAN_VIEN" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
     if not readable or (write and not can_write(name, user)):
         raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này.")
@@ -80,6 +86,8 @@ def validate_combined(name: str, data: dict, user: User) -> None:
     if name == "employees":
         if (data["loai_nhan_vien"] == "ADMIN") != (data.get("ma_kho") is None):
             raise HTTPException(422, "ADMIN không gán kho; NHAN_VIEN phải gán một kho.")
+        if data['loai_nhan_vien'] == 'NHAN_VIEN':
+            require_operating_warehouse(data.get('ma_kho'))
     if name == "promotions":
         try:
             valid = datetime.fromisoformat(data["ngay_ket_thuc"]) > datetime.fromisoformat(data["ngay_bat_dau"])

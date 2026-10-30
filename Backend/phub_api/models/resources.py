@@ -18,7 +18,7 @@ class Resource:
 
 
 RESOURCES = {
-    "warehouses": Resource("KHO", "Kho", ("ma_kho",), True, True),
+    "warehouses": Resource("KHO", "Kho cố định", ("ma_kho",), False, True),
     "employees": Resource("NHAN_VIEN", "Nhân viên", ("ma_nhan_vien",), True),
     "accounts": Resource("TAI_KHOAN", "Tài khoản", ("ma_tk",)),
     "customers": Resource("KHACH_HANG", "Khách hàng", ("ma_kh",), True),
@@ -74,7 +74,7 @@ ENUMS = {
     ("vouchers", "trang_thai"): ["HOAT_DONG", "TAM_DUNG"],
     ("vouchers", "loai_giam"): ["PHAN_TRAM", "SO_TIEN"],
 }
-SYSTEM_FIELDS = {"promotions": {"nguoi_tao", "ngay_tao"}, "vouchers": {"ngay_tao"},
+SYSTEM_FIELDS = {"products": {"ty_le_loi_nhuan_mac_dinh", "dung_thue_mac_dinh"}, "promotions": {"nguoi_tao", "ngay_tao"}, "vouchers": {"ngay_tao"},
                  "customers": {"ngay_tao", "cap_nhat_luc", "luu_tru_luc"}}
 
 

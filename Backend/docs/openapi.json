@@ -1130,12 +1130,66 @@
       "CT_PHIEU_NHAPRead": {
         "additionalProperties": false,
         "example": {
+          "dinh_gia_sua_boi": null,
+          "dinh_gia_sua_luc": null,
+          "gia_ban_sau_thue": null,
+          "gia_ban_truoc_thue": null,
           "gia_nhap": "2000000.00",
           "ma_phieu_nhap": 1,
           "sku": "INTEL-I5-14400F",
-          "so_luong_nhap": 2
+          "so_luong_nhap": 2,
+          "tien_loi_nhuan": null,
+          "tong_tien_thue": "0.00",
+          "ty_le_loi_nhuan": null
         },
         "properties": {
+          "dinh_gia_sua_boi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dinh_gia_sua_boi"
+          },
+          "dinh_gia_sua_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "dinh_gia_sua_luc"
+          },
+          "gia_ban_sau_thue": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "gia_ban_sau_thue · chuỗi decimal, không phải JSON number"
+          },
+          "gia_ban_truoc_thue": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "gia_ban_truoc_thue · chuỗi decimal, không phải JSON number"
+          },
           "gia_nhap": {
             "description": "gia_nhap · chuỗi decimal, không phải JSON number",
             "pattern": "^-?\\d+(\\.\\d{1,2})?$",
@@ -1152,13 +1206,56 @@
           "so_luong_nhap": {
             "description": "so_luong_nhap",
             "type": "integer"
+          },
+          "tien_loi_nhuan": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "tien_loi_nhuan · chuỗi decimal, không phải JSON number"
+          },
+          "tong_tien_thue": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "tong_tien_thue · chuỗi decimal, không phải JSON number"
+          },
+          "ty_le_loi_nhuan": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d{1,4})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ty_le_loi_nhuan · chuỗi decimal, không phải JSON number"
           }
         },
         "required": [
           "ma_phieu_nhap",
           "sku",
           "so_luong_nhap",
-          "gia_nhap"
+          "gia_nhap",
+          "ty_le_loi_nhuan",
+          "tien_loi_nhuan",
+          "gia_ban_truoc_thue",
+          "tong_tien_thue",
+          "gia_ban_sau_thue",
+          "dinh_gia_sua_boi",
+          "dinh_gia_sua_luc"
         ],
         "title": "CT_PHIEU_NHAPRead",
         "type": "object"
@@ -3301,47 +3398,6 @@
         "title": "KHACH_HANGUpdate",
         "type": "object"
       },
-      "KHOCreate": {
-        "additionalProperties": false,
-        "example": {
-          "dia_chi": "Địa chỉ minh họa",
-          "ten_kho": "Kho trung tâm",
-          "trang_thai": 1
-        },
-        "properties": {
-          "dia_chi": {
-            "description": "dia_chi",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Dia Chi",
-            "type": "string"
-          },
-          "ten_kho": {
-            "description": "ten_kho",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Ten Kho",
-            "type": "string"
-          },
-          "trang_thai": {
-            "default": 1,
-            "description": "trang_thai",
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "title": "Trang Thai",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "ten_kho",
-          "dia_chi"
-        ],
-        "title": "KHOCreate",
-        "type": "object"
-      },
       "KHOPage": {
         "additionalProperties": false,
         "properties": {
@@ -3406,57 +3462,6 @@
           "trang_thai"
         ],
         "title": "KHORead",
-        "type": "object"
-      },
-      "KHOSaved": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/KHORead"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "type": "object"
-      },
-      "KHOUpdate": {
-        "additionalProperties": false,
-        "description": "Chỉ gửi trường cần đổi; bỏ password nếu giữ nguyên. Không nhận PK/SKU/trường server tự gán.",
-        "example": {
-          "ten_kho": "Kho trung tâm"
-        },
-        "minProperties": 1,
-        "properties": {
-          "dia_chi": {
-            "description": "dia_chi",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Dia Chi",
-            "type": "string"
-          },
-          "ten_kho": {
-            "description": "ten_kho",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Ten Kho",
-            "type": "string"
-          },
-          "trang_thai": {
-            "description": "trang_thai",
-            "enum": [
-              0,
-              1,
-              2
-            ],
-            "title": "Trang Thai",
-            "type": "integer"
-          }
-        },
-        "title": "KHOUpdate",
         "type": "object"
       },
       "LOAI_SPCreate": {
@@ -5083,6 +5088,7 @@
       "PHIEU_NHAPRead": {
         "additionalProperties": false,
         "example": {
+          "dinh_gia_da_ap_dung": false,
           "ghi_chu": null,
           "ma_kho": 1,
           "ma_ncc": 1,
@@ -5096,6 +5102,10 @@
           "trang_thai": "NHAP"
         },
         "properties": {
+          "dinh_gia_da_ap_dung": {
+            "description": "dinh_gia_da_ap_dung",
+            "type": "boolean"
+          },
           "ghi_chu": {
             "anyOf": [
               {
@@ -5182,7 +5192,8 @@
           "nguoi_tao",
           "nguoi_cap_nhat",
           "nguoi_xac_nhan",
-          "ghi_chu"
+          "ghi_chu",
+          "dinh_gia_da_ap_dung"
         ],
         "title": "PHIEU_NHAPRead",
         "type": "object"
@@ -5385,6 +5396,128 @@
         "title": "PaymentTransaction",
         "type": "object"
       },
+      "PricePreview": {
+        "additionalProperties": false,
+        "properties": {
+          "markup_rate": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,13}0*$)\\d{0,8}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Markup Rate"
+          },
+          "receipt_id": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": -2147483648.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Id"
+          },
+          "sku": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Sku",
+            "type": "string"
+          },
+          "taxes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TaxRule"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxes"
+          },
+          "unit_cost": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Unit Cost"
+          }
+        },
+        "required": [
+          "sku",
+          "unit_cost"
+        ],
+        "title": "PricePreview",
+        "type": "object"
+      },
+      "PricingConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Expected Version",
+            "type": "string"
+          },
+          "markup_rate": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,8}|(?=[\\d.]{1,13}0*$)\\d{0,8}\\.\\d{0,4}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Markup Rate"
+          },
+          "taxes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TaxRule"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxes"
+          }
+        },
+        "required": [
+          "markup_rate",
+          "taxes",
+          "expected_version"
+        ],
+        "title": "PricingConfig",
+        "type": "object"
+      },
       "ProductGallery": {
         "properties": {
           "images": {
@@ -5567,6 +5700,27 @@
         "title": "QuoteRequest",
         "type": "object"
       },
+      "ReceiptConfirmVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Expected Version",
+            "type": "string"
+          },
+          "pricing_version": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Pricing Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "pricing_version"
+        ],
+        "title": "ReceiptConfirmVersion",
+        "type": "object"
+      },
       "ReceiptCreate": {
         "additionalProperties": false,
         "properties": {
@@ -5665,6 +5819,11 @@
       },
       "ReceiptHeader": {
         "properties": {
+          "dinh_gia_da_ap_dung": {
+            "default": false,
+            "title": "Dinh Gia Da Ap Dung",
+            "type": "boolean"
+          },
           "ghi_chu": {
             "anyOf": [
               {
@@ -5801,6 +5960,18 @@
       },
       "ReceiptLineRead": {
         "properties": {
+          "pricing": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing"
+          },
           "product_name": {
             "title": "Product Name",
             "type": "string"
@@ -5845,6 +6016,11 @@
               }
             ],
             "title": "Creator Name"
+          },
+          "dinh_gia_da_ap_dung": {
+            "default": false,
+            "title": "Dinh Gia Da Ap Dung",
+            "type": "boolean"
           },
           "ghi_chu": {
             "anyOf": [
@@ -6522,6 +6698,7 @@
         "example": {
           "bao_hanh_thang": 36,
           "don_vi": "Cai",
+          "dung_thue_mac_dinh": true,
           "duong_dan_anh": "https://example.com/cpu.jpg",
           "gia_ban_hien_tai": "2500000.00",
           "ma_loai_sp": "CPU",
@@ -6532,7 +6709,8 @@
           "ten_sp": "Intel Core i5-14400F",
           "thong_so_ky_thuat": "Socket: LGA1700",
           "thuong_hieu": "Intel",
-          "trang_thai": 1
+          "trang_thai": 1,
+          "ty_le_loi_nhuan_mac_dinh": null
         },
         "properties": {
           "bao_hanh_thang": {
@@ -6542,6 +6720,10 @@
           "don_vi": {
             "description": "don_vi",
             "type": "string"
+          },
+          "dung_thue_mac_dinh": {
+            "description": "dung_thue_mac_dinh · server tự gán",
+            "type": "boolean"
           },
           "duong_dan_anh": {
             "anyOf": [
@@ -6615,6 +6797,18 @@
           "trang_thai": {
             "description": "trang_thai",
             "type": "integer"
+          },
+          "ty_le_loi_nhuan_mac_dinh": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d{1,4})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ty_le_loi_nhuan_mac_dinh · chuỗi decimal, không phải JSON number · server tự gán"
           }
         },
         "required": [
@@ -6625,6 +6819,8 @@
           "ma_loai_sp_con",
           "thuong_hieu",
           "gia_ban_hien_tai",
+          "ty_le_loi_nhuan_mac_dinh",
+          "dung_thue_mac_dinh",
           "mo_ta",
           "thong_so_ky_thuat",
           "don_vi",
@@ -7606,6 +7802,104 @@
           "cap_nhat_luc"
         ],
         "title": "TON_KHORead",
+        "type": "object"
+      },
+      "TaxDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Z][A-Z0-9_]{0,29}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Rate"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "rate"
+        ],
+        "title": "TaxDefinition",
+        "type": "object"
+      },
+      "TaxEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Rate"
+          }
+        },
+        "required": [
+          "name",
+          "rate"
+        ],
+        "title": "TaxEdit",
+        "type": "object"
+      },
+      "TaxRule": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "pattern": "^[A-Z][A-Z0-9_]{0,29}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,3}|(?=[\\d.]{1,8}0*$)\\d{0,3}\\.\\d{0,4}0*$)",
+                "type": "string"
+              }
+            ],
+            "title": "Rate"
+          }
+        },
+        "required": [
+          "code",
+          "rate"
+        ],
+        "title": "TaxRule",
         "type": "object"
       },
       "TicketCreate": {
@@ -18399,6 +18693,7 @@
                     {
                       "bao_hanh_thang": 36,
                       "don_vi": "Cai",
+                      "dung_thue_mac_dinh": true,
                       "duong_dan_anh": "https://example.com/cpu.jpg",
                       "gia_ban_hien_tai": "2500000.00",
                       "ma_loai_sp": "CPU",
@@ -18409,7 +18704,8 @@
                       "ten_sp": "Intel Core i5-14400F",
                       "thong_so_ky_thuat": "Socket: LGA1700",
                       "thuong_hieu": "Intel",
-                      "trang_thai": 1
+                      "trang_thai": 1,
+                      "ty_le_loi_nhuan_mac_dinh": null
                     }
                   ],
                   "page": 1,
@@ -18576,6 +18872,7 @@
                     {
                       "bao_hanh_thang": 36,
                       "don_vi": "Cai",
+                      "dung_thue_mac_dinh": true,
                       "duong_dan_anh": "https://example.com/cpu.jpg",
                       "gia_ban_hien_tai": "2500000.00",
                       "ma_loai_sp": "CPU",
@@ -18586,7 +18883,8 @@
                       "ten_sp": "Intel Core i5-14400F",
                       "thong_so_ky_thuat": "Socket: LGA1700",
                       "thuong_hieu": "Intel",
-                      "trang_thai": 1
+                      "trang_thai": 1,
+                      "ty_le_loi_nhuan_mac_dinh": null
                     }
                   ]
                 },
@@ -18770,6 +19068,7 @@
                     {
                       "bao_hanh_thang": 36,
                       "don_vi": "Cai",
+                      "dung_thue_mac_dinh": true,
                       "duong_dan_anh": "https://example.com/cpu.jpg",
                       "gia_ban_hien_tai": "2500000.00",
                       "ma_loai_sp": "CPU",
@@ -18780,7 +19079,8 @@
                       "ten_sp": "Intel Core i5-14400F",
                       "thong_so_ky_thuat": "Socket: LGA1700",
                       "thuong_hieu": "Intel",
-                      "trang_thai": 1
+                      "trang_thai": 1,
+                      "ty_le_loi_nhuan_mac_dinh": null
                     }
                   ]
                 },
@@ -19559,10 +19859,17 @@
                 "example": {
                   "data": [
                     {
+                      "dinh_gia_sua_boi": null,
+                      "dinh_gia_sua_luc": null,
+                      "gia_ban_sau_thue": null,
+                      "gia_ban_truoc_thue": null,
                       "gia_nhap": "2000000.00",
                       "ma_phieu_nhap": 1,
                       "sku": "INTEL-I5-14400F",
-                      "so_luong_nhap": 2
+                      "so_luong_nhap": 2,
+                      "tien_loi_nhuan": null,
+                      "tong_tien_thue": "0.00",
+                      "ty_le_loi_nhuan": null
                     }
                   ],
                   "page": 1,
@@ -19762,6 +20069,7 @@
                 "example": {
                   "data": [
                     {
+                      "dinh_gia_da_ap_dung": false,
                       "ghi_chu": null,
                       "ma_kho": 1,
                       "ma_ncc": 1,
@@ -22311,7 +22619,7 @@
     },
     "/api/data/warehouses": {
       "get": {
-        "description": "Bảng `KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_warehouses",
         "parameters": [
           {
@@ -22495,7 +22803,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Danh sách / chi tiết · Kho",
+        "summary": "Danh sách / chi tiết · Kho cố định",
         "tags": [
           "Admin · Tổ chức"
         ],
@@ -22503,362 +22811,10 @@
         "x-primary-key": [
           "ma_kho"
         ],
-        "x-read-only": false,
+        "x-read-only": true,
         "x-roles": [
           "ADMIN",
           "NHAN_VIEN"
-        ],
-        "x-table": "KHO"
-      },
-      "patch": {
-        "description": "Bảng `KHO`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
-        "operationId": "patch_warehouses",
-        "parameters": [
-          {
-            "description": "Chuỗi JSON mảng khóa theo thứ tự ('ma_kho',); int gửi JSON number, varchar gửi JSON string.",
-            "examples": {
-              "primary_key": {
-                "summary": "Dữ liệu giả minh họa; thay bằng khóa thật",
-                "value": "[1]"
-              }
-            },
-            "in": "query",
-            "name": "key",
-            "required": true,
-            "schema": {
-              "maxLength": 6000,
-              "title": "Key",
-              "type": "string"
-            }
-          },
-          {
-            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
-            "example": "http://localhost:8000",
-            "in": "header",
-            "name": "Origin",
-            "required": true,
-            "schema": {
-              "format": "uri",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "examples": {
-                "illustration": {
-                  "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
-                  "value": {
-                    "ten_kho": "Kho trung tâm"
-                  }
-                }
-              },
-              "schema": {
-                "$ref": "#/components/schemas/KHOUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "data": [
-                    {
-                      "dia_chi": "Địa chỉ minh họa",
-                      "ma_kho": 1,
-                      "ten_kho": "Kho trung tâm",
-                      "trang_thai": 1
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/KHOSaved"
-                }
-              }
-            },
-            "description": "Bản ghi đã lưu, không trả mật khẩu/hash.",
-            "headers": {
-              "Cache-Control": {
-                "example": "no-store",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Bản ghi không tồn tại."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Bản ghi không tồn tại."
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": [
-                    {
-                      "loc": [
-                        "body",
-                        "ten_sp"
-                      ],
-                      "msg": "Field required",
-                      "type": "missing"
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SessionCookie": []
-          }
-        ],
-        "summary": "Chỉnh sửa · Kho",
-        "tags": [
-          "Admin · Tổ chức"
-        ],
-        "x-implementation-status": "implemented-live-unverified",
-        "x-primary-key": [
-          "ma_kho"
-        ],
-        "x-read-only": false,
-        "x-roles": [
-          "ADMIN"
-        ],
-        "x-table": "KHO"
-      },
-      "post": {
-        "description": "Bảng `KHO`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
-        "operationId": "post_warehouses",
-        "parameters": [
-          {
-            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
-            "example": "http://localhost:8000",
-            "in": "header",
-            "name": "Origin",
-            "required": true,
-            "schema": {
-              "format": "uri",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "examples": {
-                "illustration": {
-                  "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
-                  "value": {
-                    "dia_chi": "Địa chỉ minh họa",
-                    "ten_kho": "Kho trung tâm",
-                    "trang_thai": 1
-                  }
-                }
-              },
-              "schema": {
-                "$ref": "#/components/schemas/KHOCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "data": [
-                    {
-                      "dia_chi": "Địa chỉ minh họa",
-                      "ma_kho": 1,
-                      "ten_kho": "Kho trung tâm",
-                      "trang_thai": 1
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/KHOSaved"
-                }
-              }
-            },
-            "description": "Bản ghi đã lưu, không trả mật khẩu/hash.",
-            "headers": {
-              "Cache-Control": {
-                "example": "no-store",
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": [
-                    {
-                      "loc": [
-                        "body",
-                        "ten_sp"
-                      ],
-                      "msg": "Field required",
-                      "type": "missing"
-                    }
-                  ]
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                }
-              }
-            },
-            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          },
-          {
-            "SessionCookie": []
-          }
-        ],
-        "summary": "Thêm · Kho",
-        "tags": [
-          "Admin · Tổ chức"
-        ],
-        "x-implementation-status": "implemented-live-unverified",
-        "x-primary-key": [
-          "ma_kho"
-        ],
-        "x-read-only": false,
-        "x-roles": [
-          "ADMIN"
         ],
         "x-table": "KHO"
       }
@@ -23565,6 +23521,329 @@
         "summary": "Lịch sử thu và hoàn tiền của đơn thuộc khách",
         "tags": [
           "Customer Payments"
+        ]
+      }
+    },
+    "/api/pricing/config": {
+      "get": {
+        "operationId": "config_api_pricing_config_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sku",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sku"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Cấu hình markup/thuế hiệu lực, danh mục và lịch sử sửa (ADMIN/KHO)",
+        "tags": [
+          "Admin · Định giá nhập hàng"
+        ]
+      },
+      "put": {
+        "operationId": "save_config_api_pricing_config_put",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sku",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sku"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sửa cấu hình sản phẩm hoặc mặc định hệ thống (ADMIN)",
+        "tags": [
+          "Admin · Định giá nhập hàng"
+        ]
+      }
+    },
+    "/api/pricing/preview": {
+      "post": {
+        "operationId": "preview_api_pricing_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricePreview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Tính giá bằng Decimal tại backend; UI không gửi số tiền đã tính",
+        "tags": [
+          "Admin · Định giá nhập hàng"
+        ]
+      }
+    },
+    "/api/pricing/receipts/{receipt_id}": {
+      "get": {
+        "operationId": "receipt_api_pricing_receipts__receipt_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "receipt_id",
+            "required": true,
+            "schema": {
+              "title": "Receipt Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Preview giá trước xác nhận; version chống xác nhận giá cũ",
+        "tags": [
+          "Admin · Định giá nhập hàng"
+        ]
+      }
+    },
+    "/api/pricing/taxes": {
+      "post": {
+        "operationId": "add_tax_api_pricing_taxes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxDefinition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Tạo loại thuế (ADMIN)",
+        "tags": [
+          "Admin · Định giá nhập hàng"
+        ]
+      }
+    },
+    "/api/pricing/taxes/{code}": {
+      "patch": {
+        "operationId": "edit_tax_api_pricing_taxes__code__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Z][A-Z0-9_]{0,29}$",
+              "title": "Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaxEdit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sửa tên/tỷ lệ mặc định loại thuế (ADMIN)",
+        "tags": [
+          "Admin · Định giá nhập hàng"
         ]
       }
     },
@@ -24557,7 +24836,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ReceiptVersion"
+                "$ref": "#/components/schemas/ReceiptConfirmVersion"
               }
             }
           },
@@ -24688,6 +24967,10 @@
     }
   ],
   "tags": [
+    {
+      "description": "Markup/thuế, preview Decimal và snapshot phiếu; ADMIN sửa, kho chỉ xem.",
+      "name": "Admin · Định giá nhập hàng"
+    },
     {
       "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trong kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu.",
       "name": "Kho · Nghiệp vụ"

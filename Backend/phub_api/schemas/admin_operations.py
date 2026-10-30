@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from phub_api.schemas.pricing import PricingOverrides
 
 Resource = Literal['orders', 'receipts', 'inventory', 'settings', 'notifications', 'support']
 Money = Decimal
@@ -19,11 +20,14 @@ class Line(StrictModel):
     unit_price: Money | None = Field(None, ge=0, max_digits=18, decimal_places=2)
 
 
+class ReceiptPricingLine(Line, PricingOverrides):
+    pass
+
 class Document(StrictModel):
     warehouse_id: int = Field(strict=True, ge=-(2**31), le=2**31-1)
     supplier_id: int | None = Field(None, strict=True, ge=-(2**31), le=2**31-1)
     note: str | None = Field(None, max_length=2000)
-    lines: list[Line] = Field(min_length=1, max_length=100)
+    lines: list[ReceiptPricingLine] = Field(min_length=1, max_length=100)
 
     @model_validator(mode='after')
     def unique_lines(self):
@@ -52,7 +56,7 @@ class PosOrder(StrictModel):
 
 
 class Lines(StrictModel):
-    lines: list[Line] = Field(min_length=1, max_length=100)
+    lines: list[ReceiptPricingLine] = Field(min_length=1, max_length=100)
 
     @model_validator(mode='after')
     def unique_lines(self):
@@ -103,6 +107,9 @@ class Message(StrictModel):
 class Empty(StrictModel):
     pass
 
+class ConfirmReceipt(StrictModel):
+    pricing_version: str = Field(pattern=r'^[a-f0-9]{64}$')
+
 
 COMMANDS = {
     ('orders', 'create'): PosOrder,
@@ -111,7 +118,7 @@ COMMANDS = {
     ('orders', 'payment'): Payment, ('orders', 'refund'): Payment,
     ('receipts', 'create'): Document,
     ('receipts', 'lines'): Lines,
-    **{('receipts', action): Empty for action in ['confirm', 'cancel']},
+    ('receipts', 'confirm'): ConfirmReceipt, ('receipts', 'cancel'): Empty,
     ('inventory', 'adjust'): Adjustment,
     ('settings', 'save'): Preferences, ('notifications', 'read'): NotificationRead,
     ('support', 'message'): Message,

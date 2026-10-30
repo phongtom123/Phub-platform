@@ -3,6 +3,7 @@ import re
 
 from phub_api.models.resources import CUSTOMER_CHILDREN, RESOURCES, public_columns
 from phub_api.models.user import User
+from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID
 
 
 def selected_columns(name: str, user: User) -> str:
@@ -18,6 +19,8 @@ def selected_columns(name: str, user: User) -> str:
 
 def scoped_query(name: str, user: User, db, search: str | None = None):
     query = db.table(RESOURCES[name].table).select(selected_columns(name, user), count="exact")
+    if name in {'warehouses', 'inventory'}:
+        query = query.eq('ma_kho', OPERATING_WAREHOUSE_ID)
     if user.role == "KHACH_HANG":
         query = query.eq("scope.ma_kh" if name in CUSTOMER_CHILDREN else "ma_kh", user.customer_id)
     if user.role == "NHAN_VIEN":

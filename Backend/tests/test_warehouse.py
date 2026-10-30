@@ -14,8 +14,8 @@ from phub_api.models.user import User
 
 @pytest.fixture
 def warehouse_client():
-    state = {'role': 'NHAN_VIEN', 'warehouse': -1, 'employee': 'NV1', 'calls': [], 'error': None}
-    receipt = {'ma_phieu_nhap': -5, 'ma_phieu_code': 'PN-TEST', 'ma_ncc': 0, 'ma_kho': -1,
+    state = {'role': 'NHAN_VIEN', 'warehouse': 2, 'employee': 'NV1', 'calls': [], 'error': None}
+    receipt = {'ma_phieu_nhap': -5, 'ma_phieu_code': 'PN-TEST', 'ma_ncc': 0, 'ma_kho': 2,
                'ngay_tao': '2026-10-29T10:00:00', 'trang_thai': 'NHAP', 'nguoi_tao': 'NV1', 'supplier_name': 'Supplier'}
     detail = {'receipt': receipt, 'lines': [{'sku': 'SKU1', 'product_name': 'Product', 'quantity': 2, 'unit_price': '10.25', 'unit': 'unit'}], 'version': 'a' * 64, 'replayed': False}
 
@@ -25,7 +25,7 @@ def warehouse_client():
             return httpx.Response(400, json=state['error'])
         if body.get('p_kind') in {'history', 'receipts'}:
             data = [] if body['p_kind'] == 'history' else [receipt | {'creator_name': 'Staff', 'line_count': 1}]
-            return httpx.Response(200, json={'data': data, 'total': len(data), 'page': 1, 'page_size': 20, 'warehouse_id': -1})
+            return httpx.Response(200, json={'data': data, 'total': len(data), 'page': 1, 'page_size': 20, 'warehouse_id': 2})
         return httpx.Response(200, json=detail)
 
     with httpx.Client(transport=httpx.MockTransport(handle)) as transport:
@@ -63,15 +63,15 @@ def test_create_edit_confirm_cancel_are_atomic_rpc_commands(warehouse_client):
     assert client.post('/api/warehouse/receipts', json=document(), headers=headers()).status_code == 201
     assert client.patch('/api/warehouse/receipts/-5', json=document(expected_version='a' * 64), headers=headers()).status_code == 200
     for action in ['confirm', 'cancel']:
-        assert client.post(f'/api/warehouse/receipts/-5/{action}', json={'expected_version': 'a' * 64}, headers=headers()).status_code == 200
+        assert client.post(f'/api/warehouse/receipts/-5/{action}', json={'expected_version': 'a' * 64, **({'pricing_version': 'b' * 64} if action == 'confirm' else {})}, headers=headers()).status_code == 200
     assert [body['p_action'] for _, body in state['calls']] == ['create', 'update', 'confirm', 'cancel']
-    assert all(path.endswith('/rpc/warehouse_receipt_v1') and body['p_actor'] == 'STAFF' for path, body in state['calls'])
+    assert all(path.endswith('/rpc/priced_receipt_v1') and body['p_actor'] == 'STAFF' and body['p_portal'] == 'WAREHOUSE' for path, body in state['calls'])
     assert state['calls'][0][1]['p_id'] is None
     assert state['calls'][0][1]['p_body']['lines'][0]['unit_price'] == '10.25'
     assert all('warehouse_id' not in body['p_body'] for _, body in state['calls'])
 
 
-@pytest.mark.parametrize('role,warehouse,employee', [('ADMIN', None, 'AD1'), ('KHACH_HANG', None, None), ('NHAN_VIEN', None, 'NV1'), ('NHAN_VIEN', -1, None)])
+@pytest.mark.parametrize('role,warehouse,employee', [('ADMIN', None, 'AD1'), ('KHACH_HANG', None, None), ('NHAN_VIEN', None, 'NV1'), ('NHAN_VIEN', 1, 'NV1'), ('NHAN_VIEN', 2, None)])
 def test_wrong_roles_or_missing_assignments_never_access_operations(warehouse_client, role, warehouse, employee):
     client, state = warehouse_client; state.update(role=role, warehouse=warehouse, employee=employee)
     assert client.get('/api/warehouse/history').status_code == 403
@@ -116,7 +116,7 @@ def test_decimal_prices_are_normalized_before_the_transaction(warehouse_client):
     ('PGRST202', 'missing function', 503), ('23503', 'foreign key', 422)])
 def test_database_errors_have_actionable_safe_status(warehouse_client, code, message, status):
     client, state = warehouse_client; state['error'] = {'code': code, 'message': message, 'details': '', 'hint': ''}
-    assert client.post('/api/warehouse/receipts/-5/confirm', json={'expected_version': 'a' * 64}, headers=headers()).status_code == status
+    assert client.post('/api/warehouse/receipts/-5/confirm', json={'expected_version': 'a' * 64, 'pricing_version': 'b' * 64}, headers=headers()).status_code == status
 
 
 def test_unauthenticated_staff_endpoints_are_closed():

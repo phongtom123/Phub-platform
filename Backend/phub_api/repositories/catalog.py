@@ -3,6 +3,7 @@ import json
 import re
 
 from postgrest.exceptions import APIError
+from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID
 
 from phub_api.models.resources import public_columns
 from phub_api.repositories.pagination import rows as all_rows
@@ -125,7 +126,7 @@ class CatalogRepository:
     def stock(self, values):
         return all_rows(lambda: self.client.table("TON_KHO")
             .select("sku,ma_kho,so_luong_ton,warehouse:KHO!inner(trang_thai)")
-            .filter("sku", "in", values).eq("warehouse.trang_thai", self.active_status)
+            .filter("sku", "in", values).eq("warehouse.trang_thai", self.active_status).eq('ma_kho', OPERATING_WAREHOUSE_ID)
             .order("ma_kho").order("sku"))
 
     def legacy_products(self):

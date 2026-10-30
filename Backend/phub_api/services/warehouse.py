@@ -2,8 +2,11 @@ from datetime import datetime, time, timedelta, timezone
 
 from fastapi import HTTPException
 from postgrest.exceptions import APIError
+from phub_api.services.pricing import PRICING_ERRORS
+from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID
 
 ERRORS = {
+    **PRICING_ERRORS,
     'WAREHOUSE_FORBIDDEN': (403, 'Nhân viên hoặc kho được phân công không còn hoạt động.'),
     'NOT_FOUND': (404, 'Không tìm thấy phiếu trong kho được phân công.'),
     'STATE_CONFLICT': (409, 'Phiếu không còn ở trạng thái nháp. Hãy tải lại.'),
@@ -18,7 +21,7 @@ class WarehouseService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args):
-        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id or self.user.warehouse_id is None:
+        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id or self.user.warehouse_id != OPERATING_WAREHOUSE_ID:
             raise HTTPException(403, 'Chỉ nhân viên đã được phân công kho mới được thực hiện.')
         try:
             return operation(*args)
@@ -26,8 +29,8 @@ class WarehouseService:
             if str(exc.message) in ERRORS:
                 status, detail = ERRORS[str(exc.message)]
                 raise HTTPException(status, detail) from None
-            if str(exc.code) in {'PGRST202', '42883', '42P01'}:
-                raise HTTPException(503, 'Database chưa cài migration warehouse_receipts.') from None
+            if str(exc.code) in {'PGRST202', '42883', '42P01', '42703'}:
+                raise HTTPException(503, 'Database thiếu cấu trúc phiếu nhập. Cần áp dụng migration warehouse_receipts và receipt_sale_pricing.') from None
             if str(exc.code) == '23505':
                 raise HTTPException(409, 'Mã phiếu đã tồn tại. Hãy làm mới.') from None
             if str(exc.code) in {'23503', '23514', '23502', '22003', '22P02', '22007'}:
@@ -38,7 +41,7 @@ class WarehouseService:
         if key.version != 4:
             raise HTTPException(422, 'Idempotency-Key phải là UUID v4.')
         return self.call(self.repository.command, self.user.account_id, action, key, receipt_id,
-                         body.model_dump(mode='json'))
+                         body.model_dump(mode='json', exclude_none=True))
 
     def read(self, kind, **query):
         start, end = query.pop('start', None), query.pop('end', None)

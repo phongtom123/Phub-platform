@@ -13,6 +13,7 @@ from phub_api.schemas.admin_accounts import (
     RoleUpdate,
 )
 from phub_api.services.auth import password_matches
+from phub_api.services.warehouse_scope import require_operating_warehouse
 
 
 class AccountsService:
@@ -75,6 +76,7 @@ class AccountsService:
             if (profile["loai_nhan_vien"] == "ADMIN") != (profile.get("ma_kho") is None):
                 raise HTTPException(422, "Phân công kho của nhân viên chưa hợp lệ.")
             if profile["loai_nhan_vien"] == "NHAN_VIEN":
+                require_operating_warehouse(profile['ma_kho'])
                 warehouses = self.repository.warehouse(profile["ma_kho"])
                 if not warehouses or warehouses[0]["trang_thai"] != 1:
                     raise HTTPException(422, "Kho được phân công không hoạt động.")
@@ -90,6 +92,8 @@ class AccountsService:
 
     def create_new(self, body: NewAccountCreate):
         owner = body.new_owner
+        if owner.role == 'NHAN_VIEN':
+            require_operating_warehouse(owner.ma_kho)
         owner_id = ("KH_" if owner.role == "KHACH_HANG" else "NV_") + uuid4().hex
         try:
             result = self.repository.create_new({
@@ -134,6 +138,7 @@ class AccountsService:
         if account_id == self.actor.account_id and body.role != "ADMIN":
             raise HTTPException(409, "Không được hạ quyền tài khoản đang đăng nhập.")
         if body.ma_kho is not None:
+            require_operating_warehouse(body.ma_kho)
             rows = self.repository.warehouse(body.ma_kho)
             if not rows or rows[0]["trang_thai"] != 1:
                 raise HTTPException(422, "Kho không tồn tại hoặc đã ngừng hoạt động.")

@@ -9,7 +9,7 @@ from phub_api.dependencies.origin import check_origin
 from phub_api.dependencies.warehouse import get_service
 from phub_api.schemas.api_contracts import READ_ERRORS, WRITE_ERRORS, error_response
 from phub_api.schemas.warehouse import (
-    ReceiptCreate, ReceiptUpdate, ReceiptVersion, WarehouseHistoryPage, WarehouseReceiptPage, WarehouseReceiptRead,
+    ReceiptCreate, ReceiptUpdate, ReceiptVersion, ReceiptConfirmVersion, WarehouseHistoryPage, WarehouseReceiptPage, WarehouseReceiptRead,
 )
 
 router = APIRouter(prefix='/api/warehouse', tags=['Kho · Nghiệp vụ'])
@@ -52,7 +52,7 @@ async def update_receipt(receipt_id: ReceiptId, body: ReceiptUpdate, request: Re
 
 
 @router.post('/receipts/{receipt_id}/confirm', response_model=WarehouseReceiptRead, responses=ERRORS, summary='Xác nhận nhập, cộng tồn và ghi lịch sử trong một transaction')
-async def confirm_receipt(receipt_id: ReceiptId, body: ReceiptVersion, request: Request, response: Response, service: Service, operation_key: OperationKey):
+async def confirm_receipt(receipt_id: ReceiptId, body: ReceiptConfirmVersion, request: Request, response: Response, service: Service, operation_key: OperationKey):
     return await write(request, response, service, 'confirm', operation_key, receipt_id, body)
 
 

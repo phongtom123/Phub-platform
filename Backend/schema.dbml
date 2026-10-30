@@ -121,6 +121,8 @@ Table SAN_PHAM {
   ma_loai_sp_con varchar [not null]
   thuong_hieu varchar
   gia_ban_hien_tai decimal(18,2) [not null]
+  ty_le_loi_nhuan_mac_dinh decimal(12,4) [note: 'Markup; NULL dung cau hinh he thong; chi API dinh gia duoc sua']
+  dung_thue_mac_dinh boolean [not null, default: true]
   mo_ta text
   thong_so_ky_thuat text
   don_vi varchar [not null, default: 'Cai']
@@ -131,6 +133,24 @@ Table SAN_PHAM {
   checks {
     `gia_ban_hien_tai >= 0`
     `bao_hanh_thang >= 0`
+  }
+}
+
+Table THUE {
+  ma_thue varchar [pk, note: 'Ma chu hoa A-Z, so va dau gach duoi; toi da 30 ky tu']
+  ten_thue varchar [not null]
+  ty_le decimal(7,4) [not null, check: `ty_le BETWEEN 0 AND 100`]
+  trang_thai boolean [not null, default: true]
+  sua_boi varchar
+  sua_luc timestamptz [not null]
+}
+
+Table SAN_PHAM_THUE {
+  sku varchar [not null]
+  ma_thue varchar [not null]
+  ty_le decimal(7,4) [not null, check: `ty_le BETWEEN 0 AND 100`]
+  indexes {
+    (sku, ma_thue) [pk]
   }
 }
 
@@ -197,6 +217,7 @@ Table PHIEU_NHAP {
   nguoi_cap_nhat varchar
   nguoi_xac_nhan varchar
   ghi_chu text
+  dinh_gia_da_ap_dung boolean [not null, default: false]
 }
 
 Table CT_PHIEU_NHAP {
@@ -204,6 +225,14 @@ Table CT_PHIEU_NHAP {
   sku varchar [not null]
   so_luong_nhap int [not null, check: `so_luong_nhap > 0`]
   gia_nhap decimal(18,2) [not null, check: `gia_nhap >= 0`]
+  ty_le_loi_nhuan decimal(12,4)
+  thue_snapshot json
+  tien_loi_nhuan decimal(18,2)
+  gia_ban_truoc_thue decimal(18,2)
+  tong_tien_thue decimal(18,2)
+  gia_ban_sau_thue decimal(18,2)
+  dinh_gia_sua_boi varchar
+  dinh_gia_sua_luc timestamptz
 
   indexes {
     (ma_phieu_nhap, sku) [pk]
@@ -444,6 +473,9 @@ Ref: MEDIA.ma_sp > SAN_PHAM.ma_sp
 Ref: CHUONG_TRINH_KHUYEN_MAI.ma_media_banner > MEDIA.ma_media
 Ref: TON_KHO.ma_kho > KHO.ma_kho
 Ref: TON_KHO.sku > SAN_PHAM.sku
+Ref: THUE.sua_boi > TAI_KHOAN.ma_tk
+Ref: SAN_PHAM_THUE.sku > SAN_PHAM.sku
+Ref: SAN_PHAM_THUE.ma_thue > THUE.ma_thue
 
 // Nhap hang
 
@@ -455,6 +487,7 @@ Ref: PHIEU_NHAP.nguoi_xac_nhan > NHAN_VIEN.ma_nhan_vien
 
 Ref: CT_PHIEU_NHAP.ma_phieu_nhap > PHIEU_NHAP.ma_phieu_nhap
 Ref: CT_PHIEU_NHAP.sku > SAN_PHAM.sku
+Ref: CT_PHIEU_NHAP.dinh_gia_sua_boi > TAI_KHOAN.ma_tk
 
 // Chuyen kho
 

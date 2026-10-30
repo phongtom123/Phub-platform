@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from phub_api.controllers.admin_operations import router as admin_operations_router
+from phub_api.controllers.pricing import router as pricing_router
 from phub_api.controllers.catalog import router as catalog_router
 from phub_api.controllers.legacy import router as legacy_router
 from phub_api.controllers.auth import router as auth_router
@@ -50,6 +51,7 @@ app = FastAPI(
 
 register_cors(app)
 app.include_router(admin_operations_router)
+app.include_router(pricing_router)
 
 app.include_router(catalog_router)
 app.include_router(auth_router)
