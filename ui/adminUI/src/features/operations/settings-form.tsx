@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { PricingSettings } from "../pricing/pricing-editor";
 import {
   OperationError,
   operationRead,
@@ -48,7 +49,7 @@ export function SettingsForm() {
     }
   }
   return (
-    <form onSubmit={save}>
+    <><form onSubmit={save}>
       {error && (
         <p className="live-error" role="alert">
           {error}
@@ -124,6 +125,6 @@ export function SettingsForm() {
           </button>
         </>
       )}
-    </form>
+    </form><PricingSettings /></>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { operationKey, warehouseApi, WarehouseApiError } from "@/src/lib/warehouse-api";
 import LookupSelect from "./lookup-select";
 import type { Receipt, ReceiptLine } from "./types";
+import { WarehousePricePreview } from "./receipt-pricing";
 
 type EditableLine = ReceiptLine & { quantityInput: string };
 export default function ReceiptForm({ id }: { id?: number }) {
@@ -64,6 +65,7 @@ export default function ReceiptForm({ id }: { id?: number }) {
         <td><input aria-label={`Giá nhập ${line.sku}`} type="text" inputMode="decimal" required value={line.unit_price} onChange={event => setLines(current => current.map((item, i) => i === index ? { ...item, unit_price: event.target.value } : item))} /></td>
         <td><button className="button" type="button" onClick={() => setLines(current => current.filter((_, i) => i !== index))}>Bỏ dòng</button></td>
       </tr>)}</tbody></table>{!lines.length && <p className="warehouse-empty">Chọn sản phẩm phía trên để thêm vào phiếu.</p>}</div>
+      {lines.map(line => <WarehousePricePreview key={line.sku} sku={line.sku} cost={line.unit_price} receiptId={id} />)}
       <div className="warehouse-toolbar"><button className="button primary" disabled={!supplier || !lines.length}>{saving ? "Đang lưu…" : "Lưu phiếu nháp"}</button><Link className="button" href={id !== undefined ? `/receipts/${id}` : "/receipts"}>Hủy chỉnh sửa</Link></div>
     </fieldset>{error && <p className="warehouse-error" role="alert">{error}</p>}{conflict && <button className="button" type="button" onClick={() => window.location.reload()}>Tải lại phiếu</button>}</form>
   </section>;

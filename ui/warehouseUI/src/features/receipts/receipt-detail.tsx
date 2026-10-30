@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { cents, displayDate, displayMoney, operationKey, receiptStatus, warehouseApi, WarehouseApiError } from "@/src/lib/warehouse-api";
 import { StatusBadge } from "@/src/components/warehouse/ui";
 import type { Receipt } from "./types";
+import { PriceBreakdown } from "./receipt-pricing";
+import { pricingRequest, confirmationMessage, type ReceiptPriceQuote } from "../../../../shared/pricing";
 
 export default function ReceiptDetail({ id }: { id: number }) {
   const [record, setRecord] = useState<Receipt | null>(null); const [loading, setLoading] = useState(true);
@@ -19,10 +21,20 @@ export default function ReceiptDetail({ id }: { id: number }) {
     return () => controller.abort();
   }, [id, refresh]);
   async function act(action: "confirm" | "cancel") {
-    if (!record || busy || conflict || !window.confirm(action === "confirm" ? "Xác nhận đã nhận đủ hàng? Hệ thống sẽ cộng tồn kho theo các dòng trong phiếu." : "Hủy phiếu nháp này? Tồn kho sẽ giữ nguyên.")) return;
-    const body = JSON.stringify({ expected_version: record.version });
-    pending.current = operationKey(pending.current, `${action}:${body}`); setBusy(true); setError(""); setMessage("");
+    if (!record || busy || conflict) return;
+    setBusy(true); setError(""); setMessage("");
     try {
+      let body: string;
+      if (pending.current?.body.startsWith(`${action}:`)) body = pending.current.body.slice(action.length + 1);
+      else if (action === "confirm") {
+        const quote = await pricingRequest<ReceiptPriceQuote>(`receipts/${id}`);
+        if (!window.confirm(confirmationMessage(quote))) return;
+        body = JSON.stringify({ expected_version: record.version, pricing_version: quote.version });
+      } else {
+        if (!window.confirm("Hủy phiếu nháp này? Tồn kho và giá bán sẽ giữ nguyên.")) return;
+        body = JSON.stringify({ expected_version: record.version });
+      }
+      pending.current = operationKey(pending.current, `${action}:${body}`);
       const saved = await warehouseApi<Receipt>(`warehouse/receipts/${id}/${action}`, {
         method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": pending.current.key }, body,
       });
@@ -46,6 +58,8 @@ export default function ReceiptDetail({ id }: { id: number }) {
       <div className="receiving-card"><h2>Hàng nhập <span className="warehouse-muted">· {record.lines.length} SKU</span></h2><div className="warehouse-table"><table><thead><tr><th>Sản phẩm / SKU</th><th>Đơn vị</th><th>Số lượng</th><th>Đơn giá nhập</th><th>Thành tiền</th></tr></thead><tbody>
         {record.lines.map(line => <tr key={line.sku}><td><strong>{line.product_name}</strong><small>{line.sku}</small></td><td>{line.unit}</td><td>{line.quantity.toLocaleString("vi-VN")}</td><td>{displayMoney(cents(line.unit_price))}</td><td>{displayMoney(cents(line.unit_price) * BigInt(line.quantity))}</td></tr>)}
       </tbody></table></div><p className="warehouse-total">Tổng giá trị nhập <strong>{displayMoney(total)}</strong></p></div>
+      {record.receipt.trang_thai === "DA_NHAP" && !record.receipt.dinh_gia_da_ap_dung && <p className="warehouse-error">Phiếu được xác nhận bằng luồng cũ; chưa ghi nhận cập nhật giá bán tự động theo định giá mới.</p>}
+      {record.lines.map(line => <PriceBreakdown key={line.sku} sku={line.sku} price={line.pricing ?? null} />)}
       {record.receipt.trang_thai === "DA_NHAP" && <Link className="button" href={`/history?q=${id}`}>Xem lịch sử biến động tồn</Link>}
     </>}
   </section>;

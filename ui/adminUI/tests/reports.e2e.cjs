@@ -19,7 +19,7 @@ const base = process.env.PHUB_TEST_BASE_URL || 'http://localhost:3000';
       if (endpoint==='admin/operations/business-report') {
         const start=url.searchParams.get('start'),end=url.searchParams.get('end');reads.push({start,end});
         const count=Math.round((Date.parse(end)-Date.parse(start))/86400000)+1;
-        const data={start:wrongPeriod?'2000-01-01':start,end,method:'MOVING_WEIGHTED_AVERAGE',basis:'COMPLETED_ORDERS',net_revenue:'1250000.00',tax:'125000.00',discounts:'50000.00',gross_revenue:'1375000.00',collected:'900000.00',refunds:'0.00',order_count:1,quantity:2,cost:'1000000.00',known_cost:'1000000.00',gross_profit:'250000.00',margin:'20.00',costed_lines:1,total_lines:1,warnings:[],products:[{sku:'CPU1',name:'CPU demo',quantity:2,net_revenue:'1250000.00',cost:'1000000.00',gross_profit:'250000.00',margin:'20.00',unpriced_lines:0}],daily:Array.from({length:count},(_,i)=>({day:new Date(Date.parse(start)+i*86400000).toISOString().slice(0,10),net_revenue:i===0?'1250000.00':'0.00',gross_profit:i===0?'250000.00':'0.00'}))};
+        const data={warehouse_id:2,start:wrongPeriod?'2000-01-01':start,end,method:'MOVING_WEIGHTED_AVERAGE',basis:'COMPLETED_ORDERS',net_revenue:'1250000.00',tax:'125000.00',discounts:'50000.00',gross_revenue:'1375000.00',collected:'900000.00',refunds:'0.00',order_count:1,quantity:2,cost:'1000000.00',known_cost:'1000000.00',gross_profit:'250000.00',margin:'20.00',costed_lines:1,total_lines:1,warnings:[],products:[{sku:'CPU1',name:'CPU demo',quantity:2,net_revenue:'1250000.00',cost:'1000000.00',gross_profit:'250000.00',margin:'20.00',unpriced_lines:0}],daily:Array.from({length:count},(_,i)=>({day:new Date(Date.parse(start)+i*86400000).toISOString().slice(0,10),net_revenue:i===0?'1250000.00':'0.00',gross_profit:i===0?'250000.00':'0.00'}))};
         if(incomplete){Object.assign(data,{cost:null,gross_profit:null,margin:null,costed_lines:0,known_cost:'0.00',warnings:['INCOMPLETE_COST_HISTORY']});data.products[0]={...data.products[0],cost:null,gross_profit:null,margin:null,unpriced_lines:1};data.daily[0].gross_profit=null;}
         return json(data);
       }
@@ -65,7 +65,7 @@ const base = process.env.PHUB_TEST_BASE_URL || 'http://localhost:3000';
     await financial.waitFor();
     incomplete=true;
     await page.getByRole('button',{name:'Làm mới báo cáo',exact:true}).click();
-    await page.getByRole('alert').filter({hasText:'Chưa đủ lịch sử giá vốn'}).waitFor();
+    await page.getByRole('alert').filter({hasText:'Kho 2 còn dòng hàng chưa xác định được giá vốn'}).waitFor();
     assert.ok(await financial.getByText('Chưa đủ dữ liệu',{exact:true}).count()>=2,'unknown cost must not become zero profit');
     incomplete=false;
     await page.getByRole('button',{name:'Làm mới báo cáo',exact:true}).click();
