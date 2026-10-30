@@ -10,7 +10,6 @@ import { ProductGalleryEditor, type GalleryEditorHandle } from "@/src/features/f
 import { ProductGalleryPreview } from "@/src/features/forms/product-gallery-preview";
 import { PromotionBannerEditor, PromotionBannerPreview, type BannerEditorHandle } from "@/src/features/forms/promotion-banner";
 import { PromotionVouchers } from "@/src/features/promotions/promotion-vouchers";
-import { PricingSettings } from "@/src/features/pricing/pricing-editor";
 import { InlineDataTable } from "@/src/features/tables/inline-data-table";
 import { ScrollableTable } from "@/src/features/tables/scrollable-table";
 import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
@@ -311,7 +310,6 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         </div>
         {resource === "products" && available.some(item => item.name === "inventory") && <ProductStock
           key={`stock:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} unit={String(result.data[0].don_vi ?? "")} />}
-        {resource === "products" && <PricingSettings key={`pricing:${result.data[0].sku}`} sku={String(result.data[0].sku)} />}
         {resource === "products" && ["receipt-lines", "receipts", "suppliers"].every(name => available.some(item => item.name === name)) &&
           <ProductSuppliers key={`suppliers:${String(result.data[0].sku ?? "")}`} sku={String(result.data[0].sku ?? "")} />}
         {resource === "inventory" && <StockHistory sku={String(result.data[0].sku)} />}

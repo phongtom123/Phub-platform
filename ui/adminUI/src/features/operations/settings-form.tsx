@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { PricingSettings } from "../pricing/pricing-editor";
 import {
   OperationError,
   operationRead,
@@ -125,6 +124,6 @@ export function SettingsForm() {
           </button>
         </>
       )}
-    </form><PricingSettings /></>
+    </form></>
   );
 }

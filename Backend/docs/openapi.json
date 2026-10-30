@@ -1130,66 +1130,13 @@
       "CT_PHIEU_NHAPRead": {
         "additionalProperties": false,
         "example": {
-          "dinh_gia_sua_boi": null,
-          "dinh_gia_sua_luc": null,
-          "gia_ban_sau_thue": null,
-          "gia_ban_truoc_thue": null,
           "gia_nhap": "2000000.00",
           "ma_phieu_nhap": 1,
           "sku": "INTEL-I5-14400F",
           "so_luong_nhap": 2,
-          "tien_loi_nhuan": null,
-          "tong_tien_thue": "0.00",
           "ty_le_loi_nhuan": null
         },
         "properties": {
-          "dinh_gia_sua_boi": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dinh_gia_sua_boi"
-          },
-          "dinh_gia_sua_luc": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "dinh_gia_sua_luc"
-          },
-          "gia_ban_sau_thue": {
-            "anyOf": [
-              {
-                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "gia_ban_sau_thue · chuỗi decimal, không phải JSON number"
-          },
-          "gia_ban_truoc_thue": {
-            "anyOf": [
-              {
-                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "gia_ban_truoc_thue · chuỗi decimal, không phải JSON number"
-          },
           "gia_nhap": {
             "description": "gia_nhap · chuỗi decimal, không phải JSON number",
             "pattern": "^-?\\d+(\\.\\d{1,2})?$",
@@ -1206,30 +1153,6 @@
           "so_luong_nhap": {
             "description": "so_luong_nhap",
             "type": "integer"
-          },
-          "tien_loi_nhuan": {
-            "anyOf": [
-              {
-                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "tien_loi_nhuan · chuỗi decimal, không phải JSON number"
-          },
-          "tong_tien_thue": {
-            "anyOf": [
-              {
-                "pattern": "^-?\\d+(\\.\\d{1,2})?$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "tong_tien_thue · chuỗi decimal, không phải JSON number"
           },
           "ty_le_loi_nhuan": {
             "anyOf": [
@@ -1249,13 +1172,7 @@
           "sku",
           "so_luong_nhap",
           "gia_nhap",
-          "ty_le_loi_nhuan",
-          "tien_loi_nhuan",
-          "gia_ban_truoc_thue",
-          "tong_tien_thue",
-          "gia_ban_sau_thue",
-          "dinh_gia_sua_boi",
-          "dinh_gia_sua_luc"
+          "ty_le_loi_nhuan"
         ],
         "title": "CT_PHIEU_NHAPRead",
         "type": "object"
@@ -6698,7 +6615,6 @@
         "example": {
           "bao_hanh_thang": 36,
           "don_vi": "Cai",
-          "dung_thue_mac_dinh": true,
           "duong_dan_anh": "https://example.com/cpu.jpg",
           "gia_ban_hien_tai": "2500000.00",
           "ma_loai_sp": "CPU",
@@ -6709,8 +6625,7 @@
           "ten_sp": "Intel Core i5-14400F",
           "thong_so_ky_thuat": "Socket: LGA1700",
           "thuong_hieu": "Intel",
-          "trang_thai": 1,
-          "ty_le_loi_nhuan_mac_dinh": null
+          "trang_thai": 1
         },
         "properties": {
           "bao_hanh_thang": {
@@ -6720,10 +6635,6 @@
           "don_vi": {
             "description": "don_vi",
             "type": "string"
-          },
-          "dung_thue_mac_dinh": {
-            "description": "dung_thue_mac_dinh · server tự gán",
-            "type": "boolean"
           },
           "duong_dan_anh": {
             "anyOf": [
@@ -6797,18 +6708,6 @@
           "trang_thai": {
             "description": "trang_thai",
             "type": "integer"
-          },
-          "ty_le_loi_nhuan_mac_dinh": {
-            "anyOf": [
-              {
-                "pattern": "^-?\\d+(\\.\\d{1,4})?$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "ty_le_loi_nhuan_mac_dinh · chuỗi decimal, không phải JSON number · server tự gán"
           }
         },
         "required": [
@@ -6819,8 +6718,6 @@
           "ma_loai_sp_con",
           "thuong_hieu",
           "gia_ban_hien_tai",
-          "ty_le_loi_nhuan_mac_dinh",
-          "dung_thue_mac_dinh",
           "mo_ta",
           "thong_so_ky_thuat",
           "don_vi",
@@ -7879,6 +7776,19 @@
             "pattern": "^[A-Z][A-Z0-9_]{0,29}$",
             "title": "Code",
             "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
           "rate": {
             "anyOf": [
@@ -18693,7 +18603,6 @@
                     {
                       "bao_hanh_thang": 36,
                       "don_vi": "Cai",
-                      "dung_thue_mac_dinh": true,
                       "duong_dan_anh": "https://example.com/cpu.jpg",
                       "gia_ban_hien_tai": "2500000.00",
                       "ma_loai_sp": "CPU",
@@ -18704,8 +18613,7 @@
                       "ten_sp": "Intel Core i5-14400F",
                       "thong_so_ky_thuat": "Socket: LGA1700",
                       "thuong_hieu": "Intel",
-                      "trang_thai": 1,
-                      "ty_le_loi_nhuan_mac_dinh": null
+                      "trang_thai": 1
                     }
                   ],
                   "page": 1,
@@ -18872,7 +18780,6 @@
                     {
                       "bao_hanh_thang": 36,
                       "don_vi": "Cai",
-                      "dung_thue_mac_dinh": true,
                       "duong_dan_anh": "https://example.com/cpu.jpg",
                       "gia_ban_hien_tai": "2500000.00",
                       "ma_loai_sp": "CPU",
@@ -18883,8 +18790,7 @@
                       "ten_sp": "Intel Core i5-14400F",
                       "thong_so_ky_thuat": "Socket: LGA1700",
                       "thuong_hieu": "Intel",
-                      "trang_thai": 1,
-                      "ty_le_loi_nhuan_mac_dinh": null
+                      "trang_thai": 1
                     }
                   ]
                 },
@@ -19068,7 +18974,6 @@
                     {
                       "bao_hanh_thang": 36,
                       "don_vi": "Cai",
-                      "dung_thue_mac_dinh": true,
                       "duong_dan_anh": "https://example.com/cpu.jpg",
                       "gia_ban_hien_tai": "2500000.00",
                       "ma_loai_sp": "CPU",
@@ -19079,8 +18984,7 @@
                       "ten_sp": "Intel Core i5-14400F",
                       "thong_so_ky_thuat": "Socket: LGA1700",
                       "thuong_hieu": "Intel",
-                      "trang_thai": 1,
-                      "ty_le_loi_nhuan_mac_dinh": null
+                      "trang_thai": 1
                     }
                   ]
                 },
@@ -19859,16 +19763,10 @@
                 "example": {
                   "data": [
                     {
-                      "dinh_gia_sua_boi": null,
-                      "dinh_gia_sua_luc": null,
-                      "gia_ban_sau_thue": null,
-                      "gia_ban_truoc_thue": null,
                       "gia_nhap": "2000000.00",
                       "ma_phieu_nhap": 1,
                       "sku": "INTEL-I5-14400F",
                       "so_luong_nhap": 2,
-                      "tien_loi_nhuan": null,
-                      "tong_tien_thue": "0.00",
                       "ty_le_loi_nhuan": null
                     }
                   ],
@@ -23575,12 +23473,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Cấu hình markup/thuế hiệu lực, danh mục và lịch sử sửa (ADMIN/KHO)",
+        "summary": "Ngữ cảnh định giá theo phiếu; không dùng danh mục thuế (ADMIN/KHO)",
         "tags": [
           "Admin · Định giá nhập hàng"
         ]
       },
       "put": {
+        "deprecated": true,
         "operationId": "save_config_api_pricing_config_put",
         "parameters": [
           {
@@ -23640,7 +23539,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Sửa cấu hình sản phẩm hoặc mặc định hệ thống (ADMIN)",
+        "summary": "Đã bỏ: nhập tỷ lệ lợi nhuận và thuế trên phiếu nhập",
         "tags": [
           "Admin · Định giá nhập hàng"
         ]
@@ -23743,6 +23642,7 @@
     },
     "/api/pricing/taxes": {
       "post": {
+        "deprecated": true,
         "operationId": "add_tax_api_pricing_taxes_post",
         "requestBody": {
           "content": {
@@ -23782,7 +23682,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Tạo loại thuế (ADMIN)",
+        "summary": "Đã bỏ danh mục thuế; trả 410 sau migration",
         "tags": [
           "Admin · Định giá nhập hàng"
         ]
@@ -23790,6 +23690,7 @@
     },
     "/api/pricing/taxes/{code}": {
       "patch": {
+        "deprecated": true,
         "operationId": "edit_tax_api_pricing_taxes__code__patch",
         "parameters": [
           {
@@ -23841,7 +23742,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Sửa tên/tỷ lệ mặc định loại thuế (ADMIN)",
+        "summary": "Đã bỏ danh mục thuế; trả 410 sau migration",
         "tags": [
           "Admin · Định giá nhập hàng"
         ]

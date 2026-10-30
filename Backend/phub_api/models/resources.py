@@ -74,7 +74,7 @@ ENUMS = {
     ("vouchers", "trang_thai"): ["HOAT_DONG", "TAM_DUNG"],
     ("vouchers", "loai_giam"): ["PHAN_TRAM", "SO_TIEN"],
 }
-SYSTEM_FIELDS = {"products": {"ty_le_loi_nhuan_mac_dinh", "dung_thue_mac_dinh"}, "promotions": {"nguoi_tao", "ngay_tao"}, "vouchers": {"ngay_tao"},
+SYSTEM_FIELDS = {"promotions": {"nguoi_tao", "ngay_tao"}, "vouchers": {"ngay_tao"},
                  "customers": {"ngay_tao", "cap_nhat_luc", "luu_tru_luc"}}
 
 

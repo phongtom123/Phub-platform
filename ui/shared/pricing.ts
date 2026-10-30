@@ -1,4 +1,4 @@
-export type TaxRule = { code: string; rate: string };
+export type TaxRule = { code: string; name?: string; rate: string };
 export type PriceInputs = { markup_rate?: string; taxes?: TaxRule[] };
 export type Price = { unit_cost: string; markup_rate: string; profit: string; pre_tax: string; total_tax: string; after_tax: string;
   taxes: (TaxRule & { name: string; amount: string })[]; margin?: string | null; actual_markup?: string | null; changed_by?: string | null; changed_at?: string | null };

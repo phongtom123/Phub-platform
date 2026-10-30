@@ -4,6 +4,7 @@ from postgrest.exceptions import APIError
 from phub_api.config.warehouse import WAREHOUSE_SCOPE_MESSAGE, OPERATING_WAREHOUSE_ID
 
 PRICING_ERRORS = {
+    'PRICING_RECEIPT_ONLY': (410, 'Thuế và tỷ lệ lợi nhuận được nhập trực tiếp trên phiếu nhập. Không còn danh mục thuế hoặc cấu hình giá riêng.'),
     'SINGLE_WAREHOUSE': (422, WAREHOUSE_SCOPE_MESSAGE),
     'PRICING_FORBIDDEN': (403, 'Chỉ ADMIN được sửa tỷ lệ/thuế. Thủ kho chỉ xem và dùng cấu hình được duyệt.'),
     'PRICING_INVALID': (422, 'Giá nhập, tỷ lệ hoặc danh sách thuế không hợp lệ. Không ghi thay đổi.'),
@@ -64,11 +65,10 @@ class PricingService:
             if quote['status'] != 'NHAP':
                 raise HTTPException(409, 'Phiếu đã xử lý, không tính lại lịch sử bằng cấu hình mới.')
             saved = next((line['price'] for line in quote['lines'] if line['sku'] == body.sku), None)
-        catalog = {tax['code']: tax for tax in context['catalog'] if tax['active']}
         rules = body.model_dump(mode='json')['taxes'] if body.taxes is not None else saved['taxes'] if saved else context['taxes']
-        if len({tax['code'] for tax in rules}) != len(rules) or any(tax['code'] not in catalog for tax in rules):
-            raise HTTPException(422, 'Loại thuế bị trùng, không tồn tại hoặc không hoạt động.')
-        rules = [{**tax, 'name': catalog[tax['code']]['name']} for tax in rules]
+        if len({tax['code'] for tax in rules}) != len(rules):
+            raise HTTPException(422, 'Không được trùng mã thuế trong một dòng phiếu nhập.')
+        rules = [{**tax, 'name': tax.get('name') or tax['code']} for tax in rules]
         try:
             price = calculate_price(body.unit_cost, body.markup_rate if body.markup_rate is not None else Decimal(saved['markup_rate'] if saved else context['markup_rate']), rules)
         except DecimalException:

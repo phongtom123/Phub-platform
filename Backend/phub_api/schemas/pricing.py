@@ -13,6 +13,7 @@ class PricingModel(BaseModel):
 
 class TaxRule(PricingModel):
     code: str = Field(pattern=r'^[A-Z][A-Z0-9_]{0,29}$')
+    name: str | None = Field(None, min_length=1, max_length=100)
     rate: Decimal = Field(ge=0, le=100, max_digits=7, decimal_places=4)
 
 class PricingOverrides(PricingModel):

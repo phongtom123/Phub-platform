@@ -245,7 +245,7 @@ export function OperationPanel({
               quantity: String(l.so_luong_nhap ?? l.so_luong),
               warehouse_id: "",
               unit_price: String(l.gia_nhap ?? ""),
-              pricing: price ? { markup_rate: price.markup_rate, taxes: price.taxes.map(tax => ({ code: tax.code, rate: tax.rate })) } : undefined,
+              pricing: price ? { markup_rate: price.markup_rate, taxes: price.taxes.map(tax => ({ code: tax.code, name: tax.name, rate: tax.rate })) } : undefined,
             }); })
           : [blankLine()],
       );

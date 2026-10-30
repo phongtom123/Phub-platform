@@ -2,7 +2,7 @@ import type { DataColumn } from "./inline-table-data";
 
 const hiddenColumns: Record<string, string[]> = {
   customers: ["ngay_tao", "cap_nhat_luc", "luu_tru_luc"],
-  products: ["mo_ta", "duong_dan_anh", "ty_le_loi_nhuan_mac_dinh", "dung_thue_mac_dinh"],
+  products: ["mo_ta", "duong_dan_anh"],
   invoices: ["tong_tien_giam"],
   receipts: ["ghi_chu"], transfers: ["ghi_chu"],
   promotions: ["ngay_tao", "ma_media_banner"], vouchers: ["ngay_tao"],

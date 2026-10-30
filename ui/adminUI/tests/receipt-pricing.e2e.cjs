@@ -10,7 +10,7 @@ const resources=[{name:'receipts',title:'Phiếu nhập',keys:['ma_phieu_nhap'],
  const page=await browser.newPage();page.setDefaultTimeout(10000);const errors=[],dialogs=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>{dialogs.push(dialog.message());return dialog.accept();});
  let markup='20',confirmed=false,confirmCalls=0,confirmKey=null;const previews=[];
  const taxes=[{code:'VAT',name:'VAT',rate:'10',amount:'120000'},{code:'OTHER',name:'Thuế khác',rate:'2',amount:'24000'}];
- const context={sku:'S',markup_rate:'20',taxes,catalog:taxes.map(t=>({...t,active:true})),current_price:'500000.00',version:'a'.repeat(64),can_edit:true,history:[]};
+ const context={sku:'S',markup_rate:'0',taxes:[],catalog:[],current_price:'500000.00',version:'a'.repeat(64),can_edit:true,history:[]};
  const price=()=>({unit_cost:'1000000',markup_rate:markup,profit:markup==='25'?'250000':'200000',pre_tax:markup==='25'?'1250000':'1200000',after_tax:markup==='25'?'1400000':'1344000',total_tax:markup==='25'?'150000':'144000',taxes,actual_markup:markup,margin:'16.6667'});
  const header=()=>({ma_phieu_nhap:1,ma_kho:2,ma_ncc:1,trang_thai:confirmed?'DA_NHAP':'NHAP'});
  await page.route('**/api/backend/**',async route=>{const request=route.request(),url=new URL(request.url()),endpoint=url.pathname.replace('/api/backend/','');const json=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
@@ -25,7 +25,7 @@ const resources=[{name:'receipts',title:'Phiếu nhập',keys:['ma_phieu_nhap'],
   if(endpoint==='pricing/receipts/1')return json({receipt_id:1,status:confirmed?'DA_NHAP':'NHAP',applied:confirmed,version:'b'.repeat(64),lines:[{sku:'S',quantity:1,current_price:'500000',price:price(),changed_by:'A',changed_at:'2026-10-30T01:00:00Z'}]});
   if(endpoint==='admin/operations/receipts'){
    const body=request.postDataJSON();
-   if(body.action==='create'){const line=body.data.lines[0];assert.equal(line.markup_rate,'25');assert.deepEqual(line.taxes.map(t=>Object.keys(t).sort()),[['code','rate'],['code','rate']]);assert.ok(!('pre_tax'in line));return json({data:[header()],replayed:false});}
+   if(body.action==='create'){const line=body.data.lines[0];assert.equal(line.markup_rate,'25');assert.deepEqual(line.taxes,[{code:'LOCAL',name:'Thuế tại phiếu',rate:'10'}]);assert.ok(!('pre_tax'in line));return json({data:[header()],replayed:false});}
    if(body.action==='confirm'){assert.equal(body.data.pricing_version,'b'.repeat(64));confirmCalls++;if(confirmCalls===1){confirmKey=request.headers()['idempotency-key'];return json({detail:'Lỗi xác nhận thử nghiệm'},503);}assert.equal(request.headers()['idempotency-key'],confirmKey);confirmed=true;return json({data:[header()],replayed:false});}
   }
   return json({data:[],total:0,filters:{}});
@@ -36,13 +36,18 @@ const resources=[{name:'receipts',title:'Phiếu nhập',keys:['ma_phieu_nhap'],
  await page.getByRole('combobox',{name:'Chọn sản phẩm dòng 1',exact:true}).selectOption('S');
  await page.getByLabel('Giá dòng 1',{exact:true}).fill('1000000');
  await page.getByText('1.344.000 ₫',{exact:true}).waitFor();
- await page.getByLabel('Tỷ lệ cộng lãi (markup, %)',{exact:true}).fill('25');
+ await page.getByLabel('Tỷ lệ cộng lãi (%)',{exact:true}).fill('25');
+ await page.getByRole('button',{name:'+ Thêm thuế',exact:true}).click();
+ await page.getByLabel('Mã thuế',{exact:true}).fill('LOCAL');
+ await page.getByLabel('Tên thuế',{exact:true}).fill('Thuế tại phiếu');
+ await page.getByLabel('Tỷ lệ thuế (%)',{exact:true}).fill('10');
  await page.getByText('1.400.000 ₫',{exact:true}).waitFor();
  await page.getByRole('button',{name:'Xác nhận',exact:true}).click();
  await page.waitForURL(url=>url.searchParams.has('key'));
  await page.getByRole('button',{name:'Chỉnh sản phẩm trong phiếu',exact:true}).click();
- assert.equal(await page.getByLabel('Tỷ lệ cộng lãi (markup, %)',{exact:true}).inputValue(),'25');
- assert.equal(await page.getByLabel('Tỷ lệ OTHER (%)',{exact:true}).inputValue(),'2','reopening must retain saved taxes even when generic table metadata omits JSON');
+ assert.equal(await page.getByLabel('Tỷ lệ cộng lãi (%)',{exact:true}).inputValue(),'25');
+ assert.equal(await page.getByLabel('Tỷ lệ thuế (%)',{exact:true}).nth(1).inputValue(),'2');
+ assert.equal(await page.getByLabel('Tên thuế',{exact:true}).nth(1).inputValue(),'Thuế khác','reopening must retain saved tax names without a catalog');
  await page.getByRole('button',{name:'Đóng',exact:true}).click();
  await page.getByRole('button',{name:'Xác nhận nhập kho',exact:true}).click();
  await page.getByRole('alert').filter({hasText:'Lỗi xác nhận thử nghiệm'}).waitFor();

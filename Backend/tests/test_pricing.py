@@ -25,3 +25,27 @@ def test_preview_rejects_tampering_and_staff_override():
     with pytest.raises(HTTPException) as error: staff.preview(PricePreview(sku='S', unit_cost='100', markup_rate='20'))
     assert error.value.status_code == 403
     with pytest.raises(HTTPException): staff.preview(PricePreview(sku='S', unit_cost='100', taxes=[TaxRule(code='VAT', rate='0')]))
+
+
+def test_receipt_tax_does_not_require_catalog_and_preserves_name():
+    repository = SimpleNamespace(context=lambda *args: {'markup_rate': '0', 'taxes': [], 'catalog': [], 'current_price': '100'})
+    admin = PricingService(repository, User('A', 'admin', 'ADMIN', 'Admin', employee_id='AD'))
+    body = PricePreview(sku='S', unit_cost='100', markup_rate='20', taxes=[TaxRule(code='LOCAL', name='Local tax', rate='10')])
+    result = admin.preview(body)
+    assert result['after_tax'] == '132'
+    assert result['taxes'][0]['name'] == 'Local tax'
+    assert admin.preview(PricePreview(sku='S', unit_cost='100'))['taxes'] == []
+    with pytest.raises(HTTPException) as error:
+        admin.preview(body.model_copy(update={'taxes': [body.taxes[0], body.taxes[0]]}))
+    assert error.value.status_code == 422
+
+
+def test_saved_receipt_inputs_drive_preview_without_global_defaults():
+    repository = SimpleNamespace(
+        context=lambda *args: {'markup_rate': '0', 'taxes': [], 'catalog': [], 'current_price': '100'},
+        receipt=lambda *args: {'status': 'NHAP', 'lines': [{'sku': 'S', 'price': {
+            'markup_rate': '30', 'taxes': [{'code': 'LOCAL', 'name': 'Saved name', 'rate': '5', 'amount': '7'}]}}]})
+    service = PricingService(repository, User('W', 'staff', 'NHAN_VIEN', 'Staff', employee_id='NV', warehouse_id=2))
+    result = service.preview(PricePreview(sku='S', unit_cost='200', receipt_id=1))
+    assert result['pre_tax'] == '260' and result['after_tax'] == '273'
+    assert result['taxes'][0]['amount'] == '13'
