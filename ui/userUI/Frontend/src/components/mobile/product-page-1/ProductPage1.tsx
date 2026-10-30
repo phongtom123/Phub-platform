@@ -13,7 +13,7 @@ export function ProductPage1({ product, activeTab }: { product: DetailProduct; a
     <ProductGallery product={product} />
     <ProductInfo product={product} activeTab={activeTab} />
     <ProductPurchaseBar product={product} />
-    <SupportLinksSection />
+    <SupportLinksSection productId={product.id} productName={product.name} />
     <ServiceBenefits />
   </article>;
 }
