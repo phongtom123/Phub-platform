@@ -83,6 +83,22 @@ class CatalogRepository:
         rows = self.active_products(PRODUCT_COLUMNS).eq("ma_sp", identifier).limit(1).execute().data
         return rows[0] if rows else None
 
+    def component_names(self, ids: list[str]) -> dict[str, str]:
+        if not ids:
+            return {}
+        rows = (
+            self.client.table("SAN_PHAM")
+            .select("ma_sp,ten_sp")
+            .in_("ma_sp", sorted(set(ids)))
+            .execute()
+            .data
+        )
+        return {
+            row["ma_sp"]: row["ten_sp"]
+            for row in rows
+            if isinstance(row, dict) and row.get("ma_sp") and row.get("ten_sp")
+        }
+
     def categories(self):
         def parents():
             return self.client.table("LOAI_SP").select("ma_loai_sp,ten_loai_sp").eq("trang_thai", self.active_status).order("ma_loai_sp")

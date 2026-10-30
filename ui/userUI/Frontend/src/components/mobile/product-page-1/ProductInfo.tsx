@@ -12,6 +12,7 @@ type Tab = "about" | "details" | "specs";
 
 export function ProductInfo({ product, activeTab }: { product: DetailProduct; activeTab: Tab }) {
   const tabs = productPage1Tabs.map(tab => ({ label: tab.label, href: `${productHref(product.id)}?tab=${tab.id}` }));
+  const contactHref = `/contact-us?${new URLSearchParams({ product_id: product.id, product_name: product.name })}`;
 
   return <section className={styles.info} aria-label="Thông tin sản phẩm">
     <TabNav items={tabs} activeHref={`${productHref(product.id)}?tab=${activeTab}`} label="Thông tin sản phẩm" className={styles.tabs} />
@@ -20,8 +21,7 @@ export function ProductInfo({ product, activeTab }: { product: DetailProduct; ac
     {activeTab === "details" && <ProductDetailsTab product={product} />}
     {activeTab === "specs" && <ProductSpecsTab product={product} />}
     <div className={styles.meta}>
-      <p><strong>Cần tư vấn?</strong> <Link href="/contact-us">Liên hệ</Link></p>
-      <span>SKU {product.sku}</span>
+      <p><strong>Cần tư vấn?</strong> <Link href={contactHref}>Liên hệ</Link></p>
     </div>
   </section>;
 }

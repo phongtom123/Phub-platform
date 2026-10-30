@@ -1,6 +1,7 @@
 """Catalog use cases and public formatting, independent of the HTTP transport."""
 from decimal import Decimal
 import json
+import re
 import unicodedata
 
 from phub_api.models.errors import CatalogError
@@ -21,6 +22,9 @@ from phub_api.schemas.catalog import (
     clean_text,
 )
 from phub_api.services.catalog_availability import available_skus
+
+COMPONENT_REF_PATTERN = re.compile(r"^(?:(\d+)x\s+)?((?:L_LINHKIEN_|SP|SEED_SP)\w+)$")
+
 
 def specifications_from_text(raw: str | None) -> list[Specification]:
     if not raw or not raw.strip():
@@ -60,11 +64,37 @@ def product_color(raw):
     return None
 
 
-
 class CatalogService:
     def __init__(self, repository: CatalogRepository):
         self.repository = repository
         self.currency = repository.currency
+
+    def resolve_component_specs(self, products: list[CatalogProduct]) -> list[CatalogProduct]:
+        ref_ids = set()
+        for product in products:
+            for spec in product.specifications:
+                match = COMPONENT_REF_PATTERN.match(spec.value.strip())
+                if match:
+                    ref_ids.add(match.group(2))
+        if not ref_ids:
+            return products
+        names = self.repository.component_names(list(ref_ids))
+        if not names:
+            return products
+        for product in products:
+            resolved_lines = []
+            changed = False
+            for spec in product.specifications:
+                match = COMPONENT_REF_PATTERN.match(spec.value.strip())
+                if match and match.group(2) in names:
+                    qty = match.group(1)
+                    comp_name = names[match.group(2)]
+                    spec.value = f"{qty}x {comp_name}" if qty else comp_name
+                    changed = True
+                resolved_lines.append(f"{spec.label}: {spec.value}")
+            if changed:
+                product.specifications_text = "\n".join(resolved_lines)
+        return products
 
     def product_from_row(self, row: dict) -> CatalogProduct:
         category = row["category"]
@@ -121,12 +151,12 @@ class CatalogService:
                 products = [product for product in products if product.stock_status == filters.stock_status]
             total = len(products)
             start = (filters.page - 1) * filters.page_size
-            items = products[start:start + filters.page_size]
+            items = self.resolve_component_specs(products[start:start + filters.page_size])
         else:
             rows, total = self.repository.page(filters)
             if total is None:
                 raise RuntimeError("Catalog exact count missing")
-            items = [self.product_from_row(row) for row in rows]
+            items = self.resolve_component_specs([self.product_from_row(row) for row in rows])
         return ProductPage(items=items, pagination=Pagination(
             page=filters.page, page_size=filters.page_size, total=total,
             total_pages=(total + filters.page_size - 1) // filters.page_size,
@@ -142,7 +172,7 @@ class CatalogService:
         row = self.repository.find(identifier)
         if row is None:
             raise CatalogError(404, "PRODUCT_NOT_FOUND", "Không tìm thấy sản phẩm.")
-        return self.product_from_row(row)
+        return self.resolve_component_specs([self.product_from_row(row)])[0]
 
     def list_categories(self) -> list[CategoryTree]:
         parents, children = self.repository.categories()
