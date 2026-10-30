@@ -586,6 +586,11 @@
             "title": "Total Lines",
             "type": "integer"
           },
+          "warehouse_id": {
+            "const": 2,
+            "title": "Warehouse Id",
+            "type": "integer"
+          },
           "warnings": {
             "items": {
               "enum": [
@@ -599,6 +604,7 @@
           }
         },
         "required": [
+          "warehouse_id",
           "start",
           "end",
           "method",
