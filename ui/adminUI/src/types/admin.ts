@@ -1,5 +1,6 @@
 export type ModuleKey =
   | "dashboard"
+  | "reports"
   | "orders"
   | "billing"
   | "customers"

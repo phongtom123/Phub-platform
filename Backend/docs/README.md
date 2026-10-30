@@ -42,6 +42,8 @@ Quản lý nhiều ảnh sản phẩm: xem [Gallery sản phẩm trong admin](PR
 
 Mỗi chương trình khuyến mãi có một banner tùy chọn: xem [Banner khuyến mãi](PROMOTION_BANNER.md).
 
+Báo cáo doanh thu/giá vốn/lợi nhuận gộp: xem [Báo cáo kinh doanh](../../docs/BUSINESS-REPORTS.md), gồm phương pháp bình quân liên hoàn và cách xử lý dữ liệu thiếu.
+
 - **Shared**: xác thực, health và metadata.
 - **Admin**: tổ chức (kho/nhân viên/tài khoản), khách hàng, sản phẩm, khuyến mãi.
 - **Kho**: tồn kho, nhà cung cấp, phiếu nhập, chuyển kho.

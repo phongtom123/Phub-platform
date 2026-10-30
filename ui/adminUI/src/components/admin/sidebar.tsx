@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Building2,
+  BarChart3,
   ChevronDown,
   CreditCard,
   FileInput,
@@ -26,7 +27,7 @@ import type { ModuleKey } from "@/src/types/admin";
 import { Logo } from "./ui";
 
 const navigation = [
-  { label: "TỔNG QUAN", items: [["dashboard", "Tổng quan", LayoutDashboard]] },
+  { label: "TỔNG QUAN", items: [["dashboard", "Tổng quan", LayoutDashboard], ["reports", "Báo cáo kinh doanh", BarChart3]] },
   {
     label: "BÁN HÀNG",
     items: [

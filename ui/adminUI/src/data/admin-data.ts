@@ -3,6 +3,7 @@ import type { ModuleKey } from "@/src/types/admin";
 /** Navigation labels only. Table metadata and records come from the backend. */
 export const moduleNames: Record<ModuleKey, string> = {
   dashboard: "Tổng quan",
+  reports: "Báo cáo kinh doanh",
   orders: "Đơn hàng",
   billing: "Hóa đơn & thanh toán",
   customers: "Khách hàng",

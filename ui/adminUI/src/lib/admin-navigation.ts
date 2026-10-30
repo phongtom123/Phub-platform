@@ -2,6 +2,7 @@ import type { ModuleKey } from "@/src/types/admin";
 
 const moduleKeys: ModuleKey[] = [
   "dashboard",
+  "reports",
   "orders",
   "billing",
   "customers",
@@ -35,11 +36,13 @@ const sectionToModule: Record<string, ModuleKey> = {
   payments: "billing",
   invoices: "billing",
   support: "support",
+  reports: "reports",
 };
 
 export function getModuleHref(moduleKey: ModuleKey) {
   if (moduleKey === "accounts") return "/accounts";
   if (moduleKey === "support") return "/support";
+  if (moduleKey === "reports") return "/reports";
   return moduleKey === "dashboard" ? "/" : `/?module=${moduleKey}`;
 }
 

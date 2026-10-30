@@ -8,8 +8,16 @@ from starlette.concurrency import run_in_threadpool
 from phub_api.dependencies.admin_operations import get_service
 from phub_api.dependencies.origin import check_origin
 from phub_api.schemas.admin_operations import Command, CommandResult, Resource
+from phub_api.schemas.business_report import BusinessReport
+from phub_api.schemas.api_contracts import READ_ERRORS
 
 router = APIRouter(prefix='/api/admin/operations', tags=['Admin · Vận hành'])
+
+
+@router.get('/business-report', response_model=BusinessReport, responses=READ_ERRORS, summary='Doanh thu, giá vốn bình quân liên hoàn và lợi nhuận từ đơn hoàn thành (ADMIN)')
+def business_report(start: date, end: date, response: Response, service=Depends(get_service)):
+    response.headers['Cache-Control'] = 'no-store'
+    return service.business_report(start, end)
 
 
 @router.get('/read/{kind}', summary='Thống kê, tìm kiếm, thông báo, cài đặt và lịch sử quản trị')

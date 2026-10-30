@@ -1,9 +1,16 @@
 "use client";
 import type { Summary } from "../dashboard/use-dashboard-data";
+import Link from "next/link";
+import { ScrollableTable } from "../tables/scrollable-table";
+export type FinancialSummaryData = Pick<Summary, "start" | "end" | "revenue" | "collected" | "top_products">;
 export function formatMoney(value: string) {
-  const [whole, part = "00"] = value.split(".");
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(value);
+  if (!match) return "—";
+  const [, negative, whole, fraction = "00"] = match;
+  const part = fraction.padEnd(2, "0");
   try {
-    return `${BigInt(whole).toLocaleString("vi-VN")}${part !== "00" ? "," + part : ""} ₫`;
+    const sign = negative && (BigInt(whole) !== BigInt(0) || part !== "00") ? "-" : "";
+    return `${sign}${BigInt(whole).toLocaleString("vi-VN")}${part !== "00" ? "," + part : ""} ₫`;
   } catch {
     return "—";
   }
@@ -16,7 +23,7 @@ function csvValue(value: unknown) {
     '"'
   );
 }
-export function FinancialSummary({ summary, disabled = false }: { summary: Summary | null; disabled?: boolean }) {
+export function FinancialSummary({ summary, disabled = false, reportHref }: { summary: FinancialSummaryData | null; disabled?: boolean; reportHref?: string }) {
   if (!summary) return null;
   function download() {
     if (!summary || disabled) return;
@@ -46,6 +53,7 @@ export function FinancialSummary({ summary, disabled = false }: { summary: Summa
       <div className="live-tools">
         <h2>Doanh thu và thu tiền</h2>
         <button onClick={download} disabled={disabled}>Xuất báo cáo CSV</button>
+        {reportHref && <Link href={reportHref}>Xem báo cáo chi tiết →</Link>}
       </div>
       <p>
         {summary.start} → {summary.end} · theo giờ Việt Nam
@@ -66,7 +74,7 @@ export function FinancialSummary({ summary, disabled = false }: { summary: Summa
       </div>
       <h3>Sản phẩm bán chạy</h3>
       {summary.top_products.length ? (
-        <table>
+        <ScrollableTable><table>
           <thead>
             <tr>
               <th>Sản phẩm</th>
@@ -85,7 +93,7 @@ export function FinancialSummary({ summary, disabled = false }: { summary: Summa
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></ScrollableTable>
       ) : (
         <p>Chưa có đơn hoàn thành trong khoảng thời gian đã chọn.</p>
       )}
