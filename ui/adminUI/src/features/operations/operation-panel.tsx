@@ -1,11 +1,14 @@
 "use client";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { DataRow } from "../../lib/inline-table-data";
 import { dataHref } from "../../lib/data-navigation";
 import { adminFetch } from "../../lib/admin-fetch";
 import { ReferenceInput } from "./reference-input";
+import { OrderPaymentFields, type CollectionDraft } from "./order-payment-fields";
+import { paymentMethods, type PaymentMethod } from "./order-payment-data";
+import { formatMoney } from "./financial-summary";
 import {
   OperationError,
   pendingCommand,
@@ -52,7 +55,7 @@ type Line = {
 const blankLine = (): Line => ({
   sku: "",
   quantity: "1",
-  warehouse_id: "2",
+  warehouse_id: "",
   unit_price: "",
 });
 const ids: Record<string, string> = {
@@ -80,7 +83,7 @@ export function OperationPanel({
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [lines, setLines] = useState<Line[]>([blankLine()]);
-  const [warehouse, setWarehouse] = useState("2"),
+  const [warehouse, setWarehouse] = useState(""),
     [supplier, setSupplier] = useState("");
   const [customer, setCustomer] = useState(""),
     [recipient, setRecipient] = useState(""),
@@ -91,6 +94,13 @@ export function OperationPanel({
   const [amount, setAmount] = useState(""),
     [method, setMethod] = useState("TIEN_MAT"),
     [reference, setReference] = useState("");
+  const [collectionReady, setCollectionReady] = useState(false);
+  const updateCollection = useCallback((draft: CollectionDraft) => {
+    setAmount(draft.amount);
+    setMethod(draft.method);
+    setReference(draft.reference);
+    setCollectionReady(draft.ready);
+  }, []);
   const [quantity, setQuantity] = useState(String(row?.so_luong_ton ?? ""));
   const pending = useRef<PendingCommand | null>(null),
     submitting = useRef(false);
@@ -263,7 +273,11 @@ export function OperationPanel({
       return;
     }
     if (["payment", "refund"].includes(mode)) {
-      if (!window.confirm("Xác nhận tiền đã thực thu/hoàn bên ngoài hệ thống?"))
+      if (mode === "payment" && !collectionReady) return;
+      const message = mode === "payment"
+        ? `Xác nhận đã nhận ${formatMoney(amount)} qua ${paymentMethods[method as PaymentMethod].toLowerCase()} cho đơn hàng ${id}?`
+        : "Xác nhận tiền đã thực thu/hoàn bên ngoài hệ thống?";
+      if (!window.confirm(message))
         return;
       void run(mode, { amount, method, ...(reference ? { reference } : {}) });
       return;
@@ -351,13 +365,13 @@ export function OperationPanel({
           <>
             <button
               disabled={busy || Boolean(pending.current)}
-              onClick={() => setMode("payment")}
+              onClick={() => { if (mode !== "payment") setCollectionReady(false); setMode("payment"); }}
             >
               Ghi nhận thu tiền
             </button>
             <button
               disabled={busy || Boolean(pending.current)}
-              onClick={() => setMode("refund")}
+              onClick={() => { setAmount(""); setMethod("TIEN_MAT"); setReference(""); setMode("refund"); }}
             >
               Ghi nhận hoàn tiền
             </button>
@@ -465,14 +479,14 @@ export function OperationPanel({
             {mode === "create" && resource === "receipts" && (
               <>
                 <label>
-                  Kho nhập cố định
+                  Kho nhập *
                   <ReferenceInput
                     field="ma_kho"
                     value={warehouse}
                     required
                     label="Chọn kho"
-                    disabled
                     searchable={false}
+                    filters={{ trang_thai: "1" }}
                     onChange={setWarehouse}
                   />
                 </label>
@@ -513,12 +527,12 @@ export function OperationPanel({
                     </label>
                     {resource === "orders" && (
                       <label>
-                        Kho xuất cố định
+                        Kho xuất *
                         <ReferenceInput
                           field="ma_kho"
                           label={`Kho xuất dòng ${index + 1}`}
-                          disabled
                           searchable={false}
+                          filters={{ trang_thai: "1" }}
                           required
                           value={l.warehouse_id}
                           onChange={(v) => setLine(index, { warehouse_id: v })}
@@ -596,7 +610,16 @@ export function OperationPanel({
                 />
               </label>
             )}
-            {["payment", "refund"].includes(mode) && (
+            {mode === "payment" && id && <OrderPaymentFields
+              key={id}
+              orderId={id}
+              disabled={busy || Boolean(pending.current)}
+              onChange={updateCollection}
+              onInvoice={actions.orders.find(action => action.action === "invoice")?.states.includes(status)
+                ? () => { if (window.confirm("Lập hóa đơn từ thông tin đơn hàng?")) void run("invoice"); }
+                : undefined}
+            />}
+            {mode === "refund" && (
               <>
                 <p className="live-note operation-wide">
                   Chỉ ghi nhận khoản tiền đã được xác nhận thực tế. Thao tác này
@@ -619,12 +642,7 @@ export function OperationPanel({
                     value={method}
                     onChange={(e) => setMethod(e.target.value)}
                   >
-                    {Object.entries({
-                      TIEN_MAT: "Tiền mặt",
-                      CHUYEN_KHOAN: "Chuyển khoản",
-                      THE: "Thẻ",
-                      VI_DIEN_TU: "Ví điện tử",
-                    }).map(([k, v]) => (
+                    {Object.entries(paymentMethods).map(([k, v]) => (
                       <option key={k} value={k}>
                         {v}
                       </option>
@@ -678,9 +696,9 @@ export function OperationPanel({
           <div className="live-tools">
             <button
               className="live-primary"
-              disabled={busy || Boolean(pending.current)}
+              disabled={busy || Boolean(pending.current) || (mode === "payment" && !collectionReady)}
             >
-              {busy ? "Đang xử lý…" : "Xác nhận"}
+              {busy ? "Đang xử lý…" : mode === "payment" ? "Xác nhận đã thu" : "Xác nhận"}
             </button>
             {!pending.current &&
               !busy &&

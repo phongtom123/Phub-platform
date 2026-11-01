@@ -1,4 +1,30 @@
-# Phạm vi một kho cố định
+# Phạm vi kho
+
+## Cập nhật 01/11/2026: mở lại các kho
+
+Migration `Backend/migrations/20261101162759_unlock_warehouses.sql` gỡ giới hạn chỉ
+vận hành kho 2. API kho/tồn kho của ADMIN trả tất cả kho; có thể sửa thông tin kho,
+chọn kho hoạt động khi lập phiếu nhập, tạo đơn và phân công nhân viên. Nhân viên
+vẫn chỉ truy cập chứng từ/tồn kho của kho được phân công; kiểm tra trạng thái kho,
+tồn khả dụng, giá, khóa giao dịch và idempotency vẫn giữ nguyên.
+
+Catalog và checkout xét các kho hoạt động. Migration không đổi trạng thái kho,
+tồn kho, giá, đơn hàng, phiếu nhập hoặc phân công nhân viên. Supabase hiện có
+4 kho (1, 2, 3, 4) đều hoạt động nên không cần cập nhật trạng thái hàng loạt.
+Đã áp dụng migration trên Supabase Phub ngày 01/11/2026; checksum của kho, tồn,
+nhân viên, phiếu nhập và đơn hàng trước/sau giữ nguyên. API local đã đọc được
+đủ các mã kho 1, 2, 3, 4 từ Supabase thật.
+Chức năng chuyển kho vẫn ngừng sử dụng theo quyết định trước đó.
+
+Báo cáo kinh doanh sau migration `20261101164437_business_report_warehouse_scope.sql`
+mặc định toàn bộ kho, cho phép chọn riêng kho và xác nhận phạm vi qua API.
+Tiền thu của đơn chưa hoàn thành vẫn tính theo ngày thanh toán. Doanh thu và
+giá vốn chỉ ghi nhận khi đơn hoàn thành; xem [báo cáo kinh doanh](BUSINESS-REPORTS.md).
+Cần triển khai backend và UI mới để bỏ các chặn ở lớp ứng dụng.
+Kiểm chứng migration bằng `Backend/scripts/test_unlocked_warehouses.cjs` và
+`Backend/tests/test_fixed_warehouse.py`; các bài kiểm tra không ghi dữ liệu thật.
+
+## Lịch sử quyết định ngày 30/10/2026 (đã được thay thế)
 
 Quyết định ngày 30/10/2026: vận hành duy nhất **kho 2 — [SEED] Kho trung tâm**. Chức năng chuyển kho tạm dừng; các kho và chứng từ cũ không bị xóa, gộp hay tự đổi mã.
 

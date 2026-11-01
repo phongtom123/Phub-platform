@@ -573,6 +573,14 @@
             "title": "Refunds",
             "type": "string"
           },
+          "scope": {
+            "enum": [
+              "ALL_WAREHOUSES",
+              "WAREHOUSE"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
           "start": {
             "format": "date",
             "title": "Start",
@@ -587,9 +595,17 @@
             "type": "integer"
           },
           "warehouse_id": {
-            "const": 2,
-            "title": "Warehouse Id",
-            "type": "integer"
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warehouse Id"
           },
           "warnings": {
             "items": {
@@ -604,6 +620,7 @@
           }
         },
         "required": [
+          "scope",
           "warehouse_id",
           "start",
           "end",
@@ -3321,6 +3338,47 @@
         "title": "KHACH_HANGUpdate",
         "type": "object"
       },
+      "KHOCreate": {
+        "additionalProperties": false,
+        "example": {
+          "dia_chi": "Địa chỉ minh họa",
+          "ten_kho": "Kho trung tâm",
+          "trang_thai": 1
+        },
+        "properties": {
+          "dia_chi": {
+            "description": "dia_chi",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Dia Chi",
+            "type": "string"
+          },
+          "ten_kho": {
+            "description": "ten_kho",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Ten Kho",
+            "type": "string"
+          },
+          "trang_thai": {
+            "default": 1,
+            "description": "trang_thai",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "title": "Trang Thai",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ten_kho",
+          "dia_chi"
+        ],
+        "title": "KHOCreate",
+        "type": "object"
+      },
       "KHOPage": {
         "additionalProperties": false,
         "properties": {
@@ -3385,6 +3443,57 @@
           "trang_thai"
         ],
         "title": "KHORead",
+        "type": "object"
+      },
+      "KHOSaved": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/KHORead"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "KHOUpdate": {
+        "additionalProperties": false,
+        "description": "Chỉ gửi trường cần đổi; bỏ password nếu giữ nguyên. Không nhận PK/SKU/trường server tự gán.",
+        "example": {
+          "ten_kho": "Kho trung tâm"
+        },
+        "minProperties": 1,
+        "properties": {
+          "dia_chi": {
+            "description": "dia_chi",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Dia Chi",
+            "type": "string"
+          },
+          "ten_kho": {
+            "description": "ten_kho",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Ten Kho",
+            "type": "string"
+          },
+          "trang_thai": {
+            "description": "trang_thai",
+            "enum": [
+              0,
+              1,
+              2
+            ],
+            "title": "Trang Thai",
+            "type": "integer"
+          }
+        },
+        "title": "KHOUpdate",
         "type": "object"
       },
       "LOAI_SPCreate": {
@@ -10961,6 +11070,24 @@
               "format": "date",
               "title": "End",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "warehouse_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Warehouse Id"
             }
           }
         ],
@@ -22523,7 +22650,7 @@
     },
     "/api/data/warehouses": {
       "get": {
-        "description": "Bảng `KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_warehouses",
         "parameters": [
           {
@@ -22707,7 +22834,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Danh sách / chi tiết · Kho cố định",
+        "summary": "Danh sách / chi tiết · Kho",
         "tags": [
           "Admin · Tổ chức"
         ],
@@ -22715,10 +22842,362 @@
         "x-primary-key": [
           "ma_kho"
         ],
-        "x-read-only": true,
+        "x-read-only": false,
         "x-roles": [
           "ADMIN",
           "NHAN_VIEN"
+        ],
+        "x-table": "KHO"
+      },
+      "patch": {
+        "description": "Bảng `KHO`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "operationId": "patch_warehouses",
+        "parameters": [
+          {
+            "description": "Chuỗi JSON mảng khóa theo thứ tự ('ma_kho',); int gửi JSON number, varchar gửi JSON string.",
+            "examples": {
+              "primary_key": {
+                "summary": "Dữ liệu giả minh họa; thay bằng khóa thật",
+                "value": "[1]"
+              }
+            },
+            "in": "query",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 6000,
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "illustration": {
+                  "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
+                  "value": {
+                    "ten_kho": "Kho trung tâm"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/KHOUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "dia_chi": "Địa chỉ minh họa",
+                      "ma_kho": 1,
+                      "ten_kho": "Kho trung tâm",
+                      "trang_thai": 1
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/KHOSaved"
+                }
+              }
+            },
+            "description": "Bản ghi đã lưu, không trả mật khẩu/hash.",
+            "headers": {
+              "Cache-Control": {
+                "example": "no-store",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Bản ghi không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Bản ghi không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Chỉnh sửa · Kho",
+        "tags": [
+          "Admin · Tổ chức"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-primary-key": [
+          "ma_kho"
+        ],
+        "x-read-only": false,
+        "x-roles": [
+          "ADMIN"
+        ],
+        "x-table": "KHO"
+      },
+      "post": {
+        "description": "Bảng `KHO`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "operationId": "post_warehouses",
+        "parameters": [
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "illustration": {
+                  "summary": "Chỉ là mẫu; không phải dữ liệu đã tạo",
+                  "value": {
+                    "dia_chi": "Địa chỉ minh họa",
+                    "ten_kho": "Kho trung tâm",
+                    "trang_thai": 1
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/KHOCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "dia_chi": "Địa chỉ minh họa",
+                      "ma_kho": 1,
+                      "ten_kho": "Kho trung tâm",
+                      "trang_thai": 1
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/KHOSaved"
+                }
+              }
+            },
+            "description": "Bản ghi đã lưu, không trả mật khẩu/hash.",
+            "headers": {
+              "Cache-Control": {
+                "example": "no-store",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Thêm · Kho",
+        "tags": [
+          "Admin · Tổ chức"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-primary-key": [
+          "ma_kho"
+        ],
+        "x-read-only": false,
+        "x-roles": [
+          "ADMIN"
         ],
         "x-table": "KHO"
       }
@@ -24935,7 +25414,7 @@
       "name": "Kho · Phiếu nhập"
     },
     {
-      "description": "Chỉ tra cứu dữ liệu lịch sử. Hệ thống chỉ sử dụng một kho nên không còn chức năng tạo, sửa hoặc xử lý chuyển kho.",
+      "description": "Chỉ tra cứu dữ liệu lịch sử. Chức năng tạo, sửa hoặc xử lý chuyển kho đã ngừng sử dụng.",
       "name": "Kho · Chuyển kho"
     },
     {

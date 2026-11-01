@@ -2,7 +2,7 @@ import { adminFetch } from "@/src/lib/admin-fetch";
 import { vietnamDay } from "../dashboard/dashboard-data";
 export type ProductProfit = { sku: string; name: string; quantity: number; net_revenue: string; cost: string | null; gross_profit: string | null; margin: string | null; unpriced_lines: number };
 export type BusinessReport = {
-  warehouse_id: 2; start: string; end: string; method: "MOVING_WEIGHTED_AVERAGE"; basis: "COMPLETED_ORDERS";
+  scope: "ALL_WAREHOUSES" | "WAREHOUSE"; warehouse_id: number | null; start: string; end: string; method: "MOVING_WEIGHTED_AVERAGE"; basis: "COMPLETED_ORDERS";
   net_revenue: string; tax: string; discounts: string; gross_revenue: string; collected: string; refunds: string;
   cost: string | null; known_cost: string; gross_profit: string | null; margin: string | null;
   order_count: number; quantity: number; costed_lines: number; total_lines: number;
@@ -31,16 +31,18 @@ export function recentRange(days: number, now = new Date()): ReportRange {
 const money = (value: unknown): value is string => typeof value === "string" && /^-?\d+(?:\.\d{1,2})?$/.test(value);
 const optionalMoney = (value: unknown) => value === null || money(value);
 export const reportWarnings = {
-  INCOMPLETE_COST_HISTORY: "Kho 2 còn dòng hàng chưa xác định được giá vốn: cần đối chiếu tồn đầu kỳ, lịch sử nhập/xuất, điều chỉnh hoặc chứng từ chuyển kho cũ. Không gán giá vốn bằng 0.",
+  INCOMPLETE_COST_HISTORY: "Phạm vi báo cáo còn dòng hàng chưa xác định được giá vốn: cần đối chiếu tồn đầu kỳ, lịch sử nhập/xuất, điều chỉnh hoặc chứng từ chuyển kho cũ. Không gán giá vốn bằng 0.",
   UNALLOCATED_REFUNDS: "Có hoàn tiền chưa phân bổ về hàng trả lại và thuế. Doanh thu hiển thị là sau giảm giá, trước phân bổ hoàn tiền; chưa xác định lợi nhuận sau hoàn tiền.",
 };
-export async function readReport(range: ReportRange, signal: AbortSignal): Promise<BusinessReport> {
+export async function readReport(range: ReportRange, signal: AbortSignal, warehouseId: number | null = null): Promise<BusinessReport> {
   const invalid = rangeError(range);
   if (invalid) throw new Error(invalid);
-  const response = await adminFetch(`/api/backend/admin/operations/business-report?${new URLSearchParams(range)}`, { signal, cache: "no-store" });
+  const query = new URLSearchParams(range);
+  if (warehouseId !== null) query.set("warehouse_id", String(warehouseId));
+  const response = await adminFetch(`/api/backend/admin/operations/business-report?${query}`, { signal, cache: "no-store" });
   const result: BusinessReport = await response.json().catch(() => null);
   if (!response.ok) throw new Error(response.status === 404 ? "Backend chưa có API báo cáo lợi nhuận. Cần cập nhật backend mới." : typeof (result as unknown as { detail?: string })?.detail === "string" ? (result as unknown as { detail: string }).detail : "Không tải được báo cáo kinh doanh.");
-  if (!result || result.warehouse_id !== 2 || result.start !== range.start || result.end !== range.end || result.method !== "MOVING_WEIGHTED_AVERAGE" || result.basis !== "COMPLETED_ORDERS" ||
+  if (!result || result.warehouse_id !== warehouseId || result.scope !== (warehouseId === null ? "ALL_WAREHOUSES" : "WAREHOUSE") || result.start !== range.start || result.end !== range.end || result.method !== "MOVING_WEIGHTED_AVERAGE" || result.basis !== "COMPLETED_ORDERS" ||
     ![result.net_revenue, result.tax, result.discounts, result.gross_revenue, result.collected, result.refunds, result.known_cost].every(money) ||
     ![result.cost, result.gross_profit, result.margin].every(optionalMoney) ||
     ![result.order_count, result.quantity, result.costed_lines, result.total_lines].every(value => Number.isSafeInteger(value) && value >= 0) || result.costed_lines > result.total_lines ||
@@ -58,11 +60,12 @@ export async function readReport(range: ReportRange, signal: AbortSignal): Promi
 
 export function reportCsv(report: BusinessReport): string {
   const rows: unknown[][] = [
-    ["Báo cáo kinh doanh", report.start, report.end], ["Kho cố định", report.warehouse_id], ["Phương pháp", "Bình quân gia quyền liên hoàn"], ["Ghi nhận", "Đơn hoàn thành; chưa thuế; sau giảm giá"],
+    ["Báo cáo kinh doanh", report.start, report.end], ["Phạm vi kho", report.warehouse_id === null ? "Tất cả kho" : `Kho ${report.warehouse_id}`], ["Phương pháp", "Bình quân gia quyền liên hoàn"], ["Ghi nhận", "Đơn hoàn thành; chưa thuế; sau giảm giá"],
     ["Lưu ý", ...report.warnings.map(warning => reportWarnings[warning])],
     ["Doanh thu sau giảm giá, trước phân bổ hoàn tiền", report.net_revenue], ["Thuế", report.tax], ["Giá trị gồm thuế", report.gross_revenue],
     ["Giá vốn", report.cost ?? "Chưa đủ dữ liệu"], ["Lợi nhuận gộp", report.gross_profit ?? "Chưa đủ dữ liệu"], ["Biên lợi nhuận gộp (%)", report.margin ?? "Không xác định"],
-    ["Thu trừ hoàn trong kỳ, đơn chỉ thuộc kho 2", report.collected], ["Hoàn tiền trong kỳ, đơn chỉ thuộc kho 2", report.refunds],
+    [report.warehouse_id === null ? "Thu trừ hoàn trong kỳ, tất cả kho" : "Thu trừ hoàn trong kỳ, đơn chỉ thuộc kho đã chọn", report.collected],
+    [report.warehouse_id === null ? "Hoàn tiền trong kỳ, tất cả kho" : "Hoàn tiền trong kỳ, đơn chỉ thuộc kho đã chọn", report.refunds],
     [], ["SKU", "Sản phẩm", "Số lượng", "Doanh thu chưa thuế", "Giá vốn", "Lợi nhuận gộp", "Biên lợi nhuận (%)", "Dòng chưa đủ giá vốn"],
     ...report.products.map(row => [row.sku, row.name, row.quantity, row.net_revenue, row.cost ?? "Chưa đủ dữ liệu", row.gross_profit ?? "Chưa đủ dữ liệu", row.margin ?? "Không xác định", row.unpriced_lines]),
     [], ["Ngày hoàn thành", "Doanh thu chưa thuế", "Lợi nhuận gộp"], ...report.daily.map(row => [row.day, row.net_revenue, row.gross_profit ?? "Chưa đủ dữ liệu"]),

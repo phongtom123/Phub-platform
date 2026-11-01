@@ -1,11 +1,9 @@
 from decimal import Decimal, DecimalException, localcontext, ROUND_HALF_UP
 from fastapi import HTTPException
 from postgrest.exceptions import APIError
-from phub_api.config.warehouse import WAREHOUSE_SCOPE_MESSAGE, OPERATING_WAREHOUSE_ID
 
 PRICING_ERRORS = {
     'PRICING_RECEIPT_ONLY': (410, 'Thuế và tỷ lệ lợi nhuận được nhập trực tiếp trên phiếu nhập. Không còn danh mục thuế hoặc cấu hình giá riêng.'),
-    'SINGLE_WAREHOUSE': (422, WAREHOUSE_SCOPE_MESSAGE),
     'PRICING_FORBIDDEN': (403, 'Chỉ ADMIN được sửa tỷ lệ/thuế. Thủ kho chỉ xem và dùng cấu hình được duyệt.'),
     'PRICING_INVALID': (422, 'Giá nhập, tỷ lệ hoặc danh sách thuế không hợp lệ. Không ghi thay đổi.'),
     'PRICING_CHANGED': (409, 'Giá bán hoặc cấu hình đã thay đổi. Tải lại preview và xác nhận giá mới.'),
@@ -34,8 +32,8 @@ class PricingService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args, admin=False):
-        if self.user.role == 'NHAN_VIEN' and self.user.warehouse_id != OPERATING_WAREHOUSE_ID:
-            raise HTTPException(403, WAREHOUSE_SCOPE_MESSAGE)
+        if self.user.role == 'NHAN_VIEN' and self.user.warehouse_id is None:
+            raise HTTPException(403, 'Nhân viên chưa được phân công kho.')
         if self.user.role not in {'ADMIN', 'NHAN_VIEN'} or not self.user.employee_id or (admin and self.user.role != 'ADMIN'):
             raise HTTPException(403, PRICING_ERRORS['PRICING_FORBIDDEN'][1])
         try:

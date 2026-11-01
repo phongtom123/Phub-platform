@@ -46,7 +46,8 @@ sau timeout **giữ nguyên key và body**. Cùng key khác nội dung trả 409
 | settings | save | store_name, store_address, store_phone, low_stock_threshold |
 | notifications | read | ids[] |
 
-Hệ thống chỉ sử dụng một kho. Chuyển kho đã ngừng sử dụng: không có menu, form
+Các kho đang hoạt động đều được sử dụng; nhân viên chỉ thao tác kho được phân công.
+Chuyển kho đã ngừng sử dụng: không có menu, form
 hoặc API ghi; RPC từ chối thao tác chuyển kho. Các bảng phiếu cũ chỉ để tra cứu.
 
 Mã kho/NCC/phiếu chấp nhận số nguyên có dấu. Mã phiếu do database tạo, mã đơn/POS

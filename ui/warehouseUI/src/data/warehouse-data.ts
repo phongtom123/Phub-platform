@@ -17,7 +17,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     rows: [], note: "Chỉ xác nhận nhập sau khi đối chiếu hàng thực nhận. Phiếu đã nhập không được cộng tồn lần nữa.",
   },
   transfers: {
-    title: "Lịch sử chuyển kho", description: "Chỉ tra cứu phiếu cũ; chức năng chuyển kho đã ngừng sử dụng vì hệ thống chỉ còn một kho.", searchPlaceholder: "Tìm mã phiếu...", filters: ["Trạng thái", "Kho nhận"],
+    title: "Lịch sử chuyển kho", description: "Chỉ tra cứu phiếu cũ; chức năng tạo và xử lý chuyển kho đã ngừng sử dụng.", searchPlaceholder: "Tìm mã phiếu...", filters: ["Trạng thái", "Kho nhận"],
     columns: [{ key: "id", label: "MÃ PHIẾU", kind: "link" }, { key: "from", label: "KHO XUẤT", kind: "strong" }, { key: "to", label: "KHO NHẬN", kind: "strong" }, { key: "items", label: "SỐ SKU" }, { key: "created", label: "NGÀY TẠO" }, { key: "status", label: "TRẠNG THÁI", kind: "status" }],
     rows: [], note: "Kho xuất phải khác kho nhận. Tồn kho nhận chỉ tăng sau khi xác nhận nhận đủ hàng.",
   },

@@ -15,9 +15,10 @@ router = APIRouter(prefix='/api/admin/operations', tags=['Admin · Vận hành']
 
 
 @router.get('/business-report', response_model=BusinessReport, responses=READ_ERRORS, summary='Doanh thu, giá vốn bình quân liên hoàn và lợi nhuận từ đơn hoàn thành (ADMIN)')
-def business_report(start: date, end: date, response: Response, service=Depends(get_service)):
+def business_report(start: date, end: date, response: Response,
+                    warehouse_id: int | None = Query(None, ge=1, le=2**31-1), service=Depends(get_service)):
     response.headers['Cache-Control'] = 'no-store'
-    return service.business_report(start, end)
+    return service.business_report(start, end, warehouse_id)
 
 
 @router.get('/read/{kind}', summary='Thống kê, tìm kiếm, thông báo, cài đặt và lịch sử quản trị')
