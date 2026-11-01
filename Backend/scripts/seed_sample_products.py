@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from phub_api.config.database import supabase
+from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID
 
 PRODUCTS = [
     {
@@ -430,11 +431,10 @@ PRODUCTS = [
     },
 ]
 
-WAREHOUSES = [-900001, -900002, -900003]
+# Use the approved operating warehouse; historical negative seed IDs were retired.
+WAREHOUSES = [OPERATING_WAREHOUSE_ID]
 INVENTORY_PER_WAREHOUSE = {
-    -900001: 50,
-    -900002: 30,
-    -900003: 20,
+    OPERATING_WAREHOUSE_ID: 50,
 }
 
 
