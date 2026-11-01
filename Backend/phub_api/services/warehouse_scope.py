@@ -1,7 +1,7 @@
 from fastapi import HTTPException
-from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID, WAREHOUSE_SCOPE_MESSAGE
 
 
-def require_operating_warehouse(value):
-    if value != OPERATING_WAREHOUSE_ID:
-        raise HTTPException(422, WAREHOUSE_SCOPE_MESSAGE)
+def require_warehouse_id(value):
+    """Validate an identifier; existence, active state and ownership are checked by the caller/RPC."""
+    if type(value) is not int or not -(2**31) <= value < 2**31:
+        raise HTTPException(422, "Chọn một kho hợp lệ.")

@@ -70,7 +70,7 @@ TAGS = [
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
     {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp."},
     {"name": "Kho · Phiếu nhập", "description": "CRUD bảng chỉ đọc. ADMIN dùng /api/admin/operations/receipts; NHAN_VIEN dùng /api/warehouse/receipts trong kho được phân công."},
-    {"name": "Kho · Chuyển kho", "description": "Chỉ tra cứu dữ liệu lịch sử. Hệ thống chỉ sử dụng một kho nên không còn chức năng tạo, sửa hoặc xử lý chuyển kho."},
+    {"name": "Kho · Chuyển kho", "description": "Chỉ tra cứu dữ liệu lịch sử. Chức năng tạo, sửa hoặc xử lý chuyển kho đã ngừng sử dụng."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
     {"name": "Bán hàng · Tài chính", "description": "Hóa đơn, thanh toán chỉ đọc. Không ghi tiền qua CRUD tổng quát."},
     {"name": "Customer · Catalog", "description": "API công khai, không cần đăng nhập. Chỉ trả sản phẩm/loại đang hoạt động."},

@@ -3,7 +3,6 @@ from datetime import datetime, time, timedelta, timezone
 from fastapi import HTTPException
 from postgrest.exceptions import APIError
 from phub_api.services.pricing import PRICING_ERRORS
-from phub_api.config.warehouse import OPERATING_WAREHOUSE_ID
 
 ERRORS = {
     **PRICING_ERRORS,
@@ -21,7 +20,7 @@ class WarehouseService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args):
-        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id or self.user.warehouse_id != OPERATING_WAREHOUSE_ID:
+        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id or self.user.warehouse_id is None:
             raise HTTPException(403, 'Chỉ nhân viên đã được phân công kho mới được thực hiện.')
         try:
             return operation(*args)

@@ -1,21 +1,26 @@
 # Báo cáo kinh doanh trong admin
 
-**Cập nhật 30/10/2026:** phạm vi mới chỉ **kho 2 — Kho trung tâm**. Xem [quy tắc một kho cố định](SINGLE-WAREHOUSE.md); migration `20261030034222_fixed_operating_warehouse.sql` thay thế hàm báo cáo cũ mà không sửa số liệu nghiệp vụ. Các giới hạn chuyển kho/hoàn tiền bên dưới mô tả phiên bản đầu; phiên bản mới đọc xuất chuyển kho cũ để tái dựng tồn và tách hoàn tiền đơn hủy trước xuất khỏi hoàn tiền hàng bán.
+**Cập nhật 01/11/2026:** mặc định báo cáo **tất cả kho**, có bộ lọc từng kho.
+Migration `20261101164437_business_report_warehouse_scope.sql` thêm RPC v2 chỉ đọc,
+giữ RPC v1 cho backend cũ. Đã áp dụng trên Supabase Phub. Khoản thu 5.500.000đ của
+đơn đang chuẩn bị ở kho 4 đã được xác minh trong dòng tiền ngày 01/11/2026 của cả
+báo cáo tất cả kho và riêng kho 4; doanh thu vẫn bằng 0 do đơn chưa hoàn thành.
 
 ## Đã triển khai
 
 - Trang `/reports`, menu **Tổng quan → Báo cáo kinh doanh**.
 - Link từ khối **Doanh thu và thu tiền** trên dashboard, giữ kỳ đang xem.
-- Chọn ngày bắt đầu/kết thúc, chọn nhanh 7/30/90 ngày, làm mới và xuất CSV.
-- Tối đa 366 ngày/kỳ; thời gian theo Việt Nam. URL lưu `start`, `end` để chia sẻ hoặc mở lại.
-- API `GET /api/admin/operations/business-report?start=...&end=...` gọi RPC `admin_business_report_v1`. Chỉ ADMIN đang hoạt động; hàm STABLE/SECURITY INVOKER và chỉ service_role được EXECUTE. Không thêm/sửa/xóa bảng, cột hay dữ liệu.
-- Đối chiếu kỳ được API trả về và định dạng số tiền trước khi hiển thị. Khi đổi kỳ hoặc lỗi tải, không xuất số liệu cũ dưới kỳ mới.
+- Chọn kho, ngày bắt đầu/kết thúc, chọn nhanh 7/30/90 ngày, làm mới và xuất CSV.
+- Tối đa 366 ngày/kỳ; thời gian theo Việt Nam. URL lưu `start`, `end`, `warehouse_id` tùy chọn để chia sẻ hoặc mở lại.
+- API `GET /api/admin/operations/business-report?start=...&end=...` gọi RPC `admin_business_report_v2`. Bỏ `warehouse_id` để lấy tất cả kho; thêm `warehouse_id=4` để lấy riêng kho 4. Response xác nhận `scope=ALL_WAREHOUSES, warehouse_id=null` hoặc `scope=WAREHOUSE, warehouse_id=<mã kho>`. Chỉ ADMIN đang hoạt động; hàm STABLE/SECURITY INVOKER và chỉ service_role được EXECUTE. Không thêm/sửa/xóa bảng, cột hay dữ liệu nghiệp vụ.
+- Đối chiếu cả kỳ, phạm vi kho và định dạng số tiền trước khi hiển thị. Khi đổi kỳ/kho hoặc lỗi tải, không xuất số liệu cũ dưới bộ lọc mới.
 - Giữ cơ chế đọc lại 10 giây hiện có; lỗi cập nhật nền giữ bản lần trước và khóa xuất CSV đến khi đọc lại thành công.
 
 ## Ý nghĩa số liệu hiện tại
 
 - **Doanh thu sau giảm giá, chưa thuế**: tổng `so_luong * don_gia - giam_gia - giam_gia_voucher` của chi tiết đơn HOAN_THANH, theo ngày hoàn thành trong kỳ. Thuế tách riêng. Không trừ giảm giá lần hai.
 - **Thu tiền thực nhận**: giao dịch thu thành công trừ giao dịch hoàn thành công trong kỳ theo ngày giao dịch. Không phải lợi nhuận.
+- Báo cáo tất cả kho cộng mỗi giao dịch đúng một lần, kể cả đơn chưa hoàn thành hoặc có hàng ở nhiều kho. Báo cáo riêng kho chỉ tính tiền của đơn hoàn toàn thuộc kho đó; không tự phân bổ giao dịch của đơn nhiều kho. Không tính khoản chờ xử lý/thất bại thành tiền đã thu.
 - **Theo sản phẩm/ngày**: toàn bộ SKU của đơn hoàn thành, số lượng/doanh thu/giá vốn/lợi nhuận/biên; tìm kiếm SKU/tên và phân trang. CSV xuất toàn bộ, không chỉ trang hiện tại.
 - Bộ lọc ngày trên trang không thay đổi định nghĩa hoặc tự xử lý lại số liệu của API.
 
@@ -51,8 +56,9 @@ Không gọi lợi nhuận gộp là lợi nhuận ròng: hệ thống chưa ghi
 
 ## Triển khai và kiểm tra tập trung
 
-Áp dụng `Backend/migrations/20261030020310_business_report.sql`, deploy backend mới rồi admin. Khi thiếu API/hàm, UI báo rõ, không tự thay bằng báo cáo cũ. Migration chỉ tạo hàm đọc, không ghi chứng từ/tồn kho.
+Sau các migration báo cáo trước đó, áp dụng `Backend/migrations/20261101164437_business_report_warehouse_scope.sql`, deploy backend mới rồi admin. Khi thiếu API/hàm hoặc sai phạm vi, UI báo rõ, không tự thay bằng báo cáo cũ. Migration chỉ tạo hàm đọc, không ghi chứng từ/tồn kho.
 
 - `Backend/scripts/test_business_report.cjs`: PGlite cô lập (đặt PHUB_PGLITE_MODULE nếu cần), không kết nối cloud.
+- `Backend/scripts/test_report_warehouse_scope.cjs`: tiền thu đơn chưa hoàn thành, phạm vi toàn bộ/từng kho, giá vốn riêng theo kho, đơn nhiều kho không nhân đôi dòng tiền, tương thích v1 và quyền truy cập.
 - `Backend/tests/test_business_report.py`: quyền, ngày, RPC và thiếu migration.
 - `ui/adminUI/tests/reports.e2e.cjs`: API giả lập, KPI/CSV, bảng SKU/ngày, chọn kỳ, sai kỳ, mobile.

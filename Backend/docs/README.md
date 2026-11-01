@@ -48,7 +48,7 @@ Báo cáo doanh thu/giá vốn/lợi nhuận gộp: xem [Báo cáo kinh doanh](.
 
 - **Shared**: xác thực, health và metadata.
 - **Admin**: tổ chức (kho/nhân viên/tài khoản), khách hàng, sản phẩm, khuyến mãi.
-- **Kho**: vận hành kho cố định 2, tồn kho, nhà cung cấp và phiếu nhập. Chuyển kho ngừng sử dụng; xem [phạm vi một kho](../../docs/SINGLE-WAREHOUSE.md).
+- **Kho**: quản lý các kho, tồn kho, nhà cung cấp và phiếu nhập. Nhân viên chỉ thao tác kho được phân công. Chuyển kho vẫn ngừng sử dụng; xem [phạm vi kho](../../docs/SINGLE-WAREHOUSE.md).
 - **Bán hàng**: đơn hàng, hóa đơn, thanh toán.
 - **Customer**: catalog công khai và alias sản phẩm cũ (deprecated).
 

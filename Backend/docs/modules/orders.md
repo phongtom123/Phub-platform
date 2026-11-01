@@ -40,7 +40,7 @@ Mỗi thao tác đặt mới dùng key mới. Retry do timeout/mất mạng dùn
 ```
 
 SKU/kho/giá trên chỉ minh họa; dùng dữ liệu thật đã được phép đặt. `warehouse_id`
-là mã kho số nguyên dương; hệ thống hiện vận hành kho 2 — Kho trung tâm. Số lượng là số nguyên 1–1000;
+là mã của một kho đang hoạt động. Số lượng là số nguyên 1–1000;
 1–100 dòng; cùng SKU được chọn kho khác nhau nhưng không lặp cùng SKU/kho.
 Giá đối chiếu phải là chuỗi không âm, tối đa 16 chữ số nguyên và 2 chữ số thập phân.
 Server không nhận giá chốt, thuế, tổng tiền, giảm giá hoặc mã nhân viên/khách từ client.

@@ -4,7 +4,7 @@ from phub_api.models.user import User
 from phub_api.repositories.tables import TablesRepository, clean
 from phub_api.schemas.warehouse_drafts import ReceiptDraftUpdate
 from phub_api.services.tables import key_values
-from phub_api.services.warehouse_scope import require_operating_warehouse
+from phub_api.services.warehouse_scope import require_warehouse_id
 
 
 class WarehouseDraftService:
@@ -13,7 +13,7 @@ class WarehouseDraftService:
 
     def update(self, resource: str, key: str, body: ReceiptDraftUpdate):
         if resource != "receipts":
-            raise HTTPException(410, "Chức năng chuyển kho đã ngừng sử dụng; hệ thống chỉ sử dụng một kho.")
+            raise HTTPException(410, "Chức năng chuyển kho đã ngừng sử dụng; chỉ tra cứu chứng từ cũ.")
         if self.user.role != "ADMIN" or not self.user.employee_id:
             raise HTTPException(403, "Chỉ quản trị viên có hồ sơ nhân viên được sửa phiếu nháp.")
         keys = key_values(resource, key)
@@ -28,9 +28,8 @@ class WarehouseDraftService:
         existing = self.repository.detail(resource, self.user, keys)
         if not existing:
             raise HTTPException(404, "Không tìm thấy phiếu.")
-        require_operating_warehouse(existing[0]['ma_kho'])
         if 'ma_kho' in values:
-            require_operating_warehouse(values['ma_kho'])
+            require_warehouse_id(values['ma_kho'])
         if existing[0]["trang_thai"] != "NHAP":
             raise HTTPException(409, "Chỉ sửa được phiếu nháp. Phiếu đã xử lý được giữ nguyên thông tin.")
         if resource == "receipts":
