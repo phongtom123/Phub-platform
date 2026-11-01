@@ -1690,7 +1690,7 @@
                 "expected_unit_price": "15990000.00",
                 "quantity": 1,
                 "sku": "SKU-DEMO",
-                "warehouse_id": -900001
+                "warehouse_id": 2
               }
             ],
             "note": "Gọi trước khi giao",

@@ -64,7 +64,7 @@ class OrderItem(InputModel):
 class CreateOrder(InputModel):
     model_config = ConfigDict(extra="forbid", json_schema_extra={"examples": [{
         "recipient": {"name": "Nguyễn Văn A", "phone": "0901234567", "address_line": "123 Đường thử nghiệm", "province": "TP Hồ Chí Minh", "ward": "Phường thử nghiệm"},
-        "items": [{"sku": "SKU-DEMO", "warehouse_id": -900001, "quantity": 1, "expected_unit_price": "15990000.00"}],
+        "items": [{"sku": "SKU-DEMO", "warehouse_id": 2, "quantity": 1, "expected_unit_price": "15990000.00"}],
         "note": "Gọi trước khi giao",
     }]})
     recipient: Recipient
