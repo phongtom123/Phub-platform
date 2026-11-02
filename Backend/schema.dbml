@@ -322,18 +322,12 @@ Table HOA_DON {
   tong_tien_thue decimal(18,2) [not null]
   tong_tien_sau_thue decimal(18,2) [not null]
 
-<<<<<<< Updated upstream
   nguoi_lap varchar [note: 'Nhan vien lap thu cong; NULL khi he thong tu lap']
   nguon_lap varchar [not null, default: 'QUAN_TRI', note: 'QUAN_TRI, TU_DONG']
   ma_tk_lap varchar [note: 'Tai khoan khoi tao hoa don tu dong']
-=======
-  nguoi_lap varchar [note: 'ADMIN lap hoa don; null neu he thong tu lap']
-  nguon_lap varchar [not null, default: 'QUAN_TRI', note: 'QUAN_TRI hoac TU_DONG']
->>>>>>> Stashed changes
 
   checks {
     `tong_tien_giam >= 0`
-    `(nguon_lap = 'QUAN_TRI' AND nguoi_lap IS NOT NULL) OR (nguon_lap = 'TU_DONG' AND nguoi_lap IS NULL)`
     `tong_tien_truoc_thue >= 0 AND tong_tien_thue >= 0 AND tong_tien_sau_thue >= 0`
     `tong_tien_sau_thue = tong_tien_truoc_thue + tong_tien_thue`
     `(nguon_lap = 'QUAN_TRI' AND nguoi_lap IS NOT NULL) OR (nguon_lap = 'TU_DONG' AND nguoi_lap IS NULL)`

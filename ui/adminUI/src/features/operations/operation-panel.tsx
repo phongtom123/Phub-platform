@@ -28,7 +28,7 @@ const actions: Record<
   orders: [
     { action: "confirm", label: "Xác nhận đơn", states: ["MOI"] },
     { action: "prepare", label: "Chuẩn bị hàng", states: ["XAC_NHAN"] },
-    // Tạm ẩn thao tác xuất kho đơn hàng theo phạm vi hiện tại.
+    { action: "dispatch", label: "Xác nhận xuất kho", states: ["DANG_CHUAN_BI"] },
     {
       action: "invoice",
       label: "Lập hóa đơn",
@@ -348,7 +348,11 @@ export function OperationPanel({
                     const approved = window.confirm(confirmationMessage(quote));
                     setBusy(false); if (approved) void run(a.action, { pricing_version: quote.version });
                   }).catch(reason => { setBusy(false); setError(reason.message); });
-                } else if (window.confirm(`${a.label}?`)) void run(a.action);
+                } else if (window.confirm(a.action === "dispatch"
+                  ? "Xác nhận hàng đã sẵn sàng xuất kho? Thao tác này trừ tồn kho theo số lượng trong đơn và chuyển đơn sang Đã xuất kho."
+                  : a.action === "complete"
+                    ? "Xác nhận đơn đã được giao xong? Chỉ hoàn thành khi đã lập hóa đơn và thu đủ tiền."
+                    : `${a.label}?`)) void run(a.action);
               }}
             >
               {a.label}

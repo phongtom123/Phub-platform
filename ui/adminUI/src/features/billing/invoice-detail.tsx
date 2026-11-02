@@ -14,12 +14,8 @@ const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
 });
 const handledFields = new Set([
   "ma_hoadon", "ma_donhang", "thoi_gian_lap", "ten_nguoi_mua", "ma_so_thue", "dia_chi_nguoi_mua",
-<<<<<<< Updated upstream
   "nguoi_lap", "tong_tien_giam", "tong_tien_truoc_thue", "tong_tien_thue", "tong_tien_sau_thue",
   "nguon_lap", "ma_tk_lap",
-=======
-  "nguoi_lap", "nguon_lap", "tong_tien_giam", "tong_tien_truoc_thue", "tong_tien_thue", "tong_tien_sau_thue",
->>>>>>> Stashed changes
 ]);
 const text = (value: DataRow[string]) => value === null || value === undefined || value === "" ? "—" : String(value);
 
@@ -77,15 +73,11 @@ export function InvoiceDetail({ row, columns, label }: Props) {
           <dl className={styles.fields}>
             <div className={`live-field ${styles.field}`}><dt>Mã đơn hàng</dt><dd>{orderHref ? <Link href={orderHref}>{orderId}</Link> : "—"}</dd></div>
             <div className={`live-field ${styles.field}`}><dt>Người lập</dt><dd>{row.nguoi_lap
-<<<<<<< Updated upstream
               ? <Link href={dataHref("employees", { key: JSON.stringify([row.nguoi_lap]) })}>{String(row.nguoi_lap)}</Link>
               : row.nguon_lap === "TU_DONG" ? "Hệ thống tự động" : "—"}</dd></div>
             {row.ma_tk_lap && <div className={`live-field ${styles.field}`}><dt>Tài khoản khởi tạo</dt><dd>
               <Link href={`/accounts/${encodeURIComponent(String(row.ma_tk_lap))}`}>{String(row.ma_tk_lap)}</Link>
             </dd></div>}
-=======
-              ? <Link href={dataHref("employees", { key: JSON.stringify([row.nguoi_lap]) })}>{String(row.nguoi_lap)}</Link> : row.nguon_lap === "TU_DONG" ? "Hệ thống (tự động)" : "—"}</dd></div>
->>>>>>> Stashed changes
           </dl>
         </section>
       </div>
