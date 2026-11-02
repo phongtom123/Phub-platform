@@ -27,6 +27,8 @@ def public_transaction(row) -> PaymentTransaction:
         "failed": f"{label} xử lý thất bại.",
         "unknown": f"{label} có trạng thái chưa xác định; cần được xác nhận lại.",
     }[status]
+    if row.get("la_bypass"):
+        message += " Ghi nhận qua bypass, không phải xác nhận từ cổng thanh toán."
     return PaymentTransaction(
         type=kind, method=METHODS.get(row.get("phuong_thuc"), "unknown"),
         amount=row["so_tien"], status=status, occurred_at=row.get("thoi_gian"), message=message,
