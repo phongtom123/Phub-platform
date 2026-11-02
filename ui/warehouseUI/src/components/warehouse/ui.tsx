@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import { AlertCircle, CheckCircle2, Clock3, Package, PackageCheck, Truck } from "lucide-react";
+import Link from "next/link";
 
-export function MetricCard({ label, value, foot, icon }: { label: string; value: string; foot: string; icon: "box" | "alert" | "clock" | "truck" }) {
+export function MetricCard({ label, value, foot, icon, href }: { label: string; value: string; foot: string; icon: "box" | "alert" | "clock" | "truck"; href?: string }) {
   const Icon = { box: Package, alert: AlertCircle, clock: Clock3, truck: Truck }[icon];
-  return <article className="metric-card"><div className="metric-heading">{label}<span className={`metric-icon ${icon}`}><Icon size={17}/></span></div><div className="metric-value">{value}</div><div className="metric-foot">{foot}</div></article>;
+  const content = <><div className="metric-heading">{label}<span className={`metric-icon ${icon}`}><Icon size={17}/></span></div><div className="metric-value">{value}</div><div className="metric-foot">{foot}</div></>;
+  return href ? <Link href={href} className="metric-card metric-link">{content}</Link> : <article className="metric-card">{content}</article>;
 }
 
 export function Panel({ title, subtitle, action, children, className = "" }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string }) {
@@ -12,7 +14,7 @@ export function Panel({ title, subtitle, action, children, className = "" }: { t
 
 export function StatusBadge({ value }: { value: string | number }) {
   const text = String(value);
-  const cls = ["Sắp hết", "Chờ xác nhận", "Đang kiểm kê", "Đang chuyển", "Nháp"].includes(text) ? "warning" : ["Hết hàng"].includes(text) ? "danger" : ["Đã nhập", "Đã nhận", "Còn hàng", "Hoàn tất"].includes(text) ? "success" : "neutral";
+  const cls = ["Chờ xác nhận", "Đang soạn", "Đang chuyển", "Nháp", "Sắp hết hàng"].includes(text) ? "warning" : ["Hết hàng"].includes(text) ? "danger" : ["Đã nhập", "Đã xuất", "Đã nhận", "Còn hàng", "Hoàn tất", "Đang hoạt động"].includes(text) ? "success" : "neutral";
   return <span className={`status-badge ${cls}`}><i />{text}</span>;
 }
 
