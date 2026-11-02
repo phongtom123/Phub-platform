@@ -1,3 +1,3 @@
-import WarehouseApp from "@/src/components/warehouse/warehouse-app";
+import WarehouseApp from "@/src/views/warehouse/warehouse-view";
 
 export default function SectionPage() { return <WarehouseApp/>; }
