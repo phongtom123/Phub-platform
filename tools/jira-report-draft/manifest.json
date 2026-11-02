@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Jira QA Report Draft",
+  "version": "1.0.0",
+  "description": "Create a QA report template in Jira's comment editor. Never submits or saves comments.",
+  "content_scripts": [
+    {
+      "matches": ["https://*.atlassian.net/*"],
+      "js": ["report-core.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}
