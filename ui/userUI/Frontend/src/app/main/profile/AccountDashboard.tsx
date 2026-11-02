@@ -45,7 +45,7 @@ function AccountOrders() {
         <Pager pagination={orders.data.pagination} onPage={setPage} />
       </>}
     </Panel> : <>
-      {mode === "orders" && <OrderPanel key={selected} orderId={selected} />}
+      {mode === "orders" && <OrderPanel key={selected} orderId={selected} onOrderChanged={orders.reload} />}
       {mode === "invoices" && <InvoicePanel key={selected} orderId={selected} />}
       {mode === "payments" && <PaymentPanels key={selected} orderId={selected} />}
     </>}

@@ -255,3 +255,21 @@
     gap: 8px;
   }
 }
+
+.cancelButton {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #d32f2f !important;
+  border-radius: 18px;
+  color: #d32f2f !important;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cancelButton:hover:not(:disabled) {
+  background: #ffebee;
+}
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

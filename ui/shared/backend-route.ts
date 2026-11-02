@@ -82,6 +82,7 @@ function validCustomerPath(path: string[], method: string): boolean {
     if (path.length === 2) return ["GET", "POST"].includes(method);
     if (!validIdentifier(path[2])) return false;
     if (path.length === 3) return method === "GET";
+    if (path.length === 4 && path[3] === "cancel") return method === "POST";
     return path.length === 4 && path[3] === "invoice" && method === "GET";
   }
   if (path[0] !== "orders") return false;

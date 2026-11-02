@@ -317,6 +317,7 @@ test("customer gateway exposes only authenticated commerce contracts", async () 
     ["GET", ["customer", "orders"]], ["POST", ["customer", "orders"]],
     ["GET", ["customer", "orders", "ORDER-1"]],
     ["GET", ["customer", "orders", "ORDER-1", "invoice"]],
+    ["POST", ["customer", "orders", "ORDER-1", "cancel"]],
     ["POST", ["orders"]], ["GET", ["orders", "ORDER-1", "payments"]],
     ["GET", ["orders", "ORDER-1", "transactions"]],
     ["POST", ["orders", "ORDER-1", "payment-request"]],

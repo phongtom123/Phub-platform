@@ -1,7 +1,8 @@
 from decimal import Decimal
 from typing import Literal
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_serializer, field_validator, model_validator
 
 from phub_api.schemas.catalog import Pagination
 from phub_api.schemas.orders import InputModel, Money, OrderItem, Recipient
@@ -139,6 +140,36 @@ class CustomerProfile(BaseModel):
     ward: str | None
     avatar_url: str | None = None
     payment_bypass_enabled: bool = False
+
+
+class AddressRequest(Recipient):
+    """Một địa chỉ trong sổ địa chỉ. Không nhận mã khách: khách lấy từ phiên đăng nhập."""
+
+    is_default: StrictBool = False
+
+
+class CustomerAddress(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: UUID
+    name: str
+    phone: str
+    address_line: str
+    province: str
+    ward: str
+    is_default: bool
+
+
+class AddressBook(BaseModel):
+    """Toàn bộ sổ địa chỉ sau thao tác; `item` là địa chỉ vừa tạo/sửa, null khi xóa hoặc đọc."""
+
+    model_config = ConfigDict(extra="forbid")
+    items: list[CustomerAddress]
+    item: CustomerAddress | None
+
+
+class CancelOrderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class OrderQuery(BaseModel):

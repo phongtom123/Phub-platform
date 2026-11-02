@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Button } from "@/components/common/Button";
 import { useAccountResource } from "@/lib/account/useAccountResource";
 import { groupInvoiceLines } from "@/lib/shopping/invoice-lines";
-import { formatDate, formatMoney, orderStatus, paymentMethod, paymentStatus, parseInvoice, parseOrder, parsePayment, parseTransactions, type OrderLine, type Pagination, type Transaction } from "@/lib/account/client";
+import { cancelCustomerOrder, formatDate, formatMoney, orderStatus, paymentMethod, paymentStatus, parseInvoice, parseOrder, parsePayment, parseTransactions, type OrderLine, type Pagination, type Transaction } from "@/lib/account/client";
 import styles from "./profile.module.css";
 
 export function DataState({ loading, error, reload }: { loading: boolean; error: string; reload: () => void }) {
@@ -27,10 +27,22 @@ function Lines({ items, currency }: { items: OrderLine[]; currency: string }) {
     <tbody>{lines.map((line, index) => <tr key={`${line.sku}:${index}`}><td>{line.name}<small>{line.sku}</small></td><td>{line.quantity} {line.unit}</td><td>{formatMoney(line.unit_price, currency)}</td><td>{formatMoney(line.discount, currency)}</td><td>{formatMoney(line.tax_amount, currency)}</td><td>{formatMoney(line.line_total, currency)}</td></tr>)}</tbody>
   </table></div>;
 }
-export function OrderPanel({ orderId }: { orderId: string }) {
+export function OrderPanel({ orderId, onOrderChanged }: { orderId: string; onOrderChanged?: () => void }) {
   const resource = useAccountResource(`customer/orders/${encodeURIComponent(orderId)}`, parseOrder);
   const order = resource.data;
-  return <Panel title={`Chi tiết đơn ${orderId}`} action={<Button variant="outline" onClick={resource.reload} disabled={resource.loading}>Làm mới đơn</Button>}>
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const isCancelable = order && ["MOI", "XAC_NHAN", "DANG_CHUAN_BI"].includes(order.status);
+  async function handleCancel() {
+    if (cancelling) return;
+    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?\nNếu đơn đã được thanh toán, khoản tiền sẽ được hệ thống hoàn lại tự động.")) return;
+    setCancelling(true); setCancelError("");
+    try { await cancelCustomerOrder(orderId); resource.reload(); onOrderChanged?.(); }
+    catch (err) { setCancelError(err instanceof Error ? err.message : "Không thể hủy đơn hàng."); }
+    finally { setCancelling(false); }
+  }
+  return <Panel title={`Chi tiết đơn ${orderId}`} action={<div className={styles.orderActions}><Button variant="outline" onClick={resource.reload} disabled={resource.loading || cancelling}>Làm mới đơn</Button>{isCancelable && <Button variant="outline" onClick={handleCancel} disabled={resource.loading || cancelling}>{cancelling ? "Đang hủy…" : "Hủy đơn hàng"}</Button>}</div>}>
+    {cancelError && <div className={styles.error} role="alert"><p>{cancelError}</p></div>}
     <DataState {...resource} />
     {order && <><dl className={styles.infoGrid}>
       <div><dt>Trạng thái đơn</dt><dd><span className={styles.badge}>{orderStatus[order.status] ?? "Chưa xác định"}</span></dd></div>

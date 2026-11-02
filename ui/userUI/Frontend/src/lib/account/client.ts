@@ -98,4 +98,10 @@ export const orderStatus: Record<string, string> = { MOI: "Mới đặt", XAC_NH
 export const paymentStatus: Record<string, string> = { pending: "Chờ xử lý", succeeded: "Thành công", failed: "Thất bại", unknown: "Chưa xác định" };
 export const paymentMethod: Record<string, string> = { cash: "Tiền mặt", bank_transfer: "Chuyển khoản", card: "Thẻ", e_wallet: "Ví điện tử", unknown: "Chưa xác định" };
 export function formatMoney(value: string, unit: string) { return new Intl.NumberFormat("vi-VN", { style: "currency", currency: unit }).format(Number(value)); }
+export function cancelCustomerOrder(orderId: string, reason?: string): Promise<OrderDetail> {
+  return accountRequest(`customer/orders/${encodeURIComponent(orderId)}/cancel`, parseOrder, {
+    method: "POST",
+    body: JSON.stringify(reason ? { reason } : {}),
+  });
+}
 export function formatDate(value: string | null) { return value ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(value)) : "Chưa có thông tin"; }
