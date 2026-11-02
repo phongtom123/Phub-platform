@@ -30,3 +30,11 @@ class PaymentRepository:
 
     def count(self, order_id, customer):
         return self.transaction_query(order_id, customer, count="exact", head=True).limit(1).execute().count
+
+    def demo(self, order_id, customer, action, *, key=None, method=None,
+             page=1, page_size=20):
+        return self.client.rpc("customer_demo_payment_v1", {
+            "p_customer_id": customer.customer_id, "p_order_id": order_id,
+            "p_action": action, "p_key": str(key) if key is not None else None,
+            "p_method": method, "p_page": page, "p_page_size": page_size,
+        }).execute().data

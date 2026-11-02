@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_serializer
 
@@ -36,6 +37,11 @@ class PaymentTransaction(BaseModel):
         return format(value, ".2f")
 
 
+class DemoPaymentContext(BaseModel):
+    request_key: UUID
+    order_status: str
+
+
 class PaymentOverview(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -43,6 +49,7 @@ class PaymentOverview(BaseModel):
     currency: str = Field(pattern=r"^[A-Z]{3}$")
     latest_transaction: PaymentTransaction | None = Field(description="Trạng thái giao dịch mới nhất, có thể là thu hoặc hoàn tiền. Không phải kết luận đã tất toán toàn đơn.")
     message: str
+    demo: DemoPaymentContext | None = None
 
 
 class TransactionPage(BaseModel):

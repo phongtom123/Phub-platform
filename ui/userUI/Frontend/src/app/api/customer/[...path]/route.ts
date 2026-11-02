@@ -93,6 +93,7 @@ async function forward(
       }
     }
     headers.set("Content-Type", "application/json");
+    headers.set("Origin", origin || expectedOrigin);
   }
   try {
     const base = backendBaseUrl();
@@ -127,11 +128,22 @@ async function forward(
       status: upstream.status,
       headers: responseHeaders,
     });
-  } catch {
+  } catch (reason) {
+    const failure = reason as { name?: string; cause?: { code?: string } };
+    const code = failure?.cause?.code || failure?.name || "UNKNOWN";
+    // Diagnostic only: never log cookies, authorization, request bodies or customer IDs.
+    console.error("[customer-api] upstream unavailable", { method: request.method, resource: path[0], code });
+    const detail = ["ENOTFOUND", "EAI_AGAIN"].includes(code)
+      ? "Không phân giải được địa chỉ API mua hàng. Kiểm tra kết nối mạng hoặc DNS."
+      : ["TimeoutError", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_HEADERS_TIMEOUT"].includes(code)
+        ? "API mua hàng phản hồi quá chậm. Vui lòng thử lại."
+        : "Không thể kết nối dịch vụ mua hàng. Vui lòng thử lại.";
     return error(
       503,
       "DATA_SERVICE_UNAVAILABLE",
-      "Không thể kết nối dịch vụ mua hàng. Nếu đã gửi đơn, hãy thử lại cùng lần đặt này.",
+      detail + (request.method === "POST" && path[0] === "orders"
+        ? " Nếu đã gửi yêu cầu, hãy thử lại cùng lần này để tránh tạo trùng."
+        : ""),
     );
   }
 }

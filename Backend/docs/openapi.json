@@ -2488,6 +2488,25 @@
         "title": "DailyProfit",
         "type": "object"
       },
+      "DemoPaymentContext": {
+        "properties": {
+          "order_status": {
+            "title": "Order Status",
+            "type": "string"
+          },
+          "request_key": {
+            "format": "uuid",
+            "title": "Request Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_key",
+          "order_status"
+        ],
+        "title": "DemoPaymentContext",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -5312,6 +5331,16 @@
             "pattern": "^[A-Z]{3}$",
             "title": "Currency",
             "type": "string"
+          },
+          "demo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DemoPaymentContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "latest_transaction": {
             "anyOf": [
@@ -8715,6 +8744,11 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "payment_bypass_enabled": {
+            "default": false,
+            "title": "Payment Bypass Enabled",
+            "type": "boolean"
           },
           "phone": {
             "anyOf": [
@@ -23589,7 +23623,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Điểm nối yêu cầu thanh toán cho đơn thuộc khách",
+        "summary": "Yêu cầu thanh toán; hỗ trợ bypass giả lập khi backend bật PAYMENT_DEMO_ENABLED",
         "tags": [
           "Customer Payments"
         ]

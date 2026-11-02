@@ -98,6 +98,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
       setAttempt(null);
       overview.reload(); history.reload();
       window.dispatchEvent(new Event("phub:invoice-changed"));
+      window.dispatchEvent(new CustomEvent("phub:order-changed", { detail: { orderId } }));
     } catch (reason) {
       if (reason instanceof ShoppingError && ["PAYMENT_INTEGRATION_REQUIRED", "AUTH_INTEGRATION_REQUIRED", "AUTHENTICATION_REQUIRED", "ACCESS_DENIED", "ORDER_NOT_FOUND", "VALIDATION_ERROR", "PAYMENT_ALREADY_PENDING", "ORDER_ALREADY_PAID", "ORDER_NOT_PAYABLE"].includes(reason.code)) {
         try { sessionStorage.removeItem(storageKey); } catch {}
@@ -113,6 +114,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
     try {
       await shoppingRequest(`orders/${encodeURIComponent(orderId)}/demo-payment-state`, { method: "POST", body: JSON.stringify({ status }) }, validatePayments);
       overview.reload(); history.reload();
+      window.dispatchEvent(new CustomEvent("phub:order-changed", { detail: { orderId } }));
     } catch (reason) { setRequestError(reason instanceof Error ? reason.message : "Không thể đổi trạng thái thử nghiệm."); }
     finally { busy.current = false; setSending(false); }
   }
@@ -134,11 +136,13 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
       <div className={styles.panel}>
         <PaymentMethodField value={method} onChange={setMethod} disabled={sending || !!attempt || overview.data?.latest_transaction?.status === "pending"} />
         {attempt && !sending && <p className={styles.pending}>Yêu cầu trước chưa xác nhận kết quả. Thử lại giữ nguyên phương thức và lần yêu cầu để tránh gửi trùng.</p>}
-        <button type="button" className={styles.primary} disabled={sending || (!attempt && (overview.loading || overview.data?.latest_transaction?.status === "pending"))}
+        <button type="button" className={styles.primary} disabled={sending || (!attempt && (overview.loading || overview.data?.latest_transaction?.status === "pending" || (overview.data?.demo !== undefined && overview.data.latest_transaction?.status === "succeeded")))}
           onClick={() => void sendRequest()}>
-          {sending ? "Đang xử lý…" : attempt ? "Thử lại yêu cầu thanh toán" : "Yêu cầu thanh toán"}
+          {sending ? "Đang xử lý…" : attempt ? "Thử lại yêu cầu thanh toán" : shop.customer?.payment_bypass_enabled ? "Thanh toán bypass" : "Yêu cầu thanh toán"}
         </button>
-        <p className={styles.muted}>Yêu cầu đang chờ chưa xác nhận đã trả tiền. Trạng thái được cập nhật sau khi khoản thanh toán được xác minh.</p>
+        <p className={styles.muted}>{shop.customer?.payment_bypass_enabled
+          ? "Không thu tiền thật. Bấm Thanh toán bypass để chuyển đơn sang Đang chuẩn bị hàng."
+          : "Yêu cầu đang chờ chưa xác nhận đã trả tiền. Trạng thái được cập nhật sau khi khoản thanh toán được xác minh."}</p>
         {requestError && <p role="alert" className={styles.error}>{requestError}</p>}
       </div>
       {shop.customer?.demo_mode && <section className={styles.panel} aria-label="Mô phỏng thanh toán">

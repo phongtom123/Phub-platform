@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, Query, Response
 
 from phub_api.dependencies.customer import require_customer
+from phub_api.dependencies.origin import check_origin
 from phub_api.dependencies.payments import get_service
 from phub_api.middleware.payment_errors import PaymentError, PaymentRoute
 from phub_api.models.customer import CurrentCustomer
@@ -30,7 +31,7 @@ ERRORS = {
 
 router = APIRouter(prefix="/api/orders", tags=["Customer Payments"], route_class=PaymentRoute)
 
-@router.get("/{order_id}/payments", response_model=PaymentOverview, responses=ERRORS,
+@router.get("/{order_id}/payments", response_model=PaymentOverview, response_model_exclude_defaults=True, responses=ERRORS,
             summary="Xem giao dịch thanh toán mới nhất của đơn thuộc khách")
 def payment_overview(
     order_id: OrderId,
@@ -52,8 +53,8 @@ def transaction_history(
     return service.history(order_id, customer, query)
 
 
-@router.post("/{order_id}/payment-request", response_model=PaymentOverview, responses={409: documented_error("IDEMPOTENCY_CONFLICT", "Lần thanh toán có nội dung khác hoặc đang được xử lý."), **ERRORS},
-             summary="Điểm nối yêu cầu thanh toán cho đơn thuộc khách")
+@router.post("/{order_id}/payment-request", response_model=PaymentOverview, response_model_exclude_defaults=True, dependencies=[Depends(check_origin)], responses={409: documented_error("IDEMPOTENCY_CONFLICT", "Lần thanh toán có nội dung khác hoặc đang được xử lý."), **ERRORS},
+             summary="Yêu cầu thanh toán; hỗ trợ bypass giả lập khi backend bật PAYMENT_DEMO_ENABLED")
 def request_order_payment(order_id: OrderId, request: PaymentRequest, response: Response,
     customer: Annotated[CurrentCustomer, Depends(require_customer)],
     service: Annotated[PaymentService, Depends(get_service)],

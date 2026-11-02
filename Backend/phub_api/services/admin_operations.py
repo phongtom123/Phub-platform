@@ -19,6 +19,7 @@ ERRORS = {
     'STOCK_CHANGED': (409, 'Tồn kho đã thay đổi kể từ lúc kiểm kê. Hãy làm mới.'),
     'PRICE_CHANGED': (409, 'Giá sản phẩm đã thay đổi. Hãy làm mới giá trước khi tạo đơn.'),
     'PAYMENT_LIMIT': (409, 'Số tiền vượt số còn phải thu hoặc số được hoàn.'),
+    'PAYMENT_DEMO_ORDER': (409, 'Đơn thanh toán bypass chỉ dùng mô phỏng, không lập hóa đơn, thu tiền thật hoặc xuất kho. Có thể hủy đơn để giải phóng lượng giữ chỗ.'),
     'PAYMENT_REQUIRED': (409, 'Cần lập hóa đơn và thu đủ tiền trước khi hoàn thành đơn.'),
     'VOUCHER_UNAVAILABLE': (409, 'Voucher hết hạn, hết lượt hoặc không đủ điều kiện.'),
     'VALIDATION_ERROR': (422, 'Thông tin nghiệp vụ không hợp lệ.'),

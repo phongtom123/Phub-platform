@@ -4,6 +4,8 @@ OpenAPI là đặc tả JSON cho API. Swagger UI là trang để đọc đặc t
 Nguồn chuẩn là code + `Backend/schema.dbml`; [openapi.json](openapi.json) là snapshot xuất từ ứng dụng để review trong Git hoặc import vào công cụ API.
 Không sửa snapshot thủ công để thêm một endpoint chưa có code.
 
+Thanh toán demo bằng nút bypass: [cách bật và luồng xử lý](PAYMENT-BYPASS.md).
+
 ## Mở Swagger
 
 Từ thư mục repository:

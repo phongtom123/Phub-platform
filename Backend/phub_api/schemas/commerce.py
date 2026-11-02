@@ -125,6 +125,7 @@ class CustomerProfile(BaseModel):
     province: str | None
     ward: str | None
     avatar_url: str | None = None
+    payment_bypass_enabled: bool = False
 
 
 class OrderQuery(BaseModel):

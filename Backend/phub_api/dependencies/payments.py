@@ -4,9 +4,10 @@ import re
 from fastapi import Depends
 
 from phub_api.config.database import get_supabase
+from phub_api.config.payment_demo import PaymentDemoSettings
 from phub_api.models.errors import PaymentError
 from phub_api.repositories.payments import PaymentRepository
-from phub_api.services.payment_requests import UnconnectedPaymentRequests
+from phub_api.services.payment_requests import DemoPaymentRequests, UnconnectedPaymentRequests
 from phub_api.services.payments import PaymentService
 
 
@@ -17,8 +18,11 @@ def get_repository(db=Depends(get_supabase)):
     return PaymentRepository(db, currency)
 
 
-def get_payment_requests():
-    return UnconnectedPaymentRequests()
+def get_payment_requests(repository: PaymentRepository = Depends(get_repository)):
+    settings = PaymentDemoSettings.from_environment()
+    if settings.enabled and repository.currency != "VND":
+        raise PaymentError(503, "PAYMENT_CONFIGURATION_REQUIRED", "Thanh toán bypass hiện chỉ hỗ trợ VND.")
+    return DemoPaymentRequests(repository, settings) if settings.enabled else UnconnectedPaymentRequests()
 
 
 def get_service(repository: PaymentRepository = Depends(get_repository),
