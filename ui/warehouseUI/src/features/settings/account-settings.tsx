@@ -69,13 +69,13 @@ export default function AccountSettings({ section }: { section: "account" | "set
         {profileError && <div className="module-note">{profileError}</div>}
         {!profile && !profileError && <div className="module-note">Đang tải thông tin tài khoản…</div>}
         {profile && <div className="account-form">
-          <div className="profile-banner"><span className="profile-avatar">{profile.name.slice(0, 1).toUpperCase()}</span><div><strong>{profile.name}</strong><small>{profile.role === "NHAN_VIEN_KHO" ? "Nhân viên kho" : profile.role} · {profile.employee_id}</small></div><span className="active-pill"><i/> Đang hoạt động</span></div>
+          <div className="profile-banner"><span className="profile-avatar">{profile.name.slice(0, 1).toUpperCase()}</span><div><strong>{profile.name}</strong><small>{["NHAN_VIEN", "NHAN_VIEN_KHO"].includes(profile.role) ? "Nhân viên kho" : profile.role} · {profile.employee_id}</small></div><span className="active-pill"><i/> Đang hoạt động</span></div>
           <div className="form-grid"><label><span>Họ và tên</span><input value={profile.name} readOnly/></label><label><span>Mã nhân viên</span><input value={profile.employee_id} readOnly/></label><label><span>Tên tài khoản</span><input value={profile.username} readOnly/></label><label><span>Email</span><input value={profile.email ?? "—"} readOnly/></label><label><span>Kho phụ trách</span><input value={profile.warehouse_id == null ? "Chưa phân công" : `Kho #${profile.warehouse_id}`} readOnly/></label></div>
           <div className="module-note">Thông tin hồ sơ và phân công được quản lý bởi quản trị viên.</div>
         </div>}
       </Panel>
       <Panel title="Quyền và phân công" subtitle="Thông tin vai trò hiện tại">
-        <div className="access-list"><div><ShieldCheck size={17}/><span><small>VAI TRÒ</small><strong>NHAN_VIEN_KHO · Nhân viên kho</strong></span></div><div><Building2 size={17}/><span><small>PHẠM VI KHO</small><strong>Kho trung tâm</strong></span></div><div><UserRound size={17}/><span><small>CHI NHÁNH</small><strong>Trung tâm phân phối PHUB</strong></span></div></div>
+        <div className="access-list"><div><ShieldCheck size={17}/><span><small>VAI TRÒ</small><strong>{profile?.role ? `${profile.role} · Nhân viên kho` : "Đang tải…"}</strong></span></div><div><Building2 size={17}/><span><small>PHẠM VI KHO</small><strong>Kho trung tâm</strong></span></div><div><UserRound size={17}/><span><small>CHI NHÁNH</small><strong>Trung tâm phân phối PHUB</strong></span></div></div>
         <div className="module-note"><span>i</span>Quyền truy cập do quản trị viên cấp. Liên hệ quản trị viên nếu cần thay đổi vai trò hoặc kho được phân công.</div>
       </Panel>
       <Panel title="Bảo mật tài khoản" subtitle="Cài đặt bảo vệ tài khoản">
