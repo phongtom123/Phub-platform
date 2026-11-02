@@ -1,5 +1,11 @@
 # Hóa đơn tự động sau khi đặt hàng
 
+Customer checkout hiện gọi `customer_checkout_multi_warehouse_v1`, kế thừa phần
+lập hóa đơn của `customer_checkout_v2` qua migration
+`20261102140733_multi_warehouse_customer_checkout.sql`. Các dòng xuất theo kho
+được gộp khi hiển thị đơn/hóa đơn khách hàng. Xem
+[logic mua hàng và hướng dẫn cho AI](../../docs/USER-COMMERCE-LOGIC.md).
+
 Migration `20261102080347_automatic_checkout_invoice.sql` nối việc lập hóa đơn vào
 transaction `customer_checkout_v2`. Đơn online mới có hóa đơn ngay khi đặt thành công,
 không cần xác nhận/lập thủ công ở admin. Nếu lập hóa đơn lỗi, đơn hàng, dòng hàng,

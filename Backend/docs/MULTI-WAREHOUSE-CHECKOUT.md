@@ -1,5 +1,9 @@
 # Customer checkout across warehouses
 
+For the complete current customer workflow, UI grouping, sold-out behavior and
+handoff guidance for AI agents, see
+[USER-COMMERCE-LOGIC.md](../../docs/USER-COMMERCE-LOGIC.md).
+
 Customer availability sums unreserved stock across every active warehouse for a SKU.
 `MOI`, `XAC_NHAN` and `DANG_CHUAN_BI` orders reserve their allocated quantities.
 For example, physical stock 39 + 39 + 60 + 50 = 188, with reservations 21 + 2,

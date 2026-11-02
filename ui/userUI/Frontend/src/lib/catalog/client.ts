@@ -36,12 +36,13 @@ export function validateProduct(value: unknown): ApiProduct {
   return product;
 }
 
-export async function getProductAvailability(product: { id: string; sku: string }, quantity: number): Promise<boolean> {
+export async function getProductAvailability(product: { id: string; sku?: string }, quantity: number, signal?: AbortSignal): Promise<boolean> {
   const result = await readJson(await fetch(
     `/api/catalog/products/${encodeURIComponent(product.id)}/availability?quantity=${quantity}`,
-    { cache: "no-store" },
+    { cache: "no-store", signal },
   )) as { id?: unknown; sku?: unknown; quantity?: unknown; available?: unknown } | null;
-  if (!result || result.id !== product.id || result.sku !== product.sku || result.quantity !== quantity || typeof result.available !== "boolean") {
+  if (!result || result.id !== product.id || typeof result.sku !== "string" || !result.sku
+      || (product.sku !== undefined && result.sku !== product.sku) || result.quantity !== quantity || typeof result.available !== "boolean") {
     throw new CatalogApiError("Không kiểm tra được tồn kho. Vui lòng thử lại.", 502);
   }
   return result.available;

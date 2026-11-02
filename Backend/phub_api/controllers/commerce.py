@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query, Response
+from fastapi import APIRouter, Body, Depends, Header, Query, Response
 
 from phub_api.dependencies.commerce import get_service
 from phub_api.dependencies.customer import require_customer
@@ -9,6 +9,9 @@ from phub_api.middleware.commerce_errors import CommerceRoute
 from phub_api.middleware.payment_errors import PaymentError
 from phub_api.models.customer import CurrentCustomer
 from phub_api.schemas.commerce import (
+    AddressBook,
+    AddressRequest,
+    CancelOrderRequest,
     CheckoutQuote,
     CustomerOrderReceipt,
     CustomerOrderRequest,
@@ -53,6 +56,30 @@ def save_current_profile(request: Recipient, customer: Customer, service: Servic
     return service.save_profile(request, customer)
 
 
+@router.get("/addresses", response_model=AddressBook, responses=ERRORS, summary="Sổ địa chỉ nhận hàng của khách đang đăng nhập")
+def list_addresses(customer: Customer, service: Service, query: Annotated[NoQuery, Query()]):
+    return service.list_addresses(customer)
+
+
+@router.post("/addresses", response_model=AddressBook, status_code=201, responses=ERRORS,
+             summary="Thêm địa chỉ nhận hàng (địa chỉ đầu tiên tự là mặc định)")
+def create_address(request: AddressRequest, customer: Customer, service: Service):
+    return service.create_address(request, customer)
+
+
+@router.put("/addresses/{address_id}", response_model=AddressBook, responses=ERRORS,
+            summary="Sửa địa chỉ hoặc đặt làm mặc định (không thể bỏ mặc định trực tiếp)")
+def update_address(address_id: UUID, request: AddressRequest, customer: Customer, service: Service,
+                   query: Annotated[NoQuery, Query()]):
+    return service.update_address(address_id, request, customer)
+
+
+@router.post("/addresses/{address_id}/delete", response_model=AddressBook, responses=ERRORS,
+               summary="Xóa địa chỉ; nếu xóa địa chỉ mặc định thì địa chỉ cập nhật gần nhất trở thành mặc định")
+def delete_address(address_id: UUID, customer: Customer, service: Service, query: Annotated[NoQuery, Query()]):
+    return service.delete_address(address_id, customer)
+
+
 @router.post("/checkout/quote", response_model=CheckoutQuote, responses=ERRORS, summary="Báo giá giỏ hàng và kiểm tra voucher")
 def quote_checkout(request: QuoteRequest, customer: Customer, service: Service):
     return service.quote(request, customer)
@@ -88,3 +115,9 @@ def order_detail(order_id: OrderId, customer: Customer, service: Service, query:
 @router.get("/orders/{order_id}/invoice", response_model=InvoiceOverview, responses=ERRORS, summary="Hóa đơn công khai của đơn thuộc khách")
 def order_invoice(order_id: OrderId, customer: Customer, service: Service, query: Annotated[NoQuery, Query()]):
     return service.invoice(order_id, customer)
+
+
+@router.post("/orders/{order_id}/cancel", response_model=OrderDetail, responses=ERRORS,
+             summary="Hủy đơn hàng thuộc tài khoản đang đăng nhập (hoàn tiền tự động nếu đã thanh toán)")
+def cancel_order(order_id: OrderId, customer: Customer, service: Service, request: Annotated[CancelOrderRequest | None, Body()] = None):
+    return service.cancel_order(order_id, customer, request=request)

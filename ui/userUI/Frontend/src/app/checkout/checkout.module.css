@@ -122,3 +122,68 @@
   max-width: 640px;
   margin: 0 auto;
 }
+
+.defaultBadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #e6f0ff;
+  color: #0156ff;
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+.form > label.checkboxRow,
+.checkboxRow {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: fit-content !important;
+  max-width: 100%;
+  margin: 6px 0 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+  user-select: none;
+}
+.form > label.checkboxRow input[type="checkbox"],
+.form input.checkboxInput,
+.checkboxRow input {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  cursor: pointer;
+  accent-color: #0156ff;
+  flex-shrink: 0;
+}
+.form > label.checkboxRow span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #222;
+  line-height: 1.4;
+}
+.form > label.checkboxRow:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.orderNoteInput {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #cdd5f0;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+.noteCounter {
+  color: #777;
+  font-size: 12px;
+}

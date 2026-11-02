@@ -2,6 +2,9 @@
 
 Ba UI Next.js, một backend FastAPI Python và Supabase PostgreSQL. Chạy local bằng npm/venv/uvicorn, không cần container.
 
+Logic mua hàng đã chốt và hướng dẫn tiếp tục cho AI:
+[giỏ hàng, gom kho, đơn hàng, hóa đơn và hết hàng](docs/USER-COMMERCE-LOGIC.md).
+
 ```text
 Browser → Next.js /api/backend/* → FastAPI :8000 → Supabase
 ```

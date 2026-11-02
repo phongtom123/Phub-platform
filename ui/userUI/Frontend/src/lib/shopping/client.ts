@@ -1,5 +1,8 @@
 import { cents } from "./money";
 import type {
+  AddressBook,
+  AddressInput,
+  CustomerAddress,
   CustomerProfile,
   OrderDetail,
   OrderPage,
@@ -329,6 +332,21 @@ export function validateTransactions(value: unknown): TransactionPage {
   return p as unknown as TransactionPage;
 }
 
+function validateAddress(value: unknown): CustomerAddress {
+  const a = record(value);
+  if (typeof a.id !== "string" || !a.id || typeof a.is_default !== "boolean")
+    invalid();
+  recipient(a);
+  return a as unknown as CustomerAddress;
+}
+export function validateAddressBook(value: unknown): AddressBook {
+  const book = record(value);
+  if (!Array.isArray(book.items) || book.items.length > 100) invalid();
+  (book.items as unknown[]).forEach(validateAddress);
+  if (book.item !== null) validateAddress(book.item);
+  return book as unknown as AddressBook;
+}
+
 export const getProfile = () => shoppingRequest("me", {}, validateProfile);
 export const requestPayment = (orderId: string, method: PaymentMethod, key: string) => shoppingRequest(
   `orders/${encodeURIComponent(orderId)}/payment-request`,
@@ -352,6 +370,26 @@ export function validateInvoice(value: unknown): InvoiceOverview {
   }
   return result as unknown as InvoiceOverview;
 }
+export const listAddresses = (signal?: AbortSignal) =>
+  shoppingRequest("addresses", { signal }, validateAddressBook);
+export const createAddress = (address: AddressInput) =>
+  shoppingRequest(
+    "addresses",
+    { method: "POST", body: JSON.stringify(address) },
+    validateAddressBook,
+  );
+export const updateAddress = (id: string, address: AddressInput) =>
+  shoppingRequest(
+    `addresses/${encodeURIComponent(id)}`,
+    { method: "PUT", body: JSON.stringify(address) },
+    validateAddressBook,
+  );
+export const deleteAddress = (id: string) =>
+  shoppingRequest(
+    `addresses/${encodeURIComponent(id)}/delete`,
+    { method: "POST", body: "{}" },
+    validateAddressBook,
+  );
 export const saveProfile = (recipient: Recipient) => shoppingRequest(
   "me", { method: "PUT", body: JSON.stringify(recipient) }, validateProfile,
 );
@@ -374,4 +412,13 @@ export const createOrder = (body: OrderRequest, key: string) =>
       body: JSON.stringify(body),
     },
     validateReceipt,
+  );
+export const cancelOrder = (orderId: string, reason?: string) =>
+  shoppingRequest(
+    `orders/${encodeURIComponent(orderId)}/cancel`,
+    {
+      method: "POST",
+      body: JSON.stringify(reason ? { reason } : {}),
+    },
+    validateOrder,
   );

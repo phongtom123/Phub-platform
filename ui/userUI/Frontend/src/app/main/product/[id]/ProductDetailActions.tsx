@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import { AddToCartButton } from "@/components/shopping/AddToCartButton";
+import { useProductStock } from "@/lib/catalog/useProductStock";
 import type { DetailProduct } from "@/data/product-details";
 import styles from "./detail.module.css";
 
@@ -18,6 +19,7 @@ export function ProductDetailActions({
 }) {
   const router = useRouter();
   const shop = useShopping();
+  const stock = useProductStock(product);
   const [quantityText, setQuantityText] = useState("1");
   const quantity = Number(quantityText);
   const validQuantity = quantityText !== "" && Number.isSafeInteger(quantity) && quantity > 0;
@@ -30,8 +32,9 @@ export function ProductDetailActions({
   }).format(actualPrice);
 
   const handleBuyNow = async () => {
-    if (!product || !validQuantity) return;
+    if (!product || !validQuantity || stock.status !== "available") return;
     const added = await shop.add({ id: product.id, sku: product.sku }, quantity);
+    stock.reload();
     if (added) router.push("/cart");
   };
 
@@ -41,7 +44,7 @@ export function ProductDetailActions({
         Giá bán <strong>{formattedPrice}</strong>
       </p>
 
-      <div className={styles.quantityControls}>
+      {stock.status !== "sold_out" && <div className={styles.quantityControls}>
         <span style={{ fontSize: 13, color: "#666" }}>Số lượng:</span>
         <button
           type="button"
@@ -98,18 +101,23 @@ export function ProductDetailActions({
         >
           +
         </button>
-      </div>
-      {quantityText !== "" && !validQuantity && <small role="alert" className={styles.quantityError}>
+      </div>}
+      {stock.status !== "sold_out" && quantityText !== "" && !validQuantity && <small role="alert" className={styles.quantityError}>
         {quantity === 0 ? "Số lượng phải lớn hơn 0." : "Số lượng quá lớn để xử lý. Vui lòng kiểm tra lại."}
       </small>}
 
       <div className={styles.purchaseActions}>
+        {stock.status === "sold_out" ? <p role="status" className={styles.soldOut}>Hết hàng</p> : stock.status === "error" ? <div>
+          <p role="alert">Không kiểm tra được tồn kho. Vui lòng thử lại.</p>
+          <button type="button" onClick={stock.reload}>Kiểm tra lại tồn kho</button>
+        </div> : <>
         {product ? (
           <AddToCartButton
             className={styles.cartButton}
             product={{ id: product.id, sku: product.sku }}
             quantity={quantity}
             disabled={!validQuantity}
+            stock={stock}
           />
         ) : (
           <button className={styles.cartButton} type="button" disabled>
@@ -119,12 +127,13 @@ export function ProductDetailActions({
         <button
           type="button"
           onClick={handleBuyNow}
-          disabled={shop.cartLoading || !product || !validQuantity}
+          disabled={stock.status !== "available" || shop.cartLoading || !product || !validQuantity}
           className={styles.buyNowButton}
         >
           <span aria-hidden="true">⚡</span>
           <span>Mua ngay</span>
         </button>
+        </>}
       </div>
     </div>
   );

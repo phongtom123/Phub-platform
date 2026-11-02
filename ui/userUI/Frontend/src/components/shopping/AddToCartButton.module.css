@@ -62,6 +62,8 @@
 }
 
 .label { min-width: 0; white-space: nowrap; }
+.soldOut { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; color: #b42318; background: #fff1f0; border: 1px solid #fecdca; border-radius: 8px; font-size: 14px; font-weight: 700; }
+.retry { min-height: 44px; padding: 8px 16px; border: 1px solid #a2a6b0; border-radius: 8px; background: #fff; color: #333; cursor: pointer; }
 
 .quantity {
   min-width: 27px;

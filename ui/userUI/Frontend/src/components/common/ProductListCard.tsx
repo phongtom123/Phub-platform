@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Button } from "./Button";
 import { IconButton } from "./icon";
@@ -17,6 +18,7 @@ export interface ProductListCardProps extends Omit<ProductCardProps, "actions" |
   description?: string;
   specifications: SpecsTableProps["rows"];
   inCart?: boolean;
+  cartAction?: ReactNode;
   compared?: boolean;
   wished?: boolean;
   onCart: () => void;
@@ -26,7 +28,7 @@ export interface ProductListCardProps extends Omit<ProductCardProps, "actions" |
 }
 
 /** Presentational catalog row. The caller owns API data and session-only comparison state. */
-export function ProductListCard({ name, href, imageSrc, imageAlt, sku, description, specifications, amount, originalAmount, currency, locale, rating, reviewCount, stock, inCart = false, compared = false, wished = false, onCart, onCompare, onWish, onEnquire, className }: ProductListCardProps) {
+export function ProductListCard({ name, href, imageSrc, imageAlt, sku, description, specifications, amount, originalAmount, currency, locale, rating, reviewCount, stock, cartAction, compared = false, wished = false, onCompare, onWish, onEnquire, className }: ProductListCardProps) {
   return <article className={[styles.card, className].filter(Boolean).join(" ")} aria-label={name}>
     <div className={styles.body}>
       <div className={styles.media}>
@@ -37,9 +39,9 @@ export function ProductListCard({ name, href, imageSrc, imageAlt, sku, descripti
         <p className={styles.sku}>SKU {sku}</p>
         <h2><Link href={href}>{name}{description && <span> — {description}</span>}</Link></h2>
         <Price amount={amount} originalAmount={originalAmount} currency={currency} locale={locale} className={styles.price} />
-        <Button variant="outlinePrimary" className={styles.cart} disabled title="Chưa kết nối API giỏ hàng">
+        {cartAction ? <div className={styles.cart}>{cartAction}</div> : <Button variant="outlinePrimary" className={styles.cart} disabled title="Chưa kết nối API giỏ hàng">
           <Image src="/icons/header/cart.svg" alt="" width={20} height={20} />Thêm vào giỏ (chưa khả dụng)
-        </Button>
+        </Button>}
       </div>
       <div className={styles.side}>
         {stock && <StockStatus status={stock} className={styles.stock} />}
