@@ -39,7 +39,7 @@ export function OrderPanel({ orderId }: { orderId: string }) {
   </Panel>;
 }
 export function InvoicePanel({ orderId }: { orderId: string }) {
-  const resource = useAccountResource(`customer/orders/${encodeURIComponent(orderId)}/invoice`, parseInvoice);
+  const resource = useAccountResource(`customer/orders/${encodeURIComponent(orderId)}/invoice`, parseInvoice, 5000);
   const data = resource.data;
   return <Panel title={`Hóa đơn của ${orderId}`} action={<Button variant="outline" onClick={resource.reload} disabled={resource.loading}>Làm mới hóa đơn</Button>}>
     <DataState {...resource} />

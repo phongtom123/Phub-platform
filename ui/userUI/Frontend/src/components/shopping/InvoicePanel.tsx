@@ -6,7 +6,7 @@ import { useCustomerResource } from "./useCustomerResource";
 import styles from "./shopping.module.css";
 
 export function InvoicePanel({ orderId }: { orderId: string }) {
-  const resource = useCustomerResource(`orders/${encodeURIComponent(orderId)}/invoice`, validateInvoice);
+  const resource = useCustomerResource(`orders/${encodeURIComponent(orderId)}/invoice`, validateInvoice, 5000);
   const data = resource.data;
   useEffect(() => {
     window.addEventListener("phub:invoice-changed", resource.reload);

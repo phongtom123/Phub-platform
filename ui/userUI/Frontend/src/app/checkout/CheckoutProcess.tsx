@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import { PaymentPanel } from "@/components/shopping/PaymentPanel";
+import { InvoicePanel } from "@/components/shopping/InvoicePanel";
 import { createOrder, getQuote, saveProfile, ShoppingError } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
 import type { Quote, OrderRequest, Receipt } from "@/lib/shopping/types";
@@ -388,6 +389,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               </Link>
             </div>
           </div>
+          <InvoicePanel orderId={orderReceipt.id} />
           {shop.customer?.payment_bypass_enabled && <PaymentPanel orderId={orderReceipt.id} />}
         </div>
       </main>
