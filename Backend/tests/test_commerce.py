@@ -51,7 +51,7 @@ def commerce_client(monkeypatch):
         payload = json.loads(request.content)
         if state["result"] is not None:
             return httpx.Response(200, json=state["result"])
-        if request.url.path.endswith("/customer_checkout_v2"):
+        if request.url.path.endswith("/customer_checkout_multi_warehouse_v1"):
             result = {"order": state["receipt"], "replayed": state["replayed"]} if payload["p_create"] else {"quote": state["quote"]}
         else:
             assert request.url.path.endswith("/customer_read_orders_v2")
@@ -129,7 +129,31 @@ def test_customer_order_creation_and_replay_share_one_rpc(commerce_client):
     assert replay.headers["Idempotency-Replayed"] == "true"
 
 
-@pytest.mark.parametrize("field,value", [("quantity", 0), ("quantity", True), ("quantity", 1.5), ("quantity", "2"), ("quantity", 1001), ("sku", ""), ("sku", "A\x01"), ("sku", "x"*101), ("price", "1.00")])
+def test_pooled_quote_retains_one_product_with_all_warehouse_allocations(commerce_client):
+    client, state, requests, _, _ = commerce_client
+    allocations = [{"warehouse_id": -900002, "quantity": 1}, {"warehouse_id": 3, "quantity": 1}]
+    state["quote"]["items"][0]["allocations"] = allocations
+    response = client.post("/api/customer/checkout/quote", json={"items": [{"sku": "SKU-A", "quantity": 2}]})
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 1
+    assert response.json()["items"][0]["allocations"] == allocations
+    assert requests[0].url.path.endswith("/customer_checkout_multi_warehouse_v1")
+
+
+@pytest.mark.parametrize("allocations", [
+    [{"warehouse_id": -900002, "quantity": 1}],
+    [{"warehouse_id": -900002, "quantity": 1}, {"warehouse_id": -900002, "quantity": 1}],
+    [{"warehouse_id": 3, "quantity": 2}],
+    [{"warehouse_id": -900002, "quantity": 0}],
+])
+def test_corrupt_warehouse_allocation_is_rejected(commerce_client, allocations):
+    client, state, _, _, _ = commerce_client
+    state["quote"]["items"][0]["allocations"] = allocations
+    response = client.post("/api/customer/checkout/quote", json={"items": [{"sku": "SKU-A", "quantity": 2}]})
+    assert response.status_code == 500
+
+
+@pytest.mark.parametrize("field,value", [("quantity", 0), ("quantity", True), ("quantity", 1.5), ("quantity", "2"), ("quantity", 2147483648), ("sku", ""), ("sku", "A\x01"), ("sku", "x"*101), ("price", "1.00")])
 def test_quote_invalid_or_forged_items_never_reach_db(commerce_client, field, value):
     client, _, requests, _, _ = commerce_client
     item = {"sku": "SKU-A", "quantity": 1, field: value}

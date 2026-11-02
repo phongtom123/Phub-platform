@@ -10,7 +10,7 @@ from phub_api.schemas.payments import OrderId
 
 class CartItem(InputModel):
     sku: str = Field(min_length=1, max_length=100)
-    quantity: int = Field(strict=True, ge=1, le=1000)
+    quantity: int = Field(strict=True, ge=1, le=2_147_483_647)
 
 
 class VoucherInput(InputModel):
@@ -69,12 +69,18 @@ class MoneyOutput(BaseModel):
         return format(value, ".2f") if isinstance(value, Decimal) else value
 
 
+class WarehouseAllocation(BaseModel):
+    warehouse_id: int
+    quantity: int = Field(ge=1, le=2_147_483_647)
+
+
 class CheckoutLine(MoneyOutput):
     sku: str
-    warehouse_id: int
+    warehouse_id: int = Field(description="Kho đầu tiên trong phân bổ; allocations liệt kê đầy đủ các kho cấp hàng.")
+    allocations: list[WarehouseAllocation] = Field(default_factory=list)
     name: str
     unit: str
-    quantity: int = Field(ge=1, le=1000)
+    quantity: int = Field(ge=1, le=2_147_483_647)
     unit_price: Money
     gross_total: Money
     discount: Money
@@ -96,6 +102,13 @@ class CheckoutQuote(MoneyOutput):
 
     @model_validator(mode="after")
     def consistent_totals(self):
+        for line in self.items:
+            if line.allocations and (
+                sum(allocation.quantity for allocation in line.allocations) != line.quantity
+                or len({allocation.warehouse_id for allocation in line.allocations}) != len(line.allocations)
+                or line.allocations[0].warehouse_id != line.warehouse_id
+            ):
+                raise ValueError("Invalid warehouse allocation")
         if any(line.gross_total != line.unit_price * line.quantity or line.discount > line.gross_total
                or line.line_total != line.gross_total - line.discount or line.tax_amount != 0 or line.tax_rate != 10
                for line in self.items):

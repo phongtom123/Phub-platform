@@ -174,12 +174,25 @@ export function validateQuote(value: unknown): Quote {
       typeof line.name !== "string" ||
       typeof line.unit !== "string" ||
       !Number.isInteger(line.warehouse_id) ||
-      !Number.isInteger(line.quantity) ||
+      !Number.isSafeInteger(line.quantity) ||
       Number(line.quantity) < 1 ||
-      Number(line.quantity) > 1000
+      Number(line.quantity) > 2_147_483_647
     )
       invalid();
     skus.add(line.sku as string);
+    if (line.allocations !== undefined) {
+      if (!Array.isArray(line.allocations)) invalid();
+      const warehouses = new Set<number>();
+      let allocated = 0;
+      for (const rawAllocation of line.allocations) {
+        const allocation = record(rawAllocation);
+        if (!Number.isInteger(allocation.warehouse_id) || !Number.isSafeInteger(allocation.quantity)
+            || Number(allocation.quantity) < 1 || warehouses.has(Number(allocation.warehouse_id))) invalid();
+        warehouses.add(Number(allocation.warehouse_id));
+        allocated += Number(allocation.quantity);
+      }
+      if (line.allocations.length && (allocated !== line.quantity || record(line.allocations[0]).warehouse_id !== line.warehouse_id)) invalid();
+    }
     const lineGross = cents(amount(line.gross_total)),
       lineDiscount = cents(amount(line.discount)),
       lineTotal = cents(amount(line.line_total));

@@ -30,11 +30,13 @@ export function AddToCartButton({
   quantity = 1,
   className,
   label = "Thêm vào giỏ",
+  disabled = false,
 }: {
   product: { id: string; sku?: string };
   quantity?: number;
   className?: string;
   label?: string;
+  disabled?: boolean;
 }) {
   const shop = useShopping();
   const [phase, setPhase] = useState<ButtonPhase>("idle");
@@ -73,7 +75,7 @@ export function AddToCartButton({
         phase === "added" && styles.added,
         className,
       ].filter(Boolean).join(" ")}
-      disabled={shop.cartLoading || shop.authStatus === "loading"}
+      disabled={disabled || shop.cartLoading || shop.authStatus === "loading"}
       onClick={() => void handleAdd()}
       aria-label={`${visibleLabel}${quantity > 1 ? `, số lượng ${quantity}` : ""}`}
       data-state={phase}

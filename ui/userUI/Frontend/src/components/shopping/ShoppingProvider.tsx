@@ -17,7 +17,7 @@ import {
   restoreCart,
   type StoredCartLine,
 } from "@/lib/shopping/cart-storage";
-import { readJson, validateProduct } from "@/lib/catalog/client";
+import { getProductAvailability, readJson, validateProduct } from "@/lib/catalog/client";
 import { safeImageUrl } from "@/lib/catalog/types";
 import type { CartLine, CustomerProfile } from "@/lib/shopping/types";
 import styles from "./shopping.module.css";
@@ -48,6 +48,7 @@ interface ShoppingState {
     customerId: string,
   ) => void;
   refreshCart: () => Promise<void>;
+  checkSelectedStock: () => Promise<boolean>;
   setNotice: (value: string) => void;
 }
 const ShoppingContext = createContext<ShoppingState | null>(null);
@@ -76,6 +77,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const linesRef = useRef<CartLine[]>([]);
   const sessionGeneration = useRef(0);
   const cartGeneration = useRef(0);
+  const adding = useRef(false);
   const persist = useCallback((next: CartLine[]) => {
     linesRef.current = next;
     setLines(next);
@@ -245,13 +247,12 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       );
       return false;
     }
-    if (
-      cartLoading ||
-      !Number.isInteger(quantity) ||
-      quantity < 1 ||
-      quantity > 1000
-    )
+    if (cartLoading || adding.current) return false;
+    if (!Number.isSafeInteger(quantity) || quantity < 1) {
+      setNotice("Vui lòng nhập số lượng là số nguyên lớn hơn 0.");
       return false;
+    }
+    adding.current = true;
     setCartLoading(true);
     try {
       const actual = validateProduct(
@@ -265,13 +266,17 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       if (owner.current !== id) return false;
       if (product.sku !== undefined && actual.sku !== product.sku)
         throw new Error("Sản phẩm đã thay đổi. Vui lòng chọn lại.");
+      const before = linesRef.current.find((item) => item.sku === actual.sku);
+      const requested = (before?.quantity || 0) + quantity;
+      if (!Number.isSafeInteger(requested)) throw new Error("Số lượng quá lớn để xử lý. Vui lòng kiểm tra lại.");
+      const available = await getProductAvailability(actual, requested);
+      if (owner.current !== id) return false;
+      if (!available) throw new Error("Không đủ hàng trong kho cho số lượng yêu cầu (đã tính cả sản phẩm có trong giỏ).");
       const current = linesRef.current;
       const existing = current.find((item) => item.sku === actual.sku);
-      if (
-        (existing?.quantity || 0) + quantity > 1000 ||
-        (!existing && current.length >= 100)
-      )
-        throw new Error("Giỏ hàng vượt số lượng cho phép.");
+      if ((existing?.quantity || 0) + quantity !== requested)
+        throw new Error("Số lượng trong giỏ vừa thay đổi. Vui lòng thử thêm lại.");
+      if (!existing && current.length >= 100) throw new Error("Giỏ hàng đã đủ 100 sản phẩm khác nhau.");
       persist(
         existing
           ? current.map((item) =>
@@ -310,14 +315,47 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       );
       return false;
     } finally {
+      adding.current = false;
       setCartLoading(false);
     }
   };
   const refreshCart = async () => {
     if (owner.current) await loadLines(linesRef.current, owner.current);
   };
+  const checkSelectedStock = async () => {
+    const id = owner.current;
+    const generation = sessionGeneration.current;
+    if (!id || cartLoading || !["authenticated", "guest"].includes(authStatus)) return false;
+    const selected = linesRef.current.filter(line => line.selected !== false);
+    if (!selected.length) return false;
+    const selectionKey = (items: CartLine[]) => JSON.stringify(
+      items.filter(line => line.selected !== false).map(line => [line.product_id, line.sku, line.quantity]),
+    );
+    const checkedSelection = selectionKey(selected);
+    setNotice("");
+    try {
+      const availability = await Promise.all(selected.map(async line => {
+        if (line.unavailable) throw new Error(`Không thể kiểm tra sản phẩm ${line.name || line.sku}. Vui lòng tải lại giỏ hàng.`);
+        return getProductAvailability({ id: line.product_id, sku: line.sku }, line.quantity);
+      }));
+      if (owner.current !== id || sessionGeneration.current !== generation) return false;
+      if (checkedSelection !== selectionKey(linesRef.current)) {
+        throw new Error("Giỏ hàng vừa thay đổi. Vui lòng tiến hành đặt hàng lại để kiểm tra số lượng mới.");
+      }
+      const insufficient = selected.filter((_, index) => !availability[index]);
+      if (insufficient.length) {
+        throw new Error(`Không đủ hàng trong kho cho: ${insufficient.map(line => `${line.name || line.sku} (${line.quantity})`).join(", ")}. Vui lòng giảm số lượng hoặc bỏ chọn sản phẩm.`);
+      }
+      return true;
+    } catch (error) {
+      if (owner.current === id && sessionGeneration.current === generation) {
+        setNotice(error instanceof Error ? error.message : "Không kiểm tra được tồn kho. Vui lòng thử lại.");
+      }
+      return false;
+    }
+  };
   const update = (sku: string, quantity: number) => {
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) return;
+    if (!Number.isSafeInteger(quantity) || quantity < 1) return;
     persist(
       linesRef.current.map((item) =>
         item.sku === sku ? { ...item, quantity } : item,
@@ -367,6 +405,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         deselectAll,
         completeOrder,
         refreshCart,
+        checkSelectedStock,
         setNotice,
       }}
     >

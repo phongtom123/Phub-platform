@@ -23,6 +23,7 @@ export interface CartLine {
 export interface CheckoutLine {
   sku: string;
   warehouse_id: number;
+  allocations?: { warehouse_id: number; quantity: number }[];
   name: string;
   unit: string;
   quantity: number;

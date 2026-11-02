@@ -1204,7 +1204,7 @@
         "additionalProperties": false,
         "properties": {
           "quantity": {
-            "maximum": 1000.0,
+            "maximum": 2147483647.0,
             "minimum": 1.0,
             "title": "Quantity",
             "type": "integer"
@@ -1454,6 +1454,13 @@
       "CheckoutLine": {
         "additionalProperties": false,
         "properties": {
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/WarehouseAllocation"
+            },
+            "title": "Allocations",
+            "type": "array"
+          },
           "discount": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
             "title": "Discount",
@@ -1474,7 +1481,7 @@
             "type": "string"
           },
           "quantity": {
-            "maximum": 1000.0,
+            "maximum": 2147483647.0,
             "minimum": 1.0,
             "title": "Quantity",
             "type": "integer"
@@ -1503,6 +1510,7 @@
             "type": "string"
           },
           "warehouse_id": {
+            "description": "Kho đầu tiên trong phân bổ; allocations liệt kê đầy đủ các kho cấp hàng.",
             "title": "Warehouse Id",
             "type": "integer"
           }
@@ -4730,7 +4738,7 @@
             "type": "string"
           },
           "quantity": {
-            "maximum": 1000.0,
+            "maximum": 2147483647.0,
             "minimum": 1.0,
             "title": "Quantity",
             "type": "integer"
@@ -5603,6 +5611,35 @@
           "expected_version"
         ],
         "title": "PricingConfig",
+        "type": "object"
+      },
+      "ProductAvailability": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "quantity",
+          "available"
+        ],
+        "title": "ProductAvailability",
         "type": "object"
       },
       "ProductGallery": {
@@ -8653,6 +8690,26 @@
           "msg"
         ],
         "title": "ValidationIssue",
+        "type": "object"
+      },
+      "WarehouseAllocation": {
+        "properties": {
+          "quantity": {
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "warehouse_id",
+          "quantity"
+        ],
+        "title": "WarehouseAllocation",
         "type": "object"
       },
       "WarehouseHistoryPage": {
@@ -13143,6 +13200,125 @@
         },
         "security": [],
         "summary": "Chi tiết sản phẩm công khai, ảnh và thông số",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
+    "/api/catalog/products/{product_id}/availability": {
+      "get": {
+        "operationId": "check_product_availability_api_catalog_products__product_id__availability_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "quantity",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "title": "Quantity",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductAvailability"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "PRODUCT_NOT_FOUND",
+                    "details": [],
+                    "message": "Không tìm thấy sản phẩm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy sản phẩm."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Kiểm tra đủ hàng cho số lượng muốn thêm vào giỏ, không giữ hàng",
         "tags": [
           "Customer · Catalog"
         ]

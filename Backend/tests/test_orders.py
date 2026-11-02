@@ -100,7 +100,7 @@ def test_existing_order_endpoint_cannot_bypass_customer_auth(orders_client, orde
 
 
 @pytest.mark.parametrize("field,value", [
-    ("quantity", 0), ("quantity", -1), ("quantity", 1.5), ("quantity", True), ("quantity", "2"), ("quantity", 1001),
+    ("quantity", 0), ("quantity", -1), ("quantity", 1.5), ("quantity", True), ("quantity", "2"), ("quantity", 2147483648),
     ("warehouse_id", True), ("warehouse_id", "1"), ("warehouse_id", 2147483648),
     ("sku", ""), ("sku", "x" * 101), ("sku", "A\x00"),
     ("expected_unit_price", 0.1), ("expected_unit_price", "-1"), ("expected_unit_price", "0.001"),

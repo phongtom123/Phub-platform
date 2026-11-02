@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import styles from "./cart.module.css";
 
@@ -19,7 +19,7 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
     const parsed = Number(value);
     const nextQuantity = value === "" || !Number.isInteger(parsed)
       ? quantity
-      : Math.min(100, Math.max(1, parsed));
+      : Number.isSafeInteger(parsed) ? Math.max(1, parsed) : quantity;
 
     onUpdate(sku, nextQuantity);
     setDraft(null);
@@ -39,21 +39,20 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
         -
       </button>
       <input
-        type="number"
-        min={1}
-        max={100}
-        step={1}
+        type="text"
+        pattern="[0-9]*"
         inputMode="numeric"
         aria-label="Số lượng"
         value={draft ?? String(quantity)}
         onChange={(event) => {
           const value = event.target.value;
+          if (!/^\d*$/.test(value)) return;
           setDraft(value);
 
           if (value === "") return;
 
           const parsed = Number(value);
-          if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 100) {
+          if (Number.isSafeInteger(parsed) && parsed >= 1) {
             onUpdate(sku, parsed);
           }
         }}
@@ -66,9 +65,9 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
         type="button"
         onClick={() => {
           setDraft(null);
-          onUpdate(sku, Math.min(100, quantity + 1));
+          onUpdate(sku, quantity + 1);
         }}
-        disabled={quantity >= 100}
+        disabled={!Number.isSafeInteger(quantity + 1)}
         aria-label="Tăng số lượng"
       >
         +
@@ -80,6 +79,8 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
 export function ShoppingCart() {
   const router = useRouter();
   const shop = useShopping();
+  const [checkingStock, setCheckingStock] = useState(false);
+  const checkoutPending = useRef(false);
 
   const selectedTotal = shop.selectedLines.reduce((sum, line) => {
     return sum + parseFloat(line.unit_price || "0") * line.quantity;
@@ -106,12 +107,21 @@ export function ShoppingCart() {
     }
   };
 
-  const handleCheckout = () => {
-    if (shop.authStatus === "guest") {
-      router.push("/auth/login?redirect=%2Fcheckout");
-      return;
+  const handleCheckout = async () => {
+    if (checkoutPending.current || shop.cartLoading || !shop.selectedLines.length) return;
+    checkoutPending.current = true;
+    setCheckingStock(true);
+    try {
+      if (!await shop.checkSelectedStock()) return;
+      if (shop.authStatus === "guest") {
+        router.push("/auth/login?redirect=%2Fcheckout");
+      } else if (shop.authStatus === "authenticated") {
+        router.push("/checkout");
+      }
+    } finally {
+      checkoutPending.current = false;
+      setCheckingStock(false);
     }
-    if (shop.authStatus === "authenticated") router.push("/checkout");
   };
 
   return (
@@ -280,13 +290,18 @@ export function ShoppingCart() {
                 type="button"
                 className={styles.checkout}
                 disabled={
+                  checkingStock ||
+                  shop.cartLoading ||
                   shop.selectedLines.length === 0 ||
                   shop.authStatus === "loading" ||
                   shop.authStatus === "unavailable"
                 }
                 onClick={handleCheckout}
+                aria-busy={checkingStock}
               >
-                {shop.selectedLines.length === 0
+                {checkingStock
+                  ? "Đang kiểm tra tồn kho…"
+                  : shop.selectedLines.length === 0
                   ? "Vui lòng chọn sản phẩm"
                   : shop.authStatus === "guest"
                     ? `Đăng nhập để thanh toán (${shop.selectedLines.length})`

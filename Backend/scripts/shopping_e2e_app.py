@@ -108,7 +108,7 @@ def database(request):
         table = request.url.path.rsplit("/", 1)[-1]
         if request.method == "POST":
             payload = json.loads(request.content)
-            if table == "customer_checkout_v2":
+            if table in {"customer_checkout_v2", "customer_checkout_multi_warehouse_v1"}:
                 return httpx.Response(200, json=checkout(payload))
             if table == "customer_read_orders_v2":
                 owned = [order for order in state["orders"].values() if order["owner"] == payload["p_customer_id"]]
