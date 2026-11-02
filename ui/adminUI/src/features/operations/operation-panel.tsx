@@ -19,6 +19,7 @@ import "./operations.css";
 import { useAdminAuth } from "../../components/admin/auth-provider";
 import { ReceiptPricing, ReceiptPricingSummary } from "../pricing/pricing-editor";
 import { pricingRequest, confirmationMessage, type PriceInputs, type ReceiptPriceQuote } from "../../../../shared/pricing";
+import { InvoiceCreator } from "./invoice-creator";
 
 const actions: Record<
   string,
@@ -339,7 +340,9 @@ export function OperationPanel({
               key={a.action}
               disabled={busy || Boolean(pending.current)}
               onClick={() => {
-                if (resource === "receipts" && a.action === "confirm") {
+                if (resource === "orders" && a.action === "invoice") {
+                  setMode("invoice");
+                } else if (resource === "receipts" && a.action === "confirm") {
                   setBusy(true); setError("");
                   pricingRequest<ReceiptPriceQuote>(`receipts/${id}`).then(quote => {
                     const approved = window.confirm(confirmationMessage(quote));
@@ -410,7 +413,17 @@ export function OperationPanel({
           {notice}
         </p>
       )}
-      {mode && (
+      {mode === "invoice" && id && row && (
+        <InvoiceCreator
+          orderId={id}
+          buyer={String(row.ten_nguoi_nhan ?? "")}
+          address={[row.dia_chi_chi_tiet, row.xa_phuong, row.tinh_thanh].filter(Boolean).join(", ")}
+          disabled={busy || Boolean(pending.current)}
+          onCancel={() => setMode("")}
+          onConfirm={() => void run("invoice")}
+        />
+      )}
+      {mode && mode !== "invoice" && (
         <form onSubmit={submit} className="live-form operation-form">
           <h2>
             {mode === "create"

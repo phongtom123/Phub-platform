@@ -29,6 +29,8 @@ async function main() {
       }
       if (path === "/api/backend/auth/logout") { loggedOut = true; return ok({ message: "OK" }); }
       if (path.includes("/api/catalog/")) return ok({ items: [] });
+      if (path === "/api/customer/me") return mode === "guest" || loggedOut
+        ? fail(401, "Cần đăng nhập.") : ok(profile);
       if (mode === "expired") return fail(401, "Expired");
       if (mode === "forbidden") return fail(403, "Forbidden");
       if (path === "/api/backend/customer/me") {
@@ -106,6 +108,10 @@ async function main() {
     await page.getByRole("button", { name: "Hóa đơn", exact: true }).last().click();
     const invoice = page.getByRole("region", { name: `Hóa đơn của ${firstOrder.id}`, exact: true });
     await invoice.getByText(/1\.100\.000/).waitFor();
+    mode = "no-invoice";
+    await invoice.getByText("Đơn này chưa được lập hóa đơn.").waitFor({ timeout: 12000 });
+    mode = "ready";
+    await invoice.getByText(/1\.100\.000/).waitFor({ timeout: 12000 });
     mode = "no-invoice";
     await invoice.getByRole("button", { name: "Làm mới hóa đơn" }).click();
     await invoice.getByText("Đơn này chưa được lập hóa đơn.").waitFor();
