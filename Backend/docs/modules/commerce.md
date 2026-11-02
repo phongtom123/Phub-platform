@@ -2,14 +2,20 @@
 
 > Tài liệu module theo kiến trúc Controller → Service → Repository.
 
+> Cập nhật 02/11/2026: customer checkout gom tồn khả dụng từ các kho hoạt động,
+> bỏ trần 1.000 và tự tạo hóa đơn trong transaction đặt hàng. Các migration tương
+> ứng đã được áp dụng vào Supabase Phub trong phiên sửa. Xem
+> [logic hiện hành và hướng dẫn cho AI](../../../docs/USER-COMMERCE-LOGIC.md).
+
 Module nối các API catalog, đặt đơn và thanh toán với giao diện khách hàng desktop/mobile.
-Không làm lại đăng ký/đăng nhập, không sửa UI admin/kho, không tạo phiếu xuất,
-hóa đơn hay giao dịch thu tiền. Mô tả cả bốn mục tiêu ở [Backend README](../../README.md);
+Không làm lại đăng ký/đăng nhập hoặc UI admin/kho. Đặt đơn mới tự lập hóa đơn,
+chưa tạo giao dịch thu tiền hoặc xuất kho. Mô tả cả bốn mục tiêu ở [Backend README](../../README.md);
 cách chạy UI và kiểm thử ở [SHOPPING-INTEGRATION.md](../../../ui/userUI/Frontend/SHOPPING-INTEGRATION.md).
 
 ## Trạng thái và phần cần nhóm phối hợp
 
-Code API, proxy và UI đã có. **Chưa áp dụng migration lên Supabase chung.**
+Code API, proxy và UI đã có. Ghi nhận ngày 06/10 về việc chưa áp dụng migration
+bên dưới là lịch sử; trạng thái triển khai ngày 02/11 được ghi ở phần cập nhật đầu trang.
 Tất cả API có dữ liệu khách dùng `phub_api/dependencies/customer.py::require_customer`, được
 chuyển từ phiên JWT/cookie chung trong `phub_api/services/auth.py`. Backend kiểm tra lại trạng
 thái tài khoản, role và liên kết khách từ database ở mỗi request. Catalog vẫn
@@ -37,7 +43,7 @@ Nhóm Swagger **Customer Shopping**:
 | --- | --- |
 | `GET /api/customer/me` | Tên, điện thoại, địa chỉ mặc định của khách đã xác minh |
 | `PUT /api/customer/me` | Lưu tên/điện thoại/địa chỉ nhận hàng mặc định của khách hiện tại |
-| `POST /api/customer/checkout/quote` | Kiểm tra SKU/số lượng, chọn kho đủ hàng, tính giá và voucher |
+| `POST /api/customer/checkout/quote` | Kiểm tra SKU/số lượng, phân bổ qua các kho đủ tổng tồn khả dụng, tính giá và voucher |
 | `POST /api/customer/orders` | Tạo đơn thuộc khách, chốt giá/giảm giá/người nhận, idempotent |
 | `GET /api/customer/orders` | Lịch sử đơn của khách, phân trang |
 | `GET /api/customer/orders/{order_id}` | Chi tiết và các dòng snapshot của đơn thuộc khách |
@@ -55,8 +61,8 @@ List nhận `page=1..1000000`, `page_size=1..100` và từ chối query khác.
 Khi RPC đọc chưa có, `phub_api/repositories/commerce_reads.py` đọc bảng hiện có;
 `phub_api/services/commerce_reads.py` kiểm tra quyền sở hữu và dựng kết quả
 trên dòng đơn. Chỉ fallback cho lỗi thiếu hàm, không bỏ qua lỗi quyền/schema khác.
-Đọc hóa đơn không cần RPC. Tạo đơn vẫn cần RPC transaction; chưa chạy migration
-theo lựa chọn 07/10. UI thử đầy đủ ở [PAYMENT-UI-REVIEW.md](../../../PAYMENT-UI-REVIEW.md).
+Đọc hóa đơn không cần RPC. Customer checkout tạo đơn bằng RPC transaction
+`customer_checkout_multi_warehouse_v1`. UI thử đầy đủ ở [PAYMENT-UI-REVIEW.md](../../../PAYMENT-UI-REVIEW.md).
 
 `PUT /me` nhận cùng schema `Recipient` gồm `name`, `phone`, `address_line`,
 `province`, `ward`. Validation trim chuỗi, chuẩn hóa số điện thoại, giới hạn độ
@@ -72,9 +78,11 @@ Ví dụ quote:
 {"items":[{"sku":"SKU-A","quantity":2}],"voucher_code":"SAVE10"}
 ```
 
-Quote chỉ đọc, không giữ hàng hoặc lượt voucher. Mỗi SKU được chọn một kho hoạt
-động đủ tồn khả dụng, ưu tiên `ma_kho` nhỏ nhất. Không tự chia SKU sang nhiều kho
-trong checkout; nếu không có kho đủ, trả `INSUFFICIENT_STOCK`.
+Quote chỉ đọc, không giữ hàng hoặc lượt voucher. Mỗi SKU được phân bổ lần lượt
+qua các kho hoạt động theo `ma_kho`, sau khi trừ reservation. Tổng không đủ thì
+trả `INSUFFICIENT_STOCK`. Quote/receipt giữ một dòng mỗi SKU và có `allocations`;
+`warehouse_id` là kho đầu tiên để tương thích request. Tạo đơn kiểm tra và phân
+bổ lại dưới khóa; `CT_DON_HANG` lưu riêng từng phần xuất kho.
 
 Ví dụ tạo đơn sau quote (mã kho/SKU/giá cần lấy từ quote thật):
 
@@ -95,7 +103,7 @@ Header `Idempotency-Key` bắt buộc UUID v4. 201 cho đơn mới, 200 cho repl
 voucher hoặc trạng thái đơn đã thay đổi. Mọi response thành công/lỗi đều `no-store`.
 
 Request từ chối trường thừa và ký tự điều khiển. Giỏ 1–100 SKU duy nhất, số lượng
-nguyên 1–1000, mã SKU/voucher tối đa 100 ký tự. Người nhận dùng validation của
+nguyên 1–2.147.483.647 theo kiểu integer của database, mã SKU/voucher tối đa 100 ký tự. Người nhận dùng validation của
 orders: tên 100, địa chỉ 255, tỉnh/phường 100, ghi chú 2000; điện thoại chuẩn hóa
 rồi kiểm tra 8–15 chữ số, có thể có `+`. Giá/tổng đối chiếu phải là chuỗi thập phân
 không âm, tối đa 16 chữ số nguyên và 2 số thập phân. Server lấy giá chốt từ database.

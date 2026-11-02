@@ -57,6 +57,7 @@
 .breadcrumb span { margin: 0; }
 .productCopy { grid-area: copy; min-width: 0; }
 .copyInner { min-width: 0; padding-top: 0; }
+.purchaseActions .soldOut { margin: 0; padding: 12px 20px; border: 1px solid #fecdca; border-radius: 8px; background: #fff1f0; color: #b42318; font-size: 16px; font-weight: 700; }
 .copyInner h1 { overflow-wrap: anywhere; }
 .specTable { max-width: 100%; }
 .specTable dt, .specTable dd { min-width: 0; overflow-wrap: anywhere; }
