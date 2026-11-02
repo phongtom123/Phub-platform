@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { validateOrder } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
+import { groupInvoiceLines } from "@/lib/shopping/invoice-lines";
 import { CustomerGate, useShopping } from "./ShoppingProvider";
 import { useCustomerResource } from "./useCustomerResource";
 import { PaymentPanel } from "./PaymentPanel";
@@ -78,7 +79,7 @@ function Details({ id }: { id: string }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((line, index) => (
+                  {groupInvoiceLines(data.items).map((line, index) => (
                     <tr key={index}>
                       <td>
                         {line.name}

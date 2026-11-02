@@ -2,12 +2,14 @@
 import { useEffect } from "react";
 import { validateInvoice } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
+import { groupInvoiceLines } from "@/lib/shopping/invoice-lines";
 import { useCustomerResource } from "./useCustomerResource";
 import styles from "./shopping.module.css";
 
 export function InvoicePanel({ orderId }: { orderId: string }) {
   const resource = useCustomerResource(`orders/${encodeURIComponent(orderId)}/invoice`, validateInvoice, 5000);
   const data = resource.data;
+  const lines = groupInvoiceLines(data?.items ?? []);
   useEffect(() => {
     window.addEventListener("phub:invoice-changed", resource.reload);
     return () => window.removeEventListener("phub:invoice-changed", resource.reload);
@@ -22,7 +24,7 @@ export function InvoicePanel({ orderId }: { orderId: string }) {
       <p>Lập lúc: {data.invoice.issued_at.replace("T", " ")}</p>
       <div className={styles.tableWrap}><table className={styles.table}>
         <thead><tr><th>Sản phẩm</th><th>Số lượng</th><th>Đơn giá</th><th>Giảm giá</th><th>Thành tiền trên đơn</th></tr></thead>
-        <tbody>{data.items.map((line, index) => <tr key={index}>
+        <tbody>{lines.map((line, index) => <tr key={index}>
           <td>{line.name}</td><td>{line.quantity}</td><td>{money(line.unit_price, data.currency)}</td>
           <td>{money(line.discount, data.currency)}</td><td>{money(line.line_total, data.currency)}</td>
         </tr>)}</tbody>

@@ -18,7 +18,9 @@ export function ProductDetailActions({
 }) {
   const router = useRouter();
   const shop = useShopping();
-  const [quantity, setQuantity] = useState(1);
+  const [quantityText, setQuantityText] = useState("1");
+  const quantity = Number(quantityText);
+  const validQuantity = quantityText !== "" && Number.isSafeInteger(quantity) && quantity > 0;
 
   const actualPrice = product?.price ?? price ?? 0;
   const actualCurrency = product?.currency ?? currency ?? "VND";
@@ -28,7 +30,7 @@ export function ProductDetailActions({
   }).format(actualPrice);
 
   const handleBuyNow = async () => {
-    if (!product) return;
+    if (!product || !validQuantity) return;
     const added = await shop.add({ id: product.id, sku: product.sku }, quantity);
     if (added) router.push("/cart");
   };
@@ -44,7 +46,10 @@ export function ProductDetailActions({
         <button
           type="button"
           aria-label="Giảm số lượng"
-          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+          onClick={() => setQuantityText(value => {
+            const next = BigInt(value || "1") - BigInt(1);
+            return next < BigInt(1) ? "1" : String(next);
+          })}
           style={{
             width: 28,
             height: 28,
@@ -54,24 +59,33 @@ export function ProductDetailActions({
             cursor: "pointer",
             fontWeight: 700,
           }}
-          disabled={quantity <= 1}
+          disabled={quantityText === "" || quantity <= 1}
         >
           -
         </button>
-        <span
-          style={{
-            minWidth: 32,
-            textAlign: "center",
-            fontWeight: 600,
-            fontSize: 14,
+        <input
+          className={styles.quantityInput}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          aria-label="Số lượng"
+          aria-invalid={quantityText !== "" && !validQuantity}
+          value={quantityText}
+          onChange={event => {
+            if (/^\d*$/.test(event.target.value)) setQuantityText(event.target.value);
           }}
-        >
-          {quantity}
-        </span>
+          onBlur={() => {
+            if (quantityText === "") setQuantityText("1");
+            else if (validQuantity) setQuantityText(String(quantity));
+          }}
+          onKeyDown={event => {
+            if (["-", "+", ".", ",", "e", "E"].includes(event.key)) event.preventDefault();
+          }}
+        />
         <button
           type="button"
           aria-label="Tăng số lượng"
-          onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+          onClick={() => setQuantityText(value => String(BigInt(value || "0") + BigInt(1)))}
           style={{
             width: 28,
             height: 28,
@@ -85,6 +99,9 @@ export function ProductDetailActions({
           +
         </button>
       </div>
+      {quantityText !== "" && !validQuantity && <small role="alert" className={styles.quantityError}>
+        {quantity === 0 ? "Số lượng phải lớn hơn 0." : "Số lượng quá lớn để xử lý. Vui lòng kiểm tra lại."}
+      </small>}
 
       <div className={styles.purchaseActions}>
         {product ? (
@@ -92,6 +109,7 @@ export function ProductDetailActions({
             className={styles.cartButton}
             product={{ id: product.id, sku: product.sku }}
             quantity={quantity}
+            disabled={!validQuantity}
           />
         ) : (
           <button className={styles.cartButton} type="button" disabled>
@@ -101,7 +119,7 @@ export function ProductDetailActions({
         <button
           type="button"
           onClick={handleBuyNow}
-          disabled={shop.cartLoading || !product}
+          disabled={shop.cartLoading || !product || !validQuantity}
           className={styles.buyNowButton}
         >
           <span aria-hidden="true">⚡</span>

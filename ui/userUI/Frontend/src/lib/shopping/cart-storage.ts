@@ -16,9 +16,8 @@ export function restoreCart(value: unknown): StoredCartLine[] {
       typeof item.sku === "string" &&
       item.sku.length <= 100 &&
       !seen.has(item.sku) &&
-      Number.isInteger(item.quantity) &&
+      Number.isSafeInteger(item.quantity) &&
       item.quantity >= 1 &&
-      item.quantity <= 1000 &&
       (item.selected === undefined || typeof item.selected === "boolean") &&
       (seen.add(item.sku), true),
   );
@@ -33,7 +32,7 @@ export function mergeStoredCarts(
     const accountLine = merged.get(guestLine.sku);
     if (accountLine) {
       accountLine.quantity = Math.min(
-        1000,
+        Number.MAX_SAFE_INTEGER,
         accountLine.quantity + guestLine.quantity,
       );
       accountLine.selected =

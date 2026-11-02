@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/common/Button";
 import { useAccountResource } from "@/lib/account/useAccountResource";
+import { groupInvoiceLines } from "@/lib/shopping/invoice-lines";
 import { formatDate, formatMoney, orderStatus, paymentMethod, paymentStatus, parseInvoice, parseOrder, parsePayment, parseTransactions, type OrderLine, type Pagination, type Transaction } from "@/lib/account/client";
 import styles from "./profile.module.css";
 
@@ -20,9 +21,10 @@ export function Pager({ pagination, onPage }: { pagination: Pagination; onPage: 
 }
 function Lines({ items, currency }: { items: OrderLine[]; currency: string }) {
   if (!items.length) return <p className={styles.note}>Chưa có dòng sản phẩm.</p>;
+  const lines = groupInvoiceLines(items);
   return <div className={styles.tableScroll} role="region" aria-label="Chi tiết sản phẩm trong đơn" tabIndex={0}><table className={styles.table}>
     <thead><tr><th scope="col">Sản phẩm / SKU</th><th scope="col">Số lượng</th><th scope="col">Đơn giá</th><th scope="col">Giảm giá</th><th scope="col">Thuế dòng</th><th scope="col">Thành tiền</th></tr></thead>
-    <tbody>{items.map((line, index) => <tr key={`${line.sku}:${index}`}><td>{line.name}<small>{line.sku}</small></td><td>{line.quantity} {line.unit}</td><td>{formatMoney(line.unit_price, currency)}</td><td>{formatMoney(line.discount, currency)}</td><td>{formatMoney(line.tax_amount, currency)}</td><td>{formatMoney(line.line_total, currency)}</td></tr>)}</tbody>
+    <tbody>{lines.map((line, index) => <tr key={`${line.sku}:${index}`}><td>{line.name}<small>{line.sku}</small></td><td>{line.quantity} {line.unit}</td><td>{formatMoney(line.unit_price, currency)}</td><td>{formatMoney(line.discount, currency)}</td><td>{formatMoney(line.tax_amount, currency)}</td><td>{formatMoney(line.line_total, currency)}</td></tr>)}</tbody>
   </table></div>;
 }
 export function OrderPanel({ orderId }: { orderId: string }) {

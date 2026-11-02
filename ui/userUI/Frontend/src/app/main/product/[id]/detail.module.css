@@ -46,6 +46,9 @@
 .purchaseControls { min-width: 0; }
 .buyArea { --blue: #0156ff; flex-wrap: wrap; justify-content: flex-end; }
 .quantityControls { display: flex; align-items: center; gap: 8px; margin-block: 8px; white-space: nowrap; }
+.quantityInput { box-sizing: border-box; width: 96px; min-width: 0; height: 34px; padding: 4px 8px; border: 1px solid #a2a6b0; border-radius: 4px; background: #fff; color: #111; text-align: center; font-family: inherit; font-size: 16px; font-weight: 600; }
+.quantityInput:focus-visible { outline: 2px solid #0156ff; outline-offset: 2px; }
+.quantityError { color: #c62828; font-size: 12px; }
 .productHero { grid-template-areas: "breadcrumb gallery" "copy gallery"; grid-template-rows: auto 1fr; }
 .breadcrumbWrap { grid-area: breadcrumb; display: flex; justify-content: flex-end; padding-block: 68px 35px; background: #f5f7ff; }
 .breadcrumb { width: min(684px, calc(100% - 64px)); margin: 0; padding-right: 44px; overflow-wrap: anywhere; }
