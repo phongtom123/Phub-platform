@@ -44,6 +44,8 @@ def payments_client():
     def handle(request):
         requests.append(request)
         table = request.url.path.rsplit("/", 1)[-1]
+        if table == "customer_demo_payment_v1":
+            return httpx.Response(200, json=state["demo_result"])
         if state["error"] and (state["error_table"] is None or state["error_table"] == table) and (state.get("error_method") is None or state["error_method"] == request.method):
             raise state["error"]
         if table == "DON_HANG":
@@ -62,7 +64,7 @@ def payments_client():
         app.include_router(router)
         app.dependency_overrides[get_repository] = lambda: repository
         app.dependency_overrides[require_customer] = lambda: CurrentCustomer(customer_id=CUSTOMER_ID)
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Origin": "http://localhost:3000"}) as client:
             yield client, state, requests, repository, app
 
 
@@ -356,6 +358,50 @@ def test_payment_request_foreign_order_and_invalid_idempotency_are_blocked(payme
     requests.clear()
     assert client.post(f"{BASE}/payment-request", json={"method":"cash"}, headers={"Idempotency-Key":str(uuid4())}).status_code == 401
     assert requests == []
+
+
+def test_bypass_is_server_enabled_owned_and_returns_atomic_database_result(payments_client, monkeypatch):
+    import json
+    client, state, requests, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "true")
+    key = str(uuid4())
+    transaction = {"type": "collection", "method": "card", "amount": "220.08", "status": "succeeded",
+                   "occurred_at": "2026-11-02T07:30:00Z", "message": "Mô phỏng; không thu tiền thật."}
+    state["demo_result"] = {"replayed": False, "overview": {
+        "order_id": ORDER_ID, "currency": "VND", "latest_transaction": transaction,
+        "message": transaction["message"], "demo": {"request_key": key, "order_status": "DANG_CHUAN_BI"}}}
+    response = client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": key})
+    assert response.status_code == 200
+    assert response.json()["demo"]["order_status"] == "DANG_CHUAN_BI"
+    assert response.json()["latest_transaction"]["amount"] == "220.08"
+    assert response.headers["Idempotency-Replayed"] == "false"
+    payload = json.loads(requests[-1].content)
+    assert payload["p_customer_id"] == CUSTOMER_ID and payload["p_order_id"] == ORDER_ID
+    assert payload["p_key"] == key and payload["p_method"] == "card"
+    assert "amount" not in payload and "status" not in payload
+    state["demo_result"]["replayed"] = True
+    assert client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": key}).headers["Idempotency-Replayed"] == "true"
+    state["orders"] = []
+    requests.clear()
+    assert client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": key}).status_code == 404
+    assert len(requests) == 1 and requests[0].method == "GET"
+
+
+def test_bypass_does_not_return_success_on_database_error(payments_client, monkeypatch):
+    client, state, _, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "true")
+    state["demo_result"] = {"error": "ORDER_NOT_PAYABLE"}
+    response = client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": str(uuid4())})
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "ORDER_NOT_PAYABLE"
+
+
+def test_bypass_rejects_cross_origin_before_database(payments_client, monkeypatch):
+    client, _, requests, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "true")
+    response = client.post(f"{BASE}/payment-request", json={"method": "card"},
+                           headers={"Idempotency-Key": str(uuid4()), "Origin": "https://foreign.example"})
+    assert response.status_code == 403 and requests == []
 
 
 def test_main_registers_payments_without_requiring_auth_at_startup(monkeypatch):

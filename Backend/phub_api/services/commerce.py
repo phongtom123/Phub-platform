@@ -3,6 +3,7 @@ import os
 from postgrest.exceptions import APIError
 
 from phub_api.models.customer import CurrentCustomer
+from phub_api.config.payment_demo import PaymentDemoSettings
 from phub_api.models.errors import PaymentError
 from phub_api.schemas.commerce import (
     CheckoutQuote,
@@ -61,7 +62,8 @@ class CommerceService:
         return CustomerProfile(customer_id=row["ma_kh"], name=row["ten_kh"], phone=row.get("sdt"),
                                address_line=row.get("dia_chi_chi_tiet_md"), province=row.get("tinh_thanh_md"),
                                ward=row.get("xa_phuong_md"),
-                               avatar_url=avatar.get("url") if isinstance(avatar, dict) else None)
+                               avatar_url=avatar.get("url") if isinstance(avatar, dict) else None,
+                               payment_bypass_enabled=PaymentDemoSettings.from_environment().enabled)
 
     def save_profile(self, request, customer):
         self.profile(customer)

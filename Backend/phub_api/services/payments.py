@@ -66,6 +66,10 @@ class PaymentService:
 
     def overview(self, order_id, customer: CurrentCustomer):
         self.require_owned_order(order_id, customer)
+        if hasattr(self.payment_requests, "overview"):
+            result = self.payment_requests.overview(order_id, customer)
+            if result is not None:
+                return result
         rows = self.repository.latest(order_id, customer)
         items = self.public_rows(rows, order_id, customer)
         if len(items) > 1:
@@ -78,6 +82,10 @@ class PaymentService:
 
     def history(self, order_id, customer: CurrentCustomer, query: TransactionQuery):
         self.require_owned_order(order_id, customer)
+        if hasattr(self.payment_requests, "history"):
+            result = self.payment_requests.history(order_id, customer, query)
+            if result is not None:
+                return result
         offset = (query.page - 1) * query.page_size
         try:
             result = self.repository.page(order_id, customer, query.page, query.page_size)

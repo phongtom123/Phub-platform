@@ -36,7 +36,7 @@ class PaymentRoute(APIRoute):
             except APIError as exc:
                 code = str(exc.code or "")
                 logger.warning("Payment database request failed")
-                if code in {"42P01", "42703", "PGRST200", "PGRST204", "PGRST205"}:
+                if code in {"42P01", "42703", "42883", "PGRST200", "PGRST202", "PGRST204", "PGRST205"}:
                     response = error_response(503, "PAYMENT_SCHEMA_NOT_READY", "Cấu trúc dữ liệu thanh toán chưa sẵn sàng.")
                 elif code.startswith(("08", "53")) or code in {"PGRST000", "PGRST001", "PGRST002", "40001", "40P01", "55P03", "57014", "57P01", "57P02", "57P03"} or (code.isdigit() and 500 <= int(code) < 600):
                     response = error_response(503, "DATA_SERVICE_UNAVAILABLE", "Dịch vụ dữ liệu tạm thời không khả dụng.")

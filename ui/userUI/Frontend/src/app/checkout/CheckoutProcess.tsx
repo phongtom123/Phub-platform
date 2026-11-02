@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
-import { createOrder, getQuote, saveProfile } from "@/lib/shopping/client";
+import { PaymentPanel } from "@/components/shopping/PaymentPanel";
+import { createOrder, getQuote, saveProfile, ShoppingError } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
 import type { Quote, OrderRequest, Receipt } from "@/lib/shopping/types";
 import styles from "./checkout.module.css";
@@ -55,6 +56,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [orderReceipt, setOrderReceipt] = useState<Receipt | null>(null);
+  const placingOrder = useRef(false);
 
   // 1. Load addresses from localStorage and customer profile
   useEffect(() => {
@@ -252,6 +254,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
   // 4. Handle "Đặt hàng" tại trang Đặt hàng
   const handlePlaceOrder = async () => {
+    if (placingOrder.current) return;
     if (!currentAddress) {
       setSubmitError("Vui lòng nhập và chọn thông tin giao hàng trước khi đặt hàng.");
       setViewMode("shipping_form");
@@ -262,6 +265,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
       return;
     }
 
+    placingOrder.current = true;
     setSubmitting(true);
     setSubmitError("");
 
@@ -285,22 +289,41 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
       })),
     };
 
-    const idempotencyKey = crypto.randomUUID();
-
+    const attemptStorageKey = `phub-checkout-attempt-v1:${shop.customer?.customer_id}`;
     try {
+      const canonical = JSON.stringify({ ...orderBody, items: [...orderBody.items].sort((a, b) => a.sku.localeCompare(b.sku)) });
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
+      const fingerprint = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
+      // Persist only a key and hash; no delivery details or credentials are stored here.
+      const previous = JSON.parse(sessionStorage.getItem(attemptStorageKey) || "null");
+      if (previous && (previous.fingerprint !== fingerprint || typeof previous.key !== "string" ||
+          !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(previous.key))) {
+        throw new Error("Lần đặt trước chưa xác nhận kết quả. Hãy kiểm tra lịch sử đơn hàng trước khi đặt nội dung khác.");
+      }
+      const idempotencyKey = previous?.key || crypto.randomUUID();
+      sessionStorage.setItem(attemptStorageKey, JSON.stringify({ key: idempotencyKey, fingerprint }));
       const receipt = await createOrder(orderBody, idempotencyKey);
+      try { sessionStorage.removeItem(attemptStorageKey); } catch { /* The order has already succeeded. */ }
+      try {
+        sessionStorage.setItem(`phub-payment-choice-v1:${shop.customer?.customer_id}:${receipt.id}`,
+          paymentMethod === "cod" ? "cash" : "bank_transfer");
+      } catch { /* Order is already committed; storage failure must not report checkout failure. */ }
       setOrderReceipt(receipt);
       shop.completeOrder(
         shop.selectedLines.map((l) => ({ sku: l.sku, quantity: l.quantity })),
         shop.customer?.customer_id || ""
       );
     } catch (err) {
+      if (err instanceof ShoppingError && err.status >= 400 && err.status < 500 && ![408, 429].includes(err.status)) {
+        try { sessionStorage.removeItem(attemptStorageKey); } catch { /* Keep the error visible. */ }
+      }
       setSubmitError(
         err instanceof Error
           ? err.message
           : "Không thể tạo đơn hàng. Vui lòng kiểm tra lại kết nối và thử lại."
       );
     } finally {
+      placingOrder.current = false;
       setSubmitting(false);
     }
   };
@@ -318,7 +341,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               Mã đơn hàng: <strong>{orderReceipt.id}</strong>
             </p>
             <p style={{ color: "#555", fontSize: 14, margin: "0 0 20px" }}>
-              Tổng tiền thanh toán: <strong>{money(orderReceipt.total, orderReceipt.currency)}</strong>
+              Tổng tiền hàng trước thuế: <strong>{money(orderReceipt.total, orderReceipt.currency)}</strong>
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <Link
@@ -365,6 +388,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               </Link>
             </div>
           </div>
+          {shop.customer?.payment_bypass_enabled && <PaymentPanel orderId={orderReceipt.id} />}
         </div>
       </main>
     );

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useEffect } from "react";
 import { validateOrder } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
 import { CustomerGate, useShopping } from "./ShoppingProvider";
@@ -26,6 +27,13 @@ function Details({ id }: { id: string }) {
     `orders/${encodeURIComponent(id)}`,
     validateOrder,
   );
+  useEffect(() => {
+    function onOrderChanged(event: Event) {
+      if ((event as CustomEvent<{ orderId: string }>).detail?.orderId === id) reload();
+    }
+    window.addEventListener("phub:order-changed", onOrderChanged);
+    return () => window.removeEventListener("phub:order-changed", onOrderChanged);
+  }, [id, reload]);
   return (
     <>
       <button type="button" onClick={reload}>

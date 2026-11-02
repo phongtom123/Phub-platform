@@ -1,5 +1,6 @@
 export interface CustomerProfile {
   demo_mode?: boolean;
+  payment_bypass_enabled?: boolean;
   customer_id: string;
   name: string;
   phone: string | null;
@@ -117,6 +118,7 @@ export interface Payments {
   currency: string;
   latest_transaction: Transaction | null;
   message: string;
+  demo?: { request_key: string; order_status: string };
 }
 export interface TransactionPage {
   order_id: string;

@@ -144,6 +144,8 @@ export function validateProfile(value: unknown): CustomerProfile {
   for (const key of ["phone", "address_line", "province", "ward"])
     if (p[key] !== null && typeof p[key] !== "string") invalid();
   if (p.avatar_url !== undefined && p.avatar_url !== null && typeof p.avatar_url !== "string") invalid();
+  if (p.demo_mode !== undefined && typeof p.demo_mode !== "boolean") invalid();
+  if (p.payment_bypass_enabled !== undefined && typeof p.payment_bypass_enabled !== "boolean") invalid();
   return p as unknown as CustomerProfile;
 }
 
@@ -297,6 +299,12 @@ export function validatePayments(value: unknown): Payments {
   if (typeof p.order_id !== "string" || typeof p.message !== "string")
     invalid();
   if (p.latest_transaction !== null) validateTransaction(p.latest_transaction);
+  if (p.demo !== undefined) {
+    const demo = record(p.demo);
+    if (typeof demo.request_key !== "string" ||
+        !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(demo.request_key) ||
+        typeof demo.order_status !== "string") invalid();
+  }
   return p as unknown as Payments;
 }
 export function validateTransactions(value: unknown): TransactionPage {
