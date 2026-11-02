@@ -100,7 +100,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
       window.dispatchEvent(new Event("phub:invoice-changed"));
       window.dispatchEvent(new CustomEvent("phub:order-changed", { detail: { orderId } }));
     } catch (reason) {
-      if (reason instanceof ShoppingError && ["PAYMENT_INTEGRATION_REQUIRED", "AUTH_INTEGRATION_REQUIRED", "AUTHENTICATION_REQUIRED", "ACCESS_DENIED", "ORDER_NOT_FOUND", "VALIDATION_ERROR", "PAYMENT_ALREADY_PENDING", "ORDER_ALREADY_PAID", "ORDER_NOT_PAYABLE"].includes(reason.code)) {
+      if (reason instanceof ShoppingError && ["PAYMENT_INTEGRATION_REQUIRED", "AUTH_INTEGRATION_REQUIRED", "AUTHENTICATION_REQUIRED", "AUTH_CUSTOMER_UNAVAILABLE", "ACCESS_DENIED", "ORDER_NOT_FOUND", "VALIDATION_ERROR", "PAYMENT_ALREADY_PENDING", "ORDER_ALREADY_PAID", "ORDER_NOT_PAYABLE", "INVOICE_TOTAL_MISMATCH"].includes(reason.code)) {
         try { sessionStorage.removeItem(storageKey); } catch {}
         setAttempt(null);
         overview.reload(); history.reload();
@@ -141,7 +141,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
           {sending ? "Đang xử lý…" : attempt ? "Thử lại yêu cầu thanh toán" : shop.customer?.payment_bypass_enabled ? "Thanh toán bypass" : "Yêu cầu thanh toán"}
         </button>
         <p className={styles.muted}>{shop.customer?.payment_bypass_enabled
-          ? "Không thu tiền thật. Bấm Thanh toán bypass để chuyển đơn sang Đang chuẩn bị hàng."
+          ? "Bỏ qua cổng thanh toán. Hệ thống lưu giao dịch, lập hóa đơn và chuyển đơn sang Đang chuẩn bị hàng."
           : "Yêu cầu đang chờ chưa xác nhận đã trả tiền. Trạng thái được cập nhật sau khi khoản thanh toán được xác minh."}</p>
         {requestError && <p role="alert" className={styles.error}>{requestError}</p>}
       </div>

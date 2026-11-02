@@ -1,4 +1,4 @@
-"""Server-only opt-in for simulated payments; never trust a client demo flag."""
+"""Server-only gateway bypass; invoice and payment records still persist normally."""
 from dataclasses import dataclass
 import os
 

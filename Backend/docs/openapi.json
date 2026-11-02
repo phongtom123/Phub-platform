@@ -2717,7 +2717,9 @@
           "ma_donhang": "DH001",
           "ma_hoadon": "HD001",
           "ma_so_thue": null,
+          "ma_tk_lap": null,
           "nguoi_lap": "NV001",
+          "nguon_lap": "QUAN_TRI",
           "ten_nguoi_mua": null,
           "thoi_gian_lap": "2026-10-05T08:00:00+07:00",
           "tong_tien_giam": "50000.00",
@@ -2756,8 +2758,30 @@
             ],
             "description": "ma_so_thue"
           },
+          "ma_tk_lap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_tk_lap"
+          },
           "nguoi_lap": {
-            "description": "nguoi_lap",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "nguoi_lap"
+          },
+          "nguon_lap": {
+            "description": "nguon_lap",
             "type": "string"
           },
           "ten_nguoi_mua": {
@@ -2808,7 +2832,9 @@
           "tong_tien_truoc_thue",
           "tong_tien_thue",
           "tong_tien_sau_thue",
-          "nguoi_lap"
+          "nguoi_lap",
+          "nguon_lap",
+          "ma_tk_lap"
         ],
         "title": "HOA_DONRead",
         "type": "object"
@@ -7706,16 +7732,22 @@
       "THANH_TOANRead": {
         "additionalProperties": false,
         "example": {
+          "la_bypass": false,
           "loai_giao_dich": "THU",
           "ma_donhang": "DH001",
           "ma_giao_dich": "EXAMPLE-TXN-001",
           "ma_thanh_toan": 1,
+          "ma_tk_ghi_nhan": null,
           "phuong_thuc": "CHUYEN_KHOAN",
           "so_tien": "4950000.00",
           "thoi_gian": "2026-10-05T08:00:00+07:00",
           "trang_thai": "THANH_CONG"
         },
         "properties": {
+          "la_bypass": {
+            "description": "la_bypass",
+            "type": "boolean"
+          },
           "loai_giao_dich": {
             "description": "loai_giao_dich",
             "type": "string"
@@ -7738,6 +7770,17 @@
           "ma_thanh_toan": {
             "description": "ma_thanh_toan · database tự sinh",
             "type": "integer"
+          },
+          "ma_tk_ghi_nhan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_tk_ghi_nhan"
           },
           "phuong_thuc": {
             "description": "phuong_thuc",
@@ -7766,7 +7809,9 @@
           "phuong_thuc",
           "trang_thai",
           "ma_giao_dich",
-          "thoi_gian"
+          "thoi_gian",
+          "la_bypass",
+          "ma_tk_ghi_nhan"
         ],
         "title": "THANH_TOANRead",
         "type": "object"
@@ -17877,7 +17922,9 @@
                       "ma_donhang": "DH001",
                       "ma_hoadon": "HD001",
                       "ma_so_thue": null,
+                      "ma_tk_lap": null,
                       "nguoi_lap": "NV001",
+                      "nguon_lap": "QUAN_TRI",
                       "ten_nguoi_mua": null,
                       "thoi_gian_lap": "2026-10-05T08:00:00+07:00",
                       "tong_tien_giam": "50000.00",
@@ -18562,10 +18609,12 @@
                 "example": {
                   "data": [
                     {
+                      "la_bypass": false,
                       "loai_giao_dich": "THU",
                       "ma_donhang": "DH001",
                       "ma_giao_dich": "EXAMPLE-TXN-001",
                       "ma_thanh_toan": 1,
+                      "ma_tk_ghi_nhan": null,
                       "phuong_thuc": "CHUYEN_KHOAN",
                       "so_tien": "4950000.00",
                       "thoi_gian": "2026-10-05T08:00:00+07:00",

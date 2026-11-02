@@ -9,16 +9,18 @@ class UnconnectedPaymentRequests:
 
 DEMO_ERRORS = {
     "ORDER_NOT_FOUND": (404, "Không tìm thấy đơn hàng thuộc tài khoản của bạn."),
-    "ORDER_NOT_PAYABLE": (409, "Chỉ dùng đơn ONLINE mới, chưa có hóa đơn hoặc giao dịch thật để thử nghiệm."),
-    "PAYMENT_ALREADY_PENDING": (409, "Đơn đang có yêu cầu thanh toán giả lập chờ xử lý."),
-    "ORDER_ALREADY_PAID": (409, "Đơn đã mô phỏng thanh toán thành công."),
+    "ORDER_NOT_PAYABLE": (409, "Đơn ONLINE không ở trạng thái cho phép thanh toán hoặc số tiền không hợp lệ."),
+    "PAYMENT_ALREADY_PENDING": (409, "Đơn đang có yêu cầu thanh toán chờ xử lý."),
+    "ORDER_ALREADY_PAID": (409, "Đơn đã được thanh toán đủ."),
+    "AUTH_CUSTOMER_UNAVAILABLE": (403, "Tài khoản khách hàng không còn hoạt động."),
+    "INVOICE_TOTAL_MISMATCH": (409, "Tổng hóa đơn không khớp các dòng đơn hàng. Cần kiểm tra trước khi thanh toán."),
     "IDEMPOTENCY_CONFLICT": (409, "Lần yêu cầu thanh toán có nội dung khác."),
-    "VALIDATION_ERROR": (422, "Thông tin thanh toán giả lập không hợp lệ."),
+    "VALIDATION_ERROR": (422, "Thông tin thanh toán bypass không hợp lệ."),
 }
 
 
 class DemoPaymentRequests(UnconnectedPaymentRequests):
-    """Money stays in a separate demo ledger; only order preparation is simulated."""
+    """Skip the gateway; persist invoice, collection and preparation atomically."""
 
     def __init__(self, repository, settings):
         self.repository, self.settings = repository, settings

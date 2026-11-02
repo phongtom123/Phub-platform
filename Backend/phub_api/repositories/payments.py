@@ -2,7 +2,7 @@
 from phub_api.models.customer import CurrentCustomer
 
 TRANSACTION_COLUMNS = (
-    "so_tien::text,loai_giao_dich,phuong_thuc,trang_thai,thoi_gian,"
+    "so_tien::text,loai_giao_dich,phuong_thuc,trang_thai,thoi_gian,la_bypass,"
     "owned_order:DON_HANG!inner(ma_donhang,ma_kh)"
 )
 

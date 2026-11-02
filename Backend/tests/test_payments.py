@@ -27,7 +27,8 @@ BASE = f"/api/orders/{ORDER_ID}"
 
 
 @pytest.fixture
-def payments_client():
+def payments_client(monkeypatch):
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "false")
     row = {
         "so_tien": "100000.10", "loai_giao_dich": "THU", "phuong_thuc": "CHUYEN_KHOAN",
         "trang_thai": "CHO_XU_LY", "thoi_gian": "2026-10-06T10:00:00",
@@ -154,6 +155,17 @@ def test_owned_order_without_transactions_is_not_reported_paid(payments_client):
     history = client.get(f"{BASE}/transactions").json()
     assert history["items"] == []
     assert history["pagination"] == {"page": 1, "page_size": 20, "total": 0, "total_pages": 0}
+
+
+def test_bypass_payment_is_read_from_business_table_even_when_mode_is_off(payments_client, monkeypatch):
+    client, state, requests, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "false")
+    state["rows"][0].update(la_bypass=True, trang_thai="THANH_CONG")
+    response = client.get(f"{BASE}/payments")
+    assert response.status_code == 200
+    assert response.json()["latest_transaction"]["status"] == "succeeded"
+    assert "bypass" in response.json()["message"]
+    assert requests[-1].url.path.endswith("/THANH_TOAN")
 
 
 def test_history_page_beyond_end_is_empty(payments_client):

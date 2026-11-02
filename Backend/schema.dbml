@@ -322,12 +322,15 @@ Table HOA_DON {
   tong_tien_thue decimal(18,2) [not null]
   tong_tien_sau_thue decimal(18,2) [not null]
 
-  nguoi_lap varchar [not null, note: 'ADMIN lap hoa don']
+  nguoi_lap varchar [note: 'Nhan vien lap thu cong; NULL khi he thong tu lap']
+  nguon_lap varchar [not null, default: 'QUAN_TRI', note: 'QUAN_TRI, TU_DONG']
+  ma_tk_lap varchar [note: 'Tai khoan khoi tao hoa don tu dong']
 
   checks {
     `tong_tien_giam >= 0`
     `tong_tien_truoc_thue >= 0 AND tong_tien_thue >= 0 AND tong_tien_sau_thue >= 0`
     `tong_tien_sau_thue = tong_tien_truoc_thue + tong_tien_thue`
+    `(nguon_lap = 'QUAN_TRI' AND nguoi_lap IS NOT NULL) OR (nguon_lap = 'TU_DONG' AND nguoi_lap IS NULL)`
   }
 }
 
@@ -344,6 +347,12 @@ Table THANH_TOAN {
 
   ma_giao_dich varchar [unique, note: 'Ma doi soat duy nhat; NULL neu tien mat']
   thoi_gian datetime [not null]
+  la_bypass boolean [not null, default: false, note: 'Ghi vao he thong khong qua cong thanh toan']
+  ma_tk_ghi_nhan varchar [note: 'Tai khoan yeu cau ghi nhan thanh toan bypass']
+
+  checks {
+    `NOT la_bypass OR ma_tk_ghi_nhan IS NOT NULL`
+  }
 }
 
 // ======================================
@@ -483,6 +492,8 @@ Ref: CT_DON_HANG.ma_kho_xuat > KHO.ma_kho
 
 Ref: DON_HANG.ma_donhang - HOA_DON.ma_donhang
 Ref: HOA_DON.nguoi_lap > NHAN_VIEN.ma_nhan_vien
+Ref: HOA_DON.ma_tk_lap > TAI_KHOAN.ma_tk
+Ref: THANH_TOAN.ma_tk_ghi_nhan > TAI_KHOAN.ma_tk
 Ref: THANH_TOAN.ma_donhang > DON_HANG.ma_donhang
 
 // Chuong trinh khuyen mai - Voucher

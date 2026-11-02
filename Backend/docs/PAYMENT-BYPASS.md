@@ -1,41 +1,43 @@
 # Thanh toán bypass
 
-Thay bước thanh toán thật bằng nút **Thanh toán bypass**. Khách đăng nhập có thể bấm nút cho đơn ONLINE mới thuộc chính mình; không cần chọn tài khoản demo riêng.
+Bypass chỉ bỏ bước gọi cổng thanh toán. Kết quả được lưu vào các bảng nghiệp vụ trên Supabase, không dùng dữ liệu mẫu để thay thế database.
 
 ## Kích hoạt
 
-1. Áp dụng migration nâng cấp `migrations/20261102071529_customer_demo_payments.sql` trên database tương ứng. Không chạy lại initial schema.
-2. Deploy backend mới và đặt `PAYMENT_DEMO_ENABLED=true` trong môi trường backend. Mặc định là `false`.
-3. Chạy/deploy website khách hàng với backend đó trong `PHUB_API_BASE_URL`, rồi tải lại hồ sơ đăng nhập.
+1. Áp dụng lần lượt `migrations/20261102071529_customer_demo_payments.sql` và `migrations/20261102081903_bypass_business_payments.sql`. Database đã áp dụng migration đầu chỉ cần chạy migration sau. Không chạy lại initial schema.
+2. Đặt `PAYMENT_DEMO_ENABLED=true` ở backend và chạy/deploy mã mới. Tên biến cũ được giữ để tương thích cấu hình; mặc định là `false`.
+3. Website khách hàng trỏ `PHUB_API_BASE_URL` tới backend mới. Backend trả `payment_bypass_enabled` trong hồ sơ để hiện nút **Thanh toán bypass**.
 
-Backend trả `payment_bypass_enabled` trong `GET /api/customer/me`; frontend dùng giá trị này để hiện nút. Không dùng biến `NEXT_PUBLIC_*` hoặc cờ do khách gửi để cấp quyền bypass.
+Local hiện chạy website ở `http://localhost:3000`, API ở `http://127.0.0.1:8000`. Key Supabase và JWT chỉ nằm trong `Backend/.env`, được Git bỏ qua. Render chưa được deploy hoặc thay đổi môi trường trong lần sửa này.
 
-## Luồng sử dụng
+## Luồng dữ liệu
 
-- Đặt đơn → bấm **Thanh toán bypass** ngay tại màn hình xác nhận hoặc trang chi tiết đơn.
-- Gọi `POST /api/orders/{order_id}/payment-request` với JSON `{"method":"bank_transfer"}`, header `Idempotency-Key` là UUID v4 và Origin hợp lệ.
-- Backend xác minh phiên, chủ đơn; SQL khóa đơn, tính số tiền từ các dòng đã lưu, ghi giao dịch giả lập và chuyển `MOI → DANG_CHUAN_BI` trong cùng transaction.
-- Thành công trả `latest_transaction.status=succeeded`, kèm `demo.order_status=DANG_CHUAN_BI`. Frontend cập nhật nội dung đơn, không tải lại toàn bộ trang.
-- Bấm lại cùng khóa và cùng nội dung trả kết quả đã ghi. Khóa dùng cho đơn/phương thức khác bị từ chối. Một đơn không được bypass thành công lần thứ hai bằng khóa mới.
+Khách đăng nhập bấm nút tại màn hình đặt hàng thành công hoặc chi tiết đơn. Frontend gửi phương thức và UUID v4 trong `Idempotency-Key` đến `POST /api/orders/{order_id}/payment-request`; không gửi số tiền, người ghi nhận hoặc trạng thái đích.
 
-Số tiền gồm giá trị sau giảm giá và thuế theo từng dòng, sử dụng `numeric` và `round(...,2)` giống bước lập hóa đơn hiện tại. Frontend không gửi số tiền hoặc trạng thái mong muốn.
+Backend xác minh phiên, Origin, chủ đơn và tài khoản còn hoạt động. Trong cùng transaction, SQL:
 
-## Phạm vi dữ liệu
+1. Khóa đơn và chi tiết; chỉ nhận đơn ONLINE ở trạng thái MOI, XAC_NHAN hoặc DANG_CHUAN_BI.
+2. Tính giá sau giảm giá và thuế từng dòng bằng `numeric`, làm tròn `round(...,2)` theo quy ước lập hóa đơn hiện có.
+3. Chưa có hóa đơn thì cập nhật thuế/thành tiền ở `CT_DON_HANG` và tạo `HOA_DON`. Đã có hóa đơn thì kiểm tra khớp các dòng, không tạo lại hoặc đổi người lập cũ.
+4. Tính số còn phải thu theo hóa đơn trừ các khoản THU thành công, cộng khoản HOAN_TIEN thành công. Từ chối nếu có giao dịch đang chờ hoặc đơn đã thanh toán đủ.
+5. Ghi khoản THU/THANH_CONG vào `THANH_TOAN`, chỉ thu số còn thiếu.
+6. Liên kết bản ghi chống trùng với khoản thu, chuyển `DON_HANG.trang_thai` sang DANG_CHUAN_BI.
 
-- Giao dịch và snapshot nằm riêng trong schema `payment_demo`, không ghi vào `THANH_TOAN` hoặc tự tạo `HOA_DON`; tiền giả lập không cộng vào thu tiền thật.
-- Chỉ nhận đơn ONLINE ở trạng thái MOI, chưa có hóa đơn/giao dịch thật. Không chuyển đổi đơn đã có giao dịch thật sang giả lập.
-- Đơn bypass không được xuất kho, hoàn thành, lập hóa đơn hoặc ghi khoản thu thật. Có thể hủy ở Admin để giải phóng lượng giữ chỗ. Tồn kho vật lý không đổi khi bypass.
-- Khi tắt chế độ, các đơn giả lập vẫn giữ dấu vết và các chốt bảo vệ trên database; lịch sử giả lập được đọc khi bật lại chế độ.
-- RPC chỉ cấp quyền cho `service_role`. Trình duyệt không được đọc/ghi trực tiếp schema riêng.
+Lỗi giữa chừng rollback hóa đơn, khoản thu và trạng thái. Gửi lại cùng khóa/nội dung trả kết quả đã ghi, không thu lại. Khóa dùng cho đơn hoặc phương thức khác bị từ chối.
 
-## Xác minh
+## Dấu vết và các bước tiếp theo
 
-Đã kiểm tra API về quyền sở hữu, Origin, số tiền do server cung cấp, chế độ tắt và phản hồi lỗi; kiểm tra SQL trong PostgreSQL cô lập về làm tròn, chống trùng, rollback, không ghi tiền thật và không xuất kho. Không tạo thanh toán thử trên database thật.
+- `THANH_TOAN.la_bypass=true`, mã đối soát tiền tố `BYPASS-`, `ma_tk_ghi_nhan` lưu tài khoản yêu cầu. Đây là khoản thanh toán được ghi nhận trong hệ thống, không phải xác nhận từ cổng thanh toán.
+- Hóa đơn tự lập có `nguon_lap=TU_DONG`, `nguoi_lap=NULL`, `ma_tk_lap` lưu tài khoản khởi tạo. Không gán một nhân viên/Admin bất kỳ làm người lập.
+- `payment_demo.attempts` là bảng chống trùng/audit với `payment_id` trỏ tới `THANH_TOAN`; dữ liệu thanh toán và hóa đơn đọc từ bảng nghiệp vụ. Tên schema và metadata API `demo` được giữ tương thích, không còn là sổ giao dịch giả tách biệt.
+- Đơn có thể tiếp tục xuất kho, hoàn thành, hoàn tiền qua nghiệp vụ bình thường. Bấm bypass không tự xuất kho hoặc hoàn thành đơn. Báo cáo dùng các bản ghi này theo điều kiện ghi nhận hiện có của báo cáo.
+- Tắt bypass chặn các yêu cầu bypass mới; dữ liệu đã ghi vẫn hiện trong lịch sử thanh toán, hóa đơn và Admin.
+- RPC chỉ cấp quyền thực thi cho `service_role`; trình duyệt không được ghi trực tiếp database.
 
-Migration đã áp dụng trên Supabase **Phub** ngày 02/11/2026. RPC đã được kiểm tra bằng truy vấn đọc với mã đơn không tồn tại. Backend/biến môi trường Render chưa được deploy hoặc thay đổi trong đợt này.
+## Nâng cấp dữ liệu cũ và kiểm tra
 
-Website local `http://localhost:3000` đã chuyển sang backend mới `http://127.0.0.1:8000`, bật `PAYMENT_DEMO_ENABLED=true` trong `Backend/.env`. Supabase server key và khóa JWT chỉ lưu trong file backend được Git bỏ qua; UI không chứa các secret này. Cần đăng nhập lại sau khi đổi từ Render sang backend local vì khóa ký phiên khác nhau.
+Migration mới bỏ các chốt chặn hóa đơn/xuất kho của bản cũ. Lần bypass cũ đã thành công, còn DANG_CHUAN_BI, chưa có hóa đơn/khoản thu, tài khoản hoạt động và số tiền còn khớp sẽ được ghi vào bảng nghiệp vụ. Không tạo đơn mới; không chuyển các đơn đã hủy hoặc đã có bản ghi tài chính.
 
-Gateway local đã kiểm tra tải danh mục HTTP 200 và từ chối request không có phiên bằng HTTP 401; RPC kết nối được qua backend local. Lỗi mạng được ghi log dạng mã lỗi và loại tài nguyên, không ghi cookie, token hoặc nội dung yêu cầu. Khi gửi đơn gặp lỗi chưa xác định kết quả, checkout giữ lại khóa idempotency để lần thử lại cùng nội dung không tạo đơn trùng.
+Đã áp dụng trên Supabase Phub ngày 02/11/2026. Lần bypass cũ được khôi phục thành một hóa đơn và một khoản thu **79.200.000đ**, gồm tiền hàng **72.000.000đ** và thuế **7.200.000đ**; giữ trạng thái DANG_CHUAN_BI.
 
-Security Advisor không phát sinh cảnh báo WARN mới. Thông tin [RLS enabled, no policy](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) ở `payment_demo.attempts` là chủ đích: mặc định từ chối mọi role thường, chỉ backend `service_role` có quyền và bypass RLS. Hai cảnh báo sẵn có về quyền thực thi hàm `rls_auto_enable` đã tồn tại trước migration, không thuộc thay đổi này.
+Kiểm tra tập trung đã qua: SQL PostgreSQL cô lập về tạo hóa đơn/khoản thu, làm tròn, chống trùng, ghi phần còn thiếu, rollback, sửa dữ liệu cũ, xuất kho/hoàn thành/hoàn tiền và quyền RPC; API về chủ đơn, Origin, chế độ tắt và phản hồi lỗi; TypeScript hai giao diện. Không tạo đơn thử hoặc khoản thanh toán thử trên Supabase thật.
