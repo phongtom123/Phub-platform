@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true); setError("");
-    try { const account = await login(username, password); if (account.role !== "NHAN_VIEN_KHO") throw new Error("Tài khoản không có quyền nhân viên kho."); router.replace("/"); }
+    try { const account = await login(username, password); if (!["NHAN_VIEN", "NHAN_VIEN_KHO"].includes(account.role)) throw new Error("Tài khoản không có quyền nhân viên kho."); router.replace("/"); }
     catch (err) { setError(err instanceof Error ? err.message : "Đăng nhập thất bại."); }
     finally { setLoading(false); }
   }
