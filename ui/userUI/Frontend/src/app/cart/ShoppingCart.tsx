@@ -2,8 +2,80 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import styles from "./cart.module.css";
+
+interface CartQuantityInputProps {
+  sku: string;
+  quantity: number;
+  onUpdate: (sku: string, quantity: number) => void;
+}
+
+function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) {
+  const [draft, setDraft] = useState<string | null>(null);
+
+  const commitDraft = (value: string) => {
+    const parsed = Number(value);
+    const nextQuantity = value === "" || !Number.isInteger(parsed)
+      ? quantity
+      : Math.min(100, Math.max(1, parsed));
+
+    onUpdate(sku, nextQuantity);
+    setDraft(null);
+  };
+
+  return (
+    <div className={styles.qtyControl}>
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(null);
+          onUpdate(sku, Math.max(1, quantity - 1));
+        }}
+        disabled={quantity <= 1}
+        aria-label="Giảm số lượng"
+      >
+        -
+      </button>
+      <input
+        type="number"
+        min={1}
+        max={100}
+        step={1}
+        inputMode="numeric"
+        aria-label="Số lượng"
+        value={draft ?? String(quantity)}
+        onChange={(event) => {
+          const value = event.target.value;
+          setDraft(value);
+
+          if (value === "") return;
+
+          const parsed = Number(value);
+          if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 100) {
+            onUpdate(sku, parsed);
+          }
+        }}
+        onBlur={(event) => commitDraft(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(null);
+          onUpdate(sku, Math.min(100, quantity + 1));
+        }}
+        disabled={quantity >= 100}
+        aria-label="Tăng số lượng"
+      >
+        +
+      </button>
+    </div>
+  );
+}
 
 export function ShoppingCart() {
   const router = useRouter();
@@ -158,60 +230,11 @@ export function ShoppingCart() {
                     </div>
                     <div style={{ fontWeight: 500 }}>{formattedUnitPrice}</div>
                     <div className={styles.qty}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            shop.update(line.sku, Math.max(1, line.quantity - 1))
-                          }
-                          style={{
-                            width: 26,
-                            height: 26,
-                            border: "1px solid #ccc",
-                            borderRadius: 4,
-                            background: "#fff",
-                            cursor: "pointer",
-                            fontWeight: 700,
-                          }}
-                          disabled={line.quantity <= 1}
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min={1}
-                          max={100}
-                          value={line.quantity}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            if (val > 0) shop.update(line.sku, val);
-                          }}
-                          style={{
-                            width: 44,
-                            height: 28,
-                            textAlign: "center",
-                            border: "1px solid #ccc",
-                            borderRadius: 4,
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            shop.update(line.sku, line.quantity + 1)
-                          }
-                          style={{
-                            width: 26,
-                            height: 26,
-                            border: "1px solid #ccc",
-                            borderRadius: 4,
-                            background: "#fff",
-                            cursor: "pointer",
-                            fontWeight: 700,
-                          }}
-                        >
-                          +
-                        </button>
-                      </div>
+                      <CartQuantityInput
+                        sku={line.sku}
+                        quantity={line.quantity}
+                        onUpdate={shop.update}
+                      />
                     </div>
                     <strong style={{ color: "#0156ff" }}>{formattedLineTotal}</strong>
                     <div className={styles.itemActions}>
