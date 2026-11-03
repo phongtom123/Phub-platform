@@ -1,216 +1,117 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { emptyFilters } from "@/components/catalog/catalogData";
 import { CatalogImage } from "@/components/common/CatalogImage";
 import { getProducts } from "@/lib/catalog/client";
 import { categoryHref } from "@/lib/catalog/categories";
-import { catalogProduct, productHref, type CatalogCategory } from "@/lib/catalog/types";
-import { resolveProductMediaUrl } from "@/lib/media";
-import { prefetchOptimizedImage } from "@/lib/prefetchImage";
-import styles from "./Header.module.css";
+import { useCatalogFacets } from "@/lib/catalog/useCatalogFacets";
+import { safeImageUrl, type ApiProduct, type CatalogCategory } from "@/lib/catalog/types";
+import styles from "./CatalogMegaMenu.module.css";
 
-const BRAND_LOGOS: Record<string, string> = {
-  adata: "/images/brands/adata.png",
-  gigabyte: "/images/brands/gigabyte.png",
-  hp: "/images/brands/hp.png",
-  msi: "/images/brands/msi.png",
-  razer: "/images/brands/razer.png",
-  roccat: "/images/brands/roccat.png",
-  thermaltake: "/images/brands/thermaltake.png",
-};
-type MegaProduct = ReturnType<typeof catalogProduct>;
-const productCache = new Map<string, MegaProduct[]>();
-const productRequests = new Map<string, Promise<MegaProduct[]>>();
-let catalogWarmRequest: Promise<void> | null = null;
-const EMPTY_PRODUCTS: MegaProduct[] = [];
+// This sample supplies decorative thumbnails, never the available filter choices.
+const thumbnails = new Map<string, ApiProduct[]>();
+const priceRanges = [
+  { label: "Dưới 5 triệu", max: "4999999" },
+  { label: "5 – 10 triệu", min: "5000000", max: "9999999" },
+  { label: "10 – 20 triệu", min: "10000000", max: "19999999" },
+  { label: "20 – 40 triệu", min: "20000000", max: "39999999" },
+  { label: "Từ 40 triệu", min: "40000000" },
+];
 
-function menuKey(categoryId: string, subcategoryId?: string) {
-  return subcategoryId ? `subcategory:${subcategoryId}` : `category:${categoryId}`;
+export function CategoryMenuIcon({ label }: { label: string }) {
+  const value = label.toLocaleLowerCase("vi");
+  const path = /linh kiện|cpu|ram|chip|xử lý/.test(value)
+    ? "M8 8h8v8H8zM4 9h4m-4 6h4m8-6h4m-4 6h4M9 4v4m6-4v4M9 16v4m6-4v4"
+    : /giá|triệu/.test(value)
+      ? "m3 11 8-8h8l2 2v8l-8 8zM16 7h.01M9 12l3 3m0-6 3 3"
+      : /phụ kiện|chuột|bàn phím/.test(value)
+        ? "M8 11V8a4 4 0 0 1 8 0v3m-9 0h10v5a5 5 0 0 1-10 0zM12 11v4"
+        : "M3 4h18v13H3zM8 21h8m-4-4v4M6 7h12";
+  return <svg className={styles.icon} width="30" height="30" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={path} /></svg>;
 }
 
-function loadMenuProducts(categoryId: string, subcategoryId?: string): Promise<MegaProduct[]> {
-  const key = menuKey(categoryId, subcategoryId);
-  const cached = productCache.get(key);
-  if (cached) return Promise.resolve(cached);
-  if (catalogWarmRequest) {
-    return catalogWarmRequest.then(() => productCache.get(key) ?? loadMenuProducts(categoryId, subcategoryId));
-  }
-  const pendingRequest = productRequests.get(key);
-  if (pendingRequest) return pendingRequest;
-  const request = getProducts({
-    q: "",
-    filters: {
-      ...emptyFilters,
-      categories: subcategoryId ? [] : [categoryId],
-      subcategories: subcategoryId ? [subcategoryId] : [],
-    },
-    sort: "position",
-    page: 1,
-    pageSize: 20,
-    view: "grid",
-  }).then(result => {
-    const products = result.items.map(catalogProduct);
-    productCache.set(key, products);
-    return products;
-  }).finally(() => productRequests.delete(key));
-  productRequests.set(key, request);
-  return request;
+type MenuOption = { label: string; href: string; image?: string };
+
+function MenuGroup({ title, options, onNavigate }: { title: string; options: MenuOption[]; onNavigate: () => void }) {
+  if (!options.length) return null;
+  return <section className={styles.group} aria-label={title}>
+    <h3>{title}</h3>
+    <div className={styles.tiles}>
+      {options.map(option => <Link key={option.href} href={option.href} title={option.label} prefetch={false} onClick={onNavigate}>
+        <span className={styles.visual}>{option.image
+          ? <CatalogImage src={option.image} alt="" width={36} height={36} />
+          : <CategoryMenuIcon label={title} />}</span>
+        <span>{option.label.replace(/^(Bộ vi xử lý|Card màn hình|Bo mạch chủ|Nguồn máy tính|Ổ cứng)\s+/iu, "")}</span>
+      </Link>)}
+    </div>
+  </section>;
 }
 
-function brandLogo(brand: string) {
-  const normalized = brand.toLocaleLowerCase("vi");
-  return Object.entries(BRAND_LOGOS).find(([name]) => normalized.includes(name))?.[1];
-}
-
-/** Fill mega-menu data and image caches after homepage product images get priority. */
-export async function warmCatalogMegaMenu(categoryId: string, subcategoryId?: string) {
-  const products = await loadMenuProducts(categoryId, subcategoryId);
-  products.slice(0, 4).forEach(product => prefetchOptimizedImage(product.imageSrc, 150));
-  Array.from(new Set(products.map(product => product.brand).filter(Boolean))).slice(0, 7).forEach(brand => {
-    const logo = brandLogo(brand);
-    if (logo) prefetchOptimizedImage(resolveProductMediaUrl(logo), 124);
-  });
-}
-
-/** Fetch the catalog once, then populate every root/subcategory menu cache. */
-export function warmAllCatalogMegaMenus(categories: CatalogCategory[]) {
-  if (catalogWarmRequest) return catalogWarmRequest;
-  const request = (async () => {
-    const first = await getProducts({
-      q: "", filters: emptyFilters, sort: "position", page: 1, pageSize: 100, view: "grid",
-    });
-    const products = first.items.map(catalogProduct);
-    for (let page = 2; page <= first.pagination.total_pages; page += 1) {
-      const result = await getProducts({
-        q: "", filters: emptyFilters, sort: "position", page, pageSize: 100, view: "grid",
-      });
-      products.push(...result.items.map(catalogProduct));
-    }
-    categories.forEach(category => {
-      productCache.set(menuKey(category.id), products.filter(product => product.category === category.id));
-      category.children.forEach(child => {
-        productCache.set(menuKey(category.id, child.id), products.filter(product => product.subcategory === child.id));
-      });
-    });
-  })();
-  catalogWarmRequest = request.finally(() => { catalogWarmRequest = null; });
-  return catalogWarmRequest;
-}
-
-function money(amount: number, currency: string) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency", currency, maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-export function CatalogMegaMenu({ category, onNavigate, onKeepOpen }: {
-  category: CatalogCategory;
-  onNavigate: () => void;
-  onKeepOpen?: () => void;
+export function CatalogMegaMenu({ id, category, onNavigate }: {
+  id: string; category: CatalogCategory; onNavigate: () => void;
 }) {
-  const [activeSubcategoryId, setActiveSubcategoryId] = useState<string | null>(null);
-  const activeSubcategory = category.children.find(child => child.id === activeSubcategoryId) ?? null;
-  const key = menuKey(category.id, activeSubcategory?.id);
-  const viewAllHref = categoryHref(category.id, activeSubcategory?.id);
-  const [attempt, setAttempt] = useState(0);
-  const [state, setState] = useState<{
-    key: string;
-    products: MegaProduct[];
-    error: string | null;
-  }>(() => ({ key: productCache.has(key) ? key : "", products: productCache.get(key) ?? [], error: null }));
+  const facets = useCatalogFacets({ q: "", filters: { ...emptyFilters, categories: [category.id] },
+    sort: "position", page: 1, pageSize: 20, view: "grid" });
+  const [products, setProducts] = useState<ApiProduct[]>(() => thumbnails.get(category.id) ?? []);
 
   useEffect(() => {
-    if (productCache.has(key)) return;
-    let active = true;
-    loadMenuProducts(category.id, activeSubcategory?.id)
-      .then(products => {
-        if (active) setState({ key, products, error: null });
-      })
-      .catch(error => {
-        if (active) {
-          setState({
-            key,
-            products: [],
-            error: error instanceof Error ? error.message : "Không thể tải sản phẩm nổi bật.",
-          });
-        }
-      });
-    return () => { active = false; };
-  }, [activeSubcategory, attempt, category.id, key]);
+    if (thumbnails.has(category.id)) return;
+    const controller = new AbortController();
+    getProducts({ q: "", filters: { ...emptyFilters, categories: [category.id] },
+      sort: "position", page: 1, pageSize: 20, view: "grid" }, controller.signal).then(result => {
+      if (controller.signal.aborted) return;
+      if (thumbnails.size >= 30) thumbnails.delete(thumbnails.keys().next().value!);
+      thumbnails.set(category.id, result.items);
+      setProducts(result.items);
+    }).catch(() => { /* Category icons remain usable without thumbnails. */ });
+    return () => controller.abort();
+  }, [category.id]);
 
-  const products = productCache.get(key) ?? (state.key === key ? state.products : EMPTY_PRODUCTS);
-  const error = state.key === key ? state.error : null;
-  const loading = !productCache.has(key) && state.key !== key;
-  const featured = loading ? [] : products.slice(0, 4);
-  const brands = useMemo(() => Array.from(new Set(
-    (loading ? EMPTY_PRODUCTS : products).map(product => product.brand).filter(Boolean),
-  )).slice(0, 7), [loading, products]);
-
-  function brandHref(brand: string) {
-    const params = new URLSearchParams({ brand });
-    params.set(activeSubcategory ? "subcategory_id" : "category_id", activeSubcategory?.id ?? category.id);
-    return `/main/product?${params}`;
+  function href(values: Record<string, string>) {
+    return `/main/product?${new URLSearchParams({ category_id: category.id, ...values })}`;
   }
+  function thumbnail(test: (product: ApiProduct) => boolean) {
+    const image = products.find(product => test(product) && product.images.length)?.images[0]?.url;
+    return image ? safeImageUrl(image) : undefined;
+  }
+  const children = category.children.map(child => ({ label: child.label,
+    href: href({ subcategory_id: child.id }), image: thumbnail(product => product.subcategory.id === child.id) }));
+  const brands = (facets.data?.brands ?? []).filter(brand => brand.count > 0).map(brand => ({
+    label: brand.label, href: href({ brand: brand.value }), image: thumbnail(product => product.brand === brand.value),
+  }));
 
-  return (
-    <section className={styles.megaMenu} aria-label={`Danh mục ${category.label}`} onMouseEnter={onKeepOpen}>
-      <aside className={styles.megaCategories} aria-label="Danh mục con">
-        <Link className={styles.megaCategoryAll} data-active={!activeSubcategory}
-          href={categoryHref(category.id)} prefetch={false} onClick={onNavigate}
-          onMouseEnter={() => setActiveSubcategoryId(null)} onFocus={() => setActiveSubcategoryId(null)}>
-          <span>Xem tất cả {category.label}</span><span aria-hidden="true">›</span>
-        </Link>
-        {category.children.map(child => (
-          <Link key={child.id} data-active={activeSubcategoryId === child.id}
-            href={categoryHref(category.id, child.id)} prefetch={false} onClick={onNavigate}
-            onMouseEnter={() => setActiveSubcategoryId(child.id)} onFocus={() => setActiveSubcategoryId(child.id)}>
-            <span>{child.label}</span><span aria-hidden="true">›</span>
-          </Link>
-        ))}
-      </aside>
-
-      <div className={styles.megaProducts}>
-        <div className={styles.megaHeading}>
-          <strong>{activeSubcategory ? `Gợi ý cho ${activeSubcategory.label}` : "Sản phẩm nổi bật"}</strong>
-          <Link href={viewAllHref} prefetch={false} onClick={onNavigate}>Xem toàn bộ</Link>
-        </div>
-        {loading && <p className={styles.megaStatus} role="status">Đang tải sản phẩm…</p>}
-        {!loading && error && <div className={styles.megaStatus} role="alert">
-          <span>{error}</span>
-          <button type="button" onClick={() => {
-            productCache.delete(key);
-            setState({ key: "", products: [], error: null });
-            setAttempt(value => value + 1);
-          }}>Thử lại</button>
-        </div>}
-        {!loading && !error && !featured.length && <p className={styles.megaStatus}>Chưa có sản phẩm trong danh mục này.</p>}
-        {!loading && !error && featured.length > 0 && <div key={key} className={styles.megaProductGrid}>
-          {featured.map(product => (
-            <article key={product.id} className={styles.megaProductCard}>
-              <span className={styles.megaStock}><i aria-hidden="true" /> Còn hàng</span>
-              <Link className={styles.megaProductImage} href={productHref(product.id)} prefetch={false} onClick={onNavigate}>
-                <CatalogImage src={product.imageSrc} alt={product.name} width={150} height={120} loading="eager" />
-              </Link>
-              <Link className={styles.megaProductName} href={productHref(product.id)} prefetch={false} onClick={onNavigate}>
-                {product.name}
-              </Link>
-              <strong className={styles.megaPrice}>{money(product.amount, product.currency ?? "VND")}</strong>
-            </article>
-          ))}
-        </div>}
+  return <section id={id} className={styles.menu} aria-label={`Danh mục ${category.label}`}>
+    <div className={styles.heading}><h2>{category.label}</h2>
+      <Link href={categoryHref(category.id)} prefetch={false} onClick={onNavigate}>Xem tất cả <span aria-hidden="true">→</span></Link>
+    </div>
+    <div className={styles.columns}>
+      <div className={styles.column}>
+        <MenuGroup title="Loại sản phẩm" options={children} onNavigate={onNavigate} />
+        <MenuGroup title="Theo mức giá" options={priceRanges.map(range => ({ label: range.label,
+          href: href({ ...(range.min ? { min_price: range.min } : {}), ...(range.max ? { max_price: range.max } : {}) }),
+        }))} onNavigate={onNavigate} />
       </div>
-
-      {brands.length > 0 && <div className={styles.megaBrands} aria-label="Thương hiệu nổi bật">
-        {brands.map(brand => {
-          const logo = brandLogo(brand);
-          return <Link key={brand} href={brandHref(brand)} prefetch={false} onClick={onNavigate} title={brand}>
-            {logo ? <Image src={resolveProductMediaUrl(logo)} alt={brand} width={124} height={42} loading="eager" /> : <span>{brand}</span>}
-          </Link>;
-        })}
-      </div>}
-    </section>
-  );
+      <div className={styles.column}>
+        <MenuGroup title="Theo thương hiệu" options={brands} onNavigate={onNavigate} />
+        {(facets.data?.specs ?? []).filter((_, index) => index % 2 === 0).map(facet => <MenuGroup key={facet.key}
+          title={`Theo ${facet.label}`} options={facet.options.filter(option => option.count > 0).map(option => ({
+            label: option.label, href: href({ spec: JSON.stringify([facet.key, option.value]) }),
+          }))} onNavigate={onNavigate} />)}
+      </div>
+      <div className={styles.column}>
+        {(facets.data?.specs ?? []).filter((_, index) => index % 2 === 1).map(facet => <MenuGroup key={facet.key}
+          title={`Theo ${facet.label}`} options={facet.options.filter(option => option.count > 0).map(option => ({
+            label: option.label, href: href({ spec: JSON.stringify([facet.key, option.value]) }),
+          }))} onNavigate={onNavigate} />)}
+        <MenuGroup title="Tình trạng hàng" options={[{ label: "Sản phẩm còn hàng", href: href({ stock_status: "in-stock" }) }]}
+          onNavigate={onNavigate} />
+      </div>
+    </div>
+    {facets.loading && <p className={styles.status} role="status">Đang tải lựa chọn theo loại sản phẩm…</p>}
+    {facets.error && <p className={styles.status} role="alert">{facets.error} <button type="button" onClick={facets.retry}>Thử lại</button></p>}
+    {facets.data?.total === 0 && <p className={styles.status}>Danh mục này chưa có sản phẩm.</p>}
+  </section>;
 }

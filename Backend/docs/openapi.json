@@ -1408,6 +1408,62 @@
         "title": "CatalogBanner",
         "type": "object"
       },
+      "CatalogFacet": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/FacetOption"
+            },
+            "title": "Options",
+            "type": "array"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "options"
+        ],
+        "title": "CatalogFacet",
+        "type": "object"
+      },
+      "CatalogFacets": {
+        "properties": {
+          "brands": {
+            "items": {
+              "$ref": "#/components/schemas/FacetOption"
+            },
+            "title": "Brands",
+            "type": "array"
+          },
+          "specs": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogFacet"
+            },
+            "title": "Specs",
+            "type": "array"
+          },
+          "total": {
+            "minimum": 0.0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "specs",
+          "brands",
+          "total"
+        ],
+        "title": "CatalogFacets",
+        "type": "object"
+      },
       "CatalogProduct": {
         "examples": [
           {
@@ -2798,6 +2854,30 @@
           "error"
         ],
         "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FacetOption": {
+        "properties": {
+          "count": {
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label",
+          "count"
+        ],
+        "title": "FacetOption",
         "type": "object"
       },
       "GalleryImage": {
@@ -13255,6 +13335,292 @@
         ]
       }
     },
+    "/api/catalog/facets": {
+      "get": {
+        "operationId": "catalog_facets_api_catalog_facets_get",
+        "parameters": [
+          {
+            "description": "Mã LOAI_SP_CON; lặp tham số để chọn nhiều danh mục con, kết hợp bằng OR.",
+            "in": "query",
+            "name": "subcategory_id",
+            "required": false,
+            "schema": {
+              "description": "Mã LOAI_SP_CON; lặp tham số để chọn nhiều danh mục con, kết hợp bằng OR.",
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 50,
+              "title": "Subcategory Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Tìm chuỗi trong tên hoặc SKU, không phân biệt hoa/thường; ký tự đặc biệt được tìm nguyên văn.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tìm chuỗi trong tên hoặc SKU, không phân biệt hoa/thường; ký tự đặc biệt được tìm nguyên văn.",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
+            "in": "query",
+            "name": "category_id",
+            "required": false,
+            "schema": {
+              "description": "Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 20,
+              "title": "Category Id",
+              "type": "array"
+            }
+          },
+          {
+            "description": "Giá trị thuong_hieu từ /api/catalog/brands; so khớp chính xác.",
+            "in": "query",
+            "name": "brand",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Giá trị thuong_hieu từ /api/catalog/brands; so khớp chính xác.",
+              "title": "Brand"
+            }
+          },
+          {
+            "description": "Giá thấp nhất, bao gồm mức này; giá trước thuế.",
+            "in": "query",
+            "name": "min_price",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Giá thấp nhất, bao gồm mức này; giá trước thuế.",
+              "title": "Min Price"
+            }
+          },
+          {
+            "description": "Giá cao nhất, bao gồm mức này; phải >= min_price.",
+            "in": "query",
+            "name": "max_price",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Giá cao nhất, bao gồm mức này; phải >= min_price.",
+              "title": "Max Price"
+            }
+          },
+          {
+            "description": "Màu từ thông số sản phẩm, không phân biệt hoa/thường. __unspecified__ chọn sản phẩm chưa ghi màu.",
+            "in": "query",
+            "name": "color",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Màu từ thông số sản phẩm, không phân biệt hoa/thường. __unspecified__ chọn sản phẩm chưa ghi màu.",
+              "title": "Color"
+            }
+          },
+          {
+            "description": "Còn/hết hàng khả dụng trong kho hoạt động, trừ hàng giữ cho đơn chưa xuất đã có hóa đơn hoặc khoản thu thành công; kiểm tra lại khi checkout.",
+            "in": "query",
+            "name": "stock_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StockStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Còn/hết hàng khả dụng trong kho hoạt động, trừ hàng giữ cho đơn chưa xuất đã có hóa đơn hoặc khoản thu thành công; kiểm tra lại khi checkout.",
+              "title": "Stock Status"
+            }
+          },
+          {
+            "description": "Bộ lọc thông số từ /facets; mỗi giá trị là mảng JSON [key,value]. OR cùng key, AND giữa các key.",
+            "in": "query",
+            "name": "spec",
+            "required": false,
+            "schema": {
+              "description": "Bộ lọc thông số từ /facets; mỗi giá trị là mảng JSON [key,value]. OR cùng key, AND giữa các key.",
+              "items": {
+                "maxLength": 768,
+                "type": "string"
+              },
+              "maxItems": 40,
+              "title": "Spec",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 2147483647,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Mặc định theo mã sản phẩm; giá bằng nhau được sắp tiếp theo mã sản phẩm.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CatalogSort",
+              "default": "default",
+              "description": "Mặc định theo mã sản phẩm; giá bằng nhau được sắp tiếp theo mã sản phẩm."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogFacets"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Bộ lọc thông số và thương hiệu theo loại sản phẩm; số lượng xét các điều kiện khác",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
     "/api/catalog/products": {
       "get": {
         "operationId": "list_products_api_catalog_products_get",
@@ -13412,6 +13778,22 @@
               ],
               "description": "Còn/hết hàng khả dụng trong kho hoạt động, trừ hàng giữ cho đơn chưa xuất đã có hóa đơn hoặc khoản thu thành công; kiểm tra lại khi checkout.",
               "title": "Stock Status"
+            }
+          },
+          {
+            "description": "Bộ lọc thông số từ /facets; mỗi giá trị là mảng JSON [key,value]. OR cùng key, AND giữa các key.",
+            "in": "query",
+            "name": "spec",
+            "required": false,
+            "schema": {
+              "description": "Bộ lọc thông số từ /facets; mỗi giá trị là mảng JSON [key,value]. OR cùng key, AND giữa các key.",
+              "items": {
+                "maxLength": 768,
+                "type": "string"
+              },
+              "maxItems": 40,
+              "title": "Spec",
+              "type": "array"
             }
           },
           {

@@ -54,6 +54,14 @@ export function queryFor(request: CatalogRequest): URLSearchParams {
   request.filters.categories.forEach(id => params.append("category_id", id));
   request.filters.subcategories.forEach(id => params.append("subcategory_id", id));
   if (request.filters.brand) params.set("brand", request.filters.brand);
+  if (request.filters.minPrice?.trim()) params.set("min_price", request.filters.minPrice.trim());
+  if (request.filters.maxPrice?.trim()) params.set("max_price", request.filters.maxPrice.trim());
+  if (request.filters.color) params.set("color", request.filters.color);
+  const stockStatus = request.filters.stockStatus || (request.filters.inStock ? "in-stock" : "");
+  if (stockStatus) params.set("stock_status", stockStatus);
+  Object.entries(request.filters.specs ?? {}).sort(([a], [b]) => a.localeCompare(b)).forEach(([key, values]) => {
+    [...new Set(values)].sort().forEach(value => params.append("spec", JSON.stringify([key, value])));
+  });
   params.set("sort", request.sort === "position" ? "default" : request.sort);
   params.set("page", String(request.page));
   params.set("page_size", String(request.pageSize));

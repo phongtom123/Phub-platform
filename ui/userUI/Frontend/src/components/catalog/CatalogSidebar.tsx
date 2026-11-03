@@ -8,6 +8,8 @@ import { CatalogSelectionPanel } from "./CatalogSelectionPanel";
 import { filterCount, type CatalogFilters, type CatalogProduct } from "./catalogData";
 import type { CatalogController } from "@/lib/catalog/useCatalog";
 import styles from "./Catalog.module.css";
+import { PriceStockFilters } from "./PriceStockFilters";
+import { priceFilterError } from "@/lib/catalog/filters";
 
 interface Props {
   draft: CatalogFilters; onChange: (value: CatalogFilters) => void; onApply: () => void; onClear: () => void; onBrand: (brand: string) => void; activeBrand: string;
@@ -30,8 +32,9 @@ export function CatalogSidebar({ draft, onChange, onApply, onClear, onBrand, act
           </div>
         </div>)}
       </Accordion>
-      {["Khoảng giá", "Màu sắc", "Tình trạng tồn kho"].map(title => <Accordion key={title} title={title} className={styles.filterGroup}><FilterOption label="Chưa khả dụng" disabled /></Accordion>)}
-      <div className={styles.apply}><Button onClick={onApply} disabled={metadata.loading}>Áp dụng ({filterCount(draft)})</Button></div>
+      <Accordion title="Khoảng giá" className={styles.filterGroup}><PriceStockFilters value={draft} onChange={onChange} section="price" /></Accordion>
+      <Accordion title="Tình trạng tồn kho" className={styles.filterGroup}><PriceStockFilters value={draft} onChange={onChange} section="stock" /></Accordion>
+      <div className={styles.apply}><Button onClick={onApply} disabled={metadata.loading || !!priceFilterError(draft)}>Áp dụng ({filterCount(draft)})</Button></div>
     </section>
     {!filtersOnly && <>
       <section className={styles.brandSection} aria-labelledby="catalog-brands-heading">

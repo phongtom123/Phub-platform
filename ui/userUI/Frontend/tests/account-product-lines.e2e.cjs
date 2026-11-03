@@ -22,6 +22,7 @@ const invoice = { order_id: id, currency: "VND", invoice: { issued_at: order.cre
         if (route.request().method() !== "GET") writes.push(path);
         if (path.endsWith("/auth/me")) return ok({ account_id: "POOL-ACCOUNT", username: "pool.test", role: "KHACH_HANG", name: profile.name, customer_id: profile.customer_id, employee_id: null, warehouse_id: null });
         if (path.endsWith("/customer/me")) return ok(profile);
+        if (path.endsWith("/customer/addresses")) return ok({ items: [], item: null });
         if (path.startsWith("/api/catalog/")) return ok({ items: [] });
         if (path.endsWith("/customer/orders")) return ok({ items: [order], pagination: { page: 1, page_size: 10, total: 1, total_pages: 1 } });
         if (path.endsWith(`/customer/orders/${id}`)) return ok(order);

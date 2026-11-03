@@ -3,63 +3,37 @@ import { useShopping } from "@/components/shopping/ShoppingProvider";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Suspense, useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { IconButton } from "@/components/common/icon";
-import { SearchInput } from "@/components/common/SearchInput";
+import { HeaderSearch } from "./HeaderSearch";
 import { AccountMenu, CartPreview, GuestAvatar } from "./HeaderPanels";
 import { useCategories } from "@/lib/catalog/useCategories";
 import { categoryHref } from "@/lib/catalog/categories";
-import { HeaderTopBar } from "./HeaderTopBar";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
-import { CatalogMegaMenu, warmAllCatalogMegaMenus, warmCatalogMegaMenu } from "./CatalogMegaMenu";
+import { CatalogMegaMenu, CategoryMenuIcon } from "./CatalogMegaMenu";
 import styles from "./Header.module.css";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { AUTH_SESSION_EVENT, getSession, logoutSession, type SessionUser } from "../../../../../shared/auth-client";
 
-type Dropdown = "shop" | "account" | "cart";
-type Panel = Dropdown | "mobile" | "notice" | null;
+type Dropdown = "account" | "cart";
+type Panel = Dropdown | "categories" | "mobile" | "notice" | null;
 
 export default function AltHeader() {
   const router = useRouter();
-  const pathname = usePathname();
- const shop = useShopping();
+  const shop = useShopping();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const hoverRef = useRef<Dropdown | null>(null);
-  const categoryCloseTimerRef = useRef<number | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const catalog = useCategories();
   const [session, setSession] = useState<SessionUser | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
 
-  function cancelCategoryClose() {
-    if (categoryCloseTimerRef.current !== null) {
-      window.clearTimeout(categoryCloseTimerRef.current);
-      categoryCloseTimerRef.current = null;
-    }
-  }
-
-  function openCategory(categoryId: string) {
-    cancelCategoryClose();
-    setActiveCategoryId(categoryId);
-  }
-
-  function scheduleCategoryClose(categoryId: string) {
-    cancelCategoryClose();
-    categoryCloseTimerRef.current = window.setTimeout(() => {
-      setActiveCategoryId(current => current === categoryId ? null : current);
-      categoryCloseTimerRef.current = null;
-    }, 150);
-  }
-
   function close(restoreFocus = false) {
-    cancelCategoryClose();
     setPanel(null);
-    setSearchOpen(false);
     setActiveCategoryId(null);
     hoverRef.current = null;
     if (restoreFocus) triggerRef.current?.focus();
@@ -69,14 +43,13 @@ export default function AltHeader() {
     triggerRef.current = trigger;
     const wasHover = hoverRef.current === next;
     hoverRef.current = null;
-    setSearchOpen(false);
     setActiveCategoryId(null);
     setPanel(current => (current === next && !wasHover ? null : next));
   }
 
   function hoverOpen(next: Dropdown, event: ReactPointerEvent<HTMLElement>) {
     if (!window.matchMedia("(min-width: 1100px) and (hover: hover)").matches) return;
-    if (event.pointerType !== "mouse" || searchOpen || (panel && hoverRef.current === null)) return;
+    if (event.pointerType !== "mouse" || (panel && hoverRef.current === null)) return;
     triggerRef.current =
       event.currentTarget instanceof HTMLButtonElement
         ? event.currentTarget
@@ -109,65 +82,32 @@ export default function AltHeader() {
     };
   }, []);
 
-  useEffect(() => () => {
-    if (categoryCloseTimerRef.current !== null) window.clearTimeout(categoryCloseTimerRef.current);
-  }, []);
-
   useEffect(() => {
-    if ((pathname !== "/" && pathname !== "/main/landing") || catalog.loading || !catalog.data.length) return;
-    let cancelled = false;
-    let idleId: number | null = null;
-    let gapTimer: number | null = null;
-
-    async function warmInOrder() {
-      try { await warmAllCatalogMegaMenus(catalog.data); }
-      catch { return; }
-      const targets = [
-        ...catalog.data.map(category => ({ categoryId: category.id, subcategoryId: undefined })),
-        ...catalog.data.flatMap(category => category.children.map(child => ({
-          categoryId: category.id, subcategoryId: child.id,
-        }))),
-      ];
-      for (const target of targets) {
-        if (cancelled) return;
-        try { await warmCatalogMegaMenu(target.categoryId, target.subcategoryId); }
-        catch { /* Hover keeps the normal retry UI available. */ }
-        if (cancelled) return;
-        await new Promise<void>(resolve => { gapTimer = window.setTimeout(resolve, 250); });
-      }
-    }
-
-    const delayTimer = window.setTimeout(() => {
-      if ("requestIdleCallback" in window) {
-        idleId = window.requestIdleCallback(() => { void warmInOrder(); }, { timeout: 2_000 });
-      } else {
-        void warmInOrder();
-      }
-    }, 1_500);
-
+    if (panel !== "categories") return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const mobile = window.matchMedia("(max-width: 1099px)");
+    function changed() { setPanel(null); setActiveCategoryId(null); }
+    mobile.addEventListener("change", changed);
     return () => {
-      cancelled = true;
-      window.clearTimeout(delayTimer);
-      if (gapTimer !== null) window.clearTimeout(gapTimer);
-      if (idleId !== null) window.cancelIdleCallback(idleId);
+      document.body.style.overflow = previous;
+      mobile.removeEventListener("change", changed);
     };
-  }, [catalog.data, catalog.loading, pathname]);
+  }, [panel]);
 
   useEffect(() => {
     function dismissOutside(event: Event) {
       if (!rootRef.current?.contains(event.target as Node)) {
         hoverRef.current = null;
         setPanel(null);
-        setSearchOpen(false);
         setActiveCategoryId(null);
       }
     }
     function escape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || (!panel && !searchOpen && !activeCategoryId)) return;
+      if (event.key !== "Escape" || (!panel && !activeCategoryId)) return;
       event.preventDefault();
       hoverRef.current = null;
       setPanel(null);
-      setSearchOpen(false);
       setActiveCategoryId(null);
       triggerRef.current?.focus();
     }
@@ -179,7 +119,7 @@ export default function AltHeader() {
       document.removeEventListener("focusin", dismissOutside);
       document.removeEventListener("keydown", escape);
     };
-  }, [activeCategoryId, panel, searchOpen]);
+  }, [activeCategoryId, panel]);
 
   async function signOut() {
     try {
@@ -193,104 +133,57 @@ export default function AltHeader() {
     }
   }
 
+  const activeCategory = catalog.data.find(item => item.id === activeCategoryId) ?? catalog.data[0];
+
   function dropdownProps(name: Dropdown) {
     return { "data-open": panel === name, "aria-hidden": panel !== name, inert: panel !== name };
   }
 
   return (
     <header ref={rootRef} className={styles.header}>
-      <HeaderTopBar
-        id={id}
-        open={panel === "shop"}
-        onToggle={trigger => toggle("shop", trigger)}
-        onEnter={event => hoverOpen("shop", event)}
-        onLeave={hoverClose}
-        onClose={() => close()}
-      />
-
+      {panel === "categories" && <button type="button" className={styles.categoryBackdrop}
+        aria-label="Đóng danh mục sản phẩm" tabIndex={-1} onClick={() => close(true)} />}
       <div className={styles.mainBar}>
         <Link href="/" className={styles.logo} aria-label="Tech Store — Trang chủ" onClick={() => close()}>
           <Image src="/images/1.png" alt="" width={34} height={41} preload />
         </Link>
-        <IconButton
-          className={styles.mobileToggle}
-          label={panel === "mobile" ? "Đóng danh mục" : "Mở danh mục"}
-          aria-expanded={panel === "mobile"}
-          aria-controls={id + "-mobile"}
-          aria-haspopup="dialog"
-          onClick={event => toggle("mobile", event.currentTarget)}
-        >
-          <span className={styles.hamburger} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
-        </IconButton>
+        <button type="button" className={styles.categoryButton}
+          aria-label={panel === "categories" || panel === "mobile" ? "Đóng danh mục" : "Mở danh mục"}
+          aria-expanded={panel === "categories" || panel === "mobile"}
+          aria-controls={id + (panel === "mobile" ? "-mobile" : "-categories")}
+          onClick={event => toggle(window.matchMedia("(max-width: 1099px)").matches ? "mobile" : "categories", event.currentTarget)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          Danh mục
+        </button>
 
-        <nav
+        {panel === "categories" && <nav id={id + "-categories"}
           aria-label="Danh mục sản phẩm"
-          className={[styles.navigation, searchOpen && styles.navigationHidden].filter(Boolean).join(" ")}
+          className={styles.categoryMenu}
         >
-          {catalog.loading && <span role="status">Đang tải danh mục…</span>}
-          {catalog.error && <span role="alert">Không tải được danh mục. <button type="button" onClick={catalog.retry}>Thử lại</button></span>}
+          <div className={styles.categoryList}>
+          {catalog.loading && <p role="status">Đang tải danh mục…</p>}
+          {catalog.error && <p role="alert">Không tải được danh mục. <button type="button" onClick={catalog.retry}>Thử lại</button></p>}
           {catalog.data.map(item => (
-            <div key={item.id} className={styles.categoryNav} data-active={activeCategoryId === item.id}
-              onMouseEnter={() => openCategory(item.id)}
-              onMouseLeave={() => scheduleCategoryClose(item.id)}
-              onFocusCapture={() => openCategory(item.id)}
-              onBlurCapture={event => {
-                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setActiveCategoryId(null);
-              }}>
+            <div key={item.id} className={styles.categoryNav} data-active={activeCategory?.id === item.id}
+              onMouseEnter={() => setActiveCategoryId(item.id)}
+              onFocusCapture={() => setActiveCategoryId(item.id)}>
               <Link href={categoryHref(item.id)} onClick={() => close()}
-                aria-haspopup="true" aria-expanded={activeCategoryId === item.id}>{item.label}</Link>
-              {activeCategoryId === item.id && <CatalogMegaMenu category={item} onNavigate={() => close()} onKeepOpen={cancelCategoryClose} />}
+                aria-controls={id + "-category-options"} aria-expanded={activeCategory?.id === item.id}>
+                <CategoryMenuIcon label={item.label} /><span>{item.label}</span><span aria-hidden="true">›</span>
+              </Link>
             </div>
           ))}
           <Link className={styles.dealsLink} href="/main/product" onClick={() => close()}>Tất Cả Sản Phẩm</Link>
-        </nav>
-
-        {searchOpen && (
-          <div id={id + "-search"} className={styles.searchSlot}>
-            <SearchInput
-              autoFocus
-              className={styles.searchForm}
-              placeholder="Tìm theo Tên hoặc Mã SP..."
-              maxLength={100}
-              onSearch={query => {
-                close();
-                router.push(`/main/product?${new URLSearchParams({ q: query.trim() })}`);
-              }}
-              onSelectProduct={product => {
-                close();
-                router.push(`/main/product/${encodeURIComponent(product.id)}`);
-              }}
-            />
           </div>
-        )}
+          {activeCategory && <CatalogMegaMenu key={activeCategory.id} id={id + "-category-options"}
+            category={activeCategory} onNavigate={() => close()} />}
+        </nav>}
+
+        <div id={id + "-search"} className={styles.searchSlot} onFocusCapture={() => { setPanel(null); setActiveCategoryId(null); hoverRef.current = null; }}>
+          <Suspense fallback={<span role="status">Đang mở tìm kiếm…</span>}><HeaderSearch onNavigate={href => { close(); router.push(href); }} /></Suspense>
+        </div>
 
         <div className={styles.actions}>
-          <IconButton
-            className={styles.searchToggle}
-            label={searchOpen ? "Đóng tìm kiếm" : "Mở tìm kiếm"}
-            aria-expanded={searchOpen}
-            aria-controls={id + "-search"}
-            onClick={event => {
-              triggerRef.current = event.currentTarget;
-              hoverRef.current = null;
-              setSearchOpen(!searchOpen);
-              setActiveCategoryId(null);
-              setPanel(null);
-            }}
-          >
-            {searchOpen ? (
-              <span aria-hidden="true" className={styles.closeGlyph}>
-                ×
-              </span>
-            ) : (
-              <Image src="/icons/header/search.svg" alt="" width={18} height={18} />
-            )}
-          </IconButton>
-
           <div
             className={styles.actionAnchor}
             onPointerEnter={event => hoverOpen("cart", event)}

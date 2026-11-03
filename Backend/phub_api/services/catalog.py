@@ -29,6 +29,7 @@ from phub_api.schemas.catalog import (
 )
 from phub_api.services.catalog_availability import available_skus, available_quantities
 from phub_api.config.orders import OrderSettings
+from phub_api.services.catalog_facets import build_facets, filter_products
 
 COMPONENT_REF_PATTERN = re.compile(r"^(?:(\d+)x\s+)?((?:L_LINHKIEN_|SP|SEED_SP)\w+)$")
 
@@ -184,8 +185,10 @@ class CatalogService:
         )
 
     def list_products(self, filters: CatalogQuery) -> ProductPage:
-        if filters.color or filters.stock_status:
+        if filters.color or filters.stock_status or filters.spec:
             products = [self.product_from_row(row) for row in self.repository.products(filters)]
+            if filters.spec:
+                products = filter_products(self.resolve_component_specs(products), filters.spec)
             if filters.color:
                 products = [product for product in products if
                             (product.color is None if filters.color == "__unspecified__" else
@@ -207,6 +210,12 @@ class CatalogService:
             page=filters.page, page_size=filters.page_size, total=total,
             total_pages=(total + filters.page_size - 1) // filters.page_size,
         ))
+
+    def facets(self, filters: CatalogQuery):
+        scope = filters.model_copy(update={"brand": None, "min_price": None, "max_price": None, "color": None, "stock_status": None, "spec": []})
+        products = self.resolve_component_specs([self.product_from_row(row) for row in self.repository.products(scope)])
+        available = available_skus(self.repository, [product.sku for product in products]) if filters.stock_status else None
+        return build_facets(products, filters, available)
 
     def get_product(self, product_id: str) -> CatalogProduct:
         try:

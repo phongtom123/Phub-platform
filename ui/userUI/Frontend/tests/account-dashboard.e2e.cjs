@@ -23,6 +23,7 @@ const pagination=(page,total=11)=>({page,page_size:10,total,total_pages:Math.cei
    if(path.endsWith('/auth/logout')){loggedOut=true;return ok({message:'OK'});}
    if(path.startsWith('/api/catalog/'))return ok({items:[]});
    if(path==='/api/customer/me')return mode==='guest'||loggedOut?fail(401,'Cần đăng nhập.'):ok(profile);
+   if(path==='/api/customer/addresses')return ok({items:[{id:'00000000-0000-4000-8000-000000000001',...profile,is_default:true}],item:null});
    if(mode==='expired')return fail(401,'Expired');
    if(mode==='forbidden')return fail(403,'Forbidden');
    if(path==='/api/backend/customer/me'){
@@ -72,7 +73,7 @@ const pagination=(page,total=11)=>({page,page_size:10,total,total_pages:Math.cei
   await open();await nav.getByRole('button',{name:'Địa chỉ giao hàng',exact:true}).click();
   const address=page.getByRole('region',{name:'Địa chỉ giao hàng',exact:true});
   await address.getByText('Địa chỉ mặc định',{exact:true}).waitFor();
-  await page.getByRole('button',{name:'Chỉnh sửa địa chỉ giao hàng',exact:true}).click();await dialog.getByRole('button',{name:'Hủy',exact:true}).click();
+  await address.getByRole('button',{name:`Sửa địa chỉ của ${profile.name}`,exact:true}).click();await page.getByRole('dialog',{name:'Chỉnh sửa địa chỉ',exact:true}).getByRole('button',{name:'Hủy',exact:true}).click();
   await nav.getByRole('button',{name:'Đơn hàng của tôi',exact:true}).click();
   const first=orders.getByRole('article',{name:`Đơn ${firstOrder.id}`});await first.waitFor();
   assert.equal(await first.getByRole('link',{name:'Xem chi tiết',exact:true}).getAttribute('href'),`/main/orders/${firstOrder.id}`);

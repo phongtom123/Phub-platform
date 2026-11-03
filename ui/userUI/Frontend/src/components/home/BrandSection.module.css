@@ -1,0 +1,21 @@
+.section { margin-block: 36px; }
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+.heading h2 { margin: 0; font-size: 22px; font-weight: 600; }
+.controls { display: flex; gap: 8px; }
+.controls button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid #dfe4ec; border-radius: 50%; background: #fff; color: #3b4557; }
+.controls button:hover:not(:disabled) { border-color: #0156ff; color: #0156ff; }
+.controls button:disabled { opacity: .35; cursor: default; }
+.track { display: flex; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scroll-padding-inline: 2px; scrollbar-width: thin; scrollbar-color: #c9d2e2 transparent; padding: 3px 2px 14px; }
+.card { display: flex; flex: 0 0 172px; min-width: 0; min-height: 108px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; scroll-snap-align: start; padding: 18px 16px 12px; border: 1px solid #e3e7ed; border-radius: 12px; background: white; color: #535d6e; text-decoration: none; transition: border-color 150ms, box-shadow 150ms; }
+.card:hover { border-color: #acc4ff; box-shadow: 0 4px 12px #0156ff0c; }
+.card img { display: block; width: 136px; height: 44px; object-fit: contain; }
+.caption { font-size: 11px; line-height: 1.5; text-align: center; }
+.wordmark { display: grid; place-items: center; width: 136px; height: 44px; color: #334155; font-size: 20px; font-weight: 650; text-align: center; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .section { margin-block: 26px; }
+  .heading h2 { font-size: 19px; }
+  .track { gap: 10px; }
+  .card { flex-basis: 146px; min-height: 96px; padding-inline: 10px; }
+  .card img, .wordmark { width: 122px; height: 38px; }
+}
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }

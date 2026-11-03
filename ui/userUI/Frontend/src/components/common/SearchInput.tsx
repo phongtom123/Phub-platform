@@ -20,6 +20,7 @@ import {
   type SearchSuggestion,
 } from "@/lib/catalog/searchSuggestions";
 import styles from "./SearchInput.module.css";
+import { emptyFilters, type CatalogFilters } from "@/components/catalog/catalogData";
 
 export interface SearchInputProps {
   onSearch: (query: string) => void;
@@ -30,6 +31,12 @@ export interface SearchInputProps {
   className?: string;
   iconSrc?: string;
   maxLength?: number;
+  initialQuery?: string;
+  onQueryChange?: (query: string) => void;
+  allowEmpty?: boolean;
+  suggestionFilters?: CatalogFilters;
+  suggestionsEnabled?: boolean;
+  submitText?: string;
 }
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -85,23 +92,36 @@ export function SearchInput({
   className,
   iconSrc,
   maxLength = 200,
+  initialQuery = "",
+  onQueryChange,
+  allowEmpty = false,
+  suggestionFilters = emptyFilters,
+  suggestionsEnabled = true,
+  submitText,
 }: SearchInputProps) {
   const router = useRouter();
   const id = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
-  const [totalMatches, setTotalMatches] = useState(0);
+  const [query, setQuery] = useState(initialQuery);
+  const [storedSuggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [storedTotal, setTotalMatches] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const filterKey = JSON.stringify(suggestionFilters);
+  const lookupKey = JSON.stringify([query.trim(), filterKey]);
+  const [resultKey, setResultKey] = useState("");
+  const suggestions = resultKey === lookupKey ? storedSuggestions : [];
+  const totalMatches = resultKey === lookupKey ? storedTotal : 0;
+  useEffect(() => { inputRef.current?.setCustomValidity(""); }, [allowEmpty]);
 
   // Debounced search effect
   useEffect(() => {
     const trimmed = query.trim();
-    if (!trimmed) {
+    if (!trimmed || !suggestionsEnabled) {
       return;
     }
 
@@ -113,17 +133,22 @@ export function SearchInput({
 
     const timer = setTimeout(async () => {
       setLoading(true);
+      setSuggestions([]); setError(""); setSelectedIndex(-1);
       try {
-        const result = await fetchSearchSuggestions(trimmed, 6, controller.signal);
+        const result = await fetchSearchSuggestions(trimmed, 6, controller.signal, JSON.parse(filterKey));
         if (!controller.signal.aborted) {
           setSuggestions(result.items);
+          setResultKey(lookupKey);
           setTotalMatches(result.total);
           setLoading(false);
-          setIsOpen(true);
+          setIsOpen(inputRef.current === document.activeElement);
         }
       } catch (err: unknown) {
-        if (!(err instanceof Error && err.name === "AbortError")) {
+        if (!controller.signal.aborted) {
           setLoading(false);
+          setSuggestions([]); setTotalMatches(0); setIsOpen(inputRef.current === document.activeElement);
+          setError(err instanceof Error ? err.message : "Không tải được gợi ý tìm kiếm.");
+          setResultKey(lookupKey);
         }
       }
     }, 220);
@@ -132,7 +157,7 @@ export function SearchInput({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query]);
+  }, [query, filterKey, suggestionsEnabled, lookupKey]);
 
   // Handle clicking outside to close suggestions
   useEffect(() => {
@@ -167,7 +192,7 @@ export function SearchInput({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = query.trim();
-    if (!value) {
+    if (!value && !allowEmpty) {
       inputRef.current?.setCustomValidity("Bạn hãy nhập từ khóa tìm kiếm.");
       inputRef.current?.reportValidity();
       return;
@@ -218,7 +243,7 @@ export function SearchInput({
           placeholder={placeholder}
           autoComplete="off"
           autoFocus={autoFocus}
-          required
+          required={!allowEmpty}
           maxLength={maxLength}
           value={query}
           onFocus={() => {
@@ -228,6 +253,8 @@ export function SearchInput({
             const val = event.target.value;
             event.currentTarget.setCustomValidity("");
             setQuery(val);
+            onQueryChange?.(val);
+            setSelectedIndex(-1); setSuggestions([]); setError("");
             if (!val.trim()) {
               setSuggestions([]);
               setTotalMatches(0);
@@ -248,6 +275,7 @@ export function SearchInput({
             aria-label="Xóa nội dung tìm kiếm"
             onClick={() => {
               setQuery("");
+              onQueryChange?.("");
               setSuggestions([]);
               setIsOpen(false);
               inputRef.current?.focus();
@@ -257,18 +285,19 @@ export function SearchInput({
           </button>
         )}
 
-        <IconButton type="submit" label="Tìm kiếm" className={styles.submit}>
+        <IconButton type="submit" label="Tìm kiếm" className={[styles.submit, submitText && styles.submitWithText].filter(Boolean).join(" ")}>
           <Image
             src={iconSrc ?? "/icons/header/search.svg"}
             alt=""
             width={iconSrc ? 14.5783 : 15.366}
             height={iconSrc ? 14.5726 : 15.36}
           />
+          {submitText && <span>{submitText}</span>}
         </IconButton>
       </form>
 
       {/* Intelligent Search Dropdown */}
-      {isOpen && query.trim().length > 0 && (
+      {isOpen && suggestionsEnabled && query.trim().length > 0 && (
         <div className={styles.dropdown} role="region" aria-label="Sản phẩm đề xuất">
           <div className={styles.dropdownHeader}>
             <span className={styles.headerTitle}>Sản phẩm đề xuất</span>
@@ -277,7 +306,7 @@ export function SearchInput({
             )}
           </div>
 
-          {loading && suggestions.length === 0 ? (
+          {error && resultKey === lookupKey ? <div className={styles.emptyNotice} role="alert"><p>{error}</p><button type="button" className={styles.viewAllButton} onClick={handleViewAll}>Xem kết quả tìm kiếm →</button></div> : (loading || resultKey !== lookupKey) && suggestions.length === 0 ? (
             <div className={styles.loadingNotice}>
               <div className={styles.spinner} />
               <span>Đang tìm kiếm sản phẩm đề xuất...</span>

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { emptyFilters, type CatalogFilters, type CatalogSort } from "@/components/catalog/catalogData";
+import { type CatalogFilters, type CatalogSort } from "@/components/catalog/catalogData";
 import { catalogProduct, type CatalogMetadata, type CatalogPagination, type CatalogRequest } from "./types";
 import { getMetadata, getProducts, queryFor } from "./client";
+import { filtersFromParams } from "./filters";
+import { useCatalogFacets } from "./useCatalogFacets";
 
 type CatalogItem = ReturnType<typeof catalogProduct>;
 type CatalogPageData = { products: CatalogItem[]; pagination: CatalogPagination };
@@ -49,12 +51,13 @@ export function useMobile() {
   return useSyncExternalStore(subscribeMobile, () => window.matchMedia("(max-width: 760px)").matches, () => false);
 }
 
-export function useCatalogMetadata() {
+export function useCatalogMetadata(enabled = true) {
   const [state, setState] = useState<{ data: CatalogMetadata; loading: boolean; error: string | null }>({
     data: metadataCache ?? { categories: [], brands: [] }, loading: metadataCache === null, error: null,
   });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     getMetadata(controller.signal).then(data => {
       if (controller.signal.aborted) return;
@@ -71,7 +74,7 @@ export function useCatalogMetadata() {
       else setState({ data: { categories: [], brands: [] }, loading: false, error: error instanceof Error ? error.message : "Không thể tải bộ lọc." });
     });
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, enabled]);
   return { ...state, retry: () => { setState(current => ({ ...current, loading: !metadataCache, error: null })); setAttempt(current => current + 1); } };
 }
 
@@ -101,16 +104,14 @@ export function useCatalog() {
   }, [mobile, router]);
   const view = params.get("view") === "list" && !mobile ? "list" : "grid";
   const sort: CatalogSort = params.get("sort") === "price-asc" ? "price-asc" : params.get("sort") === "price-desc" ? "price-desc" : "position";
-  const filters: CatalogFilters = {
-    ...emptyFilters, categories: params.getAll("category_id"),
-    subcategories: params.getAll("subcategory_id"), brand: params.get("brand") || "",
-  };
+  const filters = filtersFromParams(params);
   const request: CatalogRequest = {
     q: params.get("q") || "", filters, sort, view,
     page: integer(params.get("page"), 1, 2_147_483_647),
     pageSize: mobile ? 12 : integer(params.get("page_size"), view === "list" ? 4 : 20, 100),
   };
   const key = queryFor(request).toString();
+  const facets = useCatalogFacets(request);
   const [state, setState] = useState<{
     key: string; page: CatalogPageData | null; error: string | null;
   }>(() => ({ key, page: catalogPageCache.get(key) ?? null, error: null }));
@@ -121,10 +122,7 @@ export function useCatalog() {
     // The query string is the stable dependency; ignore superseded responses.
     const query = new URLSearchParams(key);
     const snapshot: CatalogRequest = {
-      q: query.get("q") || "", filters: {
-        ...emptyFilters, categories: query.getAll("category_id"),
-        subcategories: query.getAll("subcategory_id"), brand: query.get("brand") || "",
-      },
+      q: query.get("q") || "", filters: filtersFromParams(query),
       sort: query.get("sort") === "default" ? "position" : query.get("sort") as CatalogSort,
       page: Number(query.get("page")), pageSize: Number(query.get("page_size")), view: "grid",
     };
@@ -153,7 +151,7 @@ export function useCatalog() {
   const currentState = state.key === key ? state : null;
   const page = currentState?.page ?? catalogPageCache.get(key) ?? null;
   return {
-    request, mobile, metadata, key,
+    request, mobile, metadata, facets, key,
     products: page?.products ?? [],
     pagination: page?.pagination ?? null,
     loading: !page && !currentState?.error, error: page ? null : currentState?.error ?? null,

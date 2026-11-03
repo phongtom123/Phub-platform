@@ -8,18 +8,19 @@ import { Button } from "@/components/common/Button";
 import { ProductCard } from "@/components/common/ProductCard";
 import { ProductListCard } from "@/components/common/ProductListCard";
 import { Pagination } from "@/components/common/Pagination";
-import { useCatalogDraft, type CatalogController } from "@/lib/catalog/useCatalog";
+import { type CatalogController } from "@/lib/catalog/useCatalog";
+import { catalogHeading } from "@/lib/catalog/filters";
 import { productHref } from "@/lib/catalog/types";
-import { CatalogSidebar } from "./CatalogSidebar";
+import { CatalogDropdownFilters } from "./CatalogDropdownFilters";
 import { CatalogToolbar } from "./CatalogToolbar";
 import { CatalogPreview } from "./CatalogPreview";
 import { CatalogStatus } from "./CatalogStatus";
+import { CatalogFilterChips } from "./CatalogFilterChips";
 import { emptyFilters, type CatalogProduct } from "./catalogData";
 import styles from "./Catalog.module.css";
 
 export function CatalogPage({ catalog }: { catalog: CatalogController }) {
   const { request, products, pagination, loading, error, metadata } = catalog;
-  const [draft, setDraft] = useCatalogDraft(catalog);
   const [compared, setCompared] = useState<CatalogProduct[]>([]);
   const [wished, setWished] = useState<CatalogProduct[]>([]);
   const [notice, setNotice] = useState("");
@@ -35,36 +36,16 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
     setValues(values.some(item => item.id === product.id) ? values.filter(item => item.id !== product.id) : [...values, product]);
     setNotice("Đã cập nhật danh sách tạm trên giao diện. Chức năng tài khoản và đặt hàng chưa được kết nối.");
   }
-  const chips = [
-    ...filters.categories.map(id => ({ key: id, label: metadata.data.categories.find(option => option.id === id)?.label ?? id, next: { ...filters, categories: filters.categories.filter(value => value !== id) } })),
-    ...filters.subcategories.map(id => ({
-      key: id,
-      label: metadata.data.categories.flatMap(option => option.children).find(option => option.id === id)?.label ?? id,
-      next: { ...filters, subcategories: filters.subcategories.filter(value => value !== id) },
-    })),
-    ...(filters.brand ? [{ key: "brand", label: filters.brand, next: { ...filters, brand: "" } }] : []),
-  ];
   return <div className={styles.catalog}>
     <div className={styles.container}>
       <Breadcrumb className={styles.breadcrumb} items={[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm" }]} />
-      <h1>{request.q ? `Kết quả tìm kiếm: ${request.q}` : "Sản phẩm"}{pagination ? ` (${total})` : ""}</h1>
+      <h1>{request.q ? `Kết quả tìm kiếm: ${request.q}` : catalogHeading(filters, metadata.data.categories)}{pagination ? ` (${total} sản phẩm)` : ""}</h1>
+      <CatalogDropdownFilters catalog={catalog} />
       <div className={styles.layout}>
-        <div className={styles.sidebarColumn}>
-          <Link className={styles.back} href="/">‹ Trang chủ</Link>
-          <aside id="catalog-sidebar" className={styles.sidebar} aria-label="Bộ lọc sản phẩm">
-            <CatalogSidebar draft={draft} onChange={setDraft} onApply={() => catalog.apply(draft)} onClear={() => catalog.apply(emptyFilters)}
-              activeBrand={filters.brand} onBrand={brand => catalog.apply({ ...filters, brand })}
-              compared={compared} wished={wished} onCompare={product => toggleSelection("compare", product)} onWish={product => toggleSelection("wish", product)}
-              metadata={metadata} locale="vi" />
-          </aside>
-        </div>
         <div className={styles.results} id="catalog-results" ref={resultsRef} tabIndex={-1} aria-busy={loading}>
           <CatalogToolbar start={products.length ? offset + 1 : 0} end={products.length ? offset + products.length : 0} total={total}
             sort={request.sort} pageSize={request.pageSize} view={request.view} onSort={catalog.sortBy} onPageSize={catalog.resize} onView={catalog.changeView} />
-          <div className={styles.chips} aria-label="Bộ lọc đang áp dụng">
-            {chips.map(chip => <button key={chip.key} onClick={() => catalog.apply(chip.next)} aria-label={ `Xóa bộ lọc ${chip.label}` }>{chip.label}<span aria-hidden="true">×</span></button>)}
-            {chips.length > 0 && <button onClick={() => catalog.apply(emptyFilters)}>Xóa bộ lọc</button>}
-          </div>
+          <CatalogFilterChips filters={filters} metadata={metadata.data} facets={catalog.facets.data} onChange={catalog.apply} />
           <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
           {!loading && !error && (products.length ? <div className={ `${styles.productGrid} ${request.view === "list" ? styles.productList : ""}` } aria-label="Catalog products">
             {products.map(product => request.view === "list"

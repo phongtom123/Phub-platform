@@ -1,4 +1,5 @@
 from decimal import Decimal
+import json
 from enum import Enum
 from typing import Annotated
 
@@ -47,6 +48,7 @@ class CatalogQuery(BaseModel):
     max_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá cao nhất, bao gồm mức này; phải >= min_price.")
     color: str | None = Field(default=None, max_length=100, description="Màu từ thông số sản phẩm, không phân biệt hoa/thường. __unspecified__ chọn sản phẩm chưa ghi màu.")
     stock_status: StockStatus | None = Field(default=None, description="Còn/hết hàng khả dụng trong kho hoạt động, trừ hàng giữ cho đơn chưa xuất đã có hóa đơn hoặc khoản thu thành công; kiểm tra lại khi checkout.")
+    spec: list[Annotated[str, Field(max_length=768)]] = Field(default_factory=list, max_length=40, description='Bộ lọc thông số từ /facets; mỗi giá trị là mảng JSON [key,value]. OR cùng key, AND giữa các key.')
     page: int = Field(default=1, ge=1, le=2_147_483_647)
     page_size: int = Field(default=20, ge=1, le=100)
     sort: CatalogSort = Field(default=CatalogSort.DEFAULT, description="Mặc định theo mã sản phẩm; giá bằng nhau được sắp tiếp theo mã sản phẩm.")
@@ -71,10 +73,46 @@ class CatalogQuery(BaseModel):
             raise ValueError("Giá thấp nhất không được lớn hơn giá cao nhất.")
         return self
 
+    @field_validator("spec")
+    @classmethod
+    def valid_spec_filters(cls, values):
+        normalized = []
+        for value in values:
+            try:
+                pair = json.loads(value)
+            except (ValueError, TypeError):
+                raise ValueError("Thông số lọc phải là mảng JSON [key,value].") from None
+            if (not isinstance(pair, list) or len(pair) != 2 or not all(isinstance(item, str) for item in pair)
+                    or not pair[0] or len(pair[0]) > 100 or not pair[1] or len(pair[1]) > 512):
+                raise ValueError("Thông số lọc không hợp lệ.")
+            key, choice = [clean_text(item) for item in pair]
+            if not key or not choice:
+                raise ValueError("Thông số lọc không được để trống.")
+            normalized.append(json.dumps([key, choice], ensure_ascii=False))
+        return list(dict.fromkeys(normalized))
+
 
 class Subcategory(BaseModel):
     id: str
     name: str
+
+
+class FacetOption(BaseModel):
+    value: str
+    label: str
+    count: int = Field(ge=0)
+
+
+class CatalogFacet(BaseModel):
+    key: str
+    label: str
+    options: list[FacetOption]
+
+
+class CatalogFacets(BaseModel):
+    specs: list[CatalogFacet]
+    brands: list[FacetOption]
+    total: int = Field(ge=0)
 
 
 class Category(BaseModel):
