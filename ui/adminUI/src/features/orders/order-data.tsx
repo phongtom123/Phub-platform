@@ -7,6 +7,7 @@ import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
 import { orderListColumns, orderValue } from "./order-presentation";
 import { OrderDetail } from "./order-detail";
+import type { AdminOrderDetailData } from "./order-detail-data";
 import { ScrollableTable } from "../tables/scrollable-table";
 
 type Person = { resource: "customers" | "employees"; id: string };
@@ -64,18 +65,21 @@ function useOrderPeople(rows: DataRow[], version: number) {
 type Props = {
   rows: DataRow[]; columns: DataColumn[]; keys: string[]; detail?: boolean; version: number;
   related?: { name: string; title: string }[];
+  detailData?: AdminOrderDetailData; onRefresh?: () => void;
   label: (field: string) => string; href: (row: DataRow) => string;
 };
 
-export function OrderData({ rows, columns, keys, detail = false, version, label, href, related = [] }: Props) {
-  const { names, retry } = useOrderPeople(rows, version);
+export function OrderData({ rows, columns, keys, detail = false, version, label, href, related = [], detailData, onRefresh }: Props) {
+  const { names, retry } = useOrderPeople(detailData ? [] : rows, version);
   const visibleColumns = detail ? columns : orderListColumns(columns);
   const nameLabel = (field: string) => field === "ma_kh" ? "Khách hàng" : field === "ma_nhan_vien" ? "Nhân viên phụ trách" : label(field);
   const personName = (row: DataRow, field: "ma_kh" | "ma_nhan_vien") => {
     const id = row[field];
     if (!id) return field === "ma_kh" ? String(row.ten_nguoi_nhan || "Khách vãng lai") : "Chưa phân công";
     const resource = field === "ma_kh" ? "customers" : "employees";
-    const name = names[personKey({ resource, id: String(id) })];
+    const aggregateName = field === "ma_kh" ? detailData?.customer?.ten_kh : detailData?.employee?.ho_ten;
+    const name = detailData ? (typeof aggregateName === "string" && aggregateName.trim() ? aggregateName : null)
+      : names[personKey({ resource, id: String(id) })];
     if (name === undefined) return <span role="status">Đang tải tên…</span>;
     if (name === null) return "Chưa có thông tin tên";
     return <Link href={dataHref(resource, { key: JSON.stringify([id]) })}>{name}</Link>;
@@ -91,7 +95,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     {Object.values(names).some(name => name === null) && <p className="live-note" role="status">
       Chưa tải được tên của một số hồ sơ. <button type="button" onClick={retry}>Tải lại tên</button>
     </p>}
-    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} /> : <ScrollableTable><table>
+    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} financial={detailData?.financial} onRefresh={onRefresh} /> : <ScrollableTable><table>
       <thead><tr>{visibleColumns.map(column => <th key={column.name}>{nameLabel(column.name)}</th>)}<th>Thao tác</th></tr></thead>
       <tbody>{rows.map(row => <tr key={JSON.stringify(keys.map(key => row[key]))}>
         {visibleColumns.map(column => <td key={column.name}>{cell(row, column)}</td>)}

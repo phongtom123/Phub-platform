@@ -179,6 +179,12 @@ const rows = {
           employee_id: "NV1",
         });
       if (p === "data/resources") return respond(resources);
+      if (p === "admin/orders/DH1/detail") return respond({
+        order_id: "DH1", order: rows.orders[0], customer: rows.customers[0], employee: rows.employees[0],
+        lines: [], invoice: null, payments: [], voucher_uses: [],
+        financial: { invoice_id: null, invoice_status: "CHUA_LAP", payment_status: "CHUA_CO_HOA_DON",
+          total: null, collected: "0.00", refunded: "0.00", paid: "0.00", remaining: null },
+      });
       if (p.startsWith("admin/operations/read/")) {
         const kind = p.split("/").pop();
         if (kind === "settings")
@@ -254,7 +260,7 @@ const rows = {
     await page.getByText("Đang chuẩn bị", { exact: true }).waitFor();
     assert.equal(
       await page.getByRole("button", { name: "Xác nhận xuất kho" }).count(),
-      0,
+      1,
     );
     assert.deepEqual(writes.at(-1), first);
     await page.goto(
@@ -275,10 +281,12 @@ const rows = {
       .selectOption("-1");
     await page
       .getByRole("combobox", { name: "Chọn nhà cung cấp", exact: true })
-      .selectOption("-1");
+      .fill("-1");
+    await page.getByRole("option", { name: /Mã NCC: -1$/ }).click();
     await page
       .getByRole("combobox", { name: "Chọn sản phẩm dòng 1", exact: true })
-      .selectOption("SKU1");
+      .fill("SKU1");
+    await page.getByRole("option", { name: /SKU: SKU1$/ }).click();
     await page.getByRole("spinbutton", { name: "Số lượng dòng 1" }).fill("3");
     await page.getByRole("spinbutton", { name: "Giá dòng 1" }).fill("50.25");
     await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
@@ -296,14 +304,9 @@ const rows = {
       JSON.parse(new URL(page.url()).searchParams.get("filters")).trang_thai,
       "XAC_NHAN",
     );
-    await page
-      .getByRole("textbox", { name: "Tìm kiếm toàn hệ thống" })
-      .fill("Khách");
-    await page
-      .getByRole("region", { name: "Kết quả tìm kiếm" })
-      .getByRole("link")
-      .first()
-      .waitFor();
+    await page.getByRole("textbox", { name: "Tìm kiếm", exact: true }).fill("Khách");
+    await page.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
+    await page.locator(".live-table").waitFor();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(base + "/data/receipts?workflow=new");
     await page

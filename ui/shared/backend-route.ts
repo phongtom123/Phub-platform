@@ -38,6 +38,9 @@ function validProductId(value: string | undefined): boolean {
 
 function validAdminPath(path: string[], method: string): boolean {
   if (path[0] !== "admin") return false;
+  if (path.length === 4 && path[1] === "orders" && path[3] === "detail") {
+    return method === "GET" && validProductId(path[2]) && [...path[2]].length <= 100;
+  }
   if (path[1] === "operations") {
     if (path.length === 3 && path[2] === "business-report") return method === "GET";
     if (path.length === 4 && path[2] === "read" && ["summary", "search", "notifications", "settings", "history", "messages"].includes(path[3])) return method === "GET";

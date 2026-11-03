@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, AlertTriangle, CalendarDays, Download, Info, RefreshCw, Warehouse } from "lucide-react";
+import { AlertCircle, AlertTriangle, CalendarDays, Info, RefreshCw, Warehouse } from "lucide-react";
+import { ExportCsvButton } from "../../components/export-csv-button";
 import { sameAdminData } from "@/src/lib/admin-fetch";
 import { useAdminPolling } from "@/src/lib/use-admin-polling";
 import { rangeError, readReport, recentRange, reportCsv, reportWarnings, type BusinessReport, type ReportRange } from "./report-data";
@@ -90,7 +91,7 @@ export function ReportsView() {
     {pollError && visible && <p className={styles.warning} role="alert"><AlertTriangle size={18} /><span>Chưa cập nhật được báo cáo; đang giữ số liệu lần tải trước. {pollError}</span></p>}
 
     {visible && <section className={styles.results} aria-label="Số liệu kinh doanh">
-      <div className={styles.resultHeading}><div><h2>Tổng quan trong kỳ</h2><p><span>{reportDate(start)} — {reportDate(end)}</span><span className={styles.periodHint}>Theo ngày hoàn thành · Giờ Việt Nam</span></p></div><button type="button" onClick={download} disabled={loading || Boolean(error || pollError)}><Download size={16} aria-hidden="true" />Xuất báo cáo CSV</button></div>
+      <div className={styles.resultHeading}><div><h2>Tổng quan trong kỳ</h2><p><span>{reportDate(start)} — {reportDate(end)}</span><span className={styles.periodHint}>Theo ngày hoàn thành · Giờ Việt Nam</span></p></div><ExportCsvButton onClick={download} disabled={loading || Boolean(error || pollError)} /></div>
       {visible.warnings.map(warning => <div className={styles.warning} role="alert" key={warning}><AlertTriangle size={19} /><div><strong>Chưa đủ dữ liệu để xác định đầy đủ lợi nhuận</strong><p>{reportWarnings[warning]}</p></div></div>)}
       {visible.order_count === 0 && <div className={styles.emptyPeriod}><Info size={19} /><div><strong>Kỳ này chưa có đơn hàng hoàn thành</strong><p>Khoản thanh toán thành công vẫn tính trong dòng tiền. Doanh thu và lợi nhuận được ghi nhận khi đơn hoàn thành.</p></div><button type="button" onClick={() => apply(recentRange(90))}>Xem 90 ngày gần đây</button></div>}
       <ReportMetrics report={visible} />
