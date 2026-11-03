@@ -1,0 +1,17 @@
+.hero, .loading { position: relative; overflow: hidden; border-radius: 12px; background: #f5f7fa; }
+.link { display: block; }
+.image { display: block; width: 100%; height: auto; }
+.loading { aspect-ratio: 1398 / 328; min-height: 150px; display: grid; place-items: center; color: #687384; font-size: 14px; }
+.arrow { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 36px; height: 48px; border: 0; border-radius: 7px; color: white; background: #0008; font-size: 32px; line-height: 1; }
+.arrow:hover { background: #000b; }
+.previous { left: 12px; }
+.next { right: 12px; }
+.dots { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; padding: 3px 7px; border-radius: 20px; background: #0006; }
+.dots button { position: relative; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; }
+.dots button::after { content: ""; position: absolute; inset: 7px; border: 1px solid #fff; border-radius: 50%; }
+.dots button[aria-pressed="true"]::after { background: white; }
+.error { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; padding: 20px; border-radius: 12px; background: #f5f7fa; font-size: 14px; color: #687384; }
+.error p { margin: 0; }
+.error button { padding: 8px 14px; border: 1px solid #d5dbe4; border-radius: 6px; background: white; color: #0156ff; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media(max-width:760px) { .hero, .loading { border-radius: 8px; } .loading { aspect-ratio: 16 / 6; min-height: 130px; } .previous { left: 6px; } .next { right: 6px; } .arrow { width: 30px; height: 40px; } .dots { bottom: 5px; } }

@@ -1,13 +1,18 @@
 """Catalog use cases and public formatting, independent of the HTTP transport."""
 from decimal import Decimal
+from datetime import datetime, timedelta, timezone
 import json
+import os
 import re
 import unicodedata
+from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from phub_api.models.errors import CatalogError
+from phub_api.models.errors import CatalogError, OrderError
 from phub_api.repositories.catalog import CatalogRepository
 from phub_api.schemas.catalog import (
     Brand,
+    CatalogBanner,
     CatalogProduct,
     CatalogQuery,
     Category,
@@ -22,7 +27,8 @@ from phub_api.schemas.catalog import (
     Subcategory,
     clean_text,
 )
-from phub_api.services.catalog_availability import available_quantities, available_skus
+from phub_api.services.catalog_availability import available_skus, available_quantities
+from phub_api.config.orders import OrderSettings
 
 COMPONENT_REF_PATTERN = re.compile(r"^(?:(\d+)x\s+)?((?:L_LINHKIEN_|SP|SEED_SP)\w+)$")
 
@@ -69,6 +75,45 @@ class CatalogService:
     def __init__(self, repository: CatalogRepository):
         self.repository = repository
         self.currency = repository.currency
+
+    def availability(self, skus):
+        try:
+            settings = OrderSettings.from_env()
+        except OrderError as exc:
+            raise CatalogError(exc.status_code, exc.code, exc.message) from None
+        quantities = available_quantities(self.repository, self.repository.public_skus(skus))
+        return {"items": [{"sku": sku, "available_quantity": min(quantity, 2147483647)}
+                          for sku, quantity in sorted(quantities.items())],
+                "tax_rate": format(settings.tax_rate, ".2f"), "currency": settings.currency}
+
+    def list_banners(self) -> list[CatalogBanner]:
+        # Promotion timestamps are local wall times, matching checkout rules.
+        zone_name = os.getenv("CHECKOUT_PROMOTION_TIMEZONE", "Asia/Ho_Chi_Minh")
+        try:
+            zone = ZoneInfo(zone_name)
+        except ZoneInfoNotFoundError:
+            # Windows may have no IANA database. Current Vietnam wall time is UTC+7.
+            if zone_name not in {"Asia/Ho_Chi_Minh", "Asia/Saigon", "Asia/Bangkok"}:
+                raise CatalogError(503, "DATA_SERVICE_UNAVAILABLE", "Chưa cấu hình múi giờ khuyến mãi hợp lệ.") from None
+            zone = timezone(timedelta(hours=7))
+        now = datetime.now(zone).replace(tzinfo=None)
+        result = []
+        for row in self.repository.banners(now.isoformat()):
+            media = row.get("banner")
+            if not isinstance(media, dict) or not media.get("url"):
+                continue
+            try:
+                url = urlsplit(media["url"])
+                valid_url = url.scheme in {"https", "http"} and bool(url.hostname) and not url.username and not url.password
+            except (ValueError, TypeError):
+                valid_url = False
+            if not valid_url:
+                continue
+            title = clean_text(row["ten_chuong_trinh"])
+            result.append(CatalogBanner(id=row["ma_ctkm"], title=title, image_url=media["url"],
+                alt_text=clean_text(media.get("alt_text") or title),
+                width=media.get("chieu_rong"), height=media.get("chieu_cao")))
+        return result
 
     def resolve_component_specs(self, products: list[CatalogProduct]) -> list[CatalogProduct]:
         ref_ids = set()

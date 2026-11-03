@@ -1,90 +1,56 @@
-// Browser fixtures only: no real orders, payments or inventory writes.
-const assert = require("node:assert/strict");
-const { chromium } = require(process.env.PHUB_PLAYWRIGHT_MODULE || "playwright");
-const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
-const customerId = "CART-STOCK-TEST";
-const products = ["A", "B", "C"].map(id => ({
-  id, sku: `SKU-${id}`, name: `Product ${id}`, price: "100.00", currency: "VND",
-  category: { id: "C", name: "Test" }, subcategory: { id: "SC", name: "Test" },
-  brand: null, description: null, unit: "unit", warranty_months: 0, images: [], specifications: [],
-}));
-const entries = products.map((p, i) => ({ product_id: p.id, sku: p.sku, quantity: [165, 2, 9999][i], selected: i < 2 }));
-
-(async () => {
-  const browser = await chromium.launch({ headless: true, channel: process.env.PHUB_CHROMIUM_CHANNEL || "chrome" });
-  try {
-    for (const guest of [false, true]) {
-      const context = await browser.newContext();
-      const page = await context.newPage();
-      const cartKey = guest ? "phub-cart-guest-v1" : `phub-cart-v1:${customerId}`;
-      await page.addInitScript(({ key, entries }) => localStorage.setItem(key, JSON.stringify(entries)), { key: cartKey, entries });
-      let stockB = 1, mode = "normal", release;
-      const checks = [], writes = [], errors = [];
-      page.on("pageerror", error => errors.push(error.message));
-      await page.route("**/api/**", async route => {
-        const url = new URL(route.request().url()), path = url.pathname;
-        const ok = json => route.fulfill({ json });
-        if (route.request().method() !== "GET") writes.push(path);
-        if (path.endsWith("/auth/me")) return guest
-          ? route.fulfill({ status: 401, json: { error: { message: "Guest" } } })
-          : ok({ account_id: "ACCOUNT", username: "test", role: "KHACH_HANG", name: "Test", customer_id: customerId, employee_id: null, warehouse_id: null });
-        if (path.endsWith("/customer/me")) return guest
-          ? route.fulfill({ status: 401, json: { error: { message: "Guest" } } })
-          : ok({ customer_id: customerId, name: "Test", phone: null, address_line: null, province: null, ward: null });
-        if (path.endsWith("/availability")) {
-          const id = path.split("/").at(-2), quantity = Number(url.searchParams.get("quantity"));
-          const product = products.find(p => p.id === id);
-          checks.push({ id, quantity });
-          if (mode === "delay") await new Promise(resolve => { release = resolve; });
-          if (mode === "network") return route.fulfill({ status: 503, json: { error: { message: "Không kiểm tra được tồn kho thử nghiệm." } } });
-          return ok({ id, sku: product.sku, quantity, available: quantity <= (id === "B" ? stockB : 165) });
-        }
-        const product = products.find(p => path === `/api/catalog/products/${p.id}`);
-        if (product) return ok(product);
-        if (path.startsWith("/api/catalog/")) return ok({ items: [] });
-        if (path.endsWith("/checkout/quote")) return route.fulfill({ status: 503, json: { error: { message: "Quote fixture unavailable" } } });
-        throw new Error(`Unexpected API request: ${path}`);
-      });
-      await page.goto(base + "/cart");
-      const checkout = page.getByRole("button", { name: guest ? /Đăng nhập để thanh toán/ : /Tiến hành đặt hàng/ });
-      await checkout.waitFor();
-      const saved = () => page.evaluate(key => localStorage.getItem(key), cartKey);
-      const before = await saved();
-      await checkout.click();
-      await page.getByRole("status").filter({ hasText: "Không đủ hàng trong kho cho: Product B (2)" }).waitFor();
-      assert.ok(page.url().endsWith("/cart"));
-      assert.deepEqual(checks.slice(-2), [{ id: "A", quantity: 165 }, { id: "B", quantity: 2 }]);
-      assert.ok(!checks.some(c => c.id === "C"), "Unselected products do not block checkout");
-      assert.equal(await saved(), before, "Stock checks preserve the cart");
-
-      stockB = 2;
-      mode = "network";
-      await checkout.click();
-      await page.getByRole("status").filter({ hasText: "Không kiểm tra được tồn kho thử nghiệm." }).waitFor();
-      assert.ok(page.url().endsWith("/cart"));
-
-      // Keep only A selected to control one delayed availability response.
-      await page.getByRole("checkbox", { name: "Chọn sản phẩm Product B", exact: true }).uncheck();
-      mode = "delay";
-      await checkout.click();
-      await page.getByRole("button", { name: "Đang kiểm tra tồn kho…" }).waitFor();
-      await page.waitForFunction(() => document.querySelector('button[aria-busy="true"]')?.disabled);
-      while (!release) await new Promise(resolve => setTimeout(resolve, 20));
-      const quantityInput = page.getByRole("textbox", { name: "Số lượng", exact: true }).nth(0);
-      await quantityInput.fill("166");
-      mode = "normal";
-      release();
-      await page.getByRole("status").filter({ hasText: "Giỏ hàng vừa thay đổi" }).waitFor();
-      assert.ok(page.url().endsWith("/cart"));
-      await checkout.click();
-      await page.getByRole("status").filter({ hasText: "Không đủ hàng trong kho cho: Product A (166)" }).waitFor();
-      await quantityInput.fill("165");
-      await checkout.click();
-      await page.waitForURL(guest ? "**/auth/login?redirect=%2Fcheckout" : "**/checkout");
-      assert.deepEqual(errors, []);
-      assert.ok(!writes.some(path => path.endsWith("/orders")), "Proceeding from cart never creates an order");
-      console.log(`PASS ${guest ? "guest" : "authenticated"}: selected stock checked before navigation, insufficient stock/network failures blocked, pending edits rechecked, pooled quantity 165 accepted`);
-      await context.close();
-    }
-  } finally { await browser.close(); }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+// Browser-only fixtures. No real accounts, orders or payments are created.
+const assert=require('node:assert/strict');
+const {chromium}=require(process.env.PHUB_PLAYWRIGHT_MODULE||'playwright');
+const base=process.env.PHUB_USER_TEST_URL||'http://localhost:3001';
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.PHUB_CHROMIUM_PATH||undefined,args:['--disable-features=LocalNetworkAccessChecks']});
+ try{
+  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  let stock=165,mode='ok',reads=0;
+  await page.addInitScript(()=>localStorage.setItem('phub-cart-guest-v1',JSON.stringify([{product_id:'P',sku:'S',quantity:100,selected:true}])));
+  await page.route('**/api/**',route=>{
+   assert.equal(route.request().method(),'GET');
+   const url=new URL(route.request().url());
+   if(url.pathname.endsWith('/me'))return route.fulfill({status:401,json:{error:{code:'AUTHENTICATION_REQUIRED',message:'Login required'}}});
+   if(url.pathname.endsWith('/availability')){
+    reads++;
+    assert.deepEqual(url.searchParams.getAll('sku'),['S']);
+    return mode==='error'?route.fulfill({status:503,json:{error:{message:'Chưa tải được tồn kho.'}}}):route.fulfill({json:{items:[{sku:'S',available_quantity:stock}],tax_rate:'10.00',currency:'VND'}});
+   }
+   if(url.pathname.endsWith('/products/P'))return route.fulfill({json:{id:'P',sku:'S',name:'Test Product',category:{id:'C',name:'Category'},subcategory:{id:'SC',name:'Sub'},brand:null,description:null,price:'5000000.00',currency:'VND',unit:'Cái',warranty_months:12,images:[],specifications:[]}});
+   return route.fulfill({json:{items:[]}});
+  });
+  await page.goto(`${base}/cart`,{waitUntil:'domcontentloaded'});
+  const input=page.getByRole('spinbutton',{name:'Số lượng',exact:true});
+  await input.waitFor();await page.getByText('Tối đa 165 sản phẩm',{exact:true}).waitFor();
+  assert.equal(await input.getAttribute('max'),'165');
+  const summary=page.locator('aside');
+  const total=summary.locator('p').filter({hasText:'Thành tiền sau thuế'});
+  assert.match(await total.innerText(),/550\.000\.000/);
+  const requests=reads;
+  await input.fill('165');await input.blur();assert.equal(await input.inputValue(),'165');
+  assert.match(await total.innerText(),/907\.500\.000/);
+  assert.ok(await page.getByRole('button',{name:'Tăng số lượng',exact:true}).isDisabled());
+  await input.fill('166');await input.blur();assert.equal(await input.inputValue(),'165');
+  await input.fill('150');await input.blur();assert.equal(await input.inputValue(),'150');
+  assert.match(await total.innerText(),/825\.000\.000/);
+  assert.equal(reads,requests,'typing quantities reuses availability in RAM');
+  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'phub-cart-stock-desktop.png'),fullPage:false});
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'cart fits mobile');
+  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'phub-cart-stock-mobile.png'),fullPage:true});
+  stock=20;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.getByRole('button',{name:'Giảm còn 20',exact:true}).waitFor();
+  const checkout=page.getByRole('button',{name:/Đăng nhập để thanh toán/});
+  assert.ok(await checkout.isDisabled());
+  await page.getByRole('button',{name:'Giảm còn 20',exact:true}).click();assert.equal(await input.inputValue(),'20');
+  assert.ok(await checkout.isEnabled());
+  mode='error';await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.getByRole('alert').getByText('Chưa tải được tồn kho.',{exact:true}).waitFor();assert.ok(await checkout.isDisabled());
+  mode='ok';stock=0;await page.getByRole('button',{name:'Kiểm tra lại tồn kho',exact:true}).click();
+  await page.getByText('Hết hàng',{exact:true}).waitFor();assert.ok(await input.isDisabled());assert.ok(await checkout.isDisabled());
+  assert.deepEqual(errors,[]);
+  console.log('PASS: aggregate stock max, >100 quantity, clamping, VAT and final total, no requests on typing, stock changes, API failure, sold-out and mobile');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

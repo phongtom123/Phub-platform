@@ -161,7 +161,7 @@ export function validateQuote(value: unknown): Quote {
     !(q.voucher_code === null || typeof q.voucher_code === "string") ||
     !Array.isArray(q.items) ||
     !q.items.length ||
-    q.items.length > 100
+    q.items.length > 1000
   )
     invalid();
   let gross = BigInt(0),
@@ -172,7 +172,7 @@ export function validateQuote(value: unknown): Quote {
     const line = record(raw);
     if (
       typeof line.sku !== "string" ||
-      skus.has(line.sku) ||
+      skus.has(JSON.stringify([line.sku, line.warehouse_id])) ||
       !line.sku ||
       typeof line.name !== "string" ||
       typeof line.unit !== "string" ||
@@ -182,7 +182,7 @@ export function validateQuote(value: unknown): Quote {
       Number(line.quantity) > 2_147_483_647
     )
       invalid();
-    skus.add(line.sku as string);
+    skus.add(JSON.stringify([line.sku, line.warehouse_id]));
     if (line.allocations !== undefined) {
       if (!Array.isArray(line.allocations)) invalid();
       const warehouses = new Set<number>();

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ProfilePage() {
   return <div className={styles.page}>
-    <PageHeading title="My Dashboard" breadcrumbs={[{ label: "Home", href: "/" }, { label: "My Dashboard", href: "/main/profile" }]} />
+    <PageHeading title="Tài khoản của tôi" breadcrumbs={[{ label: "Trang chủ", href: "/" }, { label: "Tài khoản", href: "/main/profile" }]} />
     <ConnectedAccount />
   </div>;
 }

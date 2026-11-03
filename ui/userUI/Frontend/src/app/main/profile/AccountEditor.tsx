@@ -63,7 +63,7 @@ export function AccountEditor({ profile, onSaved, onClose }: { profile: Customer
         <TextField label="Phường / xã" required maxLength={100} autoComplete="address-level2" value={values.ward} onChange={event => setValues({ ...values, ward: event.target.value })} />
       </fieldset>
       {error && <p className={styles.error} role="alert">{error}</p>}
-      <div className={styles.actions}><Button type="submit" disabled={saving}>{saving ? "Đang lưu…" : "Lưu thông tin"}</Button><Button variant="outline" disabled={saving} onClick={onClose}>Hủy</Button></div>
+      <div className={styles.actions}><Button type="submit" disabled={saving}>{saving ? "Đang lưu…" : "Lưu thông tin"}</Button><Button className={styles.secondaryButton} variant="outline" disabled={saving} onClick={onClose}>Hủy</Button></div>
     </form>
   </dialog>;
 }

@@ -1,5 +1,24 @@
 # Banner chương trình khuyến mãi
 
+## Hiển thị trên trang chủ khách hàng
+
+Ô quảng cáo đầu trang `/main/landing` lấy ảnh qua `GET /api/catalog/banners`.
+API chỉ trả chương trình `HOAT_DONG`, đã đến ngày bắt đầu, chưa qua ngày kết thúc,
+có `ma_media_banner` liên kết MEDIA và URL ảnh hợp lệ. Thời gian khớp cấu hình
+`CHECKOUT_PROMOTION_TIMEZONE` (mặc định giờ Việt Nam); chỉ trả thông tin công khai
+gồm mã, tên, URL, mô tả ảnh và kích thước.
+
+Để đổi ảnh: **Admin → Khuyến mãi → chọn chương trình → Chỉnh sửa → Hình ảnh
+banner → chọn/kéo thả ảnh → Lưu dữ liệu**. Kiểm tra trạng thái và thời hạn chương
+trình. Không cần nhập lại URL trên giao diện khách. Trang chủ đọc lại khi quay
+lại tab và mỗi phút lúc trang đang hiển thị. Nhiều banner có nút trước/sau và nút
+chọn; một banner không hiện nút chuyển. Không có chương trình phù hợp thì ẩn ô,
+không dùng ảnh giả lập. Bấm ảnh mở danh sách sản phẩm. Chưa có cột URL đích trong
+schema nên không tự lưu liên kết quảng cáo riêng.
+
+Chức năng này dùng nguyên bảng và liên kết hiện có, không cần migration mới.
+Chỉ đọc metadata banner trên trang khách; upload và cập nhật vẫn yêu cầu ADMIN.
+
 Mỗi chương trình có **tối đa một banner**, được lưu qua cột UUID nullable
 `CHUONG_TRINH_KHUYEN_MAI.ma_media_banner` tham chiếu `MEDIA.ma_media`.
 Chương trình cũ không có banner vẫn hoạt động bình thường.

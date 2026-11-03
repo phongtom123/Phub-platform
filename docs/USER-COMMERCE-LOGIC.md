@@ -6,6 +6,13 @@ phân bổ kho, hóa đơn, chi tiết đơn và cách kiểm chứng các thay 
 Các lỗi và chức năng còn thiếu sau lần rà soát tiếp theo được ghi tại
 [USER-FLOW-AUDIT.md](USER-FLOW-AUDIT.md), kèm mức ưu tiên và cách tái hiện.
 
+**Cập nhật sau khi tích hợp:** chỉ giữ hàng cho đơn đang xử lý đã có hóa đơn
+hoặc khoản thu thành công; giỏ hàng và báo giá không giữ hàng. Xem
+[chính sách tồn kho và thuế](../Backend/docs/CART_STOCK_AND_TAX.md).
+Trang hồ sơ hiện chỉ giữ thông tin cá nhân, địa chỉ giao hàng và danh sách đơn;
+chi tiết đơn/hóa đơn/thanh toán được mở tại `/main/orders/[id]`.
+Các mô tả màn hình hồ sơ và số liệu kiểm thử bên dưới là lịch sử trước thay đổi này.
+
 ## 1. Các quyết định đã chốt
 
 | Vấn đề | Hành vi cần giữ |

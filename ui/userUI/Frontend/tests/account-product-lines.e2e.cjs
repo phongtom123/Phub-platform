@@ -1,7 +1,7 @@
 // Browser fixtures only: no live order, invoice, stock or payment writes.
 const assert = require("node:assert/strict");
 const { chromium } = require(process.env.PHUB_PLAYWRIGHT_MODULE || "playwright");
-const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
+const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3001";
 const id = "POOL-ORDER-TEST";
 const profile = { customer_id: "POOL-CUSTOMER", name: "Pool Test", phone: null, address_line: null, province: null, ward: null };
 const lines = [37, 39, 60, 49].map((quantity, i) => ({ sku: "SEED_SKU001", warehouse_id: i + 1, name: "Điện thoại Demo A", unit: "Cái", quantity, unit_price: "5000000.00", discount: "0.00", tax_amount: `${quantity * 500000}.00`, line_total: `${quantity * 5500000}.00` }));
@@ -9,7 +9,7 @@ const order = { id, status: "MOI", created_at: "2026-11-02T14:57:46Z", currency:
 const invoice = { order_id: id, currency: "VND", invoice: { issued_at: order.created_at, subtotal: "925000000.00", discount_total: "0.00", tax_total: "92500000.00", total: "1017500000.00" }, items: lines };
 
 (async () => {
-  const browser = await chromium.launch({ headless: true, channel: process.env.PHUB_CHROMIUM_CHANNEL || "chrome" });
+  const browser = await chromium.launch({ headless: true, channel: process.env.PHUB_CHROMIUM_CHANNEL || "chrome", args: ["--disable-features=LocalNetworkAccessChecks"] });
   try {
     for (const width of [1440, 390]) {
       const context = await browser.newContext({ viewport: { width, height: 1000 } });
@@ -37,23 +37,15 @@ const invoice = { order_id: id, currency: "VND", invoice: { issued_at: order.cre
         await table.getByRole("cell", { name: /1\.017\.500\.000/ }).waitFor();
       }
       await page.goto(base + "/main/profile");
-      await page.getByRole("navigation", { name: "Quản lý tài khoản" }).getByRole("button", { name: "My Orders", exact: true }).click();
-      await page.getByRole("button", { name: "Chi tiết đơn", exact: true }).click();
-      const detail = page.getByRole("region", { name: `Chi tiết đơn ${id}`, exact: true });
-      await grouped(detail.getByRole("table"));
-      await detail.getByRole("button", { name: "Làm mới đơn" }).click();
-      await grouped(detail.getByRole("table"));
-      await page.getByRole("button", { name: "Hóa đơn", exact: true }).last().click();
-      const invoicePanel = page.getByRole("region", { name: `Hóa đơn của ${id}`, exact: true });
-      await grouped(invoicePanel.getByRole("table"));
-      await invoicePanel.getByRole("button", { name: "Làm mới hóa đơn" }).click();
-      await grouped(invoicePanel.getByRole("table"));
+      await page.getByRole("navigation", { name: "Quản lý tài khoản" }).getByRole("button", { name: "Đơn hàng của tôi", exact: true }).click();
+      await page.getByRole("link", { name: "Xem chi tiết", exact: true }).click();
+      await page.waitForURL(`**/main/orders/${id}`);
       await page.goto(base + `/main/orders/${id}`);
       await grouped(page.getByRole("table").filter({ has: page.getByRole("columnheader", { name: "Sản phẩm lúc bán", exact: true }) }));
       await grouped(page.getByRole("region", { name: "Hóa đơn của đơn hàng", exact: true }).getByRole("table"));
       assert.deepEqual(errors, []);
       assert.deepEqual(writes, []);
-      console.log(`PASS ${width}px: profile order, profile invoice, direct order and direct invoice each show one product / 185 units, correct totals, refresh preserves grouping`);
+      console.log(`PASS ${width}px: profile navigation, direct order and invoice each show one product / 185 units, correct totals, refresh preserves grouping`);
       await context.close();
     }
   } finally { await browser.close(); }

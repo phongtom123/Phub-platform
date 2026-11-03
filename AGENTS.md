@@ -7,12 +7,13 @@ Tài liệu ghi các quyết định đã chốt ngày 02/11/2026, vị trí mã
 
 - Checkout khách hàng gom tồn khả dụng từ tất cả kho hoạt động. Không khôi phục
   giới hạn một kho, kho cố định hoặc trần số lượng 99/1.000.
-- Trừ phần hàng được giữ bởi đơn `MOI`, `XAC_NHAN`, `DANG_CHUAN_BI`.
+- Trừ phần hàng được giữ bởi đơn `MOI`, `XAC_NHAN`, `DANG_CHUAN_BI`
+  đã có hóa đơn hoặc khoản thu thành công. Thêm giỏ/xem báo giá không giữ hàng.
   Kiểm tra ở trang sản phẩm, nút tiếp tục tại `/cart` và transaction tạo đơn.
 - Dòng `CT_DON_HANG` vẫn tách theo kho để giữ/xuất hàng. Chỉ gộp cách hiển thị
   sản phẩm cùng SKU, đơn vị và đơn giá bằng `groupInvoiceLines`.
-- Có hai bộ màn hình đơn/hóa đơn: trong `/main/profile` và tại
-  `/main/orders/[id]`, cùng hóa đơn sau checkout. Kiểm tra đủ các nơi liên quan.
+- `/main/profile` hiển thị danh sách đơn và dẫn đến `/main/orders/[id]`.
+  Kiểm tra chi tiết đơn, hóa đơn tại đó và hóa đơn sau checkout.
 - Hóa đơn mới được tạo cùng transaction đặt hàng; lỗi thì rollback toàn bộ.
   Có hóa đơn không đồng nghĩa đã thanh toán. Giữ idempotency và ownership.
 - Hết tồn khả dụng thì ẩn nút thêm giỏ/mua ngay và hiện `Hết hàng`.

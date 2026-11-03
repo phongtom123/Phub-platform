@@ -34,6 +34,14 @@ class CatalogRepository:
             .eq("subcategory.trang_thai", self.active_status)
         )
 
+    def banners(self, local_now: str):
+        return (self.client.table("CHUONG_TRINH_KHUYEN_MAI").select(
+            "ma_ctkm,ten_chuong_trinh,banner:MEDIA!CHUONG_TRINH_KHUYEN_MAI_banner_media_fkey!inner(url,alt_text,chieu_rong,chieu_cao)"
+        ).eq("trang_thai", "HOAT_DONG")
+            .lte("ngay_bat_dau", local_now).gte("ngay_ket_thuc", local_now)
+            .not_.is_("ma_media_banner", "null")
+            .order("ngay_bat_dau", desc=True).order("ma_ctkm", desc=True).limit(20).execute().data)
+
     def apply_filters(self, query, filters: CatalogQuery):
         if filters.q:
             pattern = quoted(re.escape(filters.q))
@@ -83,6 +91,10 @@ class CatalogRepository:
         rows = self.active_products(PRODUCT_COLUMNS).eq("ma_sp", identifier).limit(1).execute().data
         return rows[0] if rows else None
 
+    def public_skus(self, skus):
+        columns = "sku,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)"
+        return [row["sku"] for row in self.active_products(columns).in_("sku", sorted(set(skus))).limit(100).execute().data]
+
     def component_names(self, ids: list[str]) -> dict[str, str]:
         if not ids:
             return {}
@@ -119,7 +131,8 @@ class CatalogRepository:
 
     def reservations(self, values, statuses):
         return all_rows(lambda: self.client.table("CT_DON_HANG")
-            .select("sku,ma_kho_xuat,so_luong,order:DON_HANG!inner(trang_thai)")
+            .select("sku,ma_kho_xuat,so_luong,order:DON_HANG!inner(trang_thai,invoice:HOA_DON(ma_donhang),payments:THANH_TOAN(ma_thanh_toan))")
+            .eq("order.payments.trang_thai", "THANH_CONG").eq("order.payments.loai_giao_dich", "THU")
             .filter("sku", "in", values).in_("order.trang_thai", statuses).order("ma_ct_donhang"))
 
     def stock(self, values):

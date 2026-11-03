@@ -18,6 +18,7 @@ class OrderSettings:
     @classmethod
     def from_env(cls):
         try:
+            # Legacy RPC setting name; a draft reserves only once invoiced/paid.
             policy = os.getenv("ORDER_STOCK_POLICY", "reserve_on_order")
             mode = os.getenv("ORDER_PRICE_TAX_MODE", "exclusive")
             rate = Decimal(os.getenv("ORDER_TAX_RATE", "10"))

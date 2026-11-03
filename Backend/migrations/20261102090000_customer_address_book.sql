@@ -277,4 +277,3 @@ grant execute on function public.customer_address_v1(text, text, uuid, jsonb) to
 
 notify pgrst, 'reload schema';
 commit;
-

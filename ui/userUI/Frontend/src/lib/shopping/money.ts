@@ -10,8 +10,22 @@ export function decimal(value: bigint): string {
   return `${value / BigInt(100)}.${String(value % BigInt(100)).padStart(2, "0")}`;
 }
 
+export function vatCents(net: bigint, rate: string): bigint {
+  return (net * cents(rate) + BigInt(5000)) / BigInt(10000);
+}
+
+export function invoiceTotals(quote: { total: string; items: { line_total: string; tax_rate: string }[] }) {
+  const tax = quote.items.reduce((sum, line) => sum + vatCents(cents(line.line_total), line.tax_rate), BigInt(0));
+  return { tax: decimal(tax), total: decimal(cents(quote.total) + tax) };
+}
+
 export function money(value: string, currency = "VND"): string {
-  const amount = cents(value);
+  return moneyFromCents(cents(value), currency);
+}
+
+/** Cart calculations can exceed the database limit; format them without losing precision. */
+export function moneyFromCents(amount: bigint, currency = "VND"): string {
+  if (amount < BigInt(0)) throw new Error("Số tiền không hợp lệ.");
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency,

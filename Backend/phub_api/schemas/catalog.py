@@ -16,6 +16,17 @@ class CatalogSort(str, Enum):
     PRICE_DESC = "price-desc"
 
 
+class AvailableStock(BaseModel):
+    sku: str
+    available_quantity: int = Field(ge=0, le=2147483647)
+
+
+class StockAvailability(BaseModel):
+    items: list[AvailableStock]
+    tax_rate: str
+    currency: str
+
+
 class StockStatus(str, Enum):
     IN_STOCK = "in-stock"
     OUT_OF_STOCK = "out-of-stock"
@@ -35,7 +46,7 @@ class CatalogQuery(BaseModel):
     min_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá thấp nhất, bao gồm mức này; giá trước thuế.")
     max_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá cao nhất, bao gồm mức này; phải >= min_price.")
     color: str | None = Field(default=None, max_length=100, description="Màu từ thông số sản phẩm, không phân biệt hoa/thường. __unspecified__ chọn sản phẩm chưa ghi màu.")
-    stock_status: StockStatus | None = Field(default=None, description="Còn/hết hàng khả dụng trong kho hoạt động, sau lượng giữ của đơn MOI/XAC_NHAN/DANG_CHUAN_BI; kiểm tra lại khi checkout.")
+    stock_status: StockStatus | None = Field(default=None, description="Còn/hết hàng khả dụng trong kho hoạt động, trừ hàng giữ cho đơn chưa xuất đã có hóa đơn hoặc khoản thu thành công; kiểm tra lại khi checkout.")
     page: int = Field(default=1, ge=1, le=2_147_483_647)
     page_size: int = Field(default=20, ge=1, le=100)
     sort: CatalogSort = Field(default=CatalogSort.DEFAULT, description="Mặc định theo mã sản phẩm; giá bằng nhau được sắp tiếp theo mã sản phẩm.")
@@ -160,6 +171,19 @@ class ColorOption(BaseModel):
 
 class ColorList(BaseModel):
     items: list[ColorOption]
+
+
+class CatalogBanner(BaseModel):
+    id: int
+    title: str
+    image_url: str
+    alt_text: str
+    width: int | None
+    height: int | None
+
+
+class BannerList(BaseModel):
+    items: list[CatalogBanner]
 
 
 class ErrorDetail(BaseModel):

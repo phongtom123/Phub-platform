@@ -140,4 +140,3 @@ grant execute on function public.customer_cancel_order_v1(text, text, text) to s
 
 notify pgrst, 'reload schema';
 commit;
-

@@ -4,6 +4,8 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from pydantic import ValidationError
+from phub_api.schemas.commerce import CustomerOrderRequest, QuoteRequest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
@@ -312,6 +314,16 @@ def test_save_recipient_does_not_claim_success_when_rls_blocks_update(commerce_c
     assert result.status_code == 403 and result.json()["error"]["code"] == "PROFILE_UPDATE_DENIED"
 
 
+def test_checkout_accepts_stock_over_1000_and_distinct_warehouse_allocations(commerce_client):
+    _, _, _, body, _ = commerce_client
+    assert QuoteRequest(items=[{'sku': 'A', 'quantity': 1301}]).items[0].quantity == 1301
+    body['items'] += [{**body['items'][0], 'warehouse_id': 2, 'quantity': 1301}]
+    request = CustomerOrderRequest.model_validate(body)
+    assert len(request.items) == 2
+    duplicate = deepcopy(body)
+    duplicate['items'].append(deepcopy(duplicate['items'][0]))
+    with pytest.raises(ValidationError):
+        CustomerOrderRequest.model_validate(duplicate)
 ADDRESS_ID = "7b0f5f27-1c3b-4f0e-9d7a-3f6f0a1b2c3d"
 
 

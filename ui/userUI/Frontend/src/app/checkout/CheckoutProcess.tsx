@@ -5,17 +5,17 @@ import Link from "next/link";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import { PaymentPanel } from "@/components/shopping/PaymentPanel";
 import { InvoicePanel } from "@/components/shopping/InvoicePanel";
+import { useCheckoutQuote } from "@/components/shopping/CheckoutSummary";
 import {
   createAddress,
   createOrder,
   deleteAddress,
-  getQuote,
   listAddresses,
   ShoppingError,
   updateAddress,
 } from "@/lib/shopping/client";
-import { money } from "@/lib/shopping/money";
-import type { AddressBook, CustomerAddress, Quote, OrderRequest, Receipt } from "@/lib/shopping/types";
+import { money, invoiceTotals } from "@/lib/shopping/money";
+import type { AddressBook, CustomerAddress, OrderRequest, Receipt } from "@/lib/shopping/types";
 import styles from "./checkout.module.css";
 
 // The address book used to live in localStorage; that stale copy of personal data is removed.
@@ -61,10 +61,8 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
   // Quote & submission states
-  const [quote, setQuote] = useState<Quote | null>(null);
-  const effectiveQuote = shop.selectedLines.length === 0 ? null : quote;
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [quoteError, setQuoteError] = useState("");
+  const { quote, loading: quoteLoading, error: quoteError, reload: reloadQuote } = useCheckoutQuote(appliedVoucher);
+  const voucherConfirmed = !!appliedVoucher && quote?.voucher_code === appliedVoucher;
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [orderReceipt, setOrderReceipt] = useState<Receipt | null>(null);
@@ -113,45 +111,6 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
 
   // Currently selected address
   const currentAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0] || null;
-
-  // 2. Fetch quote whenever selected lines or applied voucher changes
-  useEffect(() => {
-    if (shop.selectedLines.length === 0) {
-      return;
-    }
-
-    const items = shop.selectedLines.map((l) => ({
-      sku: l.sku,
-      quantity: l.quantity,
-    }));
-
-    const controller = new AbortController();
-    queueMicrotask(() => {
-      setQuoteLoading(true);
-      setQuoteError("");
-    });
-
-    getQuote(items, appliedVoucher, controller.signal)
-      .then((q) => {
-        if (!controller.signal.aborted) {
-          setQuote(q);
-          setQuoteLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) {
-          setQuote(null);
-          setQuoteLoading(false);
-          setQuoteError(
-            err instanceof Error
-              ? err.message
-              : "Không thể lấy thông tin báo giá từ hệ thống."
-          );
-        }
-      });
-
-    return () => controller.abort();
-  }, [shop.selectedLines, appliedVoucher]);
 
   // Handle open shipping form for Add New (prefilled with the account name/phone)
   const handleOpenAddAddress = (first = addresses.length === 0) => {
@@ -248,7 +207,8 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
     e.preventDefault();
     const code = voucherCode.trim().toUpperCase();
     if (code) {
-      setAppliedVoucher(code);
+      if (code === appliedVoucher) reloadQuote();
+      else setAppliedVoucher(code);
     }
   };
 
@@ -265,7 +225,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
       setViewMode("shipping_form");
       return;
     }
-    if (!effectiveQuote || effectiveQuote.items.length === 0) {
+    if (!quote || quote.items.length === 0) {
       setSubmitError("Chưa có thông tin báo giá sản phẩm hợp lệ.");
       return;
     }
@@ -283,10 +243,10 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
         ward: currentAddress.ward,
       },
       note: orderNote.trim() || null,
-      voucher_code: appliedVoucher,
-      expected_discount: effectiveQuote.discount_total,
-      expected_total: effectiveQuote.total,
-      items: effectiveQuote.items.map((item) => ({
+      voucher_code: quote.voucher_code,
+      expected_discount: quote.discount_total,
+      expected_total: quote.total,
+      items: quote.items.map((item) => ({
         sku: item.sku,
         warehouse_id: item.warehouse_id,
         quantity: item.quantity,
@@ -296,7 +256,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
 
     const attemptStorageKey = `phub-checkout-attempt-v1:${shop.customer?.customer_id}`;
     try {
-      const canonical = JSON.stringify({ ...orderBody, items: [...orderBody.items].sort((a, b) => a.sku.localeCompare(b.sku)) });
+      const canonical = JSON.stringify({ ...orderBody, items: [...orderBody.items].sort((a, b) => a.sku.localeCompare(b.sku) || a.warehouse_id - b.warehouse_id) });
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
       const fingerprint = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
       // Persist only a key and hash; no delivery details or credentials are stored here.
@@ -346,7 +306,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               Mã đơn hàng: <strong>{orderReceipt.id}</strong>
             </p>
             <p style={{ color: "#555", fontSize: 14, margin: "0 0 20px" }}>
-              Tổng tiền hàng trước thuế: <strong>{money(orderReceipt.total, orderReceipt.currency)}</strong>
+              Thành tiền sau thuế: <strong>{money(invoiceTotals(orderReceipt).total, orderReceipt.currency)}</strong>
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <Link
@@ -929,6 +889,9 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                 <input
                   type="text"
                   placeholder="Mã giảm giá (Voucher)"
+                  aria-label="Mã giảm giá"
+                  maxLength={100}
+                  disabled={submitting}
                   value={voucherCode}
                   onChange={(e) => setVoucherCode(e.target.value)}
                   style={{
@@ -942,6 +905,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                 />
                 <button
                   type="submit"
+                  disabled={submitting || quoteLoading}
                   style={{
                     padding: "0 14px",
                     background: "#0156ff",
@@ -958,8 +922,8 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               </form>
               {appliedVoucher && (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                  <span style={{ fontSize: 12, color: "#187b34", fontWeight: 600 }}>
-                    ✓ Đã áp dụng mã: {appliedVoucher}
+                  <span role="status" style={{ fontSize: 12, color: voucherConfirmed ? "#187b34" : "#666", fontWeight: 600 }}>
+                    {voucherConfirmed ? `✓ Đã áp dụng mã: ${appliedVoucher}` : quoteLoading ? `Đang kiểm tra mã: ${appliedVoucher}…` : `Chưa áp dụng mã: ${appliedVoucher}`}
                   </span>
                   <button
                     type="button"
@@ -984,26 +948,26 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               {quoteLoading ? (
                 <p style={{ textAlign: "center", color: "#666" }}>Đang tính toán giá đơn hàng...</p>
               ) : quoteError ? (
-                <p style={{ color: "#c62828", fontSize: 13 }}>⚠️ {quoteError}</p>
-              ) : effectiveQuote ? (
+                <p role="alert" style={{ color: "#c62828", fontSize: 13 }}>⚠️ {quoteError}</p>
+              ) : quote ? (
                 <>
                   <p>
                     <span>Tiền hàng</span>
-                    <strong>{money(effectiveQuote.subtotal, effectiveQuote.currency)}</strong>
+                    <strong>{money(quote.subtotal, quote.currency)}</strong>
                   </p>
-                  {parseFloat(effectiveQuote.discount_total) > 0 && (
+                  {parseFloat(quote.discount_total) > 0 && (
                     <p style={{ color: "#187b34" }}>
                       <span>Giảm giá voucher</span>
-                      <strong>−{money(effectiveQuote.discount_total, effectiveQuote.currency)}</strong>
+                      <strong>−{money(quote.discount_total, quote.currency)}</strong>
                     </p>
                   )}
                   <p>
                     <span>Thuế VAT dự kiến (10%)</span>
-                    <span>{money(effectiveQuote.tax_total, effectiveQuote.currency)}</span>
+                    <span>{money(invoiceTotals(quote).tax, quote.currency)}</span>
                   </p>
                   <p style={{ fontSize: 16, fontWeight: 700, marginTop: 10 }}>
                     <span>Tổng thanh toán</span>
-                    <strong style={{ color: "#0156ff" }}>{money(effectiveQuote.total, effectiveQuote.currency)}</strong>
+                    <strong style={{ color: "#0156ff" }}>{money(invoiceTotals(quote).total, quote.currency)}</strong>
                   </p>
                 </>
               ) : null}
@@ -1014,7 +978,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               <button
                 type="button"
                 className={styles.placeOrder}
-                disabled={submitting || savingAddress || quoteLoading || !effectiveQuote || !currentAddress}
+                disabled={submitting || savingAddress || quoteLoading || !quote || !currentAddress}
                 onClick={handlePlaceOrder}
                 style={{ width: "100%", fontSize: 16, height: 48 }}
               >

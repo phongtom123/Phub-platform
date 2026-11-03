@@ -33,6 +33,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="vi"
       className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} h-full antialiased`}
+      // Extensions may change document attributes before React hydrates.
+      // Suppress only this element; keep hydration checks for page content.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
         <ShoppingProvider>

@@ -11,7 +11,7 @@ const invoiceLines = [37, 39, 60, 49].map((quantity, i) => ({ ...line, warehouse
 const receipt = { ...quote, id: "AUTO-ORDER-TEST", status: "MOI", sales_channel: "ONLINE", created_at: "2026-11-02T08:00:00Z", recipient, note: null };
 
 (async () => {
-  const browser = await chromium.launch({ headless: true, channel: process.env.PHUB_CHROMIUM_CHANNEL || "chrome" });
+  const browser = await chromium.launch({ headless: true, channel: process.env.PHUB_CHROMIUM_CHANNEL || "chrome", args: ["--disable-features=LocalNetworkAccessChecks"] });
   try {
     const page = await browser.newPage();
     const errors = [];
@@ -25,10 +25,12 @@ const receipt = { ...quote, id: "AUTO-ORDER-TEST", status: "MOI", sales_channel:
       const ok = json => route.fulfill({ json });
       if (path.endsWith("/auth/me")) return ok({ account_id: "ACCOUNT-TEST", username: "test", role: "KHACH_HANG", name: profile.name, customer_id: profile.customer_id, employee_id: null, warehouse_id: null });
       if (path === "/api/customer/me" || path === "/api/backend/customer/me") return ok(profile);
+      if (path === "/api/customer/addresses") return ok({ items: [{ id: "00000000-0000-4000-8000-000000000001", ...recipient, is_default: true }], item: null });
       if (path === `/api/catalog/products/${product.id}`) return ok(product);
+      if (path === "/api/catalog/availability") return ok({ items: [{ sku: product.sku, available_quantity: 185 }], tax_rate: "10.00", currency: "VND" });
       if (path.startsWith("/api/catalog/")) return ok({ items: [] });
       if (path.endsWith("/checkout/quote")) return ok(quote);
-      if (path === "/api/customer/orders" && route.request().method() === "POST") { posts++; return ok(receipt); }
+      if (path === "/api/customer/orders" && route.request().method() === "POST") { posts++; const body = route.request().postDataJSON(); assert.equal(body.expected_total, "925000000.00"); assert.deepEqual(body.items.map(item => [item.warehouse_id, item.quantity]), [[1, 185]]); return ok(receipt); }
       if (path.endsWith("/invoice")) {
         invoiceReads++;
         if (failing) return route.fulfill({ status: 503, json: { error: { message: "Test temporary failure" } } });
@@ -45,6 +47,7 @@ const receipt = { ...quote, id: "AUTO-ORDER-TEST", status: "MOI", sales_channel:
     await invoice.locator("tbody tr").getByRole("cell", { name: "185", exact: true }).waitFor();
     assert.equal(await invoice.getByText(product.name, { exact: true }).count(), 1);
     assert.equal(posts, 1, "Invoice is displayed after checkout, with no separate issuance POST");
+    assert.equal(await page.evaluate(() => localStorage.getItem("phub-cart-v1:AUTO-INVOICE-TEST")), "[]", "Completed quantities are removed from the cart");
     assert.ok(invoiceReads > 0);
     present = false;
     await invoice.getByText("Đơn chưa có hóa đơn được lập.").waitFor({ timeout: 12000 });
