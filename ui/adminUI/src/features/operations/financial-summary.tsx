@@ -1,10 +1,7 @@
 "use client";
 import type { Summary } from "../dashboard/use-dashboard-data";
 import Link from "next/link";
-import { ArrowUpRight, ChartNoAxesCombined } from "lucide-react";
 import { ScrollableTable } from "../tables/scrollable-table";
-import { ExportCsvButton } from "../../components/export-csv-button";
-import styles from "./financial-summary.module.css";
 export type FinancialSummaryData = Pick<Summary, "start" | "end" | "revenue" | "collected" | "top_products">;
 export function formatMoney(value: string) {
   const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(value);
@@ -53,16 +50,10 @@ export function FinancialSummary({ summary, disabled = false, reportHref }: { su
   }
   return (
     <section className="operation-history" aria-label="Báo cáo tài chính">
-      <div className={styles.heading}>
+      <div className="live-tools">
         <h2>Doanh thu và thu tiền</h2>
-        <div className={styles.actions}>
-          <ExportCsvButton onClick={download} disabled={disabled} />
-          {reportHref && <Link className={styles.detailLink} href={reportHref}>
-            <ChartNoAxesCombined size={18} aria-hidden="true" />
-            <span>Xem báo cáo chi tiết</span>
-            <ArrowUpRight size={16} className={styles.arrow} aria-hidden="true" />
-          </Link>}
-        </div>
+        <button onClick={download} disabled={disabled}>Xuất báo cáo CSV</button>
+        {reportHref && <Link href={reportHref}>Xem báo cáo chi tiết →</Link>}
       </div>
       <p>
         {summary.start} → {summary.end} · theo giờ Việt Nam

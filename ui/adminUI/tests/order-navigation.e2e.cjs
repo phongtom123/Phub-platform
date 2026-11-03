@@ -36,13 +36,6 @@ async function main() {
       const respond = body => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       if (url.pathname === "/api/backend/auth/me") return respond({ account_id: "TK-TEST", name: "Admin Test", username: "test.admin", role: "ADMIN" });
       if (url.pathname === "/api/backend/data/resources") return respond(resources);
-      if (url.pathname === `/api/backend/admin/orders/${order}/detail`) return respond({
-        order_id: order,
-        order: { ma_donhang: order, ma_kh: "CUST-1", ma_nhan_vien: "EMP-1", kenh_ban: "ONLINE", trang_thai: "HOAN_THANH", thoi_gian_dat: "2026-10-25T08:30:00", ten_nguoi_nhan: "Người nhận đơn", sdt_nguoi_nhan: "0901234567" },
-        customer: { ma_kh: "CUST-1", ten_kh: "Nguyễn Văn Khách" }, employee: { ma_nhan_vien: "EMP-1", ho_ten: "Trần Thị Nhân Viên" },
-        lines: [], invoice: null, payments: [], voucher_uses: [],
-        financial: { invoice_id: null, invoice_status: "CHUA_LAP", payment_status: "CHUA_CO_HOA_DON", total: null, collected: "0.00", refunded: "0.00", paid: "0.00", remaining: null },
-      });
       if (url.pathname === "/api/backend/admin/operations/read/settings") return respond({store_name:"PHUB",store_address:"",store_phone:"",low_stock_threshold:5});
       if (url.pathname === "/api/backend/admin/operations/read/summary") return respond({counts:{orders:2,products:1,customers:1,inventory:1},orders:[],statuses:[],channels:[],inventory:[],revenue:"0",collected:"0",top_products:[],start:"2026-10-01",end:"2026-10-28"});
       const name = url.pathname.split("/").pop();

@@ -31,11 +31,9 @@ const resources=[{name:'receipts',title:'Phiếu nhập',keys:['ma_phieu_nhap'],
   return json({data:[],total:0,filters:{}});
  });
  await page.goto(base+'/data/receipts?workflow=new');
- await page.getByRole('combobox',{name:'Chọn kho',exact:true}).selectOption('2');
- await page.getByRole('combobox',{name:'Chọn nhà cung cấp',exact:true}).fill('1');
- await page.getByRole('option',{name:/Mã NCC: 1$/}).click();
- await page.getByRole('combobox',{name:'Chọn sản phẩm dòng 1',exact:true}).fill('S');
- await page.getByRole('option',{name:/SKU: S/}).click();
+ assert.equal(await page.getByRole('combobox',{name:'Chọn kho',exact:true}).isDisabled(),true);
+ await page.getByRole('combobox',{name:'Chọn nhà cung cấp',exact:true}).selectOption('1');
+ await page.getByRole('combobox',{name:'Chọn sản phẩm dòng 1',exact:true}).selectOption('S');
  await page.getByLabel('Giá dòng 1',{exact:true}).fill('1000000');
  await page.getByText('1.344.000 ₫',{exact:true}).waitFor();
  await page.getByLabel('Tỷ lệ cộng lãi (%)',{exact:true}).fill('25');

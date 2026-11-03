@@ -48,28 +48,6 @@ def test_health_is_offline():
         assert client.get("/api/health").json() == {"status": "ok"}
 
 
-@pytest.mark.parametrize("query,identifier", [("12", 12), ("0012", 12), ("-5", -5), ("2147483647", 2147483647)])
-def test_supplier_search_matches_numeric_id_and_text_fields(platform_client, query, identifier):
-    client, state, requests = platform_client
-    state["rows"] = [{"ma_ncc": identifier, "ten_ncc": "Supplier"}]
-    response = client.get("/api/data/suppliers", params={"q": query, "page_size": 10})
-    assert response.status_code == 200
-    clause = requests[-1].url.params["or"]
-    assert f"ma_ncc.eq.{identifier}" in clause
-    assert "ten_ncc.imatch." in clause
-    assert requests[-1].method == "GET"
-
-
-@pytest.mark.parametrize("query", ["Supplier Alpha", "2147483648", "12,ma_ncc.gt.0", "1.5", "1e2"])
-def test_supplier_search_does_not_cast_text_or_out_of_range_identifiers(platform_client, query):
-    client, _, requests = platform_client
-    response = client.get("/api/data/suppliers", params={"q": query})
-    assert response.status_code == 200
-    clause = requests[-1].url.params["or"]
-    assert "ma_ncc.eq." not in clause
-    assert "ten_ncc.imatch." in clause
-
-
 @pytest.mark.parametrize("resource,pk,patch", [
     ("receipts", "ma_phieu_nhap", {"ma_ncc": -3, "ma_phieu_code": "PN-MOI"}),
 ])

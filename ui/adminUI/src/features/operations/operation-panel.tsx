@@ -6,7 +6,6 @@ import type { DataRow } from "../../lib/inline-table-data";
 import { dataHref } from "../../lib/data-navigation";
 import { adminFetch } from "../../lib/admin-fetch";
 import { ReferenceInput } from "./reference-input";
-import { ProductAutocomplete, SupplierAutocomplete } from "./product-autocomplete";
 import { OrderPaymentFields, type CollectionDraft } from "./order-payment-fields";
 import { paymentMethods, type PaymentMethod } from "./order-payment-data";
 import { formatMoney } from "./financial-summary";
@@ -510,10 +509,10 @@ export function OperationPanel({
                 </label>
                   <label>
                     Nhà cung cấp *
-                    <SupplierAutocomplete
+                    <ReferenceInput
+                      field="ma_ncc"
                       value={supplier}
                       required
-                      disabled={busy || Boolean(pending.current)}
                       label="Chọn nhà cung cấp"
                       onChange={setSupplier}
                     />
@@ -527,12 +526,7 @@ export function OperationPanel({
                   <div className="operation-line" key={index}>
                     <label>
                       Sản phẩm *
-                      {resource === "receipts" ? <ProductAutocomplete
-                        label={`Chọn sản phẩm dòng ${index + 1}`}
-                        required value={l.sku}
-                        disabled={busy || Boolean(pending.current)}
-                        onChange={(sku) => setLine(index, { sku, pricing: undefined })}
-                      /> : <ReferenceInput
+                      <ReferenceInput
                         field="sku"
                         label={`Chọn sản phẩm dòng ${index + 1}`}
                         required
@@ -546,7 +540,7 @@ export function OperationPanel({
                               : {}),
                           })
                         }
-                      />}
+                      />
                     </label>
                     {resource === "orders" && (
                       <label>

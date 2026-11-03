@@ -8,13 +8,10 @@ import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
 import { orderValue } from "./order-presentation";
 import styles from "./order-detail.module.css";
-import { OrderFinancialSummary } from "./order-financial-summary";
-import type { AdminOrderDetailData } from "./order-detail-data";
 
 type RelatedResource = { name: string; title: string };
 type Props = {
-  row: DataRow; columns: DataColumn[]; related: RelatedResource[]; version: number;
-  financial?: AdminOrderDetailData["financial"]; onRefresh?: () => void;
+  row: DataRow; columns: DataColumn[]; related: RelatedResource[];
   label: (field: string) => string;
   personName: (row: DataRow, field: "ma_kh" | "ma_nhan_vien") => ReactNode;
 };
@@ -35,7 +32,7 @@ const fieldLabels: Record<string, string> = {
   tinh_thanh: "Tỉnh / thành phố", xa_phuong: "Phường / xã", ghi_chu: "Ghi chú đơn hàng",
 };
 
-export function OrderDetail({ row, columns, related, label, personName, version, financial, onRefresh }: Props) {
+export function OrderDetail({ row, columns, related, label, personName }: Props) {
   const status = String(row.trang_thai ?? "");
   const complete = status === "HOAN_THANH";
   const cancelled = status === "HUY";
@@ -63,8 +60,6 @@ export function OrderDetail({ row, columns, related, label, personName, version,
         </span>
       </div>
     </header>
-
-    <OrderFinancialSummary orderId={String(row.ma_donhang)} version={version} financial={financial} onRefresh={onRefresh} />
 
     <div className={styles.grid}>
       <section className={styles.card} aria-labelledby="order-delivery-title">

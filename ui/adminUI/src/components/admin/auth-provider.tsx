@@ -5,7 +5,6 @@ import { AuthRequestError, getSession, logoutSession, type SessionUser } from ".
 import { ADMIN_SESSION_EXPIRED, advanceSessionEpoch, getSessionEpoch } from "@/src/lib/admin-fetch";
 import { AdminDataPreloader } from "./data-preloader";
 import { enterStaffPortal } from "../../../../shared/staff-portal";
-import { customerPortalUrl } from "@/src/lib/customer-portal-url";
 
 type AuthState = {
   user: SessionUser | null | undefined;
@@ -36,9 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (nextUser.role === "NHAN_VIEN") {
       await enterStaffPortal(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002", signal);
     } else if (nextUser.role === "KHACH_HANG") {
-      window.location.replace(customerPortalUrl(
-        process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001", window.location.href,
-      ));
+      window.location.replace(process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001");
     }
   }, []);
 
@@ -75,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (reason instanceof AuthRequestError && (reason.status === 401 || reason.status === 403)) {
         invalidate(); return;
       }
-      setError(userRef.current && userRef.current.role !== "ADMIN" && reason instanceof Error
+      setError(userRef.current?.role === "NHAN_VIEN" && reason instanceof Error
         ? reason.message
         : "Chưa kiểm tra được phiên đăng nhập. API tạm thời không khả dụng; phiên chưa bị xóa.");
     }).finally(() => {

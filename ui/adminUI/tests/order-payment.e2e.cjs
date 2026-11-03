@@ -24,10 +24,6 @@ const payment = (id, amount, type='THU', status='THANH_CONG', method='TIEN_MAT')
       const json=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
       if(path==='auth/me')return json({account_id:'AD1',username:'admin',name:'Admin',role:'ADMIN',employee_id:'NV1'});
       if(path==='data/resources')return json(resources);
-      if(path===`admin/orders/${order.ma_donhang}/detail`)return json({
-        order_id:order.ma_donhang,order,customer:null,employee:null,lines:[],invoice:null,payments:[],voucher_uses:[],
-        financial:{invoice_id:'HD-TEST',invoice_status:'DA_LAP',payment_status:'THU_MOT_PHAN',total:'1000.30',collected:'200.10',refunded:'50.05',paid:'150.05',remaining:'850.25'},
-      });
       if(request.method()==='POST'){
         assert.equal(path,'admin/operations/orders');
         writes.push({body:request.postDataJSON(),key:request.headers()['idempotency-key']});
