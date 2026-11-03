@@ -69,7 +69,7 @@ def build_facets(products, filters, available=None):
                 and (filters.min_price is None or product.price >= filters.min_price)
                 and (filters.max_price is None or product.price <= filters.max_price)
                 and (not filters.color or (product.color is None if filters.color == "__unspecified__" else product.color and product.color.casefold() == filters.color.casefold()))
-                and (not filters.stock_status or ((product.sku in available) == (filters.stock_status.value == "in-stock"))))
+                and (not filters.stock_status or ((product.is_active and product.sku in available) == (filters.stock_status.value == "in-stock"))))
 
     counters = {key: Counter() for key in groups}
     brands = Counter()

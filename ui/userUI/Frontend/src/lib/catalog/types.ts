@@ -3,6 +3,7 @@ import type { DetailProduct } from "@/data/product-details";
 import { resolveProductMediaUrl } from "@/lib/media";
 
 export interface ApiProduct {
+  is_active?: boolean;
   id: string; sku: string; name: string;
   category: { id: string; name: string }; brand: string | null;
   subcategory: { id: string; name: string };
@@ -41,7 +42,7 @@ export function safeImageUrl(value: string | undefined): string {
 
 export function catalogProduct(product: ApiProduct): CatalogProduct {
   return {
-    id: product.id, sku: product.sku, name: product.name,
+    id: product.id, sku: product.sku, name: product.name, isActive: product.is_active !== false,
     category: product.category.id, categoryName: product.category.name,
     subcategory: product.subcategory.id, subcategoryName: product.subcategory.name,
     brand: product.brand ?? "", color: "", position: 0,
@@ -53,7 +54,7 @@ export function catalogProduct(product: ApiProduct): CatalogProduct {
 
 export function detailProduct(product: ApiProduct): DetailProduct {
   return {
-    id: product.id, sku: product.sku, name: product.name,
+    id: product.id, sku: product.sku, name: product.name, isActive: product.is_active !== false,
     brand: product.brand ?? "", category: product.category.name, categoryId: product.category.id,
     subcategory: product.subcategory.name, subcategoryId: product.subcategory.id,
     price: Number(product.price), currency: product.currency,

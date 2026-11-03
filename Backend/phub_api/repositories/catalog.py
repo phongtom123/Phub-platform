@@ -9,7 +9,7 @@ from phub_api.repositories.pagination import rows as all_rows
 from phub_api.schemas.catalog import CatalogQuery, CatalogSort
 
 PRODUCT_COLUMNS = (
-    "ma_sp,sku,ten_sp,thuong_hieu,gia_ban_hien_tai::text,mo_ta,"
+    "ma_sp,sku,ten_sp,trang_thai,thuong_hieu,gia_ban_hien_tai::text,mo_ta,"
     "thong_so_ky_thuat,don_vi,bao_hanh_thang,duong_dan_anh,ma_loai_sp_con,"
     "category:LOAI_SP!inner(ma_loai_sp,ten_loai_sp,trang_thai),"
     "subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(ma_loai_sp_con,ten_loai_sp_con,trang_thai),"
@@ -33,6 +33,16 @@ class CatalogRepository:
             .eq("category.trang_thai", self.active_status)
             .eq("subcategory.trang_thai", self.active_status)
         )
+
+    def visible_products(self, columns: str, include_inactive=False, **options):
+        if not include_inactive:
+            return self.active_products(columns, **options)
+        return (self.client.table("SAN_PHAM").select(columns, **options)
+                # Admin statuses: 0 = hidden, 1 = active, 2 = paused.
+                # Showing paused products must never expose hidden records.
+                .in_("trang_thai", sorted({2, self.active_status}))
+                .eq("category.trang_thai", self.active_status)
+                .eq("subcategory.trang_thai", self.active_status))
 
     def banners(self, local_now: str):
         return (self.client.table("CHUONG_TRINH_KHUYEN_MAI").select(
@@ -61,7 +71,7 @@ class CatalogRepository:
         return query
 
     def product_query(self, filters: CatalogQuery):
-        query = self.apply_filters(self.active_products(PRODUCT_COLUMNS, count="exact"), filters)
+        query = self.apply_filters(self.visible_products(PRODUCT_COLUMNS, filters.include_inactive, count="exact"), filters)
         if filters.sort != CatalogSort.DEFAULT:
             query = query.order("gia_ban_hien_tai", desc=filters.sort == CatalogSort.PRICE_DESC)
         return query.order("ma_sp")
@@ -77,14 +87,15 @@ class CatalogRepository:
         except APIError as exc:
             if exc.code != "PGRST103":
                 raise
-            query = self.apply_filters(self.active_products(
+            query = self.apply_filters(self.visible_products(
                 "ma_sp,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)",
+                filters.include_inactive,
                 count="exact", head=True,
             ), filters)
             return [], query.execute().count
 
-    def find(self, identifier):
-        rows = self.active_products(PRODUCT_COLUMNS).eq("ma_sp", identifier).limit(1).execute().data
+    def find(self, identifier, include_inactive=False):
+        rows = self.visible_products(PRODUCT_COLUMNS, include_inactive).eq("ma_sp", identifier).limit(1).execute().data
         return rows[0] if rows else None
 
     def public_skus(self, skus):

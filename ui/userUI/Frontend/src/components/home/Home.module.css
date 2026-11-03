@@ -1,4 +1,4 @@
-.home { color: #000; background: #fff; font-family: var(--font-poppins), Arial, sans-serif; padding-bottom: clamp(180px, 74vw, 72px); }
+.home { color: #000; background: #fff; font-family: var(--font-poppins), Arial, sans-serif; padding-bottom: 0; }
 .home *, .home *::before, .home *::after { box-sizing: border-box; }
 .container { width: min(1398px, calc(100% - 40px)); margin-inline: auto; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -65,7 +65,6 @@
   .tabs button { font-size: 14px; }
 }
 @media (max-width: 760px) {
-  .home { padding-bottom: 120px; }
   .container { width: calc(100% - 28px); }
   .newProducts { margin-top: 24px; }
   .sectionHeading h2 { font-size: 19px; }
@@ -117,7 +116,6 @@
 .hero .arrow { width: 35px; height: 60px; padding: 0; background: transparent; }
 /* Mobile rearranges the desktop content without replacing its assets. */
 @media (max-width: 760px) {
-  .home { padding-bottom: 40px; }
   .hero { margin: 12px 0 0; }
   .hero .arrow { width: 28px; height: 44px; }
   .hero .arrow img { width: 28px; height: 44px; }

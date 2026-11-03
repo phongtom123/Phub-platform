@@ -1,0 +1,1365 @@
+{
+  "batch": "catalog-gallery-20261103",
+  "products": [
+    {
+      "product_id": "SP092",
+      "sku": "COR-CASE-3000D-AIRFLOW-BLK",
+      "name": "Vỏ máy Corsair 3000D Airflow màu đen",
+      "official_page": "https://www.corsair.com/ww/en/p/pc-cases/CC-9011251-WW/3000d-tempered-glass-mid-tower-black-cc-9011251-ww",
+      "original_image_source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/CC-9011251-WW/3000D_AF_BLACK_RENDER_01.webp",
+      "additions": [
+        {
+          "source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/CC-9011251-WW/3000D_AF_BLACK_RENDER_02.webp",
+          "cache_file": "SP092-gallery-f1f7a671c327.image",
+          "sha256": "c3cf07b39b9f1baa3f44481888581eace0443b7016fd188c6796a8d1b1202f1f",
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp",
+          "media_id": "b6f7896c-6612-4744-8c44-6090d54aac37",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8e9289a4c9964899aad8f77e08ab651c.webp",
+          "stored_width": 1024,
+          "stored_height": 1024,
+          "stored_bytes": 83560
+        },
+        {
+          "source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/CC-9011251-WW/3000D_AF_BLACK_RENDER_03.webp",
+          "cache_file": "SP092-gallery-f8117610f992.image",
+          "sha256": "694a907e19ab0392e32c9ac4e865ad9581bc347c57af8104c8feb1f60dafeb0d",
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp",
+          "media_id": "ebcd2cfb-a281-4083-98f0-65e5274da216",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/67327fcb825c442cb60766a309f01cef.webp",
+          "stored_width": 1024,
+          "stored_height": 1024,
+          "stored_bytes": 10598
+        },
+        {
+          "source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/CC-9011251-WW/3000D_AF_BLACK_RENDER_04.webp",
+          "cache_file": "SP092-gallery-175a478af285.image",
+          "sha256": "4b8b95f1530a0d4ee7af1f5d44d383c5611bc87a7d576eba9cfb178ebe5e8833",
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp",
+          "media_id": "1b7a4f07-7baa-4957-b0c4-e79419d50a28",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ca6e196f0e924e5a8c9b4f55d3a249b6.webp",
+          "stored_width": 1024,
+          "stored_height": 1024,
+          "stored_bytes": 31726
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP092",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/84a8a0407407446496469115f29658e5.webp",
+        "images": [
+          {
+            "media_id": "323acb8e-8afa-471e-bbca-3683593d1a4c",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/84a8a0407407446496469115f29658e5.webp",
+            "alt_text": "Vỏ máy Corsair 3000D Airflow màu đen",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP093",
+      "sku": "COR-CASE-2000D-AIRFLOW-BLK",
+      "name": "Vỏ máy Corsair 2000D Airflow Mini-ITX màu đen",
+      "official_page": "https://www.corsair.com/us/en/p/pc-cases/cc-9011244-ww/2000d-airflow-mini-itx-pc-case-black-cc-9011244-ww",
+      "original_image_source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/base-2000D-rgb-airflow/CC-9011244/CC-9011244_01.webp",
+      "additions": [
+        {
+          "source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/base-2000D-rgb-airflow/CC-9011244/CC-9011244_02.webp",
+          "cache_file": "SP093-gallery-17dc1b371bc0.image",
+          "sha256": "75e7a32852c2a9e14f3856ba85860300149271936237fb67d3e36774a4c10727",
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp",
+          "media_id": "9e6265fb-d3a4-4af5-9587-b4fc97c44e78",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/69eac268a3f14c31852b199a7966d6bb.webp",
+          "stored_width": 1024,
+          "stored_height": 1024,
+          "stored_bytes": 58216
+        },
+        {
+          "source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/base-2000D-rgb-airflow/CC-9011244/CC-9011244_03.webp",
+          "cache_file": "SP093-gallery-753d415301be.image",
+          "sha256": "c0f982541c5afd6673eed1d162952b9c78dd83fbe5700e08f4da655cdd0c5c23",
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp",
+          "media_id": "b2b1971c-b22f-4b8b-b9c3-872466670e93",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/4d53256aed98416ba068f931ef210a63.webp",
+          "stored_width": 1024,
+          "stored_height": 1024,
+          "stored_bytes": 128922
+        },
+        {
+          "source": "https://assets.corsair.com/image/upload/c_pad,q_auto,h_1024,w_1024,f_auto/products/Cases/base-2000D-rgb-airflow/CC-9011244/CC-9011244_04.webp",
+          "cache_file": "SP093-gallery-ca1519a45616.image",
+          "sha256": "a1c54cbeca870879b6494fbc29aaaed01993fbf56b6adc6c71188b6a33651df0",
+          "width": 1024,
+          "height": 1024,
+          "mime": "image/webp",
+          "media_id": "599af5dd-2b71-4558-a1d9-054791284a2f",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ad6bd7d88dd345ac88b34591bc05d553.webp",
+          "stored_width": 1024,
+          "stored_height": 1024,
+          "stored_bytes": 89602
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP093",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/a26ab004908b47afae014130743182e0.webp",
+        "images": [
+          {
+            "media_id": "4eb11013-e781-4091-a9cf-4fc69630b12a",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/a26ab004908b47afae014130743182e0.webp",
+            "alt_text": "Vỏ máy Corsair 2000D Airflow Mini-ITX màu đen",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP094",
+      "sku": "CM-CASE-MASTERBOX-Q300L",
+      "name": "Vỏ máy Cooler Master MasterBox Q300L",
+      "official_page": "https://www.coolermaster.com/en-us/products/masterbox-q300l.html",
+      "original_image_source": "https://www.coolermaster.com/on/demandware.static/-/Sites-cooler-master-main/default/dwf7ababb2/Assets/masterbox-q300l/large/gallery-1-min.png",
+      "additions": [
+        {
+          "source": "https://www.coolermaster.com/on/demandware.static/-/Sites-cooler-master-main/default/dw815d7839/Assets/masterbox-q300l/large/gallery-2-min.png",
+          "cache_file": "SP094-gallery-a8b130f93e9f.image",
+          "sha256": "3c037d4abf64a82774dba003117b9c5c995314ccd172eac7e08e2f9d2103e774",
+          "width": 4000,
+          "height": 4000,
+          "mime": "image/png",
+          "media_id": "c4043291-f892-46b0-9d89-015c4fd5405f",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/35c08a60f8694c6593106d7c6c16b3c0.webp",
+          "stored_width": 4000,
+          "stored_height": 4000,
+          "stored_bytes": 1324278
+        },
+        {
+          "source": "https://www.coolermaster.com/on/demandware.static/-/Sites-cooler-master-main/default/dwf7a0df19/Assets/masterbox-q300l/large/gallery-3-min.png",
+          "cache_file": "SP094-gallery-a72953033774.image",
+          "sha256": "1f3a9735c586308b01b4ebc61ba2f4573e043a93f9526653781bb73ec7f8e999",
+          "width": 4000,
+          "height": 4000,
+          "mime": "image/png",
+          "media_id": "40f8b131-ab69-47f6-ab65-1c65705aabb2",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/e84c604df0da411aa7255350d7e8efdf.webp",
+          "stored_width": 4000,
+          "stored_height": 4000,
+          "stored_bytes": 1241782
+        },
+        {
+          "source": "https://www.coolermaster.com/on/demandware.static/-/Sites-cooler-master-main/default/dw01ecbbb8/Assets/masterbox-q300l/large/gallery-4-min.png",
+          "cache_file": "SP094-gallery-486f4f39a774.image",
+          "sha256": "5a11e82a27269ba3253ab110295f15289dd29a2876a0f064a8c5ca7a64596bab",
+          "width": 4000,
+          "height": 4000,
+          "mime": "image/png",
+          "media_id": "46067aae-9192-4070-9204-870ac3930c4d",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/580c87d36ffe4487851a1d260d03ce40.webp",
+          "stored_width": 4000,
+          "stored_height": 4000,
+          "stored_bytes": 614522
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP094",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/e3aff4e3112a4f39886a157ec9b7fc3f.webp",
+        "images": [
+          {
+            "media_id": "b9fa0d88-9f5e-4b5d-8d90-bc53005e04f6",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/e3aff4e3112a4f39886a157ec9b7fc3f.webp",
+            "alt_text": "Vỏ máy Cooler Master MasterBox Q300L",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP095",
+      "sku": "TR-AIR-AX120-REFINED-SE",
+      "name": "Tản nhiệt khí Thermalright Assassin X 120 Refined SE",
+      "official_page": "https://www.thermalright.com/product/assassin-x-120-refined-se/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/assassin-x-120-refined-se.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2021/10/AX120-R-SE-主图2.jpg",
+          "cache_file": "SP095-gallery-0568a2032331.image",
+          "sha256": "76962f825ad51d2fdb3c993b86b4a746b77dd5fbf639a761612055843c8a9f48",
+          "width": 800,
+          "height": 800,
+          "mime": "image/jpeg",
+          "media_id": "8d1a0406-d9c3-423f-b29e-acfc153962f4",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/c6955f59afe34e75aef35dd5cc12b4c8.webp",
+          "stored_width": 800,
+          "stored_height": 800,
+          "stored_bytes": 49598
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2021/10/AX120-R-SE-主图3.jpg",
+          "cache_file": "SP095-gallery-1fa4d7c95fa6.image",
+          "sha256": "1454c8de13a8819acb5d1ba87e52bafd75a902b3acd83c63297919905b54bd86",
+          "width": 800,
+          "height": 800,
+          "mime": "image/jpeg",
+          "media_id": "6fb24629-edc2-4e58-8897-090beee9ae9a",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/dddd2f21ea454b7aabb7706ffe173ab2.webp",
+          "stored_width": 800,
+          "stored_height": 800,
+          "stored_bytes": 43872
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2021/10/AX120-R-SE-主图4.jpg",
+          "cache_file": "SP095-gallery-d779502cb5ce.image",
+          "sha256": "81e840142f15f8b2a0a1d3d9684ff941ae0f844e1de41136dc99a0b4b014839a",
+          "width": 800,
+          "height": 800,
+          "mime": "image/jpeg",
+          "media_id": "b9764651-21bd-4d7e-813c-add8d961a90a",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/629f916cb4774d5aa902655f2cf6640a.webp",
+          "stored_width": 800,
+          "stored_height": 800,
+          "stored_bytes": 52630
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP095",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ade33a867b864c78899fa4c8b7420ade.webp",
+        "images": [
+          {
+            "media_id": "0855189f-b85e-4aae-b61f-7f288c1d30b9",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ade33a867b864c78899fa4c8b7420ade.webp",
+            "alt_text": "Tản nhiệt khí Thermalright Assassin X 120 Refined SE",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP096",
+      "sku": "TR-AIR-ASSASSIN-KING120-SE",
+      "name": "Tản nhiệt khí Thermalright Assassin King 120 SE",
+      "official_page": "https://www.thermalright.com/product/assassin-king-120-se/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/assassin-king-120-se.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/04/3-1.jpg",
+          "cache_file": "SP096-gallery-2284ff7beddb.image",
+          "sha256": "9a66fc7b2c51c8f974a0b8bbe615e896bfa0a5213d19fdcce9d9a3fd5143ecf6",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "2caa7b96-a87e-4876-a355-befb1a0c3f88",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/3e9967047ecf4b858e0b8685bb33a730.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 153690
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/04/4-1.jpg",
+          "cache_file": "SP096-gallery-bf585f38099e.image",
+          "sha256": "9b5fb586e8518fc585c9240b98f17eba0c10d7ee816e7b0de8138cc7b117493a",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "99b44e59-2fe9-496f-9b80-50300c9a67bb",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/fe62e5140ea64532b4a8c88c83467569.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 132204
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/04/5-1.jpg",
+          "cache_file": "SP096-gallery-f7f01e39422e.image",
+          "sha256": "06a74ac83b1022fe8234200d0c82f2f74233e6546aefdbe4f15f0ac7b66a7799",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "c837d071-dd3e-4c51-a071-fa62e9663b43",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/3f434f82eca44243adc957e4d3ede2c6.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 127130
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP096",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/c4a9be1844c045979673d952e241af2a.webp",
+        "images": [
+          {
+            "media_id": "469c14f5-6e0e-4932-966d-eb7bfa74f487",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/c4a9be1844c045979673d952e241af2a.webp",
+            "alt_text": "Tản nhiệt khí Thermalright Assassin King 120 SE",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP097",
+      "sku": "TR-AIR-BURST-ASSASSIN120",
+      "name": "Tản nhiệt khí Thermalright Burst Assassin 120",
+      "official_page": "https://www.thermalright.com/product/burst-assassin-120/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/burst-assassin-120.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/04/2.jpg",
+          "cache_file": "SP097-gallery-f3bd32e6b589.image",
+          "sha256": "38ea5a57493523a125677e3fdfa37f1816b03a7b333095380191e4bd351d153a",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "f564d583-2e95-4b0f-a5d0-f6547ec8983b",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/dbfbe05b80b642f3a82ea5fc282fa47e.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 154542
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/04/3.jpg",
+          "cache_file": "SP097-gallery-e9fd423bcb24.image",
+          "sha256": "f719cf590559986e25cd657c4dacfe6d37437a0292c1ba908bef9486ad4267f4",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "6eab8fde-f848-42b7-aff9-1f1f72d5c21a",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/b7b45a718a1340d7967ab714c1c55351.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 176876
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/04/4.jpg",
+          "cache_file": "SP097-gallery-8d2bff30b49d.image",
+          "sha256": "605f8d25a119a2b307643094865e6626d310fc4726c6b6011622e7865cc94498",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "ff41bc6d-9bbc-48b9-b23d-e7a1820e89b5",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/3248db1490c541ba8e12ccb7657cc3f5.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 100574
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP097",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/4d6ff489a2ba485db70cbcaf04bed8c9.webp",
+        "images": [
+          {
+            "media_id": "a5aebaa1-d11c-46cf-af95-e49e9b929a6f",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/4d6ff489a2ba485db70cbcaf04bed8c9.webp",
+            "alt_text": "Tản nhiệt khí Thermalright Burst Assassin 120",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP098",
+      "sku": "TR-AIO-FROZEN-NOTTE240-BLK",
+      "name": "Tản nhiệt nước Thermalright Frozen Notte 240 Black ARGB",
+      "official_page": "https://www.thermalright.com/product/frozen-notte-240-black-argb/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/frozen-notte-240-black-argb.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/10/2.jpg",
+          "cache_file": "SP098-gallery-45bbc336f559.image",
+          "sha256": "92318c8cbbff41d74b7ff44c405215a5d7b7f73d8aa1609f89b9b381528f095b",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "aaa23ae5-e9e5-42a4-bd29-813eadaa0a8f",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/562f7401fda447f08f9a75bab4ca8467.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 97662
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/10/3.jpg",
+          "cache_file": "SP098-gallery-3ada470973e3.image",
+          "sha256": "575525fe9488d9f5a22fb86e149eb4d84f4be678323e40e6e452ffd774109fad",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "4ee42b12-9559-4450-baeb-c7cf3e21ebe9",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/bff7eed316c2447ab4b9303c42f959f8.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 94924
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/10/4.jpg",
+          "cache_file": "SP098-gallery-94c70a0a6c59.image",
+          "sha256": "58eebf9950f98ec894235db6952dbc43a0517eb92d899f92d56eae29e92de837",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "1f993d88-adf1-40ba-8aaa-c205c9b5b9f7",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/333d18e210f1432eb4d58b51373442a6.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 55094
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP098",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/233cefe298214460a46f15d304266562.webp",
+        "images": [
+          {
+            "media_id": "c2910f1c-5cc0-4af9-a3c2-7c0483f55053",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/233cefe298214460a46f15d304266562.webp",
+            "alt_text": "Tản nhiệt nước Thermalright Frozen Notte 240 Black ARGB",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP099",
+      "sku": "TR-AIO-FROZEN-NOTTE360-BLK",
+      "name": "Tản nhiệt nước Thermalright Frozen Notte 360 Black ARGB",
+      "official_page": "https://www.thermalright.com/product/frozen-notte-360-black-argb/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/frozen-notte-360-black-argb.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/08/2-12.jpg",
+          "cache_file": "SP099-gallery-9d8fbee9ce10.image",
+          "sha256": "20d34a4212ebde7f7525b3ff0371a361969ea66347ec6824b815bbf5173d1bec",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "da333ec9-4030-4d42-a32a-15226efe9b62",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/bbe59f749a7b4bb794ff7daec7fb3a59.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 83716
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/08/3-12.jpg",
+          "cache_file": "SP099-gallery-383d75de16fb.image",
+          "sha256": "1238d5074a8ce17aca1c9c2cfec61c4359a19382fce29e9fe29f97efdefc03bf",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "9df6c350-ff70-4430-b548-94c7c2254eed",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/5926deb70c8e4f96a5c25771d0407b68.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 82076
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/08/4-12.jpg",
+          "cache_file": "SP099-gallery-c0781caaae36.image",
+          "sha256": "ccca856fe88fff139f60c7515423fc283cd3a8d9577dd16eb3c33ec4251d5dca",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "1d17645d-3879-4a79-bcee-3bfc8b23bbbb",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/4ba97c6df6b04eca956e5d8e97436681.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 61014
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP099",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/b475b7fdc5ef4df99a7ad99bfde02b74.webp",
+        "images": [
+          {
+            "media_id": "f4776fa5-b89d-44d4-8a97-15eeca92cc92",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/b475b7fdc5ef4df99a7ad99bfde02b74.webp",
+            "alt_text": "Tản nhiệt nước Thermalright Frozen Notte 360 Black ARGB",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP100",
+      "sku": "TR-AIO-FROZEN-PRISM240-BLK",
+      "name": "Tản nhiệt nước Thermalright Frozen Prism 240 Black ARGB",
+      "official_page": "https://www.thermalright.com/product/frozen-prism-240-black-argb/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/frozen-prism-240-black-argb.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2023/02/2-1.jpg",
+          "cache_file": "SP100-gallery-22c8291781ee.image",
+          "sha256": "b3e60d087346d8268e244fe788d3a92e7f8f086478d64305f309abb71625851f",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "0baba679-d5f5-4d64-8b7c-8963ded5b659",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/b752c57f935c48f7b3a50c72e1ac0007.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 54636
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2023/02/3-1.jpg",
+          "cache_file": "SP100-gallery-0152ed0bcf8c.image",
+          "sha256": "c78393e9ef844e590167f984979ec925c2ba458b6b5d6be0bdcdc45c61424a37",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "e1787250-b94d-4476-8789-c33fa3a505a9",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/387956999f1c4a8daa1dc6e4de04250d.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 60014
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2023/02/5-1.jpg",
+          "cache_file": "SP100-gallery-ace2b56f11f6.image",
+          "sha256": "f71bc2b7434873ac1bf65ee0cffb3cc30905182161461823e3b9d64b50e5fdb3",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "e179d928-5b2b-4ded-a6e2-7479ab924b2a",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/a9b3f972d02c4a3b83bf99656a4a6845.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 157174
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP100",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8fb131349a4f47e3a3e946c8432b0b15.webp",
+        "images": [
+          {
+            "media_id": "a5a07605-188f-4656-9a63-d4115296fb2a",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8fb131349a4f47e3a3e946c8432b0b15.webp",
+            "alt_text": "Tản nhiệt nước Thermalright Frozen Prism 240 Black ARGB",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP101",
+      "sku": "TR-FAN-TL-C12C-120",
+      "name": "Quạt case Thermalright TL-C12C 120mm PWM",
+      "official_page": "https://www.thermalright.com/product/tl-c12c/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/tl-c12c.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/10/2-2.jpg",
+          "cache_file": "SP101-gallery-4f24c44b3224.image",
+          "sha256": "0b45acf2cee4c0c2e3ffe3ba8ba7e6d6a5e9c677b1b4f8462d217b8dd23b88c7",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "561f29a6-02cf-49e4-af3f-95c0a7c6a320",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/d3a8a3f24edb4362b3e6d4dc3b6763e8.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 99576
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/10/3-2.jpg",
+          "cache_file": "SP101-gallery-889e730ed25d.image",
+          "sha256": "46fc551cf27efa1336459ec9185721ad64ac05b91a0a7fe5238d16f37a1ebade",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "252541ec-7146-4050-a3ce-3dec89f0fb47",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8d9de0f0643243adbf67e121f1ac9cfc.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 20846
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/10/4-2.jpg",
+          "cache_file": "SP101-gallery-31d57f3d16b3.image",
+          "sha256": "f9b0d07e52f4d0d9db2aa59a235aeab457f5e74d939379c551923cb28548ef25",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "646e2554-e380-456e-b2d8-e4eaf321099d",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/2f55a7a4d86b4431bac869576dc2aca5.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 73542
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP101",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/c99657f1cb28452cb0dcfd93d1abddcc.webp",
+        "images": [
+          {
+            "media_id": "d3e2fd0e-5962-4777-8c47-c9d175ffefd7",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/c99657f1cb28452cb0dcfd93d1abddcc.webp",
+            "alt_text": "Quạt case Thermalright TL-C12C 120mm PWM",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP102",
+      "sku": "TR-FAN-TL-C12C-S-ARGB",
+      "name": "Quạt case Thermalright TL-C12C-S 120mm ARGB",
+      "official_page": "https://www.thermalright.com/product/tl-c12c-s/",
+      "original_image_source": "https://www.thermalright.com/wp-content/uploads/2026/08/tl-c12c-s-1.png",
+      "additions": [
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/12/2.jpg",
+          "cache_file": "SP102-gallery-83d330befaa9.image",
+          "sha256": "f6a250283a2706676ad3435beaa00683d0b5ee0301991da21e84cdce31352163",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "11bdb9f0-703c-484b-8a61-291926f56bbf",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/2b98e2f91cc249ec98b5d1ad2b0805f5.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 133140
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/12/3.jpg",
+          "cache_file": "SP102-gallery-a276d553b702.image",
+          "sha256": "637bf94b76500e2e10e38a562f317dd478b89325b816beaf3a7b3f61b4462800",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "04899941-5cae-49fb-ad16-89f12f9b3cfe",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ba656bbde4214a13939276914edba8f2.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 32604
+        },
+        {
+          "source": "https://www.thermalright.com/wp-content/uploads/2022/12/4.jpg",
+          "cache_file": "SP102-gallery-d60137232727.image",
+          "sha256": "08be897b65c64098b0b55085a9a6b1c357d38c9271d3f78b8b7a1d68632159d1",
+          "width": 1500,
+          "height": 1500,
+          "mime": "image/jpeg",
+          "media_id": "b2e4f172-ca04-4719-b9e4-1076f615a56b",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/7e9bdf4ac6ec4bc9baeb273d5667be7d.webp",
+          "stored_width": 1500,
+          "stored_height": 1500,
+          "stored_bytes": 47886
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP102",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/a7f98c63290e4bdc972dc2dd8225ae2b.webp",
+        "images": [
+          {
+            "media_id": "e8ce7cb7-7b8b-4059-9a30-b1633cdf7fb2",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/a7f98c63290e4bdc972dc2dd8225ae2b.webp",
+            "alt_text": "Quạt case Thermalright TL-C12C-S 120mm ARGB",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP103",
+      "sku": "ARC-FAN-P12-PWM-PST-BLK",
+      "name": "Quạt case ARCTIC P12 PWM PST 120mm màu đen",
+      "official_page": "https://www.arctic.de/en/P12-PWM-PST/ACFAN00120A",
+      "original_image_source": "https://www.arctic.de/media/51/49/e8/1583760048/P12_PWM_PST_Black_01.jpg",
+      "additions": [
+        {
+          "source": "https://www.arctic.de/media/88/81/4f/1583760039/P12_PWM_PST_Black_02.jpg",
+          "cache_file": "SP103-gallery-f3ffdeba54f3.image",
+          "sha256": "967402203b3229be41d6746ecce2fa22ac3f75a240c8729f2f9bb704f1a53033",
+          "width": 1200,
+          "height": 1200,
+          "mime": "image/jpeg",
+          "media_id": "133da4a0-7a8d-42d7-bfc0-0a4ea31d68f4",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/de24ebd4bf7946e7b28bd6498874dee0.webp",
+          "stored_width": 1200,
+          "stored_height": 1200,
+          "stored_bytes": 19726
+        },
+        {
+          "source": "https://www.arctic.de/media/f3/fb/bf/1583760052/P12_PWM_PST_Black_04.jpg",
+          "cache_file": "SP103-gallery-a5cdc2071cfc.image",
+          "sha256": "0e5f90280deb2bd873fcfa20cb78d55dd14f15389908fc3a0ae7fd40e957e6a4",
+          "width": 1200,
+          "height": 1200,
+          "mime": "image/jpeg",
+          "media_id": "cf96a049-5c99-4c47-9c0e-b97b5d308e19",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/f2e3ab4279bd441b91d0e4a8401a0866.webp",
+          "stored_width": 1200,
+          "stored_height": 1200,
+          "stored_bytes": 86580
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP103",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/acb344fdecbb4dc29787e075f15017c6.webp",
+        "images": [
+          {
+            "media_id": "8d1460e2-d96f-488c-b884-e6a0844d23ef",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/acb344fdecbb4dc29787e075f15017c6.webp",
+            "alt_text": "Quạt case ARCTIC P12 PWM PST 120mm màu đen",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 3
+    },
+    {
+      "product_id": "SP104",
+      "sku": "WD-HDD-BLUE-1TB-WD10EZEX",
+      "name": "Ổ cứng HDD WD Blue 1TB WD10EZEX SATA 3.5 inch",
+      "official_page": "https://www.westerndigital.com/en-gb/products/internal-drives/wd-blue-desktop-sata-hdd?sku=WD10EZEX",
+      "original_image_source": "https://www.westerndigital.com/content/dam/store/en-us/assets/products/internal-storage/wd-blue-desktop-sata-hdd/gallery/wd-blue-pc-desktop-hard-drive-1tb.png",
+      "additions": [],
+      "original_gallery": {
+        "product_id": "SP104",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ccbb4de3eef143d291cff5792cf82313.webp",
+        "images": [
+          {
+            "media_id": "fd544c5e-55a2-4d27-965c-cc5e6da862cd",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ccbb4de3eef143d291cff5792cf82313.webp",
+            "alt_text": "Ổ cứng HDD WD Blue 1TB WD10EZEX SATA 3.5 inch",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 1,
+      "limitation": "Only these distinct official product photos were verified; no duplicates or other model images added."
+    },
+    {
+      "product_id": "SP105",
+      "sku": "WD-HDD-BLUE-2TB-WD20EZBX",
+      "name": "Ổ cứng HDD WD Blue 2TB WD20EZBX SATA 3.5 inch",
+      "official_page": "https://www.westerndigital.com/en-gb/products/internal-drives/wd-blue-desktop-sata-hdd?sku=WD20EZBX",
+      "original_image_source": "https://www.westerndigital.com/content/dam/store/en-us/assets/products/internal-storage/wd-blue-desktop-sata-hdd/gallery/wd-blue-pc-desktop-hard-drive-2tb.png",
+      "additions": [],
+      "original_gallery": {
+        "product_id": "SP105",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/7078fdbbd670421aba610689f87fd223.webp",
+        "images": [
+          {
+            "media_id": "0fb28bfc-f6e8-4ea1-8c23-07c59309a571",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/7078fdbbd670421aba610689f87fd223.webp",
+            "alt_text": "Ổ cứng HDD WD Blue 2TB WD20EZBX SATA 3.5 inch",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 1,
+      "limitation": "Only these distinct official product photos were verified; no duplicates or other model images added."
+    },
+    {
+      "product_id": "SP106",
+      "sku": "TOS-HDD-P300-2TB-HDWD120",
+      "name": "Ổ cứng HDD Toshiba P300 2TB HDWD120",
+      "official_page": "https://www.toshiba-storage.com/products/toshiba-internal-hard-drives-p300/",
+      "original_image_source": "https://www.toshiba-storage.com/wp/wp-content/uploads/2019/09/toshiba-internal-hard-drive-P300.png",
+      "additions": [
+        {
+          "source": "https://www.toshiba-storage.com/wp/wp-content/uploads/2019/09/P300_Highlihgt_Product_Image.png",
+          "cache_file": "SP106-gallery-4f62b93b0118.image",
+          "sha256": "5a43a3f69c5f8a80553db65a189515bcc5e4642b909d0a77e1a75226e6486848",
+          "width": 640,
+          "height": 640,
+          "mime": "image/png",
+          "media_id": "914227eb-60d4-4317-b147-7ed969ef4e3d",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/7250a557320d4771ae8a82641ee85b51.webp",
+          "stored_width": 640,
+          "stored_height": 640,
+          "stored_bytes": 18822
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP106",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8c9374c7c1234002b8650d3dd5900b0a.webp",
+        "images": [
+          {
+            "media_id": "82f4175c-8b15-45a8-9bed-c3060104b0cb",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8c9374c7c1234002b8650d3dd5900b0a.webp",
+            "alt_text": "Ổ cứng HDD Toshiba P300 2TB HDWD120",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 2,
+      "limitation": "Only these distinct official product photos were verified; no duplicates or other model images added."
+    },
+    {
+      "product_id": "SP107",
+      "sku": "LOG-WEBCAM-C270-HD",
+      "name": "Webcam Logitech C270 HD 720p",
+      "official_page": "https://www.logitech.com/en-us/products/webcams/c270-hd-webcam.960-000694.html",
+      "original_image_source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/products/logitech/webcams/c270-hd-webcam/gallery/c270-hd-webcam-1-0224.png",
+      "additions": [
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/products/logitech/webcams/c270-hd-webcam/gallery/c270-hd-webcam-2-0224.png",
+          "cache_file": "SP107-gallery-63ecfc9a5951.image",
+          "sha256": "fc3d01f50241c9051b97d1d2b9c2d12dee99e67fc880b7779c237e9fc446ddf0",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "3fbb6e79-39e8-4995-9e8f-b8e0879e2c6d",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/878de836e8774a0e8832b0346e27e97f.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 47358
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/products/logitech/webcams/c270-hd-webcam/gallery/c270-hd-webcam-3-0224.png",
+          "cache_file": "SP107-gallery-b484b3140336.image",
+          "sha256": "9c59b1f46774c4518061e341a0f418ee972bd7cca5ba80bd7a86f8299dea54ba",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "4806537d-e078-4dbb-b5c3-d3e889ea8a20",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/94b59c38be944cc3961a3b8fdc75e4d9.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 44310
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/products/logitech/webcams/c270-hd-webcam/gallery/c270-hd-webcam-4-0224.png",
+          "cache_file": "SP107-gallery-a51bee42f3ef.image",
+          "sha256": "e29c16fa7197be938afee31fc357b3678a216fab96b36880bbbb64a19be93998",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "3948d29b-783c-40e4-a78b-3eaaa69f51a6",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8b943c5747a04cde88554ff340b52d89.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 42218
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP107",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/7ef8c29f562c411db7ceb29b4d8bbf9e.webp",
+        "images": [
+          {
+            "media_id": "a62117d0-2f4b-407b-a4cb-96734dc7b234",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/7ef8c29f562c411db7ceb29b4d8bbf9e.webp",
+            "alt_text": "Webcam Logitech C270 HD 720p",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP108",
+      "sku": "LOG-WEBCAM-C920S-PRO-HD",
+      "name": "Webcam Logitech C920s Pro Full HD 1080p",
+      "official_page": "https://www.logitech.com/en-us/products/webcams/c920-pro-hd-webcam.960-000764.html",
+      "original_image_source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/c920s/gallery/c920s-gallery-1.png",
+      "additions": [
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/c920s/gallery/c920s-gallery-2.png",
+          "cache_file": "SP108-gallery-22b8f1db0653.image",
+          "sha256": "be09da94bf06b323b7086765981639efea50fe06de11d58fb2c612a4038f3593",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "d88943d9-08ea-426a-883e-8701b76fc6aa",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ebf0961108d54b38ae8e987b3c22a159.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 83700
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/c920s/gallery/c920s-gallery-3.png",
+          "cache_file": "SP108-gallery-ba2dd72c5d9a.image",
+          "sha256": "1f8e35e15996c3d98ec8775b81c81492fb316ae3f421d4ab5d897461f88551ea",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "cf62704f-1431-44e3-8058-e3580cbf92d6",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/05e14ceab37d48e199b05359defcc723.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 84538
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/c920s/gallery/c920s-gallery-4.png",
+          "cache_file": "SP108-gallery-635294c4e1b8.image",
+          "sha256": "d58a8c0c58da9963390ec36f8b35fd06e53fccedc95b8829ceaaf5b8e57668f4",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "89eac9d0-15b0-4e11-a153-3ab3ff87b4d5",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/b0daf5c5d5234fb79c265b26a56214a5.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 62786
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP108",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/dcca26bef6ed4aeb88e397b74140926b.webp",
+        "images": [
+          {
+            "media_id": "92cade73-9f09-4745-8d19-ee2ba284958e",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/dcca26bef6ed4aeb88e397b74140926b.webp",
+            "alt_text": "Webcam Logitech C920s Pro Full HD 1080p",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP109",
+      "sku": "LOG-WEBCAM-BRIO100-GRAPHITE",
+      "name": "Webcam Logitech Brio 100 Full HD 1080p màu graphite",
+      "official_page": "https://www.logitech.com/en-us/products/webcams/brio-100-webcam.960-001580.html",
+      "original_image_source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/brio-100/gallery/brio-100-gallery-graphite-1.png",
+      "additions": [
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/brio-100/gallery/brio-100-gallery-graphite-2.png",
+          "cache_file": "SP109-gallery-9aa6b5021d03.image",
+          "sha256": "928936a727e11c277afb38382c4c12014589d04cd449dc8b9fc64037a408318b",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "0df849cf-11f2-47b4-bcaa-595c65a0f50b",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/ff290843160e4bf78b224e6433e65ffe.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 118796
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/brio-100/gallery/brio-100-gallery-graphite-3.png",
+          "cache_file": "SP109-gallery-3d2d7c3963b2.image",
+          "sha256": "1c53f49df33316fc14aa2a0260c122d74e8853c7f11963a29fccbe4f8d8ea2cc",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "3970c986-e347-42ad-9c09-936fae577d3a",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/1513c6a249d1421c9b29c6a8f69add76.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 113154
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/webcams/brio-100/gallery/brio-100-gallery-graphite-4.png",
+          "cache_file": "SP109-gallery-53e803c61e0f.image",
+          "sha256": "9c7789176101008b4c2a5dead5b3c5447493810775acb2e5ec5d271cab51f76d",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "74709400-094b-4d24-a361-ea756cf1efb6",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/c889f13c2c16418099a10913854d956e.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 140198
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP109",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/f4c1d1f1590f4e46b96ab2f654d61aa8.webp",
+        "images": [
+          {
+            "media_id": "b9bdbd41-07b4-4093-b1e2-2dd07276acd2",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/f4c1d1f1590f4e46b96ab2f654d61aa8.webp",
+            "alt_text": "Webcam Logitech Brio 100 Full HD 1080p màu graphite",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP110",
+      "sku": "LOG-SPEAKER-S150-USB",
+      "name": "Loa máy tính Logitech S150 USB Stereo",
+      "official_page": "https://www.logi.com/en-us/shop/p/s150-usb-stereo-speakers.980-000028",
+      "original_image_source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/s150/gallery/s150-gallery-01.png",
+      "additions": [
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/s150/gallery/s150-gallery-02.png",
+          "cache_file": "SP110-gallery-ded145c89cb2.image",
+          "sha256": "6430914148eab9e304c0646ae6f4214d477a082655ceac6378afdabf0bdb9bfa",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "65cd6016-037a-409c-9dc7-f2ba6365630a",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/14bc455f9529459b9b7fc5b28f6b7d7d.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 135456
+        },
+        {
+          "source": "https://resource.logitech.com/c_limit,w_1600,q_auto,f_auto/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/s150/s150-feature-2.jpg",
+          "cache_file": "SP110-gallery-707739fe8129.image",
+          "sha256": "3d5267c1045476fe4e34f43c66bcd3513480e802e1adbf7b60f973f81b92ce12",
+          "width": 1600,
+          "height": 900,
+          "mime": "image/jpeg",
+          "media_id": "a1c97390-17fb-4f89-8a69-97e9b3e2fa74",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/cf992871de69482a9e000f94f785e4c0.webp",
+          "stored_width": 1600,
+          "stored_height": 900,
+          "stored_bytes": 33668
+        },
+        {
+          "source": "https://resource.logitech.com/c_limit,w_1600,q_auto,f_auto/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/s150/s150-feature-3.jpg",
+          "cache_file": "SP110-gallery-2e1f9aecec47.image",
+          "sha256": "b64141be87b1a7fd2ff5bb093998d8cb51dddf647993f5873d1b05d05f8f339f",
+          "width": 1600,
+          "height": 900,
+          "mime": "image/jpeg",
+          "media_id": "343d4d05-2627-462a-97b7-334dc446a14b",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/bdadc302bed24131bc538b2cf35fe492.webp",
+          "stored_width": 1600,
+          "stored_height": 900,
+          "stored_bytes": 86552
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP110",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8d3c8050751e4dd6a256e7cfd2d6ff11.webp",
+        "images": [
+          {
+            "media_id": "b4a6834c-89d7-4b6f-bb94-216e28f1e715",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8d3c8050751e4dd6a256e7cfd2d6ff11.webp",
+            "alt_text": "Loa máy tính Logitech S150 USB Stereo",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP111",
+      "sku": "LOG-SPEAKER-Z150-BLK",
+      "name": "Loa máy tính Logitech Z150 Stereo màu đen",
+      "official_page": "https://www.logi.com/en-us/shop/p/z150-compact-stereo-speakers.980-000802",
+      "original_image_source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/z150/gallery/z150-gallery-1.png",
+      "additions": [
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/z150/gallery/z150-gallery-2.png",
+          "cache_file": "SP111-gallery-616d7e3bbede.image",
+          "sha256": "4a4073ec5551c27654d651720097416a578e2cfaaf15b449410e6881c792db03",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "ede4e826-45ed-4d00-9e4f-cb5d33672f78",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/79f65964ed7946379c652163c93430a9.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 264986
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/z150/gallery/z150-gallery-3.png",
+          "cache_file": "SP111-gallery-f86bf927b3d1.image",
+          "sha256": "537fd19373f2ddbfbcd2415026ddf88c6ee92e166bd552de6010f7e4ec51a832",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "e7ac1f87-ec3d-4bbc-952d-0712ab192ccb",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8480ea5c37044da7926948d5dd9f804e.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 44902
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP111",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/5467a1132d6944be8cda0411f7200b8c.webp",
+        "images": [
+          {
+            "media_id": "80126dc9-e73b-483c-b18d-1b8ea091c342",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/5467a1132d6944be8cda0411f7200b8c.webp",
+            "alt_text": "Loa máy tính Logitech Z150 Stereo màu đen",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 3
+    },
+    {
+      "product_id": "SP112",
+      "sku": "LOG-SPEAKER-Z313-2POINT1",
+      "name": "Loa máy tính Logitech Z313 2.1 kèm loa siêu trầm",
+      "official_page": "https://www.logitech.com/en-us/products/speakers/z313-speaker-system-subwoofer.980-000382.html",
+      "original_image_source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/z313/gallery/z313-gallery-1.png",
+      "additions": [
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/z313/gallery/z313-gallery-2.png",
+          "cache_file": "SP112-gallery-e79905eaaf7a.image",
+          "sha256": "e083e920d607e0f56cd204feb8150d61e7430c545c83751e650b86b27f0c78f8",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "d7709579-3448-4005-95d3-8bf1556bd98e",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/4620c91e618045949a22cec8601d2144.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 82482
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/z313/gallery/z313-gallery-03.png",
+          "cache_file": "SP112-gallery-17916b27a324.image",
+          "sha256": "e02b06b25dc6a2a8777a99fe925d3addb7be0a25cd5f0b2b84bedf0acb33f24c",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "f7ab3178-6c1e-4882-8790-5015a4866ad5",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/9b61c46568954c11bbca928aac6d3bab.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 241134
+        },
+        {
+          "source": "https://resource.logitech.com/c_fill,q_auto,f_auto,dpr_1.0/d_transparent.gif/content/dam/logitech/en/products/speakers/computer-speakers/z313/gallery/z313-gallery-04.png",
+          "cache_file": "SP112-gallery-d2082dedf52f.image",
+          "sha256": "92d4cc49aba72d650fc14d12d3f07a79b0066e368bf2202d841b62d55b13a21b",
+          "width": 1600,
+          "height": 1374,
+          "mime": "image/png",
+          "media_id": "fbf48941-4836-4b1d-ad9e-e500fb001316",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8a64f204e92f41cea06821d6daed6624.webp",
+          "stored_width": 1600,
+          "stored_height": 1374,
+          "stored_bytes": 134068
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP112",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/826f1f18824a4b05b2e765e581b4cd36.webp",
+        "images": [
+          {
+            "media_id": "7943d1b3-af5f-436e-807b-540b3c573c0d",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/826f1f18824a4b05b2e765e581b4cd36.webp",
+            "alt_text": "Loa máy tính Logitech Z313 2.1 kèm loa siêu trầm",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP113",
+      "sku": "TPL-HUB-UH400-4PORT",
+      "name": "Hub USB TP-Link UH400 4 cổng USB 3.0",
+      "official_page": "https://www.tp-link.com/us/home-networking/usb-hub/uh400/",
+      "original_image_source": "https://static.tp-link.com/UH400(UN)2.0-PT3%EF%BC%8D960x720_1479037345917k.jpg",
+      "additions": [
+        {
+          "source": "https://static.tp-link.com/UH400正面（俯视）_large_1535014348945i.jpg",
+          "cache_file": "SP113-gallery-158967fe0a97.image",
+          "sha256": "8fc818e266342a734bdc43776d92bc3b7b2eacfe88dd30033239aca09965af34",
+          "width": 1000,
+          "height": 1000,
+          "mime": "image/jpeg",
+          "media_id": "2ca3041b-01db-4fa9-a903-a43791c7360e",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/8f3da93841c24072b07bb4e774300362.webp",
+          "stored_width": 1000,
+          "stored_height": 1000,
+          "stored_bytes": 50582
+        },
+        {
+          "source": "https://static.tp-link.com/res/images/products/UH400_un_V1_1013_large_5.00_20150930161938.jpg",
+          "cache_file": "SP113-gallery-89e3e13b9186.image",
+          "sha256": "c4fad1ff093fe2ee7474a4ed9153184c7ce7038caae33f5da4b5e1fd5439da1f",
+          "width": 960,
+          "height": 720,
+          "mime": "image/jpeg",
+          "media_id": "7d3a8cbb-dd50-4b73-b7b3-7a733b97e272",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/c48b059e484542a7b731c9fa2297fd95.webp",
+          "stored_width": 960,
+          "stored_height": 720,
+          "stored_bytes": 19780
+        },
+        {
+          "source": "https://static.tp-link.com/UH400效果图_large_1535014401311l.jpg",
+          "cache_file": "SP113-gallery-3134a57cd605.image",
+          "sha256": "2d79837f59700ea2511a5f9401ec637725d733f21a7b28f11e0ce854becaf962",
+          "width": 1000,
+          "height": 1000,
+          "mime": "image/jpeg",
+          "media_id": "36e38715-2587-4b6b-b87f-7c01f7f26aa4",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/55dd2a0cae9340f2b3a78c435193fe54.webp",
+          "stored_width": 1000,
+          "stored_height": 1000,
+          "stored_bytes": 77550
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP113",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/f8502b8a6ef34cd7b76ce06d891977fa.webp",
+        "images": [
+          {
+            "media_id": "a4d01e20-b1b1-47d8-8515-145168d31253",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/f8502b8a6ef34cd7b76ce06d891977fa.webp",
+            "alt_text": "Hub USB TP-Link UH400 4 cổng USB 3.0",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP114",
+      "sku": "TPL-HUB-UH700-7PORT",
+      "name": "Hub USB TP-Link UH700 7 cổng USB 3.0",
+      "official_page": "https://www.tp-link.com/us/home-networking/usb-hub/uh700/",
+      "original_image_source": "https://static.tp-link.com/UH700_UN_2.0_01_large_1537408325767z.jpg",
+      "additions": [
+        {
+          "source": "https://static.tp-link.com/UH700_UN_2.0_02_normal_1537408335797t.jpg",
+          "cache_file": "SP114-gallery-4650e9825cb3.image",
+          "sha256": "d3e164a9187965ba9aef431be17f07dc1f2d7692c3342193ac8c87a07ccb913d",
+          "width": 590,
+          "height": 590,
+          "mime": "image/jpeg",
+          "media_id": "2b36d063-4cb9-4a5d-97d0-2e192464060e",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/342c6bd205634a84bd525b61c726add4.webp",
+          "stored_width": 590,
+          "stored_height": 590,
+          "stored_bytes": 15640
+        },
+        {
+          "source": "https://static.tp-link.com/UH700_UN_2.0_03_normal_1537408366650b.jpg",
+          "cache_file": "SP114-gallery-c180fe061680.image",
+          "sha256": "bf424c8812cad7896212bf0466c27b1db538a584a988628c0ba3ad58e6e3623e",
+          "width": 590,
+          "height": 590,
+          "mime": "image/jpeg",
+          "media_id": "b2f17f66-7329-44e7-ae27-ca33f6c633a0",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/97cca06c3866489c8db604894538fbff.webp",
+          "stored_width": 590,
+          "stored_height": 590,
+          "stored_bytes": 16768
+        },
+        {
+          "source": "https://static.tp-link.com/UH700_UN_2.0_04_normal_1537408379913q.jpg",
+          "cache_file": "SP114-gallery-0ce41c19ef0d.image",
+          "sha256": "3b892c181d3e217c94f00db1565379a736589604033ca290a9a31c7a983c5e83",
+          "width": 590,
+          "height": 590,
+          "mime": "image/jpeg",
+          "media_id": "86295408-892f-4497-8b9f-b543079a201d",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/11d177d68d9f40a29a817a927d15afb1.webp",
+          "stored_width": 590,
+          "stored_height": 590,
+          "stored_bytes": 19274
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP114",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/a8614587e6d94840a13c07ae77975a3d.webp",
+        "images": [
+          {
+            "media_id": "d02371b8-2557-4d35-9502-2b91a53d7fb4",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/a8614587e6d94840a13c07ae77975a3d.webp",
+            "alt_text": "Hub USB TP-Link UH700 7 cổng USB 3.0",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    },
+    {
+      "product_id": "SP115",
+      "sku": "TPL-HUB-UH720-7PORT",
+      "name": "Hub USB TP-Link UH720 7 cổng dữ liệu và 2 cổng sạc",
+      "official_page": "https://www.tp-link.com/us/home-networking/usb-hub/uh720/",
+      "original_image_source": "https://static.tp-link.com/upload/image-line/UH720_UN_5.0_overview_01_large_20250304062027t.jpg",
+      "additions": [
+        {
+          "source": "https://static.tp-link.com/upload/image-line/UH720_UN_5.0_overview_02_normal_20250304062057i.jpg",
+          "cache_file": "SP115-gallery-e084b63afa69.image",
+          "sha256": "7c27eba57cca127489517df52789238005f500d0ca2263c493187320b92997c8",
+          "width": 590,
+          "height": 590,
+          "mime": "image/jpeg",
+          "media_id": "42eb6dc9-b3ce-46a3-853d-a69329e944b4",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/4a252f0dc26743f2a5e95a6ae2044bcf.webp",
+          "stored_width": 590,
+          "stored_height": 590,
+          "stored_bytes": 20082
+        },
+        {
+          "source": "https://static.tp-link.com/upload/image-line/UH720_UN_5.0_overview_03_normal_20250304062111d.jpg",
+          "cache_file": "SP115-gallery-eb823ccf9e24.image",
+          "sha256": "064c6ed54d60fa00ef4bd4a7fb65f5c57b0a3852d3597d2a24c9dfdabd26f9f2",
+          "width": 590,
+          "height": 590,
+          "mime": "image/jpeg",
+          "media_id": "92f8d6a9-6056-4350-8faf-7c2c63b1901a",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/9566030b583148519a4f5956eebaf30a.webp",
+          "stored_width": 590,
+          "stored_height": 590,
+          "stored_bytes": 25158
+        },
+        {
+          "source": "https://static.tp-link.com/upload/image-line/UH720_UN_5.0_overview_04_normal_20250304062125r.jpg",
+          "cache_file": "SP115-gallery-e2c68d33e251.image",
+          "sha256": "65ed2fafa1236da20b7b8c4415c022b7a43fcda0e7d4a5bd067669a2a1e9c54a",
+          "width": 590,
+          "height": 590,
+          "mime": "image/jpeg",
+          "media_id": "84afb4dd-adfa-447d-81bf-429de02e0838",
+          "storage_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/2063d156c3b44313bbc7920ff0453faa.webp",
+          "stored_width": 590,
+          "stored_height": 590,
+          "stored_bytes": 19224
+        }
+      ],
+      "original_gallery": {
+        "product_id": "SP115",
+        "legacy_url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/815fa1af857548349065a58a1b8faca7.webp",
+        "images": [
+          {
+            "media_id": "7a450b74-bc3b-431a-b1d0-813f9916d401",
+            "url": "https://btfhahnjydaiivvcqnna.supabase.co/storage/v1/object/public/media/products/815fa1af857548349065a58a1b8faca7.webp",
+            "alt_text": "Hub USB TP-Link UH720 7 cổng dữ liệu và 2 cổng sạc",
+            "position": 0,
+            "primary": true
+          }
+        ]
+      },
+      "verified_image_count": 4
+    }
+  ],
+  "download_errors": []
+}

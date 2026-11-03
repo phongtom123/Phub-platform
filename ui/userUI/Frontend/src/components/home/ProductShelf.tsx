@@ -6,9 +6,10 @@ import { ProductCard } from "@/components/common/ProductCard";
 import { productHref } from "@/lib/catalog/types";
 import type { HomeCategory, HomeProduct } from "./homeData";
 import styles from "./Home.module.css";
+import { ProductCardActions } from "@/components/shopping/ProductCardActions";
 
 function Card({ product, compact = false }: { product: HomeProduct; compact?: boolean }) {
-  return <ProductCard {...product} mobileImageSrc={undefined} imageLoading="eager" uiLocale="vi" compactOnMobile={compact} href={productHref(product.id)} className={styles.card} />;
+  return <ProductCard {...product} mobileImageSrc={undefined} imageLoading="eager" uiLocale="vi" compactOnMobile={compact} href={productHref(product.id)} className={styles.card} actions={<ProductCardActions product={product} />} />;
 }
 export function NewProducts({ products, onViewAll, title = "Sản phẩm mới" }: { products: HomeProduct[]; onViewAll: () => void; title?: string }) {
   const track = useRef<HTMLDivElement>(null);

@@ -1638,6 +1638,12 @@
             "title": "Images",
             "type": "array"
           },
+          "is_active": {
+            "default": true,
+            "description": "False khi admin tạm ngừng bán; không cho thêm giỏ hoặc mua.",
+            "title": "Is Active",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -6101,6 +6107,11 @@
           "id": {
             "title": "Id",
             "type": "string"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
           },
           "quantity": {
             "minimum": 1.0,
@@ -13678,6 +13689,18 @@
             }
           },
           {
+            "description": "Hiện cả sản phẩm tạm ngừng (trạng thái 2), chỉ để xem; luôn loại sản phẩm đã ẩn (0), loại sản phẩm vẫn phải hoạt động.",
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Hiện cả sản phẩm tạm ngừng (trạng thái 2), chỉ để xem; luôn loại sản phẩm đã ẩn (0), loại sản phẩm vẫn phải hoạt động.",
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          },
+          {
             "description": "Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
             "in": "query",
             "name": "category_id",
@@ -13964,6 +13987,18 @@
             }
           },
           {
+            "description": "Hiện cả sản phẩm tạm ngừng (trạng thái 2), chỉ để xem; luôn loại sản phẩm đã ẩn (0), loại sản phẩm vẫn phải hoạt động.",
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Hiện cả sản phẩm tạm ngừng (trạng thái 2), chỉ để xem; luôn loại sản phẩm đã ẩn (0), loại sản phẩm vẫn phải hoạt động.",
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          },
+          {
             "description": "Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.",
             "in": "query",
             "name": "category_id",
@@ -14224,6 +14259,16 @@
               "minLength": 1,
               "title": "Product Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
             }
           }
         ],

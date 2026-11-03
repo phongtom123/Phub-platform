@@ -1,7 +1,7 @@
 import type { ProductCardProps } from "@/components/common/ProductCard";
 
 export type CatalogProduct = Pick<ProductCardProps, "name" | "imageSrc" | "amount" | "originalAmount" | "stock" | "rating" | "reviewCount" | "currency" | "locale"> & {
-  id: string; category: string; brand: string; color: string; position: number;
+  id: string; category: string; brand: string; color: string; position: number; isActive?: boolean;
   subcategory: string;
   sku: string; description: string; specifications: { label: string; value: string }[];
   categoryName?: string; subcategoryName?: string;

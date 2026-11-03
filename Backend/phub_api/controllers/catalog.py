@@ -66,8 +66,9 @@ def catalog_facets(filters: Annotated[CatalogQuery, Query()], service: Service):
 def get_product(
     product_id: Annotated[str, Path(min_length=1, max_length=100, description="ma_sp trong SAN_PHAM, không phải SKU")],
     service: Service,
+    include_inactive: bool = False,
 ):
-    return service.get_product(product_id)
+    return service.get_product(product_id, include_inactive=include_inactive)
 
 
 @router.get(

@@ -15,7 +15,7 @@ export function CatalogFilterChips({ filters, metadata, facets, onChange }: { fi
   ];
   if (!chips.length) return null;
   return <div className={styles.chips} aria-label="Bộ lọc đang áp dụng">
-    {chips.map(chip => <button key={chip.key} onClick={() => onChange(chip.next)} aria-label={`Xóa bộ lọc ${chip.label}`}>{chip.label}<span aria-hidden="true">×</span></button>)}
+    {chips.map(chip => <button key={chip.key} onClick={() => onChange(chip.next)} aria-label={`Xóa bộ lọc ${chip.label}`}>{chip.label}<span aria-hidden="true"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m5 5 10 10M15 5 5 15" /></svg></span></button>)}
     <button onClick={() => onChange({ ...emptyFilters, categories: filters.categories, subcategories: filters.subcategories })}>Xóa bộ lọc</button>
   </div>;
 }

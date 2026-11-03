@@ -1,5 +1,5 @@
 "use client";
-import { AddToCartButton } from "@/components/shopping/AddToCartButton";
+import { ProductCardActions } from "@/components/shopping/ProductCardActions";
 
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -49,8 +49,8 @@ export function CatalogPage({ catalog }: { catalog: CatalogController }) {
           <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
           {!loading && !error && (products.length ? <div className={ `${styles.productGrid} ${request.view === "list" ? styles.productList : ""}` } aria-label="Catalog products">
             {products.map(product => request.view === "list"
-              ? <ProductListCard key={product.id} {...product} href={productHref(product.id)} cartAction={<AddToCartButton product={product} />} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onCart={() => setNotice("Chưa kết nối API giỏ hàng.")} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
-              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} uiLocale="vi" />)}
+              ? <ProductListCard key={product.id} {...product} href={productHref(product.id)} cartAction={<ProductCardActions product={product} />} compared={compared.some(item => item.id === product.id)} wished={wished.some(item => item.id === product.id)} onCart={() => setNotice("Chưa kết nối API giỏ hàng.")} onCompare={() => toggleSelection("compare", product)} onWish={() => toggleSelection("wish", product)} onEnquire={() => setPreview(product)} />
+              : <ProductCard key={product.id} {...product} href={productHref(product.id)} className={styles.productCard} uiLocale="vi" actions={<ProductCardActions product={product} />} />)}
           </div> : <div className={styles.noResults}><h2>Không tìm thấy sản phẩm</h2><p>Hãy thay đổi điều kiện tìm kiếm hoặc bộ lọc.</p><Button onClick={() => catalog.apply(emptyFilters)}>Xóa bộ lọc và về trang đầu</Button>{request.q && <Link href="/main/product">Xem tất cả sản phẩm</Link>}</div>)}
           {!loading && !error && <div className={styles.pagination}><Pagination currentPage={request.page} totalPages={pagination?.total_pages ?? 0} onPageChange={page => { catalog.turnPage(page); resultsRef.current?.scrollIntoView({ block: "start", behavior: "instant" }); }} /></div>}
           <section className={styles.description} aria-label="Hướng dẫn chọn sản phẩm">

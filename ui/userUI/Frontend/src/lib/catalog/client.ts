@@ -22,6 +22,7 @@ export function validateProduct(value: unknown): ApiProduct {
   const product = value as ApiProduct;
   if (!product || typeof product.id !== "string" || typeof product.sku !== "string"
     || typeof product.name !== "string" || typeof product.category?.id !== "string"
+    || (product.is_active !== undefined && typeof product.is_active !== "boolean")
     || typeof product.category?.name !== "string" || typeof product.price !== "string"
     || typeof product.subcategory?.id !== "string" || typeof product.subcategory?.name !== "string"
     || !/^\d+(\.\d{1,2})?$/.test(product.price) || !Number.isFinite(Number(product.price))
@@ -36,20 +37,26 @@ export function validateProduct(value: unknown): ApiProduct {
   return product;
 }
 
-export async function getProductAvailability(product: { id: string; sku?: string }, quantity: number, signal?: AbortSignal): Promise<boolean> {
+export async function getProductPurchaseState(product: { id: string; sku?: string }, quantity: number, signal?: AbortSignal) {
   const result = await readJson(await fetch(
     `/api/catalog/products/${encodeURIComponent(product.id)}/availability?quantity=${quantity}`,
     { cache: "no-store", signal },
-  )) as { id?: unknown; sku?: unknown; quantity?: unknown; available?: unknown } | null;
+  )) as { id?: unknown; sku?: unknown; quantity?: unknown; available?: unknown; is_active?: unknown } | null;
   if (!result || result.id !== product.id || typeof result.sku !== "string" || !result.sku
-      || (product.sku !== undefined && result.sku !== product.sku) || result.quantity !== quantity || typeof result.available !== "boolean") {
+      || (product.sku !== undefined && result.sku !== product.sku) || result.quantity !== quantity || typeof result.available !== "boolean"
+      || (result.is_active !== undefined && typeof result.is_active !== "boolean")) {
     throw new CatalogApiError("Không kiểm tra được tồn kho. Vui lòng thử lại.", 502);
   }
-  return result.available;
+  return { available: result.available && result.is_active !== false, isActive: result.is_active !== false };
+}
+
+export async function getProductAvailability(product: { id: string; sku?: string }, quantity: number, signal?: AbortSignal): Promise<boolean> {
+  return (await getProductPurchaseState(product, quantity, signal)).available;
 }
 
 export function queryFor(request: CatalogRequest): URLSearchParams {
   const params = new URLSearchParams();
+  params.set("include_inactive", "true");
   if (request.q.trim()) params.set("q", request.q.trim());
   request.filters.categories.forEach(id => params.append("category_id", id));
   request.filters.subcategories.forEach(id => params.append("subcategory_id", id));

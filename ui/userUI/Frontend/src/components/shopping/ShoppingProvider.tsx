@@ -61,6 +61,7 @@ interface ShoppingState {
 const ShoppingContext = createContext<ShoppingState | null>(null);
 const GUEST_CART_OWNER = "__guest__";
 const GUEST_CART_KEY = "phub-cart-guest-v1";
+const EMPTY_AVAILABILITY: Record<string, number> = {};
 const keyFor = (id: string) =>
   id === GUEST_CART_OWNER ? GUEST_CART_KEY : `phub-cart-v1:${id}`;
 
@@ -81,27 +82,32 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const selectedLines = useMemo(() => lines.filter(line => line.selected !== false), [lines]);
   const [cartLoading, setCartLoading] = useState(false);
   const [notice, setNotice] = useState("");
-  const [availability, setAvailability] = useState<Record<string, number>>({});
-  const [taxRate, setTaxRate] = useState<string | null>(null);
-  const [stockError, setStockError] = useState("");
+  const [stockResult, setStockResult] = useState<{
+    key: string; quantities: Record<string, number>; taxRate: string | null; error: string;
+  } | null>(null);
   const [stockVersion, setStockVersion] = useState(0);
   const stockSignature = JSON.stringify(lines.map(line => line.sku).sort());
+  const stockKey = JSON.stringify([stockSignature, stockVersion]);
+  const currentStock = stockResult?.key === stockKey ? stockResult : null;
+  const availability = currentStock?.quantities ?? EMPTY_AVAILABILITY;
+  const taxRate = currentStock?.taxRate ?? null;
+  const stockError = currentStock?.error ?? "";
   useEffect(() => {
     const skus: string[] = JSON.parse(stockSignature);
     const controller = new AbortController();
-    setAvailability({}); setTaxRate(null); setStockError("");
     if (!skus.length) return;
     const stop = automaticRefresh(async () => {
       try {
         const stock = await getAvailability(skus, controller.signal);
-        if (!controller.signal.aborted) { setAvailability(stock.quantities); setTaxRate(stock.taxRate); setStockError(""); }
+        if (!controller.signal.aborted) setStockResult({ key: stockKey, quantities: stock.quantities, taxRate: stock.taxRate, error: "" });
       } catch (cause) {
-        if (!controller.signal.aborted) { setStockError(cause instanceof Error ? cause.message : "Chưa tải được tồn kho."); setAvailability({}); setTaxRate(null); }
+        if (!controller.signal.aborted) setStockResult({ key: stockKey, quantities: {}, taxRate: null,
+          error: cause instanceof Error ? cause.message : "Chưa tải được tồn kho." });
       }
       return true;
     }, 60_000);
     return () => { controller.abort(); stop(); };
-  }, [stockSignature, stockVersion]);
+  }, [stockSignature, stockKey]);
   const owner = useRef<string | null>(null);
   const linesRef = useRef<CartLine[]>([]);
   const sessionGeneration = useRef(0);
@@ -144,7 +150,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
             const product = validateProduct(
               await readJson(
                 await fetch(
-                  `/api/catalog/products/${encodeURIComponent(entry.product_id)}`,
+                  `/api/catalog/products/${encodeURIComponent(entry.product_id)}?include_inactive=true`,
                   { cache: "no-store" },
                 ),
               ),
@@ -156,6 +162,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
               image: safeImageUrl(product.images[0]?.url),
               unit_price: product.price,
               currency: product.currency,
+              unavailable: product.is_active === false,
             });
           } catch {
             next.push({
@@ -287,12 +294,13 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       const actual = validateProduct(
         await readJson(
           await fetch(
-            `/api/catalog/products/${encodeURIComponent(product.id)}`,
+            `/api/catalog/products/${encodeURIComponent(product.id)}?include_inactive=true`,
             { cache: "no-store" },
           ),
         ),
       );
       if (owner.current !== id) return false;
+      if (actual.is_active === false) throw new Error("Sản phẩm đang tạm ngừng bán.");
       if (product.sku !== undefined && actual.sku !== product.sku)
         throw new Error("Sản phẩm đã thay đổi. Vui lòng chọn lại.");
       const before = linesRef.current.find((item) => item.sku === actual.sku);
