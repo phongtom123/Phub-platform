@@ -46,3 +46,10 @@ test("checkout handoff keeps an internal redirect and rejects open redirects", (
     "/auth/register?redirect=%2Fcheckout",
   );
 });
+
+test("cart quantities above 1000 survive storage and guest login merging", () => {
+  const line = { product_id: "P-1", sku: "SKU-1", quantity: 1500 };
+  assert.deepEqual(restoreCart([line]), [line]);
+  assert.equal(mergeStoredCarts([line], [{ ...line, quantity: 1000 }])[0].quantity, 2500);
+  assert.deepEqual(restoreCart([{ ...line, quantity: -6 }, { ...line, quantity: 1.5 }]), []);
+});

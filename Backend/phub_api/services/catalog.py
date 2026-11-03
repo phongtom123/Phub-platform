@@ -21,6 +21,7 @@ from phub_api.schemas.catalog import (
     Pagination,
     ProductImage,
     ProductPage,
+    ProductAvailability,
     Specification,
     StockStatus,
     Subcategory,
@@ -218,6 +219,11 @@ class CatalogService:
         if row is None:
             raise CatalogError(404, "PRODUCT_NOT_FOUND", "Không tìm thấy sản phẩm.")
         return self.resolve_component_specs([self.product_from_row(row)])[0]
+
+    def check_availability(self, product_id: str, quantity: int) -> ProductAvailability:
+        product = self.get_product(product_id)
+        available = available_quantities(self.repository, [product.sku]).get(product.sku, 0)
+        return ProductAvailability(id=product.id, sku=product.sku, quantity=quantity, available=available >= quantity)
 
     def list_categories(self) -> list[CategoryTree]:
         parents, children = self.repository.categories()

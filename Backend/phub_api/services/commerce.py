@@ -6,6 +6,7 @@ from phub_api.models.customer import CurrentCustomer
 from phub_api.config.payment_demo import PaymentDemoSettings
 from phub_api.models.errors import PaymentError
 from phub_api.schemas.commerce import (
+    AddressBook,
     CheckoutQuote,
     CustomerOrderReceipt,
     CustomerProfile,
@@ -25,6 +26,10 @@ ERRORS = {
     "VOUCHER_MINIMUM_NOT_MET": (409, "Giá trị đơn chưa đạt mức tối thiểu của mã giảm giá."),
     "VOUCHER_LIMIT_REACHED": (409, "Mã giảm giá đã hết lượt sử dụng."),
     "CHECKOUT_CHANGED": (409, "Tổng tiền hoặc giảm giá đã thay đổi. Vui lòng lấy báo giá và xác nhận lại."),
+    "ADDRESS_NOT_FOUND": (404, "Không tìm thấy địa chỉ nhận hàng thuộc tài khoản của bạn."),
+    "ADDRESS_LIMIT_REACHED": (409, "Sổ địa chỉ đã đạt tối đa 10 địa chỉ. Hãy xóa bớt địa chỉ không dùng."),
+    "ORDER_ALREADY_CANCELLED": (409, "Đơn hàng này đã được hủy trước đó."),
+    "ORDER_NOT_CANCELABLE": (409, "Đơn hàng đã được xuất kho hoặc hoàn thành, không thể hủy."),
 }
 
 
@@ -75,6 +80,27 @@ class CommerceService:
             raise PaymentError(403, "PROFILE_UPDATE_DENIED", "Không thể lưu thông tin nhận hàng của tài khoản này.")
         return self.profile(customer)
 
+    def _addresses(self, customer, action, address_id=None, request=None):
+        verified(customer)
+        result = checked_result(self.repository.addresses({
+            "p_customer_id": customer.customer_id, "p_action": action,
+            "p_address_id": str(address_id) if address_id is not None else None,
+            "p_payload": request.model_dump(mode="json") if request is not None else None,
+        }))
+        return AddressBook.model_validate(result)
+
+    def list_addresses(self, customer):
+        return self._addresses(customer, "list")
+
+    def create_address(self, request, customer):
+        return self._addresses(customer, "create", request=request)
+
+    def update_address(self, address_id, request, customer):
+        return self._addresses(customer, "update", address_id, request)
+
+    def delete_address(self, address_id, customer):
+        return self._addresses(customer, "delete", address_id)
+
     def quote(self, request, customer):
         verified(customer)
         payload = request.model_dump(mode="json")
@@ -106,3 +132,15 @@ class CommerceService:
     def invoice(self, order_id, customer):
         verified(customer)
         return OrderReadService(self.repository.reads, os.getenv("CATALOG_CURRENCY", "VND")).invoice(order_id, customer.customer_id)
+
+    def cancel_order(self, order_id, customer, request=None):
+        verified(customer)
+        reason = request.reason if request is not None else None
+        result = checked_result(self.repository.cancel_order({
+            "p_customer_id": customer.customer_id,
+            "p_order_id": str(order_id),
+            "p_reason": reason,
+        }))
+        if not isinstance(result, dict) or "order" not in result:
+            raise RuntimeError("Invalid cancel order result representation")
+        return OrderDetail.model_validate(result["order"])

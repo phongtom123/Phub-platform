@@ -27,17 +27,22 @@ async function forward(
   const joined = path.join("/");
   const validGet =
     joined === "me" ||
+    joined === "addresses" ||
     joined === "orders" ||
     (path[0] === "orders" && path.length === 2) ||
     (path[0] === "orders" &&
       path.length === 3 &&
       ["payments", "transactions", "invoice"].includes(path[2]));
-  const validPost = joined === "checkout/quote" || joined === "orders" ||
+  const isAddressItem = path[0] === "addresses" && path.length === 2;
+  // Address deletion uses POST .../delete because the public API forbids HTTP DELETE.
+  const isAddressDelete = path[0] === "addresses" && path.length === 3 && path[2] === "delete";
+  const isOrderCancel = path[0] === "orders" && path.length === 3 && path[2] === "cancel";
+  const validPost = joined === "checkout/quote" || joined === "orders" || joined === "addresses" || isAddressDelete || isOrderCancel ||
     (path[0] === "orders" && path.length === 3 && ["payment-request", "demo-payment-state"].includes(path[2]));
   if (
     (request.method === "GET" && !validGet) ||
     (request.method === "POST" && !validPost) ||
-    (request.method === "PUT" && joined !== "me")
+    (request.method === "PUT" && joined !== "me" && !isAddressItem)
   )
     return error(404, "NOT_FOUND", "Không tìm thấy tài nguyên.");
   const headers = new Headers();
@@ -98,7 +103,7 @@ async function forward(
   try {
     const base = backendBaseUrl();
     const route =
-      path.length === 3 && path[2] !== "invoice"
+      path[0] === "orders" && path.length === 3 && !["invoice", "cancel"].includes(path[2])
         ? `/api/orders/${encodeURIComponent(path[1])}/${path[2]}`
         : `/api/customer/${path.map(encodeURIComponent).join("/")}`;
     const url = new URL(base.pathname.replace(/\/$/, "") + route, base.origin);

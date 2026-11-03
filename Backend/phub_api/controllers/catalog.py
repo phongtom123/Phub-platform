@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, Response
 
 from phub_api.dependencies.catalog import get_service
 from phub_api.middleware.catalog_errors import CatalogRoute
@@ -13,6 +13,7 @@ from phub_api.schemas.catalog import (
     ColorList,
     ProductPage,
     StockAvailability,
+    ProductAvailability,
 )
 from phub_api.schemas.responses import documented_error
 from phub_api.services.catalog import CatalogService
@@ -61,6 +62,21 @@ def get_product(
     service: Service,
 ):
     return service.get_product(product_id)
+
+
+@router.get(
+    "/products/{product_id}/availability", response_model=ProductAvailability,
+    summary="Kiểm tra đủ hàng cho số lượng muốn thêm vào giỏ, không giữ hàng",
+    responses={404: documented_error("PRODUCT_NOT_FOUND", "Không tìm thấy sản phẩm.")},
+)
+def check_product_availability(
+    response: Response,
+    product_id: Annotated[str, Path(min_length=1, max_length=100)],
+    quantity: Annotated[int, Query(ge=1, le=9_007_199_254_740_991)],
+    service: Service,
+):
+    response.headers["Cache-Control"] = "no-store"
+    return service.check_availability(product_id, quantity)
 
 
 @router.get("/categories", response_model=CategoryList, summary="Các loại sản phẩm đang hoạt động")

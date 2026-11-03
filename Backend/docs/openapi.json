@@ -249,6 +249,84 @@
         "title": "AccountUpdate",
         "type": "object"
       },
+      "AddressBook": {
+        "additionalProperties": false,
+        "description": "Toàn bộ sổ địa chỉ sau thao tác; `item` là địa chỉ vừa tạo/sửa, null khi xóa hoặc đọc.",
+        "properties": {
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerAddress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerAddress"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "item"
+        ],
+        "title": "AddressBook",
+        "type": "object"
+      },
+      "AddressRequest": {
+        "additionalProperties": false,
+        "description": "Một địa chỉ trong sổ địa chỉ. Không nhận mã khách: khách lấy từ phiên đăng nhập.",
+        "properties": {
+          "address_line": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Address Line",
+            "type": "string"
+          },
+          "is_default": {
+            "default": false,
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "pattern": "^\\+?[0-9]{8,15}$",
+            "title": "Phone",
+            "type": "string"
+          },
+          "province": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Province",
+            "type": "string"
+          },
+          "ward": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Ward",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address_line",
+          "province",
+          "ward"
+        ],
+        "title": "AddressRequest",
+        "type": "object"
+      },
       "AdminTicket": {
         "properties": {
           "cap_nhat_luc": {
@@ -1236,6 +1314,25 @@
         "title": "CT_PHIEU_NHAPRead",
         "type": "object"
       },
+      "CancelOrderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "CancelOrderRequest",
+        "type": "object"
+      },
       "CartItem": {
         "additionalProperties": false,
         "properties": {
@@ -1542,6 +1639,13 @@
       "CheckoutLine": {
         "additionalProperties": false,
         "properties": {
+          "allocations": {
+            "items": {
+              "$ref": "#/components/schemas/WarehouseAllocation"
+            },
+            "title": "Allocations",
+            "type": "array"
+          },
           "discount": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
             "title": "Discount",
@@ -1591,6 +1695,7 @@
             "type": "string"
           },
           "warehouse_id": {
+            "description": "Kho đầu tiên trong phân bổ; allocations liệt kê đầy đủ các kho cấp hàng.",
             "title": "Warehouse Id",
             "type": "integer"
           }
@@ -1873,6 +1978,51 @@
           "trang_thai"
         ],
         "title": "CustomerAccount",
+        "type": "object"
+      },
+      "CustomerAddress": {
+        "additionalProperties": false,
+        "properties": {
+          "address_line": {
+            "title": "Address Line",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          },
+          "province": {
+            "title": "Province",
+            "type": "string"
+          },
+          "ward": {
+            "title": "Ward",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "phone",
+          "address_line",
+          "province",
+          "ward",
+          "is_default"
+        ],
+        "title": "CustomerAddress",
         "type": "object"
       },
       "CustomerDetail": {
@@ -5693,6 +5843,35 @@
         "title": "PricingConfig",
         "type": "object"
       },
+      "ProductAvailability": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "quantity",
+          "available"
+        ],
+        "title": "ProductAvailability",
+        "type": "object"
+      },
       "ProductGallery": {
         "properties": {
           "images": {
@@ -8767,6 +8946,26 @@
           "msg"
         ],
         "title": "ValidationIssue",
+        "type": "object"
+      },
+      "WarehouseAllocation": {
+        "properties": {
+          "quantity": {
+            "maximum": 2147483647.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "warehouse_id",
+          "quantity"
+        ],
+        "title": "WarehouseAllocation",
         "type": "object"
       },
       "WarehouseHistoryPage": {
@@ -13436,6 +13635,125 @@
         ]
       }
     },
+    "/api/catalog/products/{product_id}/availability": {
+      "get": {
+        "operationId": "check_product_availability_api_catalog_products__product_id__availability_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "quantity",
+            "required": true,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "title": "Quantity",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductAvailability"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "PRODUCT_NOT_FOUND",
+                    "details": [],
+                    "message": "Không tìm thấy sản phẩm."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy sản phẩm."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Kiểm tra đủ hàng cho số lượng muốn thêm vào giỏ, không giữ hàng",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
     "/api/crm/customers/{customer_id}": {
       "get": {
         "operationId": "customer_detail_api_crm_customers__customer_id__get",
@@ -14235,6 +14553,640 @@
         "summary": "Nhận xử lý, cập nhật trạng thái/ưu tiên và phản hồi gửi khách",
         "tags": [
           "Admin · Hỗ trợ khách hàng"
+        ]
+      }
+    },
+    "/api/customer/addresses": {
+      "get": {
+        "operationId": "list_addresses_api_customer_addresses_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressBook"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
+                    "details": [],
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sổ địa chỉ nhận hàng của khách đang đăng nhập",
+        "tags": [
+          "Customer Shopping"
+        ]
+      },
+      "post": {
+        "operationId": "create_address_api_customer_addresses_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressBook"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
+                    "details": [],
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Thêm địa chỉ nhận hàng (địa chỉ đầu tiên tự là mặc định)",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/addresses/{address_id}": {
+      "put": {
+        "operationId": "update_address_api_customer_addresses__address_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "address_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Address Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressBook"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
+                    "details": [],
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sửa địa chỉ hoặc đặt làm mặc định (không thể bỏ mặc định trực tiếp)",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/addresses/{address_id}/delete": {
+      "post": {
+        "operationId": "delete_address_api_customer_addresses__address_id__delete_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "address_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Address Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressBook"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
+                    "details": [],
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xóa địa chỉ; nếu xóa địa chỉ mặc định thì địa chỉ cập nhật gần nhất trở thành mặc định",
+        "tags": [
+          "Customer Shopping"
         ]
       }
     },
@@ -15822,6 +16774,184 @@
           }
         ],
         "summary": "Chi tiết đơn thuộc khách",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/orders/{order_id}/cancel": {
+      "post": {
+        "operationId": "cancel_order_api_customer_orders__order_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "order_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Order Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/CancelOrderRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
+                    "details": [],
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Hủy đơn hàng thuộc tài khoản đang đăng nhập (hoàn tiền tự động nếu đã thanh toán)",
         "tags": [
           "Customer Shopping"
         ]

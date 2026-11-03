@@ -1,5 +1,14 @@
 # Phạm vi kho
 
+## Cập nhật 02/11/2026: gom kho cho checkout khách hàng
+
+Customer checkout cộng tồn khả dụng của tất cả kho hoạt động và phân bổ một SKU
+qua nhiều kho khi cần. Các dòng database vẫn giữ kho xuất riêng; giao diện khách
+hàng gộp lại theo SKU/đơn vị/đơn giá. Xem
+[logic mua hàng hiện hành](USER-COMMERCE-LOGIC.md) và
+[RPC gom kho](../Backend/docs/MULTI-WAREHOUSE-CHECKOUT.md).
+Phần chính sách chỉ kho 2 bên dưới là lịch sử đã được thay thế.
+
 ## Cập nhật 01/11/2026: mở lại các kho
 
 Migration `Backend/migrations/20261101162759_unlock_warehouses.sql` gỡ giới hạn chỉ

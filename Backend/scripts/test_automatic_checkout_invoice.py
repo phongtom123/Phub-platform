@@ -11,7 +11,7 @@ from uuid import uuid4
 import psycopg2
 
 
-def main():
+def main(extra_checks=None):
     binary_dir = Path(os.environ.get("PHUB_POSTGRES_BIN", "C:/Program Files/PostgreSQL/18/bin"))
     initdb = shutil.which("initdb") or str(binary_dir / "initdb.exe")
     pg_ctl = shutil.which("pg_ctl") or str(binary_dir / "pg_ctl.exe")
@@ -65,6 +65,7 @@ def main():
                     cart = {"items": [{"sku": "S", "quantity": 2}, {"sku": "T", "quantity": 1}]}
                     old = checkout(request(checkout(cart)["quote"]), True, uuid4())["order"]
                     migrate("20261102080347_automatic_checkout_invoice.sql")
+                    migrate("20261102130239_stock_based_cart_quantity.sql")
                     assert execute('select count(*) from "HOA_DON"') == 0, "No historical backfill"
                     assert execute('select sum(tien_thue) from "CT_DON_HANG" where ma_donhang=%s', (old["id"],)) == 0
                     execute("set role service_role")
@@ -88,6 +89,18 @@ def main():
                     voucher_order = checkout(request(checkout(voucher_cart)["quote"]), True, uuid4())["order"]
                     sql.execute('select tong_tien_giam::text,tong_tien_truoc_thue::text,tong_tien_thue::text,tong_tien_sau_thue::text from "HOA_DON" where ma_donhang=%s', (voucher_order["id"],))
                     assert sql.fetchone() == ("1000.01", "9000.09", "900.01", "9900.10")
+                    execute('update "TON_KHO" set so_luong_ton=5000 where sku=\'S\'')
+                    large_cart = {"items": [{"sku": "S", "quantity": 1234}]}
+                    large_quote = checkout(large_cart)
+                    assert "quote" in large_quote, large_quote
+                    large_key = uuid4()
+                    large_body = request(large_quote["quote"])
+                    large_order = checkout(large_body, True, large_key)
+                    assert large_order["order"]["items"][0]["quantity"] == 1234, large_order
+                    assert checkout(large_body, True, large_key)["replayed"]
+                    assert checkout({"items": [{"sku": "S", "quantity": 5001}]})["error"]["code"] == "INSUFFICIENT_STOCK"
+                    for invalid in [0, -6, 1.5, 2147483648]:
+                        assert checkout({"items": [{"sku": "S", "quantity": invalid}]})["error"]["code"] == "VALIDATION_ERROR"
                     before = execute('select count(*) from "DON_HANG"')
                     execute("reset role")
                     execute('''create function public.reject_test_invoice() returns trigger language plpgsql as $$ begin raise exception 'ORDER_CONFIGURATION_REQUIRED'; end $$;
@@ -100,7 +113,9 @@ def main():
                     assert execute('select count(*) from customer_order_private.idempotency where key=%s', (str(failed_key),)) == 0
                     assert not execute("select has_function_privilege('anon','public.customer_checkout_v2(text,jsonb,uuid,boolean,text,text,numeric,text,integer,text,text)','EXECUTE')")
                     assert not execute("select has_table_privilege('authenticated','public.\"HOA_DON\"','INSERT')")
-                    print("PASS: real PostgreSQL automatic invoice, per-line tax rounding, voucher, atomic rollback, idempotent retry, old data preserved, no fake employee/payment, service-only access")
+                    if extra_checks:
+                        extra_checks(execute, migrate, request, db.dsn)
+                    print("PASS: real PostgreSQL automatic invoice, stock-checked quantities above 1000, invalid quantities rejected, per-line tax rounding, voucher, atomic rollback, idempotent retry, old data preserved, no fake employee/payment, service-only access")
         finally:
             subprocess.run([pg_ctl, "-D", cluster, "-m", "immediate", "-w", "stop"], check=True, capture_output=True)
 

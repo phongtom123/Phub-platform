@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useEffect } from "react";
-import { validateOrder } from "@/lib/shopping/client";
+import { useState } from "react";
+import { cancelOrder, validateOrder } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
+import { groupInvoiceLines } from "@/lib/shopping/invoice-lines";
 import { CustomerGate, useShopping } from "./ShoppingProvider";
 import { useCustomerResource } from "./useCustomerResource";
 import { PaymentPanel } from "./PaymentPanel";
@@ -27,6 +29,10 @@ function Details({ id }: { id: string }) {
     `orders/${encodeURIComponent(id)}`,
     validateOrder,
   );
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const isCancelable = data && ["MOI", "XAC_NHAN", "DANG_CHUAN_BI"].includes(data.status);
+
   useEffect(() => {
     function onOrderChanged(event: Event) {
       if ((event as CustomEvent<{ orderId: string }>).detail?.orderId === id) reload();
@@ -34,11 +40,49 @@ function Details({ id }: { id: string }) {
     window.addEventListener("phub:order-changed", onOrderChanged);
     return () => window.removeEventListener("phub:order-changed", onOrderChanged);
   }, [id, reload]);
+
+  async function handleCancel() {
+    if (cancelling) return;
+    const confirmed = window.confirm(
+      "Bạn có chắc chắn muốn hủy đơn hàng này không?\nNếu đơn đã được thanh toán, khoản tiền sẽ được hệ thống hoàn lại tự động."
+    );
+    if (!confirmed) return;
+    setCancelling(true);
+    setCancelError("");
+    try {
+      await cancelOrder(id);
+      reload();
+      window.dispatchEvent(new CustomEvent("phub:order-changed", { detail: { orderId: id } }));
+      window.dispatchEvent(new Event("phub:invoice-changed"));
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : "Không thể hủy đơn hàng. Vui lòng thử lại.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   return (
     <>
-      <button type="button" onClick={reload}>
-        Cập nhật đơn
-      </button>
+      <div className={styles.inline} style={{ marginBottom: 12 }}>
+        <button type="button" onClick={reload} disabled={loading || cancelling}>
+          Cập nhật đơn
+        </button>
+        {isCancelable && (
+          <button
+            type="button"
+            className={styles.cancelButton}
+            onClick={handleCancel}
+            disabled={loading || cancelling}
+          >
+            {cancelling ? "Đang hủy đơn…" : "Hủy đơn hàng"}
+          </button>
+        )}
+      </div>
+      {cancelError && (
+        <p className={styles.error} role="alert" style={{ marginBottom: 16 }}>
+          ⚠️ {cancelError}
+        </p>
+      )}
       {loading && <p role="status">Đang tải đơn…</p>}
       {error && (
         <p className={styles.error} role="alert">
@@ -78,7 +122,7 @@ function Details({ id }: { id: string }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.items.map((line, index) => (
+                  {groupInvoiceLines(data.items).map((line, index) => (
                     <tr key={index}>
                       <td>
                         {line.name}
@@ -105,7 +149,7 @@ function Details({ id }: { id: string }) {
             </p>
           </section>
           <InvoicePanel orderId={data.id} />
-          <PaymentPanel orderId={data.id} />
+          <PaymentPanel orderId={data.id} orderStatus={data.status} />
         </>
       )}
     </>

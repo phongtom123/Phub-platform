@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import styles from "./cart.module.css";
 import { cents, money, moneyFromCents, vatCents } from "@/lib/shopping/money";
@@ -51,6 +51,7 @@ function CartQuantityInput({ sku, quantity, maximum, onUpdate }: CartQuantityInp
         value={draft ?? String(quantity)}
         onChange={(event) => {
           const value = event.target.value;
+          if (!/^\d*$/.test(value)) return;
           setDraft(value);
 
           if (value === "") return;
@@ -83,6 +84,8 @@ function CartQuantityInput({ sku, quantity, maximum, onUpdate }: CartQuantityInp
 export function ShoppingCart() {
   const router = useRouter();
   const shop = useShopping();
+  const [checkingStock, setCheckingStock] = useState(false);
+  const checkoutPending = useRef(false);
 
   const selectedTotal = shop.selectedLines.reduce((sum, line) => sum + cents(line.unit_price) * BigInt(line.quantity), BigInt(0));
   const tax = shop.taxRate === null ? null : shop.selectedLines.reduce((sum, line) => sum + vatCents(cents(line.unit_price) * BigInt(line.quantity), shop.taxRate!), BigInt(0));
@@ -106,13 +109,22 @@ export function ShoppingCart() {
     }
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (stockBlocked || tax === null || amountTooLarge) return;
-    if (shop.authStatus === "guest") {
-      router.push("/auth/login?redirect=%2Fcheckout");
-      return;
+    if (checkoutPending.current || shop.cartLoading || !shop.selectedLines.length) return;
+    checkoutPending.current = true;
+    setCheckingStock(true);
+    try {
+      if (!await shop.checkSelectedStock()) return;
+      if (shop.authStatus === "guest") {
+        router.push("/auth/login?redirect=%2Fcheckout");
+      } else if (shop.authStatus === "authenticated") {
+        router.push("/checkout");
+      }
+    } finally {
+      checkoutPending.current = false;
+      setCheckingStock(false);
     }
-    if (shop.authStatus === "authenticated") router.push("/checkout");
   };
 
   return (
@@ -281,14 +293,19 @@ export function ShoppingCart() {
                 type="button"
                 className={styles.checkout}
                 disabled={
+                  checkingStock ||
+                  shop.cartLoading ||
                   shop.selectedLines.length === 0 ||
-                  stockBlocked || amountTooLarge || tax === null || shop.cartLoading ||
+                  stockBlocked || amountTooLarge || tax === null ||
                   shop.authStatus === "loading" ||
                   shop.authStatus === "unavailable"
                 }
                 onClick={handleCheckout}
+                aria-busy={checkingStock}
               >
-                {shop.selectedLines.length === 0
+                {checkingStock
+                  ? "Đang kiểm tra tồn kho…"
+                  : shop.selectedLines.length === 0
                   ? "Vui lòng chọn sản phẩm"
                   : shop.authStatus === "guest"
                     ? `Đăng nhập để thanh toán (${shop.selectedLines.length})`

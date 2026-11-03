@@ -34,6 +34,7 @@ function quote(code=null){
    assert.equal(request.method(),'GET','Voucher validation must not create business records');
    if(path.endsWith('/auth/me'))return route.fulfill({json:{account_id:'ACCOUNT',role:'KHACH_HANG',customer_id:profile.customer_id,name:profile.name,username:'test',employee_id:null,warehouse_id:null}});
    if(path.endsWith('/customer/me'))return route.fulfill({json:profile});
+   if(path.endsWith('/customer/addresses'))return route.fulfill({json:{items:[{id:'00000000-0000-4000-8000-000000000001',...profile,is_default:true}],item:null}});
    if(path.endsWith('/products/P'))return route.fulfill({json:product});
    if(path.endsWith('/availability'))return route.fulfill({json:{items:[{sku:'S',available_quantity:10}],tax_rate:'10.00',currency:'VND'}});
    return route.fulfill({json:{items:[]}});

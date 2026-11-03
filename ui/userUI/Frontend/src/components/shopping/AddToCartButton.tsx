@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useShopping } from "./ShoppingProvider";
+import { useProductStock, type ProductStock } from "@/lib/catalog/useProductStock";
 import styles from "./AddToCartButton.module.css";
 
 type ButtonPhase = "idle" | "adding" | "added";
@@ -30,13 +31,19 @@ export function AddToCartButton({
   quantity = 1,
   className,
   label = "Thêm vào giỏ",
+  disabled = false,
+  stock: providedStock,
 }: {
   product: { id: string; sku?: string };
   quantity?: number;
   className?: string;
   label?: string;
+  disabled?: boolean;
+  stock?: ProductStock;
 }) {
   const shop = useShopping();
+  const ownStock = useProductStock(product, providedStock === undefined);
+  const stock = providedStock ?? ownStock;
   const [phase, setPhase] = useState<ButtonPhase>("idle");
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -45,10 +52,11 @@ export function AddToCartButton({
   }, []);
 
   const handleAdd = async () => {
-    if (phase === "adding") return;
+    if (phase === "adding" || stock.status !== "available") return;
     if (resetTimer.current) clearTimeout(resetTimer.current);
     setPhase("adding");
     const added = await shop.add(product, quantity);
+    stock.reload();
     if (!added) {
       setPhase("idle");
       return;
@@ -62,7 +70,10 @@ export function AddToCartButton({
       ? "Đang thêm…"
       : phase === "added"
         ? "Đã thêm vào giỏ"
-        : label;
+        : stock.status === "checking" ? "Đang kiểm tra tồn kho…" : label;
+
+  if (stock.status === "sold_out") return <span role="status" className={styles.soldOut}>Hết hàng</span>;
+  if (stock.status === "error") return <button type="button" className={styles.retry} onClick={stock.reload}>Thử lại kiểm tra tồn kho</button>;
 
   return (
     <button
@@ -73,7 +84,7 @@ export function AddToCartButton({
         phase === "added" && styles.added,
         className,
       ].filter(Boolean).join(" ")}
-      disabled={shop.cartLoading || shop.authStatus === "loading"}
+      disabled={disabled || stock.status !== "available" || shop.cartLoading || shop.authStatus === "loading"}
       onClick={() => void handleAdd()}
       aria-label={`${visibleLabel}${quantity > 1 ? `, số lượng ${quantity}` : ""}`}
       data-state={phase}

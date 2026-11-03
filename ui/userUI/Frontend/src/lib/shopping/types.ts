@@ -23,6 +23,7 @@ export interface CartLine {
 export interface CheckoutLine {
   sku: string;
   warehouse_id: number;
+  allocations?: { warehouse_id: number; quantity: number }[];
   name: string;
   unit: string;
   quantity: number;
@@ -50,6 +51,19 @@ export interface Recipient {
   address_line: string;
   province: string;
   ward: string;
+}
+/** One entry of the customer's address book (DIA_CHI_KHACH_HANG). */
+export interface CustomerAddress extends Recipient {
+  id: string;
+  is_default: boolean;
+}
+export interface AddressInput extends Recipient {
+  is_default?: boolean;
+}
+/** Whole address book after an operation; `item` is the address just created/updated. */
+export interface AddressBook {
+  items: CustomerAddress[];
+  item: CustomerAddress | null;
 }
 export interface OrderRequest {
   recipient: Recipient;

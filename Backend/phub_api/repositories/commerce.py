@@ -16,8 +16,14 @@ class CommerceRepository:
     def save_profile(self, customer_id, values):
         return self.client.table("KHACH_HANG").update(values).eq("ma_kh", customer_id).execute().data
 
+    def addresses(self, parameters):
+        return self.client.rpc("customer_address_v1", parameters).execute().data
+
     def checkout(self, parameters):
-        return self.client.rpc("customer_checkout_v2", parameters).execute().data
+        return self.client.rpc("customer_checkout_multi_warehouse_v1", parameters).execute().data
 
     def orders(self, parameters):
         return self.client.rpc("customer_read_orders_v2", parameters).execute().data
+
+    def cancel_order(self, parameters):
+        return self.client.rpc("customer_cancel_order_v1", parameters).execute().data

@@ -2,51 +2,60 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import { PaymentPanel } from "@/components/shopping/PaymentPanel";
 import { InvoicePanel } from "@/components/shopping/InvoicePanel";
 import { useCheckoutQuote } from "@/components/shopping/CheckoutSummary";
-import { createOrder, saveProfile, ShoppingError } from "@/lib/shopping/client";
+import {
+  createAddress,
+  createOrder,
+  deleteAddress,
+  listAddresses,
+  ShoppingError,
+  updateAddress,
+} from "@/lib/shopping/client";
 import { money, invoiceTotals } from "@/lib/shopping/money";
-import type { OrderRequest, Receipt } from "@/lib/shopping/types";
+import type { AddressBook, CustomerAddress, OrderRequest, Receipt } from "@/lib/shopping/types";
 import styles from "./checkout.module.css";
 
-export interface DeliveryAddress {
-  id: string;
-  name: string;
-  phone: string;
-  address_line: string;
-  ward: string;
-  province: string;
-  note?: string;
+// The address book used to live in localStorage; that stale copy of personal data is removed.
+const LEGACY_ADDRESSES_KEY = "phub_user_delivery_addresses_v1";
+const MAX_ADDRESSES = 10;
+// The order note is one line: the database rejects control characters such as line breaks.
+const MAX_NOTE_LENGTH = 500;
+const PHONE_PATTERN = /^\+?[0-9]{8,15}$/;
+
+function errorMessage(err: unknown, fallback: string) {
+  return err instanceof Error && err.message ? err.message : fallback;
 }
 
-const ADDRESSES_STORAGE_KEY = "phub_user_delivery_addresses_v1";
-
-export function CheckoutProcess({ confirmation = false }: { confirmation?: boolean }) {
-  const router = useRouter();
+export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   const shop = useShopping();
 
-  // Address states
-  const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
+  // Address book (database table DIA_CHI_KHACH_HANG via /api/customer/addresses)
+  const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showAddressList, setShowAddressList] = useState(false);
+  const [addressesLoaded, setAddressesLoaded] = useState(false);
+  const [addressError, setAddressError] = useState("");
+  const [addressReload, setAddressReload] = useState(0);
+  const [savingAddress, setSavingAddress] = useState(false);
 
   // View mode: "order" (Trang đặt hàng) or "shipping_form" (Trang thông tin giao hàng)
   const [viewMode, setViewMode] = useState<"order" | "shipping_form">("shipping_form");
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
-  // Shipping Form fields
+  // Shipping Form fields (the delivery note is NOT part of the address, see orderNote)
   const [formName, setFormName] = useState("");
   const [formPhone, setFormPhone] = useState("");
   const [formAddress, setFormAddress] = useState("");
   const [formWard, setFormWard] = useState("");
   const [formProvince, setFormProvince] = useState("");
-  const [formNote, setFormNote] = useState("");
+  const [formDefault, setFormDefault] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Order & Payment states
+  // Order & Payment states. The note belongs to this order only (DON_HANG.ghi_chu).
+  const [orderNote, setOrderNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer">("cod");
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
@@ -59,147 +68,139 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
   const [orderReceipt, setOrderReceipt] = useState<Receipt | null>(null);
   const placingOrder = useRef(false);
 
-  // 1. Load addresses from localStorage and customer profile
-  useEffect(() => {
-    let saved: DeliveryAddress[] = [];
-    try {
-      const stored = localStorage.getItem(ADDRESSES_STORAGE_KEY);
-      if (stored) saved = JSON.parse(stored);
-    } catch {
-      saved = [];
-    }
-
-    // If no saved address in localStorage but shop.customer has info, add customer profile address
-    if (saved.length === 0 && shop.customer) {
-      if (shop.customer.name && (shop.customer.phone || shop.customer.address_line)) {
-        const defaultAddr: DeliveryAddress = {
-          id: "addr_profile_" + (shop.customer.customer_id || "default"),
-          name: shop.customer.name || "",
-          phone: shop.customer.phone || "",
-          address_line: shop.customer.address_line || "",
-          ward: shop.customer.ward || "",
-          province: shop.customer.province || "",
-        };
-        saved = [defaultAddr];
-      }
-    }
-
-    setAddresses(saved);
-    if (saved.length > 0) {
-      setSelectedAddressId(saved[0].id);
-      setViewMode("order"); // Đã có thông tin giao hàng -> mở thẳng trang Đặt hàng
-    } else {
-      setViewMode("shipping_form"); // Chưa có thông tin giao hàng -> mở form Thông tin giao hàng
-    }
-  }, [shop.customer]);
-
-  // Persist addresses to localStorage
-  const saveAddressesToStorage = (updated: DeliveryAddress[]) => {
-    setAddresses(updated);
-    try {
-      localStorage.setItem(ADDRESSES_STORAGE_KEY, JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
+  // Show the book returned by the server and keep the selection when it still exists.
+  const applyAddressBook = (book: AddressBook, preferredId?: string | null) => {
+    setAddresses(book.items);
+    setSelectedAddressId((current) => {
+      const wanted = preferredId ?? current;
+      if (wanted && book.items.some((a) => a.id === wanted)) return wanted;
+      return (book.items.find((a) => a.is_default) ?? book.items[0])?.id ?? null;
+    });
   };
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem(LEGACY_ADDRESSES_KEY);
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+
+  // 1. Load the address book from the database
+  const customerId = shop.customer?.customer_id;
+  const addressesLoading =
+    shop.authStatus === "loading" || (shop.authStatus === "authenticated" && !addressesLoaded);
+  useEffect(() => {
+    if (shop.authStatus !== "authenticated") return;
+    const controller = new AbortController();
+    listAddresses(controller.signal)
+      .then((book) => {
+        if (controller.signal.aborted) return;
+        applyAddressBook(book);
+        // Đã có thông tin giao hàng -> mở thẳng trang Đặt hàng, chưa có -> mở form nhập
+        setViewMode(book.items.length > 0 ? "order" : "shipping_form");
+        setAddressesLoaded(true);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setAddressError(errorMessage(err, "Không thể tải thông tin giao hàng. Vui lòng thử lại."));
+        setAddressesLoaded(true);
+      });
+    return () => controller.abort();
+  }, [shop.authStatus, customerId, addressReload]);
 
   // Currently selected address
   const currentAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0] || null;
 
-  // Handle open shipping form for Add New
-  const handleOpenAddAddress = () => {
+  // Handle open shipping form for Add New (prefilled with the account name/phone)
+  const handleOpenAddAddress = (first = addresses.length === 0) => {
     setEditingAddressId(null);
     setFormName(shop.customer?.name || "");
     setFormPhone(shop.customer?.phone || "");
     setFormAddress("");
     setFormWard("");
     setFormProvince("");
-    setFormNote("");
+    setFormDefault(first);
     setFormError("");
     setViewMode("shipping_form");
   };
 
   // Handle open shipping form for Edit Existing
-  const handleOpenEditAddress = (addr: DeliveryAddress) => {
+  const handleOpenEditAddress = (addr: CustomerAddress) => {
     setEditingAddressId(addr.id);
     setFormName(addr.name);
     setFormPhone(addr.phone);
     setFormAddress(addr.address_line);
     setFormWard(addr.ward);
     setFormProvince(addr.province);
-    setFormNote(addr.note || "");
+    setFormDefault(addr.is_default);
     setFormError("");
     setViewMode("shipping_form");
   };
 
-  // Handle Delete Address
-  const handleDeleteAddress = (idToDelete: string, e: React.MouseEvent) => {
+  // Handle Delete Address (the server promotes another address when the default is deleted)
+  const handleDeleteAddress = async (idToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const next = addresses.filter((a) => a.id !== idToDelete);
-    saveAddressesToStorage(next);
-    if (selectedAddressId === idToDelete) {
-      setSelectedAddressId(next.length > 0 ? next[0].id : null);
-    }
-    if (next.length === 0) {
-      handleOpenAddAddress();
+    if (savingAddress || !window.confirm("Xóa thông tin giao hàng này?")) return;
+    setSavingAddress(true);
+    setAddressError("");
+    try {
+      const book = await deleteAddress(idToDelete);
+      applyAddressBook(book);
+      if (book.items.length === 0) handleOpenAddAddress(true);
+    } catch (err) {
+      setAddressError(errorMessage(err, "Không thể xóa thông tin giao hàng."));
+    } finally {
+      setSavingAddress(false);
     }
   };
 
-  // 3. Handle Submit "Xác nhận" trên form Thông tin giao hàng
-  const handleConfirmShippingForm = (e: React.FormEvent) => {
+  // 3. Handle Submit "Xác nhận" trên form Thông tin giao hàng: lưu vào database
+  const handleConfirmShippingForm = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savingAddress) return;
     setFormError("");
 
-    if (!formName.trim()) {
-      setFormError("Vui lòng nhập họ và tên người nhận.");
-      return;
-    }
-    if (!formPhone.trim()) {
-      setFormError("Vui lòng nhập số điện thoại người nhận.");
-      return;
-    }
-    if (!formAddress.trim()) {
-      setFormError("Vui lòng nhập địa chỉ chi tiết nhận hàng.");
-      return;
-    }
-
-    const addrId = editingAddressId || "addr_" + Date.now();
-    const newAddress: DeliveryAddress = {
-      id: addrId,
+    const input = {
       name: formName.trim(),
       phone: formPhone.trim(),
       address_line: formAddress.trim(),
-      ward: formWard.trim() || "Chưa chọn",
-      province: formProvince.trim() || "Chưa chọn",
-      note: formNote.trim() || undefined,
+      ward: formWard.trim(),
+      province: formProvince.trim(),
+      is_default: formDefault,
     };
-
-    let nextAddresses: DeliveryAddress[];
-    if (editingAddressId) {
-      nextAddresses = addresses.map((a) => (a.id === editingAddressId ? newAddress : a));
-    } else {
-      nextAddresses = [newAddress, ...addresses];
+    if (!input.name) {
+      setFormError("Vui lòng nhập họ và tên người nhận.");
+      return;
+    }
+    if (!PHONE_PATTERN.test(input.phone.replace(/[ ()-]/g, ""))) {
+      setFormError("Số điện thoại phải gồm 8–15 chữ số.");
+      return;
+    }
+    if (!input.address_line) {
+      setFormError("Vui lòng nhập địa chỉ chi tiết nhận hàng.");
+      return;
+    }
+    if (!input.ward || !input.province) {
+      setFormError("Vui lòng nhập Phường / Xã và Tỉnh / Thành phố.");
+      return;
     }
 
-    saveAddressesToStorage(nextAddresses);
-    setSelectedAddressId(addrId);
-
-    // Save profile to backend in background if customer is logged in
-    if (shop.customer) {
-      saveProfile({
-        name: newAddress.name,
-        phone: newAddress.phone,
-        address_line: newAddress.address_line,
-        ward: newAddress.ward,
-        province: newAddress.province,
-      }).catch(() => {
-        // ignore background error
-      });
+    setSavingAddress(true);
+    try {
+      const book = editingAddressId
+        ? await updateAddress(editingAddressId, input)
+        : await createAddress(input);
+      // Địa chỉ vừa lưu được chọn cho đơn hàng đang đặt
+      applyAddressBook(book, book.item?.id);
+      setAddressError("");
+      setShowAddressList(false);
+      setViewMode("order");
+    } catch (err) {
+      setFormError(errorMessage(err, "Không thể lưu thông tin giao hàng. Vui lòng thử lại."));
+    } finally {
+      setSavingAddress(false);
     }
-
-    // Chuyển sang trang đặt hàng ngay lập tức
-    setShowAddressList(false);
-    setViewMode("order");
   };
 
   const handleApplyVoucher = (e: React.FormEvent) => {
@@ -241,7 +242,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
         province: currentAddress.province,
         ward: currentAddress.ward,
       },
-      note: currentAddress.note || null,
+      note: orderNote.trim() || null,
       voucher_code: quote.voucher_code,
       expected_discount: quote.discount_total,
       expected_total: quote.total,
@@ -397,6 +398,73 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
     );
   }
 
+  // Thông tin giao hàng gắn với tài khoản: khách chưa đăng nhập không đặt được hàng.
+  if (shop.authStatus === "guest" || shop.authStatus === "unavailable") {
+    const guest = shop.authStatus === "guest";
+    return (
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <nav className={styles.breadcrumb}>
+            <Link href="/">Trang chủ</Link>
+            <span>›</span>
+            <Link href="/cart">Giỏ hàng</Link>
+            <span>›</span>
+            <strong>Đặt hàng</strong>
+          </nav>
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <h2>{guest ? "Vui lòng đăng nhập để đặt hàng" : "Không thể xác minh tài khoản"}</h2>
+            <p style={{ color: "#777", marginTop: 8 }}>
+              {guest
+                ? "Thông tin giao hàng được lưu trong tài khoản của bạn. Đăng nhập rồi quay lại để tiếp tục."
+                : "Vui lòng tải lại trang hoặc thử lại sau."}
+            </p>
+            {guest && (
+              <Link href="/auth/login?redirect=/checkout" className={styles.signIn}>
+                Đăng nhập tài khoản
+              </Link>
+            )}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (shop.authStatus === "loading" || addressesLoading) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <p style={{ padding: "60px 20px", textAlign: "center", color: "#666" }}>
+            Đang tải thông tin giao hàng...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (addressError && addresses.length === 0) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.container}>
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <p style={{ color: "#c62828" }}>⚠️ {addressError}</p>
+            <button
+              type="button"
+              className={styles.placeOrder}
+              style={{ width: 180, marginTop: 16 }}
+              onClick={() => {
+                setAddressError("");
+                setAddressesLoaded(false);
+                setAddressReload((n) => n + 1);
+              }}
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   // ==========================================
   // GIAO DIỆN 1: FORM "THÔNG TIN GIAO HÀNG"
   // (Không có phương thức thanh toán, không có cột bên phải, tiêu đề "Thông tin giao hàng", nút "Xác nhận")
@@ -415,11 +483,6 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
           <div className={styles.headingRow} style={{ minHeight: "auto", paddingBottom: 20 }}>
             <h1>Thông tin giao hàng</h1>
-            {shop.authStatus === "guest" && (
-              <Link href="/auth/login?redirect=/checkout" className={styles.signIn}>
-                Đăng nhập tài khoản
-              </Link>
-            )}
           </div>
 
           <div className={styles.singleFormContainer}>
@@ -470,7 +533,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                 <input
                   type="text"
                   required
-                  maxLength={200}
+                  maxLength={255}
                   placeholder="Ví dụ: 123 Đường Nguyễn Trãi"
                   value={formAddress}
                   onChange={(e) => setFormAddress(e.target.value)}
@@ -479,9 +542,10 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <label style={{ width: "100%" }}>
-                  Phường / Xã
+                  Phường / Xã <em>*</em>
                   <input
                     type="text"
+                    required
                     maxLength={100}
                     placeholder="Ví dụ: Phường 2"
                     value={formWard}
@@ -489,9 +553,10 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                   />
                 </label>
                 <label style={{ width: "100%" }}>
-                  Tỉnh / Thành phố
+                  Tỉnh / Thành phố <em>*</em>
                   <input
                     type="text"
+                    required
                     maxLength={100}
                     placeholder="Ví dụ: TP. Hồ Chí Minh"
                     value={formProvince}
@@ -500,15 +565,16 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                 </label>
               </div>
 
-              <label style={{ width: "100%" }}>
-                Ghi chú giao hàng (nếu có)
+              <label className={styles.checkboxRow}>
                 <input
-                  type="text"
-                  maxLength={250}
-                  placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi đến..."
-                  value={formNote}
-                  onChange={(e) => setFormNote(e.target.value)}
+                  type="checkbox"
+                  className={styles.checkboxInput}
+                  checked={formDefault}
+                  // The default address cannot be switched off directly: choose another one as default.
+                  disabled={savingAddress || (editingAddressId !== null && addresses.find((a) => a.id === editingAddressId)?.is_default === true) || addresses.length === 0}
+                  onChange={(e) => setFormDefault(e.target.checked)}
                 />
+                <span>Đặt làm địa chỉ mặc định</span>
               </label>
 
               <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
@@ -516,14 +582,16 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                   type="submit"
                   className={styles.placeOrder}
                   style={{ width: 180, fontSize: 15 }}
+                  disabled={savingAddress}
                 >
-                  Xác nhận
+                  {savingAddress ? "Đang lưu..." : "Xác nhận"}
                 </button>
 
                 {addresses.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setViewMode("order")}
+                    disabled={savingAddress}
                     style={{
                       height: 46,
                       padding: "0 22px",
@@ -563,11 +631,6 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
         <div className={styles.headingRow}>
           <h1>Đặt hàng</h1>
-          {shop.authStatus === "guest" && (
-            <Link href="/auth/login?redirect=/checkout" className={styles.signIn}>
-              Đăng nhập tài khoản
-            </Link>
-          )}
         </div>
 
         {submitError && (
@@ -600,6 +663,10 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                 </button>
               </div>
 
+              {addressError && (
+                <div style={{ color: "#c62828", fontSize: 13, marginBottom: 8 }}>⚠️ {addressError}</div>
+              )}
+
               {currentAddress ? (
                 <div className={styles.addressDetails}>
                   <div>
@@ -610,11 +677,6 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                       .filter(Boolean)
                       .join(", ")}
                   </div>
-                  {currentAddress.note && (
-                    <div style={{ color: "#777", fontSize: 13, marginTop: 4 }}>
-                      Ghi chú: {currentAddress.note}
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div style={{ color: "#c62828", fontSize: 14 }}>
@@ -649,6 +711,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                         <div className={styles.addressOptionContent}>
                           <div style={{ fontWeight: 600 }}>
                             {addr.name} — <span style={{ fontWeight: 400 }}>{addr.phone}</span>
+                            {addr.is_default && <span className={styles.defaultBadge}>Mặc định</span>}
                           </div>
                           <div style={{ color: "#555" }}>
                             {[addr.address_line, addr.ward, addr.province].filter(Boolean).join(", ")}
@@ -670,6 +733,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                               type="button"
                               className={`${styles.actionBtnText} ${styles.deleteBtnText}`}
                               onClick={(e) => handleDeleteAddress(addr.id, e)}
+                              disabled={savingAddress}
                             >
                               Xóa
                             </button>
@@ -682,15 +746,38 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                   <button
                     type="button"
                     className={styles.addNewAddressBtn}
-                    onClick={handleOpenAddAddress}
+                    onClick={() => handleOpenAddAddress()}
+                    disabled={savingAddress || addresses.length >= MAX_ADDRESSES}
                   >
                     + Thêm thông tin giao hàng mới
                   </button>
+                  {addresses.length >= MAX_ADDRESSES && (
+                    <small style={{ color: "#777" }}>Tối đa {MAX_ADDRESSES} địa chỉ. Hãy xóa bớt địa chỉ không dùng.</small>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* 2. KHỐI PHƯƠNG THỨC THANH TOÁN */}
+            {/* 2. KHỐI GHI CHÚ ĐƠN HÀNG: thuộc đơn đang đặt, lưu ở DON_HANG.ghi_chu */}
+            <div className={styles.addressBox}>
+              <div className={styles.addressBoxHeader}>
+                <h3>📝 Ghi chú đơn hàng</h3>
+                <small className={styles.noteCounter}>
+                  {orderNote.length}/{MAX_NOTE_LENGTH}
+                </small>
+              </div>
+              <input
+                type="text"
+                className={styles.orderNoteInput}
+                maxLength={MAX_NOTE_LENGTH}
+                placeholder="Ví dụ: Giao giờ hành chính, gọi trước khi đến..."
+                aria-label="Ghi chú đơn hàng"
+                value={orderNote}
+                onChange={(e) => setOrderNote(e.target.value.replace(/[\u0000-\u001f\u007f]+/g, " "))}
+              />
+            </div>
+
+            {/* 3. KHỐI PHƯƠNG THỨC THANH TOÁN */}
             <div className={styles.shippingMethods} style={{ borderTop: 0, marginTop: 0 }}>
               <fieldset>
                 <legend style={{ fontSize: 16, marginBottom: 12 }}>💳 Phương thức thanh toán</legend>
@@ -891,7 +978,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               <button
                 type="button"
                 className={styles.placeOrder}
-                disabled={submitting || quoteLoading || !quote || !currentAddress}
+                disabled={submitting || savingAddress || quoteLoading || !quote || !currentAddress}
                 onClick={handlePlaceOrder}
                 style={{ width: "100%", fontSize: 16, height: 48 }}
               >

@@ -133,6 +133,13 @@ class CatalogProduct(BaseModel):
         return format(value, ".2f")
 
 
+class ProductAvailability(BaseModel):
+    id: str
+    sku: str
+    quantity: int = Field(ge=1)
+    available: bool
+
+
 class Pagination(BaseModel):
     page: int
     page_size: int

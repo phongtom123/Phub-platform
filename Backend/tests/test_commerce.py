@@ -33,7 +33,10 @@ def commerce_client(monkeypatch):
               "items": [{key: value for key, value in receipt["items"][0].items() if key not in {"gross_total", "tax_rate"}}]}
     body = {"recipient": recipient, "note": None, "voucher_code": "save10", "expected_discount": "0.02", "expected_total": "0.18",
             "items": [{"sku": "SKU-A", "warehouse_id": -900002, "quantity": 2, "expected_unit_price": "0.10"}]}
-    state = {"quote": quote, "receipt": receipt, "detail": detail, "result": None, "replayed": False, "error": None,
+    address = {"id": "7b0f5f27-1c3b-4f0e-9d7a-3f6f0a1b2c3d", "name": "Customer A", "phone": "0901234567",
+               "address_line": "Test address", "province": "Test province", "ward": "Test ward", "is_default": True}
+    state = {"address_calls": [], "address_result": {"items": [address], "item": None}, "address": address, "cancel_calls": [],
+             "quote": quote, "receipt": receipt, "detail": detail, "result": None, "replayed": False, "error": None,
              "profile": [{"ma_kh": "KH-A", "ten_kh": "Customer A", "sdt": "0901234567", "dia_chi_chi_tiet_md": "Test address", "tinh_thanh_md": "Test province", "xa_phuong_md": "Test ward", "mat_khau": "PRIVATE-PASSWORD"}]}
     requests = []
 
@@ -50,10 +53,16 @@ def commerce_client(monkeypatch):
                 return httpx.Response(200, json=[])
             state["profile"][0].update(json.loads(request.content))
             return httpx.Response(200, json=state["profile"])
+        if request.url.path.endswith("/customer_address_v1"):
+            state["address_calls"].append(json.loads(request.content))
+            return httpx.Response(200, json=state["address_result"])
+        if request.url.path.endswith("/customer_cancel_order_v1"):
+            state["cancel_calls"].append(json.loads(request.content))
+            return httpx.Response(200, json=state.get("cancel_result", {"order": {**state["detail"], "status": "HUY"}}))
         payload = json.loads(request.content)
         if state["result"] is not None:
             return httpx.Response(200, json=state["result"])
-        if request.url.path.endswith("/customer_checkout_v2"):
+        if request.url.path.endswith("/customer_checkout_multi_warehouse_v1"):
             result = {"order": state["receipt"], "replayed": state["replayed"]} if payload["p_create"] else {"quote": state["quote"]}
         else:
             assert request.url.path.endswith("/customer_read_orders_v2")
@@ -76,6 +85,9 @@ def commerce_client(monkeypatch):
 @pytest.mark.parametrize("method,path,body", [
     ("GET", "/me", None), ("GET", "/orders", None), ("GET", "/orders/ORDER-A", None),
     ("PUT", "/me", {}),
+    ("GET", "/addresses", None), ("POST", "/addresses", {}),
+    ("PUT", "/addresses/7b0f5f27-1c3b-4f0e-9d7a-3f6f0a1b2c3d", {}),
+    ("POST", "/addresses/7b0f5f27-1c3b-4f0e-9d7a-3f6f0a1b2c3d/delete", None),
     ("POST", "/checkout/quote", {"items": [{"sku": "SKU-A", "quantity": 1}]}),
     ("POST", "/orders", {}),
 ])
@@ -129,6 +141,30 @@ def test_customer_order_creation_and_replay_share_one_rpc(commerce_client):
     replay = client.post("/api/customer/orders", json=body, headers={"Idempotency-Key": key})
     assert replay.status_code == 200 and replay.json() == response.json()
     assert replay.headers["Idempotency-Replayed"] == "true"
+
+
+def test_pooled_quote_retains_one_product_with_all_warehouse_allocations(commerce_client):
+    client, state, requests, _, _ = commerce_client
+    allocations = [{"warehouse_id": -900002, "quantity": 1}, {"warehouse_id": 3, "quantity": 1}]
+    state["quote"]["items"][0]["allocations"] = allocations
+    response = client.post("/api/customer/checkout/quote", json={"items": [{"sku": "SKU-A", "quantity": 2}]})
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 1
+    assert response.json()["items"][0]["allocations"] == allocations
+    assert requests[0].url.path.endswith("/customer_checkout_multi_warehouse_v1")
+
+
+@pytest.mark.parametrize("allocations", [
+    [{"warehouse_id": -900002, "quantity": 1}],
+    [{"warehouse_id": -900002, "quantity": 1}, {"warehouse_id": -900002, "quantity": 1}],
+    [{"warehouse_id": 3, "quantity": 2}],
+    [{"warehouse_id": -900002, "quantity": 0}],
+])
+def test_corrupt_warehouse_allocation_is_rejected(commerce_client, allocations):
+    client, state, _, _, _ = commerce_client
+    state["quote"]["items"][0]["allocations"] = allocations
+    response = client.post("/api/customer/checkout/quote", json={"items": [{"sku": "SKU-A", "quantity": 2}]})
+    assert response.status_code == 500
 
 
 @pytest.mark.parametrize("field,value", [("quantity", 0), ("quantity", True), ("quantity", 1.5), ("quantity", "2"), ("quantity", 2147483648), ("sku", ""), ("sku", "A\x01"), ("sku", "x"*101), ("price", "1.00")])
@@ -288,3 +324,124 @@ def test_checkout_accepts_stock_over_1000_and_distinct_warehouse_allocations(com
     duplicate['items'].append(deepcopy(duplicate['items'][0]))
     with pytest.raises(ValidationError):
         CustomerOrderRequest.model_validate(duplicate)
+ADDRESS_ID = "7b0f5f27-1c3b-4f0e-9d7a-3f6f0a1b2c3d"
+
+
+def test_address_book_list_uses_verified_customer_and_rpc_only(commerce_client):
+    client, state, requests, _, _ = commerce_client
+    response = client.get("/api/customer/addresses", headers={"X-Customer-Id": "KH-B"})
+    assert response.status_code == 200 and response.json() == {"items": [state["address"]], "item": None}
+    assert response.headers["Cache-Control"] == "no-store"
+    assert state["address_calls"] == [{"p_customer_id": "KH-A", "p_action": "list", "p_address_id": None, "p_payload": None}]
+    assert [request.url.path.rsplit("/", 1)[-1] for request in requests] == ["customer_address_v1"]
+
+
+def test_address_create_normalizes_input_and_never_sends_a_customer_id(commerce_client):
+    client, state, _, body, _ = commerce_client
+    state["address_result"] = {"items": [state["address"]], "item": state["address"]}
+    payload = {**body["recipient"], "name": " Moi ", "phone": "090 123-4567", "is_default": True}
+    response = client.post("/api/customer/addresses", json=payload, headers={"X-Customer-Id": "KH-B"})
+    assert response.status_code == 201 and response.json()["item"]["id"] == ADDRESS_ID
+    call = state["address_calls"][0]
+    assert call["p_customer_id"] == "KH-A" and call["p_action"] == "create" and call["p_address_id"] is None
+    assert call["p_payload"] == {**body["recipient"], "name": "Moi", "phone": "0901234567", "is_default": True}
+
+
+def test_address_update_and_delete_use_the_path_id(commerce_client):
+    client, state, _, body, _ = commerce_client
+    state["address_result"] = {"items": [state["address"]], "item": state["address"]}
+    assert client.put(f"/api/customer/addresses/{ADDRESS_ID}", json=body["recipient"]).status_code == 200
+    state["address_result"] = {"items": [], "item": None}
+    response = client.post(f"/api/customer/addresses/{ADDRESS_ID}/delete")
+    assert response.status_code == 200 and response.json() == {"items": [], "item": None}
+    update, delete = state["address_calls"]
+    assert (update["p_action"], update["p_address_id"], update["p_payload"]["is_default"]) == ("update", ADDRESS_ID, False)
+    assert (delete["p_action"], delete["p_address_id"], delete["p_payload"]) == ("delete", ADDRESS_ID, None)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("name", " "), ("phone", "abc"), ("address_line", ""), ("province", "x" * 101), ("ward", "Bad\x00"),
+    ("is_default", "true"), ("ma_kh", "KH-B"), ("customer_id", "KH-B"), ("id", ADDRESS_ID),
+])
+def test_address_invalid_or_foreign_fields_never_reach_the_database(commerce_client, field, value):
+    client, state, requests, body, _ = commerce_client
+    response = client.post("/api/customer/addresses", json={**body["recipient"], field: value})
+    assert response.status_code == 422 and response.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert requests == [] and state["address_calls"] == []
+
+
+@pytest.mark.parametrize("method,path", [
+    ("PUT", "/api/customer/addresses/not-a-uuid"), ("POST", "/api/customer/addresses/not-a-uuid/delete"),
+    ("POST", f"/api/customer/addresses/{ADDRESS_ID}/delete?ma_kh=KH-B"), ("GET", "/api/customer/addresses?ma_kh=KH-B"),
+])
+def test_address_bad_path_or_query_is_rejected_before_the_database(commerce_client, method, path):
+    client, _, requests, body, _ = commerce_client
+    response = client.request(method, path, json=body["recipient"] if method == "PUT" else None)
+    assert response.status_code == 422 and requests == []
+
+
+@pytest.mark.parametrize("code,status", [
+    ("ADDRESS_NOT_FOUND", 404), ("ADDRESS_LIMIT_REACHED", 409), ("AUTH_CUSTOMER_UNAVAILABLE", 403), ("VALIDATION_ERROR", 422),
+])
+def test_address_rpc_errors_map_to_safe_http_errors(commerce_client, code, status):
+    client, state, _, body, _ = commerce_client
+    state["address_result"] = {"error": {"code": code}}
+    response = client.put(f"/api/customer/addresses/{ADDRESS_ID}", json=body["recipient"])
+    assert response.status_code == status and response.json()["error"]["code"] == code
+
+
+def test_address_unknown_rpc_error_or_missing_migration_is_hidden(commerce_client):
+    client, state, _, _, _ = commerce_client
+    state["address_result"] = {"error": {"code": "PRIVATE_SQL_STATE"}}
+    response = client.get("/api/customer/addresses")
+    assert response.status_code == 500 and "PRIVATE" not in response.text
+    state["error"] = APIError({"code": "PGRST202", "message": "PRIVATE"})
+    response = client.get("/api/customer/addresses")
+    assert response.status_code == 503 and response.json()["error"]["code"] == "CHECKOUT_DATABASE_NOT_READY"
+    assert "PRIVATE" not in response.text
+
+
+def test_swagger_registers_the_address_book_contract(commerce_client):
+    client, _, _, _, _ = commerce_client
+    spec = client.get("/openapi.json").json()
+    assert spec["paths"]["/api/customer/addresses"].keys() >= {"get", "post"}
+    assert spec["paths"]["/api/customer/addresses/{address_id}"].keys() >= {"put"}
+    assert spec["paths"]["/api/customer/addresses/{address_id}/delete"].keys() >= {"post"}
+    assert spec["components"]["schemas"]["AddressRequest"]["additionalProperties"] is False
+    assert {"201", "401", "403", "409", "422", "503"} <= spec["paths"]["/api/customer/addresses"]["post"]["responses"].keys()
+
+
+def test_cancel_order_calls_rpc_with_customer_and_order_id(commerce_client):
+    client, state, _, _, _ = commerce_client
+    response = client.post("/api/customer/orders/ORDER-A/cancel")
+    assert response.status_code == 200
+    assert response.json()["status"] == "HUY"
+    assert len(state["cancel_calls"]) == 1
+    assert state["cancel_calls"][0] == {"p_customer_id": "KH-A", "p_order_id": "ORDER-A", "p_reason": None}
+
+
+def test_cancel_order_with_reason(commerce_client):
+    client, state, _, _, _ = commerce_client
+    response = client.post("/api/customer/orders/ORDER-A/cancel", json={"reason": "Doi y khong mua nua"})
+    assert response.status_code == 200
+    assert state["cancel_calls"][0]["p_reason"] == "Doi y khong mua nua"
+
+
+@pytest.mark.parametrize("code,status", [
+    ("ORDER_NOT_FOUND", 404),
+    ("ORDER_ALREADY_CANCELLED", 409),
+    ("ORDER_NOT_CANCELABLE", 409),
+    ("AUTH_CUSTOMER_UNAVAILABLE", 403),
+])
+def test_cancel_order_errors_map_safely(commerce_client, code, status):
+    client, state, _, _, _ = commerce_client
+    state["cancel_result"] = {"error": {"code": code}}
+    response = client.post("/api/customer/orders/ORDER-A/cancel")
+    assert response.status_code == status and response.json()["error"]["code"] == code
+
+
+def test_cancel_order_contract_in_swagger(commerce_client):
+    client, _, _, _, _ = commerce_client
+    spec = client.get("/openapi.json").json()
+    assert spec["paths"]["/api/customer/orders/{order_id}/cancel"].keys() >= {"post"}
+    assert {"200", "401", "403", "404", "409", "422", "503"} <= spec["paths"]["/api/customer/orders/{order_id}/cancel"]["post"]["responses"].keys()

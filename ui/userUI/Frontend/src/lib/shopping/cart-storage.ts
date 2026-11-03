@@ -16,7 +16,7 @@ export function restoreCart(value: unknown): StoredCartLine[] {
       typeof item.sku === "string" &&
       item.sku.length <= 100 &&
       !seen.has(item.sku) &&
-      Number.isInteger(item.quantity) &&
+      Number.isSafeInteger(item.quantity) &&
       item.quantity >= 1 &&
       item.quantity <= 2147483647 &&
       (item.selected === undefined || typeof item.selected === "boolean") &&

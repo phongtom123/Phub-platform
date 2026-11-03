@@ -43,7 +43,7 @@ class Recipient(InputModel):
 class OrderItem(InputModel):
     sku: str = Field(min_length=1, max_length=100)
     warehouse_id: StrictInt = Field(ge=-2_147_483_648, le=2_147_483_647)
-    quantity: StrictInt = Field(ge=1, le=2147483647)
+    quantity: StrictInt = Field(ge=1, le=2_147_483_647)
     expected_unit_price: Money = Field(
         description="Giá catalog khách vừa xem, dạng chuỗi thập phân. Chỉ dùng đối chiếu; giá bán lấy từ database.",
         json_schema_extra={"type": "string", "pattern": r"^[0-9]{1,16}(\.[0-9]{1,2})?$", "examples": ["15990000.00"]},
