@@ -2,6 +2,24 @@
 
 Giao diện quản trị cho nền tảng bán PC và linh kiện máy tính, được xây dựng bằng Next.js, React và TypeScript.
 
+## Chạy Admin ở port 3001
+
+Nếu website khách hàng đang chạy ở port 3000, tạo `ui/adminUI/.env.local` với:
+
+```dotenv
+PHUB_API_BASE_URL=http://127.0.0.1:8000
+NEXT_PUBLIC_CUSTOMER_URL=http://localhost:3000
+NEXT_PUBLIC_WAREHOUSE_URL=http://localhost:3002
+```
+
+Từ `ui/adminUI`, chạy `npx next dev -p 3001`. Các biến `NEXT_PUBLIC_*` phải đúng
+với cổng ứng dụng tương ứng; mặc định của dự án là Admin 3000, khách hàng 3001.
+Admin chặn cấu hình website khách trùng origin của chính nó để tránh lặp tải trang.
+Cookie đăng nhập dùng chung hostname localhost giữa các port: nếu đang có phiên
+khách hàng thì Admin chuyển về website khách. Muốn đăng nhập Admin, đăng xuất
+tài khoản khách hoặc dùng cửa sổ riêng tư. Khi backend không truy cập được, trang
+hiện lỗi kiểm tra phiên và cho thử lại, không tự coi người dùng đã đăng xuất.
+
 Đăng nhập và phần **Tài khoản** đã dùng API FastAPI/Supabase thật. Tài khoản có
 danh sách, tìm kiếm/lọc/phân trang, tạo, chi tiết, chỉnh sửa, ẩn/khóa/mở lại,
 phân quyền nhân viên và cấp lại mật khẩu. **Tài khoản của tôi** cho phép sửa thông
@@ -10,6 +28,27 @@ tin đăng nhập và đổi mật khẩu bằng mật khẩu hiện tại. Khô
 Dashboard và danh sách dùng dữ liệu API; không có bản ghi mẫu thay thế. Các chức năng chưa tích hợp hiển thị trạng thái chưa khả dụng.
 
 ## Chức năng giao diện
+
+### Gợi ý sản phẩm và nhà cung cấp trong phiếu nhập
+
+Trong form lập phiếu nhập hoặc sửa sản phẩm của phiếu nháp, nhập tên sản phẩm,
+mã sản phẩm hoặc SKU vào ô **Sản phẩm**. Danh sách gợi ý hiển thị tên, mã SP và
+SKU; có thể chọn bằng chuột hoặc phím mũi tên/Enter, Escape để đóng. Chữ đang tìm
+không được lưu như một SKU; phải chọn một sản phẩm trong gợi ý trước khi lưu phiếu.
+Danh sách là lớp nổi có cuộn riêng, bám theo ô nhập, không chiếm chỗ hoặc đẩy
+giãn bố cục form; tự chọn vị trí trên/dưới theo khoảng trống màn hình.
+Giá nhập và định giá tiếp tục dùng luồng hiện có.
+
+Ô **Nhà cung cấp** dùng chung danh sách nổi này: nhập tên hoặc mã NCC dạng số,
+xem tên/mã trong gợi ý rồi chọn. Phiếu lưu đúng `ma_ncc` đã chọn, không lưu chữ
+đang tìm. API tìm nhà cung cấp hỗ trợ cả tên và mã số chính xác, không cần đổi schema.
+
+Tìm kiếm dùng API danh sách sản phẩm đã có, có giới hạn kết quả/phân trang,
+hủy request tìm cũ và cho thử lại khi lỗi. Không cần migration. Kiểm thử browser:
+`tests/receipt-product-autocomplete.e2e.cjs` và `tests/receipt-pricing.e2e.cjs`
+dùng HTTP fixtures, không ghi phiếu hoặc tồn kho thật.
+
+### Phiên đăng nhập
 
 Admin xác nhận `/auth/me` một lần khi mở ứng dụng/F5. Đăng nhập thành công dùng
 ngay danh tính do backend trả về từ `/auth/login`, không gọi thêm `/auth/me`.
@@ -513,3 +552,18 @@ Admin có luồng xử lý đơn, nhập/chuyển kho, kiểm kê, hóa đơn/th
 tìm kiếm, thông báo, cấu hình, báo cáo CSV và in PDF. Cần backend cùng phiên bản
 và migration `20261028132157_admin_operations.sql`; không tự áp dụng lên cloud.
 Xem [hợp đồng và nghiệm thu](../../Backend/docs/ADMIN_OPERATIONS.md).
+# Tổng hợp tiền tại Chi tiết đơn
+
+Trang Chi tiết đơn luôn hiện Tổng hóa đơn (sau thuế), Đã thu, Đã hoàn và Còn phải thu.
+Trang lấy dữ liệu qua `GET /api/admin/orders/{order_id}/detail`, gồm đơn, khách,
+nhân viên, dòng hàng, hóa đơn, giao dịch, voucher và số tiền tổng hợp từ backend.
+`order-financial-summary.tsx` nhận số tiền này thay vì gọi riêng hóa đơn/thanh toán.
+Biểu mẫu thu tiền vẫn đối chiếu lại bằng `readOrderPaymentContext` trước khi ghi.
+Hai bên chỉ tính giao dịch thành công và dùng phép tính thập phân chính xác.
+Còn phải thu = max(0, tổng hóa đơn − (đã thu − đã hoàn)). Khi chưa có hóa đơn,
+tổng và số còn phải thu được ghi rõ là chưa xác định, không thay bằng 0.
+Khối tự cập nhật theo phiên bản trang sau thao tác, thăm dò 10 giây theo
+`useAdminPolling`, và có nút cập nhật thủ công. Lỗi đọc dữ liệu được hiển thị rõ.
+
+Kiểm thử với HTTP fixtures, không ghi dữ liệu thật:
+`node tests/order-financial-summary.e2e.cjs` (đặt `PHUB_ADMIN_TEST_URL` theo port admin).

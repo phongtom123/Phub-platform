@@ -56,6 +56,12 @@ class TablesRepository:
             fields = [c["name"] for c in public_columns(name) if c["type"] == "varchar"]
             if fields:
                 search = ",".join(f"{field}.imatch.{pattern}" for field in fields)
+            # Supplier IDs are integers, so name/text search needs an exact ID
+            # alternative as well. Only normalized int32 values enter the filter.
+            if name == "suppliers" and re.fullmatch(r"-?[0-9]{1,11}", q.strip()):
+                supplier_id = int(q.strip())
+                if -(2**31) <= supplier_id < 2**31:
+                    search = ",".join(filter(None, (search, f"ma_ncc.eq.{supplier_id}")))
         query = scoped_query(name, user, self.client, search)
         if order_id is not None:
             query = query.eq("ma_donhang", order_id)

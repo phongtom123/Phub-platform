@@ -25,6 +25,23 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("admin order detail gateway forwards one read with auth and rejects writes/traversal", async () => {
+  const calls = [];
+  const proxy = gateway(async (url, options) => {
+    calls.push({ url: String(url), cookie: options.headers.get("Cookie") });
+    return Response.json({ order_id: "DH1" }, { headers: { "Cache-Control": "no-store" } });
+  });
+  const segments = ["admin", "orders", "DH1", "detail"];
+  const response = await proxy(new Request("http://localhost/x", { headers: { Cookie: "phub_session=fixture" } }), segments);
+  assert.equal(response.status, 200);
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].url.endsWith("/api/admin/orders/DH1/detail"));
+  assert.equal(calls[0].cookie, "phub_session=fixture");
+  for (const method of ["POST", "PATCH", "PUT", "DELETE"]) assert.equal((await proxy(new Request("http://localhost/x", { method }), segments)).status, 404);
+  for (const id of ["..", "%2e%2e", "DH/1", "DH\\1", "A".repeat(101)]) assert.equal((await proxy(new Request("http://localhost/x"), ["admin", "orders", id, "detail"])).status, 404);
+  assert.equal(calls.length, 1);
+});
+
 test("warehouse gateway permits scoped receipt/history operations and rejects arbitrary actions", async () => {
   const calls=[];
   const proxy=gateway(async(url,options)=>{calls.push({url:String(url),key:options.headers.get('Idempotency-Key'),origin:options.headers.get('Origin')});return Response.json({});});

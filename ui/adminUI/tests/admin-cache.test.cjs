@@ -20,6 +20,24 @@ function load(fetch) {
 }
 const url = "/api/backend/data/products?page=1&page_size=20";
 
+test("order aggregates coalesce mount/poll reads and are cleared after writes and session changes", async () => {
+  let calls = 0;
+  const app = load(async () => { calls++; return json({ order_id: "DH1" }); });
+  const detail = "/api/backend/admin/orders/DH1/detail";
+  await app.adminFetch(detail);
+  await app.adminFetch(detail, { cache: "no-cache" });
+  assert.equal(calls, 1);
+  app.tick(1001);
+  await app.adminFetch(detail, { cache: "no-cache" });
+  assert.equal(calls, 2);
+  await app.adminFetch("/api/backend/admin/operations/orders", { method: "POST" });
+  await app.adminFetch(detail);
+  assert.equal(calls, 4);
+  app.advanceSessionEpoch();
+  await app.adminFetch(detail);
+  assert.equal(calls, 5);
+});
+
 test("support detail changes invalidate inbox snapshots; customer feedback is not cached here", async () => {
   let calls = 0, changed = false;
   const app = load(async () => { calls++; return json({ status: changed ? 'DA_DONG' : 'MOI' }); });

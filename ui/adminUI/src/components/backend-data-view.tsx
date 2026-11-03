@@ -16,6 +16,7 @@ import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type D
 import { listDataColumns } from "@/src/lib/table-presentation";
 import { CustomerDetail } from "@/src/features/customers/customer-detail";
 import { OrderData } from "@/src/features/orders/order-data";
+import type { AdminOrderDetailData } from "@/src/features/orders/order-detail-data";
 import { InvoiceDetail } from "@/src/features/billing/invoice-detail";
 import { ProductStock } from "@/src/features/products/product-stock";
 import { ProductSuppliers } from "@/src/features/products/product-suppliers";
@@ -30,7 +31,7 @@ type Row = DataRow;
 type Column = DataColumn;
 type Resource = { name: string; title: string; keys: string[]; columns: Column[]; writable: boolean;
   draft_update_path?: string | null; draft_update_fields?: string[] | null };
-type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string };
+type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string; order_detail?: AdminOrderDetailData };
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
 
 const labels: Record<string, string> = {
@@ -75,6 +76,17 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
   const filter = new URL(path, "http://local/").searchParams.get("filters");
   if (filter && Object.keys(JSON.parse(filter)).length && JSON.stringify(body?.filters) !== JSON.stringify(JSON.parse(filter))) throw new Error("Backend chưa xác nhận đúng bộ lọc. Cần cập nhật API để tránh hiển thị bản ghi không liên quan.");
   return body as T;
+}
+
+async function readDataPage(resource: string, params: URLSearchParams, options: RequestInit): Promise<Page> {
+  if (resource !== "orders" || !params.get("key")) return api<Page>("data/" + resource + "?" + params, options);
+  let keys: unknown;
+  try { keys = JSON.parse(params.get("key")!); } catch { throw new Error("Mã đơn hàng không hợp lệ."); }
+  if (!Array.isArray(keys) || keys.length !== 1 || typeof keys[0] !== "string" || !keys[0]) throw new Error("Mã đơn hàng không hợp lệ.");
+  const detail = await api<AdminOrderDetailData>(`admin/orders/${encodeURIComponent(keys[0])}/detail`, options);
+  if (detail.order_id !== keys[0] || detail.order?.ma_donhang !== keys[0] || !detail.financial ||
+      !Array.isArray(detail.lines) || !Array.isArray(detail.payments)) throw new Error("API chưa trả đúng chi tiết đơn hàng.");
+  return { data: [detail.order], total: 1, page: 1, page_size: 1, order_id: detail.order_id, order_detail: detail };
 }
 
 export default function BackendDataView(props: { resource: string; embedded?: boolean }) {
@@ -139,7 +151,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       params.set("filters", filterQuery);
       if (view.key) params.set("key", view.key);
       if (view.orderId) params.set("order_id", view.orderId);
-      const data = await api<Page>("data/" + resource + "?" + params, { signal, cache: "no-cache" });
+      const data = await readDataPage(resource, params, { signal, cache: "no-cache" });
       if (view.orderId && (data.order_id !== view.orderId || data.data.some(row => row.ma_donhang !== view.orderId))) {
         throw new Error("API chưa lọc đúng đơn hàng.");
       }
@@ -183,7 +195,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       if (view.key) params.set("key", view.key);
       if (view.orderId) params.set("order_id", view.orderId);
       params.set("filters", filterQuery);
-      const data = await api<Page>("data/" + resource + "?" + params, { signal: controller.signal });
+      const data = await readDataPage(resource, params, { signal: controller.signal });
       // Old deployments ignore unknown query params. Do not display unrelated
       // records as if the backend had filtered them to the selected order.
       if (view.orderId && (data.order_id !== view.orderId || data.data.some(row => row.ma_donhang !== view.orderId))) {
@@ -303,7 +315,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {resource === "products" && <ProductGalleryPreview key={String(result.data[0].ma_sp)} productId={String(result.data[0].ma_sp)}
           legacyUrl={String(result.data[0].duong_dan_anh ?? "")} name={String(result.data[0].ten_sp ?? "")} />}
         {resource === "orders" ? <OrderData rows={result.data} columns={meta.columns} keys={meta.keys} detail version={version} label={label} href={href}
-          related={available.filter(item => orderChildren.includes(item.name))} />
+          related={available.filter(item => orderChildren.includes(item.name))} detailData={result.order_detail} onRefresh={refresh} />
         : resource === "invoices" ? <InvoiceDetail row={result.data[0]} columns={meta.columns} label={label} />
         : resource === "categories" ? <CategoryDetail row={result.data[0]} columns={meta.columns} label={label}
           related={available.filter(item => ["subcategories", "products"].includes(item.name))} />
