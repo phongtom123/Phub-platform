@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getQuote } from "@/lib/shopping/client";
-import { money } from "@/lib/shopping/money";
+import { money, invoiceTotals } from "@/lib/shopping/money";
 import type { Quote } from "@/lib/shopping/types";
 import { TaxNotice } from "@/components/common/Price";
 import { useShopping } from "./ShoppingProvider";
@@ -10,6 +10,7 @@ import styles from "./shopping.module.css";
 
 export function useCheckoutQuote(voucher: string | null) {
   const shop = useShopping();
+  const normalizedVoucher = voucher?.trim().toUpperCase() || null;
   const signature = JSON.stringify(
     shop.selectedLines
       .map(({ sku, quantity }) => ({ sku, quantity }))
@@ -22,7 +23,7 @@ export function useCheckoutQuote(voucher: string | null) {
     shop.selectedLines.some((line) => line.unavailable);
   const identity = shop.customer?.customer_id;
   const [revision, setRevision] = useState(0);
-  const key = JSON.stringify([identity, signature, voucher, revision]);
+  const key = JSON.stringify([identity, signature, normalizedVoucher, revision]);
   const [result, setResult] = useState<{
     key: string;
     error: string;
@@ -31,8 +32,9 @@ export function useCheckoutQuote(voucher: string | null) {
   useEffect(() => {
     if (blocked) return;
     const controller = new AbortController();
-    getQuote(JSON.parse(signature), voucher, controller.signal)
+    getQuote(JSON.parse(signature), normalizedVoucher, controller.signal)
       .then((quote) => {
+        if (quote.voucher_code !== normalizedVoucher) throw new Error("Chưa xác nhận được mã giảm giá cho giỏ hàng này. Vui lòng thử lại.");
         if (!controller.signal.aborted) {
           setResult({ key, error: "", quote });
         }
@@ -50,7 +52,7 @@ export function useCheckoutQuote(voucher: string | null) {
         }
       });
     return () => controller.abort();
-  }, [key, signature, voucher, blocked]);
+  }, [key, signature, normalizedVoucher, blocked]);
   const current = !blocked && result?.key === key ? result : null;
   const quote = current?.quote || null;
   const error = current?.error || "";
@@ -79,16 +81,16 @@ export function QuoteTotals({ quote }: { quote: Quote }) {
         <strong>−{money(quote.discount_total, quote.currency)}</strong>
       </p>
       <p>
-        <span>Thuế tại bước đặt đơn</span>
-        <span>{money(quote.tax_total, quote.currency)}</span>
+        <span>Thuế VAT (10%)</span>
+        <span>{money(invoiceTotals(quote).tax, quote.currency)}</span>
       </p>
       <p className={styles.total}>
-        <span>Tổng tiền trước thuế</span>
-        <strong>{money(quote.total, quote.currency)}</strong>
+        <span>Thành tiền sau thuế</span>
+        <strong>{money(invoiceTotals(quote).total, quote.currency)}</strong>
       </p>
       <TaxNotice />
       <small>
-        Thuế 10% được áp dụng khi tạo hóa đơn. Phí vận chuyển sẽ được xác nhận
+        Đã gồm thuế VAT 10%. Phí vận chuyển sẽ được xác nhận
         riêng.
       </small>
     </div>

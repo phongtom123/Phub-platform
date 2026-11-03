@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -21,6 +22,8 @@ import { readJson, validateProduct } from "@/lib/catalog/client";
 import { safeImageUrl } from "@/lib/catalog/types";
 import type { CartLine, CustomerProfile } from "@/lib/shopping/types";
 import styles from "./shopping.module.css";
+import { getAvailability, MAX_QUANTITY } from "@/lib/shopping/availability";
+import { automaticRefresh } from "@/lib/automaticRefresh";
 
 type AuthStatus = "loading" | "authenticated" | "guest" | "unavailable";
 interface ShoppingState {
@@ -32,6 +35,10 @@ interface ShoppingState {
   cartLoading: boolean;
   notice: string;
   count: number;
+  availability: Record<string, number>;
+  stockError: string;
+  taxRate: string | null;
+  refreshStock: () => void;
   refreshSession: () => Promise<void>;
   add: (
     product: { id: string; sku?: string },
@@ -70,8 +77,30 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [authStatus, setAuthStatus] = useState<AuthStatus>("loading");
   const [authMessage, setAuthMessage] = useState("");
   const [lines, setLines] = useState<CartLine[]>([]);
+  const selectedLines = useMemo(() => lines.filter(line => line.selected !== false), [lines]);
   const [cartLoading, setCartLoading] = useState(false);
   const [notice, setNotice] = useState("");
+  const [availability, setAvailability] = useState<Record<string, number>>({});
+  const [taxRate, setTaxRate] = useState<string | null>(null);
+  const [stockError, setStockError] = useState("");
+  const [stockVersion, setStockVersion] = useState(0);
+  const stockSignature = JSON.stringify(lines.map(line => line.sku).sort());
+  useEffect(() => {
+    const skus: string[] = JSON.parse(stockSignature);
+    const controller = new AbortController();
+    setAvailability({}); setTaxRate(null); setStockError("");
+    if (!skus.length) return;
+    const stop = automaticRefresh(async () => {
+      try {
+        const stock = await getAvailability(skus, controller.signal);
+        if (!controller.signal.aborted) { setAvailability(stock.quantities); setTaxRate(stock.taxRate); setStockError(""); }
+      } catch (cause) {
+        if (!controller.signal.aborted) { setStockError(cause instanceof Error ? cause.message : "Chưa tải được tồn kho."); setAvailability({}); setTaxRate(null); }
+      }
+      return true;
+    }, 60_000);
+    return () => { controller.abort(); stop(); };
+  }, [stockSignature, stockVersion]);
   const owner = useRef<string | null>(null);
   const linesRef = useRef<CartLine[]>([]);
   const sessionGeneration = useRef(0);
@@ -249,7 +278,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       cartLoading ||
       !Number.isInteger(quantity) ||
       quantity < 1 ||
-      quantity > 1000
+      quantity > MAX_QUANTITY
     )
       return false;
     setCartLoading(true);
@@ -265,10 +294,14 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       if (owner.current !== id) return false;
       if (product.sku !== undefined && actual.sku !== product.sku)
         throw new Error("Sản phẩm đã thay đổi. Vui lòng chọn lại.");
+      const stock = await getAvailability([actual.sku]);
+      if (owner.current !== id) return false;
       const current = linesRef.current;
       const existing = current.find((item) => item.sku === actual.sku);
+      if ((existing?.quantity || 0) + quantity > stock.quantities[actual.sku])
+        throw new Error(`Chỉ còn ${stock.quantities[actual.sku]} sản phẩm khả dụng trong kho.`);
       if (
-        (existing?.quantity || 0) + quantity > 1000 ||
+        (existing?.quantity || 0) + quantity > MAX_QUANTITY ||
         (!existing && current.length >= 100)
       )
         throw new Error("Giỏ hàng vượt số lượng cho phép.");
@@ -315,9 +348,12 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   };
   const refreshCart = async () => {
     if (owner.current) await loadLines(linesRef.current, owner.current);
+    setStockVersion(version => version + 1);
   };
   const update = (sku: string, quantity: number) => {
-    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) return;
+    const limit = availability[sku];
+    if (!Number.isInteger(quantity) || quantity < 1 || limit === undefined || limit === 0) return;
+    quantity = Math.min(quantity, limit);
     persist(
       linesRef.current.map((item) =>
         item.sku === sku ? { ...item, quantity } : item,
@@ -338,7 +374,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     customerId: string,
   ) => {
     if (owner.current !== customerId) return;
-    const quantities = new Map(items.map((item) => [item.sku, item.quantity]));
+    const quantities = new Map<string, number>();
+    for (const item of items) quantities.set(item.sku, (quantities.get(item.sku) || 0) + item.quantity);
     persist(
       linesRef.current.flatMap((line) => {
         const remaining = line.quantity - (quantities.get(line.sku) || 0);
@@ -353,8 +390,12 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         authStatus,
         authMessage,
         lines,
-        selectedLines: lines.filter(line => line.selected !== false),
+        selectedLines,
         cartLoading,
+        availability,
+        stockError,
+        taxRate,
+        refreshStock: () => setStockVersion(version => version + 1),
         notice,
         count: lines.reduce((sum, item) => sum + item.quantity, 0),
         refreshSession,

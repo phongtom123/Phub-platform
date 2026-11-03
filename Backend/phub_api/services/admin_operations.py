@@ -16,6 +16,7 @@ ERRORS = {
     'STATE_CONFLICT': (409, 'Trạng thái đã thay đổi hoặc không cho phép thao tác. Hãy làm mới.'),
     'IDEMPOTENCY_CONFLICT': (409, 'Mã yêu cầu đã dùng cho nội dung khác.'),
     'INSUFFICIENT_STOCK': (409, 'Không đủ tồn khả dụng; có hàng đang được giữ cho đơn khác.'),
+    'INVOICE_REQUIRED': (409, 'Cần lập hóa đơn hoặc ghi nhận thanh toán trước khi xuất hàng.'),
     'STOCK_CHANGED': (409, 'Tồn kho đã thay đổi kể từ lúc kiểm kê. Hãy làm mới.'),
     'PRICE_CHANGED': (409, 'Giá sản phẩm đã thay đổi. Hãy làm mới giá trước khi tạo đơn.'),
     'PAYMENT_LIMIT': (409, 'Số tiền vượt số còn phải thu hoặc số được hoàn.'),

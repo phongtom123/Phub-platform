@@ -10,7 +10,7 @@ from phub_api.schemas.payments import OrderId
 
 class CartItem(InputModel):
     sku: str = Field(min_length=1, max_length=100)
-    quantity: int = Field(strict=True, ge=1, le=1000)
+    quantity: int = Field(strict=True, ge=1, le=2147483647)
 
 
 class VoucherInput(InputModel):
@@ -34,7 +34,7 @@ class QuoteRequest(VoucherInput):
 
 class CustomerOrderRequest(VoucherInput):
     recipient: Recipient
-    items: list[OrderItem] = Field(min_length=1, max_length=100)
+    items: list[OrderItem] = Field(min_length=1, max_length=1000)
     note: str | None = Field(default=None, max_length=2000)
     expected_discount: Money
     expected_total: Money
@@ -49,14 +49,14 @@ class CustomerOrderRequest(VoucherInput):
         return format(value, ".2f")
 
     @model_validator(mode="after")
-    def unique_skus(self):
-        if len({item.sku for item in self.items}) != len(self.items):
-            raise ValueError("Mỗi SKU chỉ được xuất hiện một lần trong đơn checkout.")
+    def unique_allocations(self):
+        if len({(item.sku, item.warehouse_id) for item in self.items}) != len(self.items):
+            raise ValueError("Mỗi SKU tại một kho chỉ được xuất hiện một lần trong đơn checkout.")
         return self
 
     def canonical_payload(self):
         payload = self.model_dump(mode="json")
-        payload["items"].sort(key=lambda item: item["sku"])
+        payload["items"].sort(key=lambda item: (item["sku"], item["warehouse_id"]))
         payload["note"] = payload["note"] or None
         return payload
 
@@ -74,7 +74,7 @@ class CheckoutLine(MoneyOutput):
     warehouse_id: int
     name: str
     unit: str
-    quantity: int = Field(ge=1, le=1000)
+    quantity: int = Field(ge=1, le=2147483647)
     unit_price: Money
     gross_total: Money
     discount: Money
@@ -88,7 +88,7 @@ class CheckoutQuote(MoneyOutput):
     tax_application: Literal["invoice"]
     shipping_status: Literal["not_quoted"]
     voucher_code: str | None
-    items: list[CheckoutLine] = Field(min_length=1, max_length=100)
+    items: list[CheckoutLine] = Field(min_length=1, max_length=1000)
     subtotal: Money
     discount_total: Money
     tax_total: Money

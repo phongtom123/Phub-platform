@@ -4,6 +4,8 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from pydantic import ValidationError
+from phub_api.schemas.commerce import CustomerOrderRequest, QuoteRequest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
@@ -129,7 +131,7 @@ def test_customer_order_creation_and_replay_share_one_rpc(commerce_client):
     assert replay.headers["Idempotency-Replayed"] == "true"
 
 
-@pytest.mark.parametrize("field,value", [("quantity", 0), ("quantity", True), ("quantity", 1.5), ("quantity", "2"), ("quantity", 1001), ("sku", ""), ("sku", "A\x01"), ("sku", "x"*101), ("price", "1.00")])
+@pytest.mark.parametrize("field,value", [("quantity", 0), ("quantity", True), ("quantity", 1.5), ("quantity", "2"), ("quantity", 2147483648), ("sku", ""), ("sku", "A\x01"), ("sku", "x"*101), ("price", "1.00")])
 def test_quote_invalid_or_forged_items_never_reach_db(commerce_client, field, value):
     client, _, requests, _, _ = commerce_client
     item = {"sku": "SKU-A", "quantity": 1, field: value}
@@ -274,3 +276,15 @@ def test_save_recipient_does_not_claim_success_when_rls_blocks_update(commerce_c
     state["write_denied"] = True
     result = client.put("/api/customer/me", json=body["recipient"])
     assert result.status_code == 403 and result.json()["error"]["code"] == "PROFILE_UPDATE_DENIED"
+
+
+def test_checkout_accepts_stock_over_1000_and_distinct_warehouse_allocations(commerce_client):
+    _, _, _, body, _ = commerce_client
+    assert QuoteRequest(items=[{'sku': 'A', 'quantity': 1301}]).items[0].quantity == 1301
+    body['items'] += [{**body['items'][0], 'warehouse_id': 2, 'quantity': 1301}]
+    request = CustomerOrderRequest.model_validate(body)
+    assert len(request.items) == 2
+    duplicate = deepcopy(body)
+    duplicate['items'].append(deepcopy(duplicate['items'][0]))
+    with pytest.raises(ValidationError):
+        CustomerOrderRequest.model_validate(duplicate)

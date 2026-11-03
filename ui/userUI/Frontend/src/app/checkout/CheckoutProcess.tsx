@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import { PaymentPanel } from "@/components/shopping/PaymentPanel";
 import { InvoicePanel } from "@/components/shopping/InvoicePanel";
-import { createOrder, getQuote, saveProfile, ShoppingError } from "@/lib/shopping/client";
-import { money } from "@/lib/shopping/money";
-import type { Quote, OrderRequest, Receipt } from "@/lib/shopping/types";
+import { useCheckoutQuote } from "@/components/shopping/CheckoutSummary";
+import { createOrder, saveProfile, ShoppingError } from "@/lib/shopping/client";
+import { money, invoiceTotals } from "@/lib/shopping/money";
+import type { OrderRequest, Receipt } from "@/lib/shopping/types";
 import styles from "./checkout.module.css";
 
 export interface DeliveryAddress {
@@ -51,9 +52,8 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
   // Quote & submission states
-  const [quote, setQuote] = useState<Quote | null>(null);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [quoteError, setQuoteError] = useState("");
+  const { quote, loading: quoteLoading, error: quoteError, reload: reloadQuote } = useCheckoutQuote(appliedVoucher);
+  const voucherConfirmed = !!appliedVoucher && quote?.voucher_code === appliedVoucher;
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [orderReceipt, setOrderReceipt] = useState<Receipt | null>(null);
@@ -105,44 +105,6 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
   // Currently selected address
   const currentAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0] || null;
-
-  // 2. Fetch quote whenever selected lines or applied voucher changes
-  useEffect(() => {
-    if (shop.selectedLines.length === 0) {
-      setQuote(null);
-      return;
-    }
-
-    const items = shop.selectedLines.map((l) => ({
-      sku: l.sku,
-      quantity: l.quantity,
-    }));
-
-    const controller = new AbortController();
-    setQuoteLoading(true);
-    setQuoteError("");
-
-    getQuote(items, appliedVoucher, controller.signal)
-      .then((q) => {
-        if (!controller.signal.aborted) {
-          setQuote(q);
-          setQuoteLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!controller.signal.aborted) {
-          setQuote(null);
-          setQuoteLoading(false);
-          setQuoteError(
-            err instanceof Error
-              ? err.message
-              : "Không thể lấy thông tin báo giá từ hệ thống."
-          );
-        }
-      });
-
-    return () => controller.abort();
-  }, [shop.selectedLines, appliedVoucher]);
 
   // Handle open shipping form for Add New
   const handleOpenAddAddress = () => {
@@ -244,7 +206,8 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
     e.preventDefault();
     const code = voucherCode.trim().toUpperCase();
     if (code) {
-      setAppliedVoucher(code);
+      if (code === appliedVoucher) reloadQuote();
+      else setAppliedVoucher(code);
     }
   };
 
@@ -279,7 +242,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
         ward: currentAddress.ward,
       },
       note: currentAddress.note || null,
-      voucher_code: appliedVoucher,
+      voucher_code: quote.voucher_code,
       expected_discount: quote.discount_total,
       expected_total: quote.total,
       items: quote.items.map((item) => ({
@@ -292,7 +255,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
 
     const attemptStorageKey = `phub-checkout-attempt-v1:${shop.customer?.customer_id}`;
     try {
-      const canonical = JSON.stringify({ ...orderBody, items: [...orderBody.items].sort((a, b) => a.sku.localeCompare(b.sku)) });
+      const canonical = JSON.stringify({ ...orderBody, items: [...orderBody.items].sort((a, b) => a.sku.localeCompare(b.sku) || a.warehouse_id - b.warehouse_id) });
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
       const fingerprint = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("");
       // Persist only a key and hash; no delivery details or credentials are stored here.
@@ -342,7 +305,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               Mã đơn hàng: <strong>{orderReceipt.id}</strong>
             </p>
             <p style={{ color: "#555", fontSize: 14, margin: "0 0 20px" }}>
-              Tổng tiền hàng trước thuế: <strong>{money(orderReceipt.total, orderReceipt.currency)}</strong>
+              Thành tiền sau thuế: <strong>{money(invoiceTotals(orderReceipt).total, orderReceipt.currency)}</strong>
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <Link
@@ -839,6 +802,9 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                 <input
                   type="text"
                   placeholder="Mã giảm giá (Voucher)"
+                  aria-label="Mã giảm giá"
+                  maxLength={100}
+                  disabled={submitting}
                   value={voucherCode}
                   onChange={(e) => setVoucherCode(e.target.value)}
                   style={{
@@ -852,6 +818,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                 />
                 <button
                   type="submit"
+                  disabled={submitting || quoteLoading}
                   style={{
                     padding: "0 14px",
                     background: "#0156ff",
@@ -868,8 +835,8 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               </form>
               {appliedVoucher && (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                  <span style={{ fontSize: 12, color: "#187b34", fontWeight: 600 }}>
-                    ✓ Đã áp dụng mã: {appliedVoucher}
+                  <span role="status" style={{ fontSize: 12, color: voucherConfirmed ? "#187b34" : "#666", fontWeight: 600 }}>
+                    {voucherConfirmed ? `✓ Đã áp dụng mã: ${appliedVoucher}` : quoteLoading ? `Đang kiểm tra mã: ${appliedVoucher}…` : `Chưa áp dụng mã: ${appliedVoucher}`}
                   </span>
                   <button
                     type="button"
@@ -894,7 +861,7 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
               {quoteLoading ? (
                 <p style={{ textAlign: "center", color: "#666" }}>Đang tính toán giá đơn hàng...</p>
               ) : quoteError ? (
-                <p style={{ color: "#c62828", fontSize: 13 }}>⚠️ {quoteError}</p>
+                <p role="alert" style={{ color: "#c62828", fontSize: 13 }}>⚠️ {quoteError}</p>
               ) : quote ? (
                 <>
                   <p>
@@ -909,11 +876,11 @@ export function CheckoutProcess({ confirmation = false }: { confirmation?: boole
                   )}
                   <p>
                     <span>Thuế VAT dự kiến (10%)</span>
-                    <span>{money(quote.tax_total, quote.currency)}</span>
+                    <span>{money(invoiceTotals(quote).tax, quote.currency)}</span>
                   </p>
                   <p style={{ fontSize: 16, fontWeight: 700, marginTop: 10 }}>
                     <span>Tổng thanh toán</span>
-                    <strong style={{ color: "#0156ff" }}>{money(quote.total, quote.currency)}</strong>
+                    <strong style={{ color: "#0156ff" }}>{money(invoiceTotals(quote).total, quote.currency)}</strong>
                   </p>
                 </>
               ) : null}

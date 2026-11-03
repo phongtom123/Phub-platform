@@ -444,6 +444,42 @@
         "title": "ApiErrorResponse",
         "type": "object"
       },
+      "AvailableStock": {
+        "properties": {
+          "available_quantity": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Available Quantity",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "available_quantity"
+        ],
+        "title": "AvailableStock",
+        "type": "object"
+      },
+      "BannerList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogBanner"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BannerList",
+        "type": "object"
+      },
       "Brand": {
         "properties": {
           "name": {
@@ -1204,7 +1240,7 @@
         "additionalProperties": false,
         "properties": {
           "quantity": {
-            "maximum": 1000.0,
+            "maximum": 2147483647.0,
             "minimum": 1.0,
             "title": "Quantity",
             "type": "integer"
@@ -1221,6 +1257,58 @@
           "quantity"
         ],
         "title": "CartItem",
+        "type": "object"
+      },
+      "CatalogBanner": {
+        "properties": {
+          "alt_text": {
+            "title": "Alt Text",
+            "type": "string"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "image_url": {
+            "title": "Image Url",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "image_url",
+          "alt_text",
+          "width",
+          "height"
+        ],
+        "title": "CatalogBanner",
         "type": "object"
       },
       "CatalogProduct": {
@@ -1474,7 +1562,7 @@
             "type": "string"
           },
           "quantity": {
-            "maximum": 1000.0,
+            "maximum": 2147483647.0,
             "minimum": 1.0,
             "title": "Quantity",
             "type": "integer"
@@ -1540,7 +1628,7 @@
             "items": {
               "$ref": "#/components/schemas/CheckoutLine"
             },
-            "maxItems": 100,
+            "maxItems": 1000,
             "minItems": 1,
             "title": "Items",
             "type": "array"
@@ -1866,7 +1954,7 @@
             "items": {
               "$ref": "#/components/schemas/CheckoutLine"
             },
-            "maxItems": 100,
+            "maxItems": 1000,
             "minItems": 1,
             "title": "Items",
             "type": "array"
@@ -1985,7 +2073,7 @@
             "items": {
               "$ref": "#/components/schemas/OrderItem"
             },
-            "maxItems": 100,
+            "maxItems": 1000,
             "minItems": 1,
             "title": "Items",
             "type": "array"
@@ -4730,7 +4818,7 @@
             "type": "string"
           },
           "quantity": {
-            "maximum": 1000.0,
+            "maximum": 2147483647.0,
             "minimum": 1.0,
             "title": "Quantity",
             "type": "integer"
@@ -7296,6 +7384,32 @@
           "trang_thai"
         ],
         "title": "StatusUpdate",
+        "type": "object"
+      },
+      "StockAvailability": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AvailableStock"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "tax_rate": {
+            "title": "Tax Rate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "tax_rate",
+          "currency"
+        ],
+        "title": "StockAvailability",
         "type": "object"
       },
       "StockEvent": {
@@ -12534,6 +12648,180 @@
         "x-implementation-status": "implemented-live-unverified"
       }
     },
+    "/api/catalog/availability": {
+      "get": {
+        "operationId": "availability_api_catalog_availability_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sku",
+            "required": true,
+            "schema": {
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 100,
+              "minItems": 1,
+              "title": "Sku",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockAvailability"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Tổng tồn khả dụng của sản phẩm tại các kho đang hoạt động",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
+    "/api/catalog/banners": {
+      "get": {
+        "operationId": "list_banners_api_catalog_banners_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BannerList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Banner của chương trình đang hoạt động và còn thời hạn",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
     "/api/catalog/brands": {
       "get": {
         "operationId": "list_brands_api_catalog_brands_get",
@@ -12910,7 +13198,7 @@
             }
           },
           {
-            "description": "Còn/hết hàng khả dụng trong kho hoạt động, sau lượng giữ của đơn MOI/XAC_NHAN/DANG_CHUAN_BI; kiểm tra lại khi checkout.",
+            "description": "Còn/hết hàng khả dụng trong kho hoạt động, trừ hàng giữ cho đơn chưa xuất đã có hóa đơn hoặc khoản thu thành công; kiểm tra lại khi checkout.",
             "in": "query",
             "name": "stock_status",
             "required": false,
@@ -12923,7 +13211,7 @@
                   "type": "null"
                 }
               ],
-              "description": "Còn/hết hàng khả dụng trong kho hoạt động, sau lượng giữ của đơn MOI/XAC_NHAN/DANG_CHUAN_BI; kiểm tra lại khi checkout.",
+              "description": "Còn/hết hàng khả dụng trong kho hoạt động, trừ hàng giữ cho đơn chưa xuất đã có hóa đơn hoặc khoản thu thành công; kiểm tra lại khi checkout.",
               "title": "Stock Status"
             }
           },

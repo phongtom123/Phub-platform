@@ -6,11 +6,13 @@ from phub_api.dependencies.catalog import get_service
 from phub_api.middleware.catalog_errors import CatalogRoute
 from phub_api.schemas.catalog import (
     BrandList,
+    BannerList,
     CatalogProduct,
     CatalogQuery,
     CategoryList,
     ColorList,
     ProductPage,
+    StockAvailability,
 )
 from phub_api.schemas.responses import documented_error
 from phub_api.services.catalog import CatalogService
@@ -31,6 +33,17 @@ router = APIRouter(
 )
 
 Service = Annotated[CatalogService, Depends(get_service)]
+StockSku = Annotated[str, Query(min_length=1, max_length=100)]
+
+
+@router.get("/availability", response_model=StockAvailability, summary="Tổng tồn khả dụng của sản phẩm tại các kho đang hoạt động")
+def availability(service: Service, sku: Annotated[list[StockSku], Query(min_length=1, max_length=100)]):
+    return service.availability(sku)
+
+
+@router.get("/banners", response_model=BannerList, summary="Banner của chương trình đang hoạt động và còn thời hạn")
+def list_banners(service: Service):
+    return BannerList(items=service.list_banners())
 
 
 @router.get("/products", response_model=ProductPage, summary="Danh sách sản phẩm đang bán")

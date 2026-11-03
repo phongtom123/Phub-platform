@@ -28,6 +28,9 @@ def filtered_catalog(catalog_client, product_row):
         {"sku": "SKU2", "ma_kho_xuat": 1, "so_luong": 100, "status": "HUY"},
     ]
 
+    for row in reservations:
+        row['order'] = {'invoice': {'ma_donhang': 'INVOICED'}, 'payments': []}
+
     def handle(request):
         assert request.method == "GET", "Catalog must never write database rows"
         table = request.url.path.rsplit("/", 1)[-1]

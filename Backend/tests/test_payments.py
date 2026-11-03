@@ -307,6 +307,8 @@ def test_existing_auth_errors_are_normalized_without_leaking_details(payments_cl
     (APIError({"code": "57014", "message": "PRIVATE-SQL", "details": "PRIVATE", "hint": "PRIVATE"}), 503, "DATA_SERVICE_UNAVAILABLE"),
     (APIError({"code": "40001", "message": "PRIVATE-SQL", "details": "PRIVATE", "hint": "PRIVATE"}), 503, "DATA_SERVICE_UNAVAILABLE"),
     (APIError({"code": "42501", "message": "PRIVATE-SQL", "details": "PRIVATE", "hint": "PRIVATE"}), 500, "INTERNAL_ERROR"),
+    (APIError({"code": "P0001", "message": "INSUFFICIENT_STOCK", "details": "PRIVATE", "hint": "PRIVATE"}), 409, "INSUFFICIENT_STOCK"),
+    (APIError({"code": "P0001", "message": "WAREHOUSE_NOT_AVAILABLE", "details": "PRIVATE", "hint": "PRIVATE"}), 409, "WAREHOUSE_NOT_AVAILABLE"),
     (RuntimeError("PRIVATE-PAYMENT"), 500, "INTERNAL_ERROR"),
 ])
 def test_database_and_transport_errors_are_sanitized(payments_client, error, expected_status, expected_code, caplog):

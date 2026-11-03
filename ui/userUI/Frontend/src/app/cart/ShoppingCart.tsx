@@ -5,21 +5,23 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import styles from "./cart.module.css";
+import { cents, money, moneyFromCents, vatCents } from "@/lib/shopping/money";
 
 interface CartQuantityInputProps {
   sku: string;
   quantity: number;
+  maximum: number | undefined;
   onUpdate: (sku: string, quantity: number) => void;
 }
 
-function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) {
+function CartQuantityInput({ sku, quantity, maximum, onUpdate }: CartQuantityInputProps) {
   const [draft, setDraft] = useState<string | null>(null);
 
   const commitDraft = (value: string) => {
     const parsed = Number(value);
     const nextQuantity = value === "" || !Number.isInteger(parsed)
       ? quantity
-      : Math.min(100, Math.max(1, parsed));
+      : Math.min(maximum ?? quantity, Math.max(1, parsed));
 
     onUpdate(sku, nextQuantity);
     setDraft(null);
@@ -33,7 +35,7 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
           setDraft(null);
           onUpdate(sku, Math.max(1, quantity - 1));
         }}
-        disabled={quantity <= 1}
+        disabled={quantity <= 1 || !maximum}
         aria-label="Giảm số lượng"
       >
         -
@@ -41,7 +43,8 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
       <input
         type="number"
         min={1}
-        max={100}
+        max={maximum}
+        disabled={!maximum}
         step={1}
         inputMode="numeric"
         aria-label="Số lượng"
@@ -53,7 +56,7 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
           if (value === "") return;
 
           const parsed = Number(value);
-          if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 100) {
+          if (maximum !== undefined && Number.isInteger(parsed) && parsed >= 1 && parsed <= maximum) {
             onUpdate(sku, parsed);
           }
         }}
@@ -66,9 +69,9 @@ function CartQuantityInput({ sku, quantity, onUpdate }: CartQuantityInputProps) 
         type="button"
         onClick={() => {
           setDraft(null);
-          onUpdate(sku, Math.min(100, quantity + 1));
+          onUpdate(sku, Math.min(maximum ?? quantity, quantity + 1));
         }}
-        disabled={quantity >= 100}
+        disabled={maximum === undefined || quantity >= maximum}
         aria-label="Tăng số lượng"
       >
         +
@@ -81,14 +84,11 @@ export function ShoppingCart() {
   const router = useRouter();
   const shop = useShopping();
 
-  const selectedTotal = shop.selectedLines.reduce((sum, line) => {
-    return sum + parseFloat(line.unit_price || "0") * line.quantity;
-  }, 0);
-
-  const formattedSelectedTotal = new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(selectedTotal);
+  const selectedTotal = shop.selectedLines.reduce((sum, line) => sum + cents(line.unit_price) * BigInt(line.quantity), BigInt(0));
+  const tax = shop.taxRate === null ? null : shop.selectedLines.reduce((sum, line) => sum + vatCents(cents(line.unit_price) * BigInt(line.quantity), shop.taxRate!), BigInt(0));
+  const formattedSelectedTotal = moneyFromCents(selectedTotal);
+  const amountTooLarge = tax !== null && selectedTotal + tax > cents("9999999999999999.99");
+  const stockBlocked = !!shop.stockError || shop.selectedLines.some(line => line.unavailable || shop.availability[line.sku] === undefined || line.quantity > shop.availability[line.sku]);
 
   const totalSelectedQuantity = shop.selectedLines.reduce(
     (sum, item) => sum + item.quantity,
@@ -107,6 +107,7 @@ export function ShoppingCart() {
   };
 
   const handleCheckout = () => {
+    if (stockBlocked || tax === null || amountTooLarge) return;
     if (shop.authStatus === "guest") {
       router.push("/auth/login?redirect=%2Fcheckout");
       return;
@@ -182,16 +183,9 @@ export function ShoppingCart() {
               </div>
 
               {shop.lines.map((line) => {
-                const unitPrice = parseFloat(line.unit_price || "0");
-                const lineTotal = unitPrice * line.quantity;
-                const formattedUnitPrice = new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: line.currency || "VND",
-                }).format(unitPrice);
-                const formattedLineTotal = new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: line.currency || "VND",
-                }).format(lineTotal);
+                const formattedUnitPrice = money(line.unit_price, line.currency);
+                const formattedLineTotal = moneyFromCents(cents(line.unit_price) * BigInt(line.quantity), line.currency);
+                const available = shop.availability[line.sku];
 
                 return (
                   <div key={line.sku} className={styles.item}>
@@ -233,8 +227,11 @@ export function ShoppingCart() {
                       <CartQuantityInput
                         sku={line.sku}
                         quantity={line.quantity}
+                        maximum={available}
                         onUpdate={shop.update}
                       />
+                      <small className={styles.stock} role="status">{available === undefined ? "Đang kiểm tra tồn kho…" : available === 0 ? "Hết hàng" : `Tối đa ${available.toLocaleString("vi-VN")} sản phẩm`}</small>
+                      {available !== undefined && available > 0 && line.quantity > available && <button type="button" className={styles.adjustStock} onClick={() => shop.update(line.sku, available)}>Giảm còn {available}</button>}
                     </div>
                     <strong style={{ color: "#0156ff" }}>{formattedLineTotal}</strong>
                     <div className={styles.itemActions}>
@@ -267,20 +264,25 @@ export function ShoppingCart() {
                   <span>Số lượng chọn mua:</span>
                   <strong>{totalSelectedQuantity} món</strong>
                 </p>
-                <p className={styles.orderTotal}>
+                <p>
                   <span>Tạm tính:</span>
                   <strong>{formattedSelectedTotal}</strong>
                 </p>
+                <p><span>Thuế VAT ({shop.taxRate ? Number(shop.taxRate) : "…"}%)</span><strong>{tax === null ? "Đang xác nhận…" : moneyFromCents(tax)}</strong></p>
+                <p className={styles.orderTotal}><span>Thành tiền sau thuế</span><strong>{tax === null ? "—" : moneyFromCents(selectedTotal + tax)}</strong></p>
                 <small>
-                  Thuế VAT và phí vận chuyển sẽ được tính chi tiết tại bước thanh toán.
+                  Đã gồm VAT. Phí vận chuyển được xác nhận riêng; voucher được áp dụng ở bước đặt hàng.
                 </small>
               </div>
+              {stockBlocked && <div className={styles.stockWarning} role="alert"><p>{shop.stockError || "Vui lòng kiểm tra số lượng và tồn kho trước khi đặt hàng."}</p><button type="button" onClick={shop.refreshStock}>Kiểm tra lại tồn kho</button></div>}
+              {amountTooLarge && <p className={styles.stockWarning} role="alert">Tổng tiền vượt giới hạn xử lý của đơn hàng. Vui lòng giảm số lượng.</p>}
 
               <button
                 type="button"
                 className={styles.checkout}
                 disabled={
                   shop.selectedLines.length === 0 ||
+                  stockBlocked || amountTooLarge || tax === null || shop.cartLoading ||
                   shop.authStatus === "loading" ||
                   shop.authStatus === "unavailable"
                 }
