@@ -34,6 +34,7 @@
   .info h1 { margin: 11px 0 7px; font-size: 22px; font-weight: 600; line-height: 1.3; }
   .reviewPrompt { margin: 0; color: #0156ff; font-size: 10px; line-height: 17px; }
   .summary { margin: 19px 0 13px; font-size: 12px; line-height: 1.57; }
+  .info .summary { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 4; -webkit-box-orient: vertical; font-size: 14px; line-height: 1.7; }
   .swatches { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
   .swatches label > span { width: 27px; height: 27px; }
   .detailList { margin: 18px 0; padding-left: 18px; font-size: 12px; line-height: 1.9; }

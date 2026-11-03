@@ -1,5 +1,5 @@
-// UI reference text transcribed from the user's FAQ – 1 screenshot.
-// This is not a reviewed or approved policy for the actual business.
+// Bản dịch nội dung tham khảo của giao diện FAQ – 1.
+// Đây không phải chính sách đã được duyệt cho hoạt động kinh doanh thực tế.
 export interface TermsSection {
   id: string;
   title: string;
@@ -9,60 +9,60 @@ export interface TermsSection {
 
 export const termsSections: readonly TermsSection[] = [
   {
-    id: "definitions", title: "Definitions & Interpretation",
-    paragraphs: ["In the following Terms and Conditions of sale, unless the context requires otherwise"],
+    id: "definitions", title: "Định nghĩa và cách hiểu",
+    paragraphs: ["Trong các điều khoản và điều kiện mua bán dưới đây, trừ khi ngữ cảnh yêu cầu cách hiểu khác:"],
     definitions: [
-      "‘Shop’ means Shop Pty Ltd ABN 11 222 333 444;",
-      "‘Customer’ means the person or corporation placing an order for the purchase of goods or services from Shop;",
-      "‘Products’ means any goods, materials, equipment or services provided to the Customer by Shop;",
-      "if the Customer comprises more than one person, each of those person’s liability is joint and several;",
-      "references to a party or a person includes any form of entity and their respective successors, assigns and representatives;",
-      "for all periods and times specified in clauses 5 and 11, time is of the essence; and",
-      "all references to currency are references to Australian dollars.",
+      "“Cửa hàng” là Công ty Shop Pty Ltd, có mã số doanh nghiệp tại Úc (ABN) 11 222 333 444.",
+      "“Khách hàng” là cá nhân hoặc tổ chức đặt mua hàng hóa hoặc dịch vụ từ Cửa hàng.",
+      "“Sản phẩm” là hàng hóa, vật tư, thiết bị hoặc dịch vụ do Cửa hàng cung cấp cho Khách hàng.",
+      "Nếu Khách hàng gồm nhiều người, những người này cùng chịu trách nhiệm liên đới và mỗi người có thể phải chịu toàn bộ nghĩa vụ.",
+      "Mọi đề cập đến một bên hoặc một người đều bao gồm các loại hình tổ chức, cùng người kế nhiệm, bên nhận chuyển giao và người đại diện tương ứng.",
+      "Đối với các thời hạn nêu tại điều 5 và điều 11, việc tuân thủ đúng thời hạn là điều kiện thiết yếu.",
+      "Mọi đề cập đến tiền tệ đều được hiểu là đô la Úc (AUD).",
     ],
   },
   {
-    id: "general", title: "General",
-    paragraphs: ["By ordering the Products and/or accepting delivery of the Products from Shop, the Customer agrees that it is bound by these Terms and Conditions of sale. Customer orders, including orders placed via the internet, are subject to acceptance by Shop. The acceptance of the Customer’s order by Shop is expressly made conditional upon the Customer’s assent to these Terms and Conditions which will prevail notwithstanding anything that may be stated to the contrary on the Customer’s order. Shop reserves the right to vary any of these terms at any time and any subsequent orders placed by the Customer will constitute an acceptance of the terms as varied. Once a Customer order has been placed and accepted by Shop, the Customer agrees that the Customer has no right to cancel or vary the order at any time, unless agreed upon in writing by both parties."],
+    id: "general", title: "Quy định chung",
+    paragraphs: ["Khi đặt mua hoặc nhận Sản phẩm từ Cửa hàng, Khách hàng đồng ý chịu sự ràng buộc của các điều khoản và điều kiện mua bán này. Mọi đơn đặt hàng, bao gồm đơn đặt qua Internet, đều cần được Cửa hàng chấp nhận. Việc chấp nhận đơn hàng phụ thuộc vào sự đồng ý của Khách hàng đối với các điều khoản này; các điều khoản này được ưu tiên áp dụng ngay cả khi đơn đặt hàng của Khách hàng có nội dung trái ngược. Cửa hàng có quyền thay đổi các điều khoản vào bất kỳ thời điểm nào; việc Khách hàng tiếp tục đặt hàng sau đó được xem là chấp nhận các điều khoản đã sửa đổi. Sau khi đơn hàng đã được đặt và được Cửa hàng chấp nhận, Khách hàng không được hủy hoặc thay đổi đơn hàng, trừ khi hai bên có thỏa thuận bằng văn bản."],
   },
   {
-    id: "quotations", title: "Quotations",
-    paragraphs: ["Any quotation by Shop to the Customer will be open for acceptance by the Customer within the period stated in the quotation or, where no period is stated, within seven (7) days from the date of the quotation. Thereafter, prices stated in the quotation may be varied by Shop without notice to the Customer."],
+    id: "quotations", title: "Báo giá",
+    paragraphs: ["Báo giá do Cửa hàng cung cấp có hiệu lực trong thời hạn được ghi trên báo giá. Nếu không ghi thời hạn, Khách hàng có thể chấp nhận báo giá trong vòng bảy (7) ngày kể từ ngày lập. Sau thời hạn này, Cửa hàng có thể thay đổi mức giá mà không cần thông báo trước cho Khách hàng."],
   },
   {
-    id: "prices-taxes", title: "Prices / Taxes",
-    paragraphs: ["The prices charged by and payable to Shop will be the ruling prices applicable at the time of order placement, provided that the Products are accepted for delivery within a reasonable time. Prices are subject to change without notice. Recommended retail prices are provided for indicative purposes only and there is no obligation for Shop to comply with that recommendation. It is agreed that should the Customer fail for any reason to acquire the quantity of Products sold then without limiting Shop’ other rights and remedies the unit price charged for the goods sold may be amended to take into account any variation in the total quantity purchased by the Customer. Prices include GST, but do not include any other tax or duty, which is in addition to the price and is to be paid by the Customer at the time of payment for the Products."],
+    id: "prices-taxes", title: "Giá bán và thuế",
+    paragraphs: ["Mức giá Khách hàng phải thanh toán là giá áp dụng tại thời điểm đặt hàng, với điều kiện Sản phẩm được nhận để giao trong một khoảng thời gian hợp lý. Giá có thể thay đổi mà không cần báo trước. Giá bán lẻ đề xuất chỉ có tính chất tham khảo và Cửa hàng không có nghĩa vụ phải áp dụng mức giá đó. Nếu vì bất kỳ lý do nào Khách hàng không mua đủ số lượng Sản phẩm đã thỏa thuận, Cửa hàng có thể điều chỉnh đơn giá theo tổng số lượng thực tế được mua, mà không ảnh hưởng đến các quyền và biện pháp xử lý khác của Cửa hàng. Giá đã bao gồm thuế hàng hóa và dịch vụ (GST), nhưng chưa bao gồm các loại thuế hoặc khoản thu khác. Các khoản này được cộng thêm vào giá và Khách hàng phải thanh toán khi trả tiền Sản phẩm."],
   },
   {
-    id: "payment", title: "Terms of Payment",
+    id: "payment", title: "Điều kiện thanh toán",
     paragraphs: [
-      "Credit Card Payments may attract a surcharge, and Shop will inform the Customer if this is to be the case before processing the transaction.",
-      "Unless otherwise agreed in writing by Shop, where Shop has not agreed in writing to provide commercial credit to the Customer, the total purchase price for Products supplied will be due for payment in cash prior to delivery.",
-      "Where Shop has agreed in writing to provide commercial credit to the Customer, the Customer must make payments in accordance with the payment terms provided by Shop.",
-      "Where Shop has approved the provision of a commercial credit arrangement with the Customer but has not provided notice of the payment terms to the Customer, the Customer must pay the total purchase price for Products supplied within seven days of the statement date.",
-      "Credit Card Payment at an Invoice or transaction level may also be offered to the Customer as a stand-alone payment method, or in conjunction with Credit Card Direct Debit Authorisation.",
+      "Thanh toán bằng thẻ tín dụng có thể phát sinh phụ phí. Nếu có, Cửa hàng sẽ thông báo cho Khách hàng trước khi xử lý giao dịch.",
+      "Trừ khi có thỏa thuận khác bằng văn bản, nếu Cửa hàng chưa chấp thuận cấp tín dụng thương mại cho Khách hàng bằng văn bản, toàn bộ giá trị Sản phẩm phải được thanh toán bằng tiền mặt trước khi giao hàng.",
+      "Nếu Cửa hàng đã đồng ý cấp tín dụng thương mại bằng văn bản, Khách hàng phải thanh toán theo các điều kiện do Cửa hàng cung cấp.",
+      "Nếu Cửa hàng đã chấp thuận thỏa thuận tín dụng thương mại nhưng chưa thông báo điều kiện thanh toán, Khách hàng phải thanh toán toàn bộ giá trị Sản phẩm trong vòng bảy (7) ngày kể từ ngày lập bảng kê.",
+      "Thanh toán bằng thẻ tín dụng theo từng hóa đơn hoặc giao dịch cũng có thể được cung cấp như một phương thức riêng, hoặc kết hợp với việc ủy quyền tự động trích tiền từ thẻ tín dụng.",
     ],
   },
   {
-    id: "credit-accounts", title: "Credit Accounts",
-    paragraphs: ["Any commercial credit arrangements that are provided to the Customer by Shop will continue until terminated by Shop at it sole discretion. In the event that Shop terminates the Customer’s commercial credit arrangement, the Customer will be notified in writing and termination will take effect upon receipt of that notification by the Customer."],
+    id: "credit-accounts", title: "Tài khoản tín dụng",
+    paragraphs: ["Các thỏa thuận tín dụng thương mại được Cửa hàng cấp cho Khách hàng tiếp tục có hiệu lực cho đến khi Cửa hàng quyết định chấm dứt theo quyền quyết định riêng của mình. Khi chấm dứt thỏa thuận, Cửa hàng sẽ thông báo bằng văn bản cho Khách hàng. Việc chấm dứt có hiệu lực kể từ khi Khách hàng nhận được thông báo."],
   },
   {
-    id: "ownership", title: "Change of Ownership",
+    id: "ownership", title: "Thay đổi chủ sở hữu",
     paragraphs: [
-      "Trading accounts are approved by Shop based on the information supplied and the representations made by the Customer. In the event that there is a change in ownership of the Customer, whether total or partial, the Customer must immediately provide written notice to Shop informing Shop of these changes. Until Shop receives written notice from the Customer of a change in ownership, the Customer (including where it is a company or trustee, each of the Directors thereof) holds Shop indemnified against any and all losses, unpaid accounts, interest, damages, costs, charges, fees and expenses incurred or suffered by Shop in trading with any person, company (including the same company but with a different shareholder or shareholders) or other entity (including a trust) which may have purchased the Customer’s business or any interest in the Customer’s business or any of the shares in the Customer and used the Customer’s previously approved account for trading.",
-      "Where a Customer has been authorised by Shop to make payments through Credit Card Direct Debit, the Customer must provide notice in writing at least five (5) days prior to any change in ownership of the business to allow Shop sufficient time to contact the new owner to obtain and confirm new Credit Card information if applicable.",
+      "Tài khoản giao dịch được Cửa hàng phê duyệt dựa trên thông tin và cam kết do Khách hàng cung cấp. Nếu có thay đổi toàn bộ hoặc một phần quyền sở hữu của Khách hàng, Khách hàng phải lập tức thông báo bằng văn bản cho Cửa hàng. Cho đến khi Cửa hàng nhận được thông báo này, Khách hàng — bao gồm từng giám đốc nếu Khách hàng là công ty hoặc bên nhận ủy thác — có trách nhiệm bồi hoàn cho Cửa hàng đối với mọi tổn thất, khoản nợ chưa thanh toán, tiền lãi, thiệt hại, chi phí và phí phát sinh khi Cửa hàng giao dịch với cá nhân, công ty hoặc tổ chức đã mua lại toàn bộ hay một phần hoạt động kinh doanh, quyền lợi hoặc cổ phần của Khách hàng và sử dụng tài khoản giao dịch đã được phê duyệt trước đó. Quy định này cũng áp dụng khi công ty giữ nguyên tên nhưng thay đổi cổ đông, hoặc khi bên mua là một tổ chức ủy thác.",
+      "Nếu Khách hàng được Cửa hàng cho phép thanh toán bằng hình thức tự động trích tiền từ thẻ tín dụng, Khách hàng phải thông báo bằng văn bản ít nhất năm (5) ngày trước khi thay đổi chủ sở hữu doanh nghiệp. Khoảng thời gian này nhằm để Cửa hàng liên hệ với chủ sở hữu mới, thu thập và xác nhận thông tin thẻ tín dụng mới khi cần thiết.",
     ],
   },
   {
-    id: "product-information", title: "Information on the Products supplied",
-    paragraphs: ["All descriptive specifications, illustrations, drawings, data, dimensions and weights furnished by Shop or otherwise contained in catalogues or other advertising material are approximate only and are intended to be merely a general description of the goods, are not incorporated within this agreement and are not to form part of the description of the goods sold under this or any other agreement unless otherwise agreed to in writing by Shop in which case such information will be subject to recognised trade tolerances."],
+    id: "product-information", title: "Thông tin về sản phẩm cung cấp",
+    paragraphs: ["Các thông số mô tả, hình minh họa, bản vẽ, dữ liệu, kích thước và khối lượng do Cửa hàng cung cấp hoặc được trình bày trong danh mục và tài liệu quảng cáo chỉ mang tính gần đúng, nhằm mô tả khái quát hàng hóa. Những thông tin này không tự động trở thành một phần của thỏa thuận hoặc mô tả hàng hóa được bán theo thỏa thuận này hay thỏa thuận khác, trừ khi Cửa hàng có chấp thuận bằng văn bản. Trong trường hợp được chấp thuận, các thông tin đó vẫn được áp dụng trong phạm vi sai số thương mại được công nhận."],
   },
   {
-    id: "delivery", title: "Delivery",
+    id: "delivery", title: "Giao hàng",
     paragraphs: [
-      "The means of delivering the Products to the Customer will be at Shop’ discretion. Shop reserves the right to deliver Products in part deliveries. In the event that Shop incurs additional costs for meeting special (i.e. Tasmania / Northern Territory Deliveries) or urgent delivery arrangements, these additional costs may be charged to the Customer and may include the cost of airfreight where it is not the normal method of delivery. The Customer agrees to accept delivery of the Products sold at any time during normal business hours.",
-      "Shop will not be liable for any loss or damage resulting from any late delivery of the Products and late delivery will not entitle the Customer to rescind or repudiate the Customer’s order for the Products.",
+      "Cửa hàng quyết định phương thức giao Sản phẩm cho Khách hàng và có quyền giao thành nhiều đợt. Nếu phát sinh chi phí do yêu cầu giao hàng đặc biệt, chẳng hạn giao đến Tasmania hoặc Lãnh thổ Bắc Úc, hoặc do yêu cầu giao gấp, Cửa hàng có thể tính thêm các chi phí đó cho Khách hàng. Chi phí phát sinh có thể bao gồm cước vận chuyển hàng không nếu đây không phải phương thức giao hàng thông thường. Khách hàng đồng ý nhận Sản phẩm đã mua trong giờ làm việc thông thường.",
+      "Cửa hàng không chịu trách nhiệm đối với tổn thất hoặc thiệt hại do giao hàng chậm. Việc giao hàng chậm không làm phát sinh quyền hủy bỏ hoặc từ chối thực hiện đơn đặt hàng của Khách hàng.",
     ],
   },
 ];

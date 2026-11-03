@@ -1,0 +1,26 @@
+.layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr); align-items: start; gap: 26px; width: min(1398px, calc(100% - 48px)); margin: 32px auto 48px; color: #172033; font-family: var(--font-poppins), Arial, sans-serif; scroll-margin-top: 20px; }
+.section { min-width: 0; padding: 24px; border: 1px solid #e1e6ee; border-radius: 12px; background: #fff; scroll-margin-top: 24px; }
+.section h2 { margin: 0 0 22px; font-size: 20px; font-weight: 600; line-height: 1.4; }
+.preview { position: relative; overflow: hidden; }
+.preview[data-clipped="true"]::after { content: ""; position: absolute; inset: auto 0 0; height: 64px; background: linear-gradient(transparent, #fff 90%); pointer-events: none; }
+.description { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: 15px; line-height: 1.9; }
+.specs { width: 100%; table-layout: fixed; border-spacing: 0; border-collapse: collapse; font-size: 13px; line-height: 1.7; }
+.specs th, .specs td { min-width: 0; padding: 10px 12px; border: 1px solid #e8ecf2; vertical-align: top; text-align: left; overflow-wrap: anywhere; }
+.specs th { width: 37%; color: #627086; font-weight: 400; }
+.specs tr:nth-child(even) { background: #f8faff; }
+.specs .group { padding-block: 8px; background: #edf4ff; color: #0156ff; font-weight: 600; }
+.empty { margin: 16px 0 0; color: #6b7280; font-size: 13px; }
+.footer { display: flex; justify-content: center; padding-top: 20px; overflow-anchor: none; }
+.footer button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: min(100%, 320px); min-height: 42px; border: 1px solid #0156ff; border-radius: 6px; background: #fff; color: #0156ff; font-family: inherit; font-size: 13px; cursor: pointer; }
+.footer button:hover { background: #f2f6ff; }
+.footer button:focus-visible { outline: 2px solid #0156ff; outline-offset: 3px; }
+.up { transform: rotate(180deg); }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 20px; } }
+@media (max-width: 760px) {
+  .layout { width: calc(100% - 28px); margin-block: 20px 28px; gap: 16px; }
+  .section { padding: 20px 16px; }
+  .section h2 { font-size: 18px; margin-bottom: 18px; }
+  .description { font-size: 14px; line-height: 1.8; }
+  .specs th, .specs td { padding: 9px 10px; font-size: 12px; }
+}

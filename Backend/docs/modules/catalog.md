@@ -38,6 +38,7 @@ Tham số danh sách:
 | Tham số | Quy tắc |
 | --- | --- |
 | `q` | Tối đa 100 ký tự sau khi trim; tìm chuỗi chứa trong tên **hoặc** SKU, không phân biệt hoa/thường |
+| `include_inactive` | Mặc định false; true cho phép xem sản phẩm tạm ngừng (2), luôn loại sản phẩm đã ẩn (0). Áp dụng cả chi tiết; không mở quyền mua |
 | `category_id` | Mã loại, tối đa 100 ký tự/mã và 20 mã duy nhất; lặp tham số để chọn nhiều loại |
 | `subcategory_id` | Mã loại con; lặp tham số để chọn nhiều loại con, kết hợp AND với nhóm cha |
 | `spec` | Lặp mảng JSON `[key,value]` từ facets; OR trong cùng key, AND giữa các key; lọc trước phân trang |
@@ -67,8 +68,14 @@ chỉ lấy thương hiệu của trang sản phẩm đầu tiên. Endpoint này
 
 ## Trạng thái, giá và dữ liệu chi tiết
 
-- Mặc định `SAN_PHAM.trang_thai = 1` và `LOAI_SP.trang_thai = 1` mới được công khai.
-  Đọc cả danh sách, chi tiết và thương hiệu đều áp dụng điều kiện này.
+- Mặc định chỉ đọc sản phẩm đang bán. Danh sách/chi tiết có `include_inactive=true`
+  trả thêm sản phẩm tạm ngừng (2), kèm `is_active=false`; sản phẩm đã ẩn (0)
+  không được trả về, kể cả khi biết mã và mở URL chi tiết. Loại cha và con vẫn
+  phải hoạt động. UI khách dùng tùy chọn này để hiển thị nhãn “Tạm ngừng bán”.
+  Endpoint brands/colors và API cũ vẫn giữ điều kiện đang hoạt động.
+- Availability theo sản phẩm trả thêm `is_active`; sản phẩm tạm ngừng luôn có
+  `available=false`, không đọc/giữ/trừ tồn. API tồn theo SKU vẫn chỉ nhận SKU đang
+  hoạt động. Bật hiển thị không thay đổi điều kiện checkout hoặc phân bổ kho.
 - Đây là quy ước mặc định theo schema có `default: 1`; file DBML chưa mô tả enum.
   Nếu nhóm dùng giá trị khác, đặt **CATALOG_ACTIVE_STATUS** trong môi trường backend.
 - Đang bán độc lập với tồn kho. Khi có `stock_status`, catalog đọc `TON_KHO`,

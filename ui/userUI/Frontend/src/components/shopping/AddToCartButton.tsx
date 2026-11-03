@@ -32,6 +32,7 @@ export function AddToCartButton({
   className,
   label = "Thêm vào giỏ",
   disabled = false,
+  iconOnly = false,
   stock: providedStock,
 }: {
   product: { id: string; sku?: string };
@@ -39,6 +40,7 @@ export function AddToCartButton({
   className?: string;
   label?: string;
   disabled?: boolean;
+  iconOnly?: boolean;
   stock?: ProductStock;
 }) {
   const shop = useShopping();
@@ -73,6 +75,7 @@ export function AddToCartButton({
         : stock.status === "checking" ? "Đang kiểm tra tồn kho…" : label;
 
   if (stock.status === "sold_out") return <span role="status" className={styles.soldOut}>Hết hàng</span>;
+  if (stock.status === "inactive") return <span role="status" className={styles.soldOut}>Tạm ngừng bán</span>;
   if (stock.status === "error") return <button type="button" className={styles.retry} onClick={stock.reload}>Thử lại kiểm tra tồn kho</button>;
 
   return (
@@ -80,6 +83,7 @@ export function AddToCartButton({
       type="button"
       className={[
         styles.button,
+        iconOnly && styles.iconOnly,
         phase === "adding" && styles.loading,
         phase === "added" && styles.added,
         className,

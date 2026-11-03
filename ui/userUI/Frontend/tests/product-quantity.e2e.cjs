@@ -5,7 +5,7 @@ const { chromium } = require(process.env.PHUB_PLAYWRIGHT_MODULE || "playwright")
 const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
 
 (async () => {
-  const browser = await chromium.launch({ headless: true, channel: process.env.PHUB_CHROMIUM_CHANNEL || "chrome" });
+  const browser = await chromium.launch({ headless: true, channel: process.env.PHUB_CHROMIUM_CHANNEL || "chrome", args: ["--disable-features=LocalNetworkAccessChecks"] });
   try {
     const reference = await browser.newContext();
     const list = await reference.request.get(base + "/api/catalog/products?page_size=1");
@@ -28,6 +28,9 @@ const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
         const path = url.pathname;
         assert.equal(route.request().method(), "GET", "Adding to cart must not write database records");
         if (path.endsWith("/me")) return route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED", message: "Guest" } } });
+        if (path === "/api/catalog/availability") return unavailable
+          ? route.fulfill({ status: 503, json: { error: { message: "Không kiểm tra được tồn kho thử nghiệm." } } })
+          : route.fulfill({ json: { items: [{ sku: product.sku, available_quantity: stock }], tax_rate: "10.00", currency: "VND" } });
         if (path.endsWith("/availability")) {
           const quantity = Number(url.searchParams.get("quantity"));
           requests.push(quantity);
@@ -56,16 +59,22 @@ const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
       await input.fill("99");
       await page.getByRole("button", { name: "Tăng số lượng", exact: true }).click();
       assert.equal(await input.inputValue(), "100");
-      assert.equal(await input.getAttribute("max"), null);
+      assert.equal(await input.getAttribute("max"), "2000");
+      const beforeTyping = requests.length;
+      await input.fill("99999999999999999999999999999999");
+      assert.equal(await input.inputValue(), "2000", "Oversized input immediately clamps to real available stock");
+      assert.ok(await page.getByRole("button", { name: "Tăng số lượng", exact: true }).isDisabled());
+      assert.equal(requests.length, beforeTyping, "Typing uses the loaded quantity without querying the API");
       await input.fill("0");
       assert.equal(await page.locator("button[data-state]").isDisabled(), true);
       await input.fill("1234");
       await page.locator("button[data-state]").click();
       await page.waitForFunction(() => JSON.parse(localStorage.getItem("phub-cart-guest-v1") || "[]")[0]?.quantity === 1234);
       assert.equal(lastCartCheck(), 1234);
-      await page.locator("button[data-state]").click();
-      await page.getByRole("status").filter({ hasText: "Không đủ hàng trong kho" }).waitFor();
-      assert.equal(lastCartCheck(), 2468, "Stock check includes the existing cart quantity");
+      await page.waitForFunction(() => document.querySelector('input[aria-label="Số lượng"]')?.max === "766");
+      assert.equal(await input.inputValue(), "766", "The remaining add limit subtracts the existing cart");
+      await input.fill("99999");
+      assert.equal(await input.inputValue(), "766");
       assert.equal((await cart())[0].quantity, 1234);
       await input.fill("6");
       stock = 1239;
@@ -74,6 +83,7 @@ const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
       assert.equal(lastCartCheck(), 1240);
       assert.equal((await cart())[0].quantity, 1234);
       assert.ok(page.url().includes("/main/product/"), "Buy now stays on the product when stock is insufficient");
+      assert.equal(await input.inputValue(), "5", "A lower stock refresh clamps the current draft");
       unavailable = true;
       await page.locator("button[data-state]").click();
       await page.getByRole("status").filter({ hasText: "Không kiểm tra được tồn kho thử nghiệm." }).waitFor();
@@ -81,14 +91,22 @@ const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
       unavailable = false;
       stock = 1240;
       await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+      await page.waitForFunction(() => document.querySelector('input[aria-label="Số lượng"]')?.max === "6");
+      await input.fill("6");
       await page.getByRole("button", { name: /Mua ngay/ }).click();
       await page.waitForURL("**/cart");
       assert.equal((await cart())[0].quantity, 1240);
       await page.reload();
-      await page.getByRole("textbox", { name: "Số lượng", exact: true }).waitFor();
+      await page.getByRole("spinbutton", { name: "Số lượng", exact: true }).waitFor();
       assert.equal((await cart())[0].quantity, 1240, "Large quantities survive reload");
+      await page.goto(base + `/main/product/${encodeURIComponent(product.id)}`);
+      await page.getByRole("status").filter({ hasText: "Giỏ hàng đã đạt tồn khả dụng" }).waitFor();
+      await page.locator("button[data-state]").waitFor({ state: "detached" });
+      assert.equal(await page.locator("button[data-state]").count(), 0);
+      assert.equal(await page.getByRole("button", { name: /Mua ngay/ }).count(), 0);
+      assert.equal(await page.getByRole("status").filter({ hasText: /^Hết hàng$/ }).count(), 0, "Full cart is not sold out");
       assert.deepEqual(errors, []);
-      console.log(`PASS ${width}px: clear 1 then type 6, no negatives/99/1000 cap, stock check includes cart, insufficient stock and network failures do not add, Buy now and reload`);
+      console.log(`PASS ${width}px: immediate max clamp, cart subtraction, no queries on typing, dynamic stock limit, large quantities, no writes on failed checks, Buy now and reload`);
       await context.close();
     }
   } finally { await browser.close(); }

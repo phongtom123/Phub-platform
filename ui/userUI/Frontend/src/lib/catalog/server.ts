@@ -16,5 +16,5 @@ export async function fetchBackend(path: string, search = "") {
 
 export async function getProduct(id: string) {
   if (id === "." || id === ".." || /[\\/\u0000-\u001f\u007f]/.test(id)) throw new CatalogApiError("Mã sản phẩm không hợp lệ.", 422);
-  return validateProduct(await readJson(await fetchBackend(`products/${encodeURIComponent(id)}`)));
+  return validateProduct(await readJson(await fetchBackend(`products/${encodeURIComponent(id)}`, "?include_inactive=true")));
 }

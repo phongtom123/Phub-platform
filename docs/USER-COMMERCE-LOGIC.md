@@ -6,6 +6,15 @@ phân bổ kho, hóa đơn, chi tiết đơn và cách kiểm chứng các thay 
 Các lỗi và chức năng còn thiếu sau lần rà soát tiếp theo được ghi tại
 [USER-FLOW-AUDIT.md](USER-FLOW-AUDIT.md), kèm mức ưu tiên và cách tái hiện.
 
+**Cập nhật 03/11/2026:** các thẻ sản phẩm trang chủ, catalog và xem nhanh dùng
+`ProductCardActions`: icon thêm giỏ và nút Mua ngay cùng dùng một kết quả kiểm tra
+tồn. Mua ngay chỉ thêm một chiếc rồi mở `/cart` nếu thành công. Nhãn “Hết hàng”
+hoặc “Tạm ngừng bán” thay toàn bộ cụm nút. Catalog UI dùng `include_inactive=true`
+để hiện trạng thái tạm ngừng (2); sản phẩm đã ẩn (0) luôn bị loại khỏi catalog,
+chi tiết và availability công khai. Loại cha/con vẫn phải hoạt động. Availability trả
+`is_active=false` khi sản phẩm tạm ngừng, luôn chặn mua dù còn tồn. Không đổi
+trạng thái DB khi hết hàng, không tự xóa sản phẩm trong giỏ đã lưu.
+
 **Cập nhật sau khi tích hợp:** chỉ giữ hàng cho đơn đang xử lý đã có hóa đơn
 hoặc khoản thu thành công; giỏ hàng và báo giá không giữ hàng. Xem
 [chính sách tồn kho và thuế](../Backend/docs/CART_STOCK_AND_TAX.md).
@@ -40,6 +49,14 @@ là hỗ trợ số nguyên lớn vô hạn.
 Không ép về `1` ngay trong mỗi lần `onChange`, vì sẽ làm thao tác Backspace bị kẹt.
 Không nhận dấu âm, số thập phân hoặc ký pháp `e`. Chuỗi trống được xử lý khi blur;
 thao tác mua cần số nguyên dương hợp lệ.
+
+Từ 03/11/2026, ô số lượng trang chi tiết tự giới hạn khi nhập vượt
+`tổng tồn khả dụng − số lượng cùng SKU đang có trong giỏ`. Nút tăng dừng ở mức
+này. Giá trị tối đa lấy từ `/api/catalog/availability`, gồm tất cả kho hoạt động
+và trừ reservation theo chính sách hiện tại; không đặt trần 99/1.000. Số đã tải
+được dùng ngay trong RAM khi gõ. Làm mới tồn hoặc đổi giỏ sẽ giới hạn lại nháp;
+hết chỗ thêm trong giỏ được thông báo riêng, không ghi thành “Hết hàng”. API lỗi
+thì chặn mua và cho thử lại. Kiểm tra số lượng thực tế khi bấm thêm/đặt vẫn giữ.
 
 Ở trang sản phẩm, “Mua ngay” dùng cùng logic thêm hàng vào giỏ, chỉ chuyển sang
 `/cart` khi thêm thành công. Nó không tự tạo đơn hoặc ghi nhận thanh toán.

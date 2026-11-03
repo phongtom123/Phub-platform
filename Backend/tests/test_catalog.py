@@ -175,6 +175,50 @@ def test_detail_uses_same_visibility_filter_and_returns_public_product(catalog_c
     assert params["subcategory.trang_thai"] == "eq.1"
 
 
+def test_paused_products_can_be_displayed_without_widening_default_visibility(catalog_client):
+    client, state, requests, _ = catalog_client
+    state["rows"][0]["trang_thai"] = 2
+    response = client.get("/api/catalog/products?include_inactive=true")
+    assert response.status_code == 200
+    assert response.json()["items"][0]["is_active"] is False
+    assert requests[-1].url.params["trang_thai"] == "in.(1,2)"
+    assert requests[-1].url.params["category.trang_thai"] == "eq.1"
+    assert requests[-1].url.params["subcategory.trang_thai"] == "eq.1"
+    detail = client.get("/api/catalog/products/SP001?include_inactive=true")
+    assert detail.json()["is_active"] is False
+    client.get("/api/catalog/products")
+    assert requests[-1].url.params["trang_thai"] == "eq.1"
+
+
+@pytest.mark.parametrize("path,is_list", [
+    ("/api/catalog/products?include_inactive=true", True),
+    ("/api/catalog/products/SP001?include_inactive=true", False),
+    ("/api/catalog/products/SP001/availability?quantity=1", False),
+])
+def test_hidden_products_stay_private_when_paused_products_are_requested(catalog_client, product_row, path, is_list):
+    client, state, requests, _ = catalog_client
+    product_row["trang_thai"] = 0
+
+    def handle(request):
+        assert request.method == "GET" and request.url.path.endswith("/SAN_PHAM")
+        visibility = request.url.params["trang_thai"]
+        # Simulate PostgREST filtering a real hidden record, rather than always
+        # returning an empty fixture that would conceal a widened public query.
+        allowed = [int(value) for value in re.findall(r"\d+", visibility)]
+        rows = [product_row] if product_row["trang_thai"] in allowed else []
+        return httpx.Response(200, json=rows, headers={"content-range": f"*/{len(rows)}"})
+
+    state["handler"] = handle
+    response = client.get(path)
+    if is_list:
+        assert response.status_code == 200
+        assert response.json()["items"] == []
+        assert response.json()["pagination"]["total"] == 0
+    else:
+        assert response.status_code == 404
+    assert requests and all(request.url.params["trang_thai"] == "in.(1,2)" for request in requests)
+
+
 def test_missing_or_hidden_product_returns_404(catalog_client):
     client, state, _, _ = catalog_client
     state["rows"] = []
@@ -347,7 +391,7 @@ def test_swagger_documents_all_endpoints_parameters_and_error_models(catalog_cli
     assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands", "/api/catalog/colors", "/api/catalog/banners", "/api/catalog/availability", "/api/catalog/products/{product_id}/availability", "/api/catalog/facets"}
     operation = paths["/api/catalog/products"]["get"]
     assert operation["tags"] == ["Public Catalog"]
-    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "subcategory_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status", "spec"}
+    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "subcategory_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status", "spec", "include_inactive"}
     for path in paths.values():
         for status in ("422", "500", "503"):
             assert path["get"]["responses"][status]["content"]["application/json"]["schema"]["$ref"].endswith("/ErrorResponse")

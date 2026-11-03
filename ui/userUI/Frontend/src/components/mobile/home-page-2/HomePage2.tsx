@@ -17,7 +17,7 @@ import { CatalogFilterChips } from "@/components/catalog/CatalogFilterChips";
 import { type CatalogController } from "@/lib/catalog/useCatalog";
 import { productHref } from "@/lib/catalog/types";
 import styles from "./HomePage2.module.css";
-import { AddToCartButton } from "@/components/shopping/AddToCartButton";
+import { ProductCardActions } from "@/components/shopping/ProductCardActions";
 
 export function HomePage2({ catalog }: { catalog: CatalogController }) {
   const { request, products, pagination, loading, error } = catalog;
@@ -36,7 +36,7 @@ export function HomePage2({ catalog }: { catalog: CatalogController }) {
         <CatalogFilterChips filters={request.filters} metadata={catalog.metadata.data} facets={catalog.facets.data} onChange={catalog.apply} />
         <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
         {!loading && !error && (products.length ? <div className={styles.productGrid} aria-label="Sản phẩm">
-          {products.map(product => <ProductCard key={product.id} {...product} href={productHref(product.id)} uiLocale="vi" compactOnMobile className={styles.productCard} actions={<AddToCartButton product={product}/>} />)}
+          {products.map(product => <ProductCard key={product.id} {...product} href={productHref(product.id)} uiLocale="vi" compactOnMobile className={styles.productCard} actions={<ProductCardActions product={product}/>} />)}
         </div> : <div className={styles.noResults}><p>Không tìm thấy sản phẩm phù hợp.</p><Button onClick={() => catalog.apply(emptyFilters)}>Xóa bộ lọc và về trang đầu</Button>{request.q && <Link href="/main/product">Xem tất cả sản phẩm</Link>}</div>)}
       </div>
       {!loading && !error && <div className={styles.pagination}><Pagination currentPage={request.page} totalPages={pagination?.total_pages ?? 0} onPageChange={page => { catalog.turnPage(page); resultsRef.current?.scrollIntoView({ behavior: "instant", block: "start" }); }} /></div>}
