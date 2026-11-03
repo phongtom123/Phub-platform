@@ -9,6 +9,7 @@ from phub_api.schemas.catalog import (
     BannerList,
     CatalogProduct,
     CatalogQuery,
+    CatalogFacets,
     CategoryList,
     ColorList,
     ProductPage,
@@ -50,6 +51,11 @@ def list_banners(service: Service):
 @router.get("/products", response_model=ProductPage, summary="Danh sách sản phẩm đang bán")
 def list_products(filters: Annotated[CatalogQuery, Query()], service: Service):
     return service.list_products(filters)
+
+
+@router.get("/facets", response_model=CatalogFacets, summary="Bộ lọc thông số và thương hiệu theo loại sản phẩm; số lượng xét các điều kiện khác")
+def catalog_facets(filters: Annotated[CatalogQuery, Query()], service: Service):
+    return service.facets(filters)
 
 
 @router.get(

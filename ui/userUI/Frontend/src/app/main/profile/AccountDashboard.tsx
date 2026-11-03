@@ -7,6 +7,7 @@ import { useAccountResource } from "@/lib/account/useAccountResource";
 import { safeImageUrl } from "@/lib/catalog/types";
 import type { SessionUser } from "../../../../../../shared/auth-client";
 import { AccountEditor } from "./AccountEditor";
+import { AccountAddresses } from "./AccountAddresses";
 import { AccountIcon } from "./AccountIcon";
 import { AccountOrders } from "./AccountOrders";
 import { DataState, Panel } from "./AccountPanels";
@@ -21,18 +22,10 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
   const person = profile.data;
   const displayName = person?.name || account.name;
   const initials = displayName.trim().split(/\s+/).slice(-2).map(part => part[0]).join("").toUpperCase();
-  const address = person && [person.address_line, person.ward, person.province].filter(Boolean).join(", ");
   function navigate(next: AccountView) { setView(next); setNotice(""); }
   function edit() { setNotice(""); setEditing(true); }
 
-  const addressCard = <Panel title="Địa chỉ giao hàng" action={<button className={styles.textAction} disabled={!person} onClick={edit} aria-label="Chỉnh sửa địa chỉ giao hàng">{address ? "Chỉnh sửa" : "Thêm địa chỉ"}</button>}>
-    {person && (address ? <div className={styles.address}>
-      <span className={styles.addressTag}>Địa chỉ mặc định</span>
-      <h3>{person.name}</h3>
-      {person.phone && <p className={styles.addressPhone}>{person.phone}</p>}
-      <p>{address}</p>
-    </div> : <div className={styles.emptyAddress}><AccountIcon name="addresses" /><p>Thêm địa chỉ để đặt hàng thuận tiện hơn.</p></div>)}
-  </Panel>;
+  const addressPrefill = { name: person?.name ?? account.name, phone: person?.phone ?? null };
 
   return <div className={styles.layout}>
     <aside className={styles.sidebar}>
@@ -52,7 +45,7 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
     <div className={styles.content}>
       {logoutError && <p role="alert" className={styles.error}>{logoutError}</p>}
       {notice && <p role="status" className={styles.notice}>{notice}</p>}
-      {view !== "orders" && <DataState {...profile} />}
+      {view === "account" && <DataState {...profile} />}
       {view === "account" && <>
         <Panel title="Thông tin cá nhân" action={<Button className={styles.secondaryButton} variant="outline" disabled={!person} onClick={edit}>Chỉnh sửa thông tin</Button>}>
           <p className={styles.sectionDescription}>Thông tin liên hệ và nhận hàng của bạn.</p>
@@ -63,7 +56,7 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
           </dl>}
         </Panel>
         <div className={styles.secondaryGrid}>
-          {addressCard}
+          <AccountAddresses key={`summary:${person?.name}:${person?.phone}`} prefill={addressPrefill} onChanged={profile.reload} onManage={() => navigate("addresses")} />
           <section className={styles.orderShortcut} aria-label="Theo dõi đơn hàng">
             <span className={styles.shortcutIcon}><AccountIcon name="orders" /></span>
             <h2>Đơn hàng của bạn</h2><p>Theo dõi trạng thái, xem hóa đơn và thông tin thanh toán của từng đơn.</p>
@@ -71,7 +64,7 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
           </section>
         </div>
       </>}
-      {view === "addresses" && addressCard}
+      {view === "addresses" && <AccountAddresses prefill={addressPrefill} onChanged={profile.reload} />}
       {view === "orders" && <AccountOrders />}
     </div>
     {editing && person && <AccountEditor profile={person} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); profile.reload(); setNotice("Đã lưu thông tin nhận hàng vào hồ sơ."); }} />}

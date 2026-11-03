@@ -35,6 +35,21 @@
 .address h3 { margin: 16px 0 8px; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
 .address p { margin: 8px 0 0; font-size: 13px; line-height: 1.9; color: #566174; overflow-wrap: anywhere; }
 .address .addressPhone { color: #344054; }
+.addressBookCount { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 22px 0 16px; color: #566174; font-size: 13px; }
+.addressBookCount span { color: #8a5a12; }
+.addressList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.addressCard { display: flex; flex-direction: column; min-width: 0; padding: 22px; border: 1px solid #e3e8f0; border-radius: 12px; }
+.addressCard[data-default="true"] { border-color: #bcd0ff; background: #f9fbff; }
+.addressCard .address { margin: 0; padding: 0 0 20px; border: 0; }
+.addressCard .address h3 { margin-top: 12px; }
+.addressActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: auto; padding-top: 14px; border-top: 1px solid #e7ecf4; }
+.dangerAction { border: 0; background: none; color: #bc3540; padding: 5px 0; font: inherit; font-size: 13px; cursor: pointer; margin-left: auto; }
+.addressDialogBody { display: grid; gap: 18px; margin-top: 20px; }
+.dialog .addressDialogBody .note { margin: 0; }
+.defaultCheckbox { display: flex; gap: 10px; align-items: center; line-height: 1.6; }
+.defaultCheckbox input { width: 17px; height: 17px; accent-color: #0156ff; flex-shrink: 0; }
+.deleteButton { min-height: 42px; padding: 10px 18px; border: 0; border-radius: 9px; background: #bc3540; color: white; font: inherit; font-size: 13px; cursor: pointer; }
+.dialog .secondaryButton { font: inherit; font-size: 13px; cursor: pointer; }
 .emptyAddress { padding: 28px 0 8px; color: #697586; font-size: 13px; line-height: 1.8; }
 .emptyAddress svg { margin-bottom: 8px; }
 .orderShortcut { display: flex; flex-direction: column; align-items: start; min-width: 0; padding: 28px; border: 1px solid #dce6fd; border-radius: 16px; background: linear-gradient(135deg, #eef4ff, #f8faff); }
@@ -91,6 +106,7 @@
   .layout { grid-template-columns: 250px minmax(0, 1fr); gap: 22px; }
   .panel, .orderShortcut { padding: 24px; }
   .secondaryGrid { grid-template-columns: minmax(0, 1fr); }
+  .addressList { grid-template-columns: minmax(0, 1fr); }
   .profileFields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .orderCard { grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
   .orderValue { text-align: left; }
@@ -112,6 +128,7 @@
   .panelHeading h2 { font-size: 18px; }
   .profileFields { gap: 22px; }
   .dialog { padding: 22px; }
+  .addressCard { padding: 18px; }
   .orderCount { display: grid; }
 }
 @media (max-width: 480px) {

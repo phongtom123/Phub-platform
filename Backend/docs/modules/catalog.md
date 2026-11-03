@@ -31,6 +31,7 @@ Từ thư mục `Backend`, dùng môi trường ảo và `.env` sẵn có của 
 | `/api/catalog/categories` | `{items: [{id, name}]}` từ các `LOAI_SP` hoạt động |
 | `/api/catalog/brands` | `{items: [{name}]}` từ sản phẩm và loại sản phẩm hoạt động |
 | `/api/catalog/colors` | `{items: [{value, label}]}` từ thông số màu đã khai báo; có nhóm thiếu màu |
+| `/api/catalog/facets` | Thương hiệu và dropdown thông số có thật trong loại đang xem; xem [quy tắc facets](../CATALOG_FACETS.md) |
 
 Tham số danh sách:
 
@@ -38,6 +39,8 @@ Tham số danh sách:
 | --- | --- |
 | `q` | Tối đa 100 ký tự sau khi trim; tìm chuỗi chứa trong tên **hoặc** SKU, không phân biệt hoa/thường |
 | `category_id` | Mã loại, tối đa 100 ký tự/mã và 20 mã duy nhất; lặp tham số để chọn nhiều loại |
+| `subcategory_id` | Mã loại con; lặp tham số để chọn nhiều loại con, kết hợp AND với nhóm cha |
+| `spec` | Lặp mảng JSON `[key,value]` từ facets; OR trong cùng key, AND giữa các key; lọc trước phân trang |
 | `brand` | Chuỗi thương hiệu từ endpoint brands, tối đa 100 ký tự; so khớp chính xác |
 | `min_price`, `max_price` | Giá trước thuế, bao gồm hai đầu khoảng; không âm, tối đa 18 chữ số và 2 số thập phân; giá từ không vượt giá đến |
 | `color` | Giá trị từ endpoint colors, tối đa 100 ký tự; `__unspecified__` chọn sản phẩm thiếu màu |
@@ -50,7 +53,8 @@ Tham số danh sách:
 GET /api/catalog/products?q=MSI&category_id=LAPTOP&category_id=PC&brand=MSI&page=1&page_size=12&sort=price-asc
 ```
 
-Các loại kết hợp bằng OR; tìm kiếm, nhóm loại, thương hiệu, giá, màu và tồn kho kết hợp bằng AND.
+Các mã trong cùng `category_id` hoặc `subcategory_id` kết hợp bằng OR. Nhóm cha,
+loại con, tìm kiếm, thương hiệu, giá, màu, tồn kho và từng thông số kết hợp bằng AND.
 `q` và `brand` rỗng sau trim được bỏ qua; mã loại rỗng bị từ chối. Tham số không
 được khai báo trả 422. Ký tự điều khiển bị từ chối. Ký tự tìm kiếm đặc biệt
 `%`, `_`, `*`, dấu ngoặc, dấu phẩy, dấu nháy và backslash được tìm nguyên văn,

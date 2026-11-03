@@ -250,13 +250,15 @@ def test_parent_category_filter_does_not_query_category_hierarchy(catalog_client
     assert not any(request.url.path.endswith("/LOAI_SP") for request in requests)
 
 
-def test_parent_and_child_filters_are_combined_with_or(catalog_client):
+def test_parent_and_child_filters_must_both_match_the_product_type(catalog_client):
     client, _, requests, _ = catalog_client
     response = client.get("/api/catalog/products", params=[
         ("category_id", "PC"), ("subcategory_id", "LAPTOP_GAMING"),
     ])
     assert response.status_code == 200
-    assert requests[-1].url.params["or"] == '(ma_loai_sp.in.("PC"),ma_loai_sp_con.in.("LAPTOP_GAMING"))'
+    assert requests[-1].url.params["ma_loai_sp"] == 'in.("PC")'
+    assert requests[-1].url.params["ma_loai_sp_con"] == 'in.("LAPTOP_GAMING")'
+    assert "or" not in requests[-1].url.params
 
 
 def test_categories_and_children_read_all_database_pages(catalog_client):
@@ -342,10 +344,10 @@ def test_swagger_documents_all_endpoints_parameters_and_error_models(catalog_cli
     client, _, _, _ = catalog_client
     schema = client.get("/openapi.json").json()
     paths = schema["paths"]
-    assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands", "/api/catalog/colors", "/api/catalog/banners", "/api/catalog/availability", "/api/catalog/products/{product_id}/availability"}
+    assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands", "/api/catalog/colors", "/api/catalog/banners", "/api/catalog/availability", "/api/catalog/products/{product_id}/availability", "/api/catalog/facets"}
     operation = paths["/api/catalog/products"]["get"]
     assert operation["tags"] == ["Public Catalog"]
-    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "subcategory_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status"}
+    assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "subcategory_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status", "spec"}
     for path in paths.values():
         for status in ("422", "500", "503"):
             assert path["get"]["responses"][status]["content"]["application/json"]["schema"]["$ref"].endswith("/ErrorResponse")

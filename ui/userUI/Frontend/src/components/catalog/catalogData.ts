@@ -6,7 +6,7 @@ export type CatalogProduct = Pick<ProductCardProps, "name" | "imageSrc" | "amoun
   sku: string; description: string; specifications: { label: string; value: string }[];
   categoryName?: string; subcategoryName?: string;
 };
-export interface CatalogFilters { categories: string[]; subcategories: string[]; price: string; color: string; brand: string; inStock: boolean }
+export interface CatalogFilters { categories: string[]; subcategories: string[]; price: string; color: string; brand: string; inStock: boolean; minPrice?: string; maxPrice?: string; stockStatus?: "" | "in-stock" | "out-of-stock"; specs?: Record<string, string[]> }
 export type CatalogSort = "position" | "price-asc" | "price-desc" | "name";
 export const emptyFilters: CatalogFilters = { categories: [], subcategories: [], price: "", color: "", brand: "", inStock: false };
 export const initialFilters: CatalogFilters = { ...emptyFilters };
@@ -36,5 +36,5 @@ export function selectProducts(filters: CatalogFilters, sort: CatalogSort) {
   });
 }
 export function filterCount(filters: CatalogFilters) {
-  return filters.categories.length + filters.subcategories.length + Number(Boolean(filters.price)) + Number(Boolean(filters.color)) + Number(Boolean(filters.brand)) + Number(filters.inStock);
+  return filters.categories.length + filters.subcategories.length + Number(Boolean(filters.price || filters.minPrice || filters.maxPrice)) + Number(Boolean(filters.color)) + Number(Boolean(filters.brand)) + Number(Boolean(filters.stockStatus || filters.inStock)) + Object.values(filters.specs ?? {}).reduce((sum, values) => sum + values.length, 0);
 }

@@ -1,42 +1,39 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/common/Breadcrumb";
 import { Button } from "@/components/common/Button";
 import { Pagination } from "@/components/common/Pagination";
 import { ProductCard } from "@/components/common/ProductCard";
 import { ServiceBenefits } from "@/components/mobile/shared/ServiceBenefits";
-import { MobileFilterPanel } from "@/components/mobile/filter/MobileFilterPanel";
+import { CatalogDropdownFilters } from "@/components/catalog/CatalogDropdownFilters";
+import { catalogHeading } from "@/lib/catalog/filters";
 import { CatalogToolbar } from "@/components/catalog/CatalogToolbar";
 import { CatalogStatus } from "@/components/catalog/CatalogStatus";
 import { HomePage2Extras } from "./HomePage2Extras";
 import { emptyFilters } from "@/components/catalog/catalogData";
-import { useCatalogDraft, type CatalogController } from "@/lib/catalog/useCatalog";
+import { CatalogFilterChips } from "@/components/catalog/CatalogFilterChips";
+import { type CatalogController } from "@/lib/catalog/useCatalog";
 import { productHref } from "@/lib/catalog/types";
 import styles from "./HomePage2.module.css";
 import { AddToCartButton } from "@/components/shopping/AddToCartButton";
 
 export function HomePage2({ catalog }: { catalog: CatalogController }) {
   const { request, products, pagination, loading, error } = catalog;
-  const [draft, setDraft] = useCatalogDraft(catalog);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const filterButtonRef = useRef<HTMLDivElement>(null);
   const offset = (request.page - 1) * request.pageSize;
-  function closeFilters() {
-    setFiltersOpen(false);
-    filterButtonRef.current?.querySelector("button")?.focus();
-  }
   return <div className={styles.page}>
     <div className={styles.container}>
       <Breadcrumb className={styles.breadcrumb} items={[{ label: "Trang chủ", href: "/" }, { label: "Sản phẩm" }]} />
-      <h1>{request.q ? `Kết quả: ${request.q}` : "Sản phẩm"}{pagination ? ` (${pagination.total})` : ""}</h1>
-      <div ref={filterButtonRef}>
+      <h1>{request.q ? `Kết quả: ${request.q}` : catalogHeading(request.filters, catalog.metadata.data.categories)}{pagination ? ` (${pagination.total} sản phẩm)` : ""}</h1>
+      <CatalogDropdownFilters catalog={catalog} />
+      <div>
         <CatalogToolbar mobile start={products.length ? offset + 1 : 0} end={products.length ? offset + products.length : 0} total={pagination?.total ?? 0}
-          sort={request.sort} pageSize={request.pageSize} view="grid" onSort={catalog.sortBy} onPageSize={catalog.resize} onView={catalog.changeView} filtersOpen={filtersOpen} onFilter={() => { setDraft(request.filters); setFiltersOpen(value => !value); }} />
+          sort={request.sort} pageSize={request.pageSize} view="grid" onSort={catalog.sortBy} onPageSize={catalog.resize} onView={catalog.changeView} />
       </div>
       <div id="homepage2-results" ref={resultsRef} className={styles.results} aria-busy={loading}>
+        <CatalogFilterChips filters={request.filters} metadata={catalog.metadata.data} facets={catalog.facets.data} onChange={catalog.apply} />
         <CatalogStatus loading={loading} error={error} retry={catalog.retry} />
         {!loading && !error && (products.length ? <div className={styles.productGrid} aria-label="Sản phẩm">
           {products.map(product => <ProductCard key={product.id} {...product} href={productHref(product.id)} uiLocale="vi" compactOnMobile className={styles.productCard} actions={<AddToCartButton product={product}/>} />)}
@@ -47,6 +44,5 @@ export function HomePage2({ catalog }: { catalog: CatalogController }) {
       <p>Tìm theo tên hoặc SKU, lọc theo danh mục và thương hiệu để chọn sản phẩm phù hợp.</p>
     </div>
     <ServiceBenefits />
-    <MobileFilterPanel open={filtersOpen} draft={draft} onChange={setDraft} onApply={() => { catalog.apply(draft); closeFilters(); }} onClose={closeFilters} metadata={catalog.metadata} />
   </div>;
 }

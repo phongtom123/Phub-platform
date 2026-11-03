@@ -48,13 +48,9 @@ class CatalogRepository:
             query = query.or_(f"ten_sp.imatch.{pattern},sku.imatch.{pattern}")
         category_values = ",".join(quoted(value) for value in filters.category_id)
         subcategory_values = ",".join(quoted(value) for value in filters.subcategory_id)
-        if category_values and subcategory_values:
-            query = query.or_(
-                f"ma_loai_sp.in.({category_values}),ma_loai_sp_con.in.({subcategory_values})"
-            )
-        elif category_values:
+        if category_values:
             query = query.filter("ma_loai_sp", "in", f"({category_values})")
-        elif subcategory_values:
+        if subcategory_values:
             query = query.filter("ma_loai_sp_con", "in", f"({subcategory_values})")
         if filters.brand:
             query = query.eq("thuong_hieu", filters.brand)

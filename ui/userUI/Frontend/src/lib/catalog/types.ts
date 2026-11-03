@@ -18,6 +18,9 @@ export interface CatalogMetadata {
   categories: CatalogCategory[];
   brands: { id: string; name: string }[];
 }
+export interface FacetOption { value: string; label: string; count: number }
+export interface CatalogFacet { key: string; label: string; options: FacetOption[] }
+export interface CatalogFacets { specs: CatalogFacet[]; brands: FacetOption[]; total: number }
 export interface CatalogPagination { page: number; page_size: number; total: number; total_pages: number }
 export interface ApiProductPage { items: ApiProduct[]; pagination: CatalogPagination }
 export interface CatalogRequest {
