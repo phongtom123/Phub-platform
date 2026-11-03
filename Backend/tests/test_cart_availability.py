@@ -55,7 +55,8 @@ def stock_handler(state, product_row, stock, reservations):
         table = request.url.path.rsplit("/", 1)[-1]
         if table == "SAN_PHAM":
             assert params["ma_sp"] == "eq.SP001"
-            assert params["trang_thai"] == params["category.trang_thai"] == params["subcategory.trang_thai"] == "eq.1"
+            assert params["trang_thai"] == "in.(1,2)"
+            assert params["category.trang_thai"] == params["subcategory.trang_thai"] == "eq.1"
             rows = [product_row]
         elif table == "CT_DON_HANG":
             assert params["order.trang_thai"] == "in.(MOI,XAC_NHAN,DANG_CHUAN_BI)"
@@ -76,7 +77,7 @@ def test_public_availability_subtracts_reservations_without_disclosing_stock(cat
     response = web.get("/api/catalog/products/SP001/availability", params={"quantity": quantity})
     assert response.status_code == 200
     assert response.headers["Cache-Control"] == "no-store"
-    assert response.json() == {"id": "SP001", "sku": "MSI-001", "quantity": quantity, "available": expected}
+    assert response.json() == {"id": "SP001", "sku": "MSI-001", "quantity": quantity, "available": expected, "is_active": True}
     assert "so_luong_ton" not in response.text and "ma_kho" not in response.text
     assert all(call.method == "GET" for call in calls)
 
@@ -88,6 +89,21 @@ def test_cart_availability_combines_active_warehouses(catalog_client, product_ro
     assert web.get("/api/catalog/products/SP001/availability?quantity=6").json()["available"] is True
     assert web.get("/api/catalog/products/SP001/availability?quantity=8").json()["available"] is True
     assert web.get("/api/catalog/products/SP001/availability?quantity=9").json()["available"] is False
+
+
+def test_paused_product_is_not_purchasable_even_if_stock_exists(catalog_client, product_row):
+    web, state, requests, _ = catalog_client
+    product_row["trang_thai"] = 2
+    def handle(request):
+        assert request.method == "GET"
+        assert request.url.path.endswith("/SAN_PHAM"), "Paused products must not read or reserve stock"
+        assert request.url.params["trang_thai"] == "in.(1,2)"
+        return httpx.Response(200, json=[product_row])
+    state["handler"] = handle
+    response = web.get("/api/catalog/products/SP001/availability?quantity=1")
+    assert response.status_code == 200
+    assert response.json() == {"id": "SP001", "sku": "MSI-001", "quantity": 1, "available": False, "is_active": False}
+    assert len(requests) == 1
 
 
 @pytest.mark.parametrize("stock", [[], [{"sku": "MSI-001", "ma_kho": 1, "so_luong_ton": 0}]])

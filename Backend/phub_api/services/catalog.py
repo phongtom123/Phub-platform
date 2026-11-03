@@ -76,6 +76,7 @@ class CatalogService:
     def __init__(self, repository: CatalogRepository):
         self.repository = repository
         self.currency = repository.currency
+        self.active_status = getattr(repository, "active_status", 1)
 
     def availability(self, skus):
         try:
@@ -182,6 +183,7 @@ class CatalogService:
             images=images,
             specifications=specifications_from_text(raw_specs), specifications_text=raw_specs,
             color=product_color(raw_specs),
+            is_active=row.get("trang_thai", self.active_status) == self.active_status,
         )
 
     def list_products(self, filters: CatalogQuery) -> ProductPage:
@@ -196,7 +198,7 @@ class CatalogService:
             if filters.stock_status:
                 available = available_skus(self.repository, [product.sku for product in products])
                 for product in products:
-                    product.stock_status = StockStatus.IN_STOCK if product.sku in available else StockStatus.OUT_OF_STOCK
+                    product.stock_status = StockStatus.IN_STOCK if product.is_active and product.sku in available else StockStatus.OUT_OF_STOCK
                 products = [product for product in products if product.stock_status == filters.stock_status]
             total = len(products)
             start = (filters.page - 1) * filters.page_size
@@ -217,20 +219,22 @@ class CatalogService:
         available = available_skus(self.repository, [product.sku for product in products]) if filters.stock_status else None
         return build_facets(products, filters, available)
 
-    def get_product(self, product_id: str) -> CatalogProduct:
+    def get_product(self, product_id: str, include_inactive=False) -> CatalogProduct:
         try:
             identifier = clean_text(product_id)
         except ValueError:
             raise CatalogError(422, "VALIDATION_ERROR", "Mã sản phẩm không hợp lệ.") from None
         if not identifier:
             raise CatalogError(422, "VALIDATION_ERROR", "Mã sản phẩm không hợp lệ.")
-        row = self.repository.find(identifier)
+        row = self.repository.find(identifier, include_inactive)
         if row is None:
             raise CatalogError(404, "PRODUCT_NOT_FOUND", "Không tìm thấy sản phẩm.")
         return self.resolve_component_specs([self.product_from_row(row)])[0]
 
     def check_availability(self, product_id: str, quantity: int) -> ProductAvailability:
-        product = self.get_product(product_id)
+        product = self.get_product(product_id, include_inactive=True)
+        if not product.is_active:
+            return ProductAvailability(id=product.id, sku=product.sku, quantity=quantity, available=False, is_active=False)
         available = available_quantities(self.repository, [product.sku]).get(product.sku, 0)
         return ProductAvailability(id=product.id, sku=product.sku, quantity=quantity, available=available >= quantity)
 

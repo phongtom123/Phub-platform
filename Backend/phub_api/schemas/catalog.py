@@ -42,6 +42,7 @@ class CatalogQuery(BaseModel):
     )
 
     q: str | None = Field(default=None, max_length=100, description="Tìm chuỗi trong tên hoặc SKU, không phân biệt hoa/thường; ký tự đặc biệt được tìm nguyên văn.")
+    include_inactive: bool = Field(default=False, description="Hiện cả sản phẩm tạm ngừng (trạng thái 2), chỉ để xem; luôn loại sản phẩm đã ẩn (0), loại sản phẩm vẫn phải hoạt động.")
     category_id: list[Identifier] = Field(default_factory=list, max_length=20, description="Mã LOAI_SP; chỉ lọc các loại đã chọn. Lặp tham số để chọn nhiều loại, kết hợp bằng OR.")
     brand: str | None = Field(default=None, max_length=100, description="Giá trị thuong_hieu từ /api/catalog/brands; so khớp chính xác.")
     min_price: Decimal | None = Field(default=None, ge=0, max_digits=18, decimal_places=2, description="Giá thấp nhất, bao gồm mức này; giá trước thuế.")
@@ -165,6 +166,7 @@ class CatalogProduct(BaseModel):
     specifications_text: str | None = Field(description="Nội dung gốc của thong_so_ky_thuat, giữ nguyên khi dữ liệu là văn bản tự do.")
     color: str | None = None
     stock_status: StockStatus | None = Field(default=None, description="Trả trạng thái khả dụng khi dùng bộ lọc tồn kho; null khi chưa kiểm tra tồn.")
+    is_active: bool = Field(default=True, description="False khi admin tạm ngừng bán; không cho thêm giỏ hoặc mua.")
 
     @field_serializer("price", when_used="json")
     def serialize_price(self, value: Decimal) -> str:
@@ -176,6 +178,7 @@ class ProductAvailability(BaseModel):
     sku: str
     quantity: int = Field(ge=1)
     available: bool
+    is_active: bool = True
 
 
 class Pagination(BaseModel):

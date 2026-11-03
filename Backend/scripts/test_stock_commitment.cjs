@@ -5,7 +5,8 @@ const {PGlite}=require(process.env.PHUB_PGLITE_MODULE||'@electric-sql/pglite');
 (async()=>{
  const db=new PGlite();
  try{
-  const migrate=name=>db.exec(fs.readFileSync(path.join(__dirname,'../migrations',name),'utf8'));
+  // Text-rewriting migrations compare function bodies normalized to LF.
+  const migrate=name=>db.exec(fs.readFileSync(path.join(__dirname,'../migrations',name),'utf8').replace(/\r\n/g,'\n'));
   const scalar=async(sql,args=[]) => (await db.query(sql,args)).rows[0].r;
   await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
   for(const name of ['001_initial_schema.sql','20261004_customer_orders.sql','20261006_customer_checkout.sql','20261023_customer_support.sql','20261028132157_admin_operations.sql','20261102080347_automatic_checkout_invoice.sql','20261102130239_stock_based_cart_quantity.sql','20261102140733_multi_warehouse_customer_checkout.sql','20261102145332_checkout_total_warehouse_stock.sql'])await migrate(name);
