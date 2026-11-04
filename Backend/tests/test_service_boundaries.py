@@ -48,7 +48,7 @@ def test_account_service_prevents_self_lock_before_any_write():
 
 def test_availability_is_a_read_model_not_an_sdk_query_builder():
     repository = SimpleNamespace(
-        reservations=lambda *args: [{"sku": "S", "ma_kho_xuat": -1, "so_luong": 3}],
+        reservations=lambda *args: [{"sku": "S", "ma_kho_xuat": -1, "so_luong": 3, "order": {"invoice": [{"ma_hoadon": "HD"}]}}],
         stock=lambda *args: [{"sku": "S", "ma_kho": -1, "so_luong_ton": 3}, {"sku": "T", "ma_kho": 2, "so_luong_ton": 1}],
     )
     assert available_skus(repository, ["S", "T"]) == {"T"}

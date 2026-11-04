@@ -104,19 +104,23 @@ async function main() {
     for (const resource of resources.slice(1, 5)) {
       await page.goto(detailUrl);
       await page.getByRole("navigation", { name: "Thông tin đơn hàng" }).getByRole("link", { name: resource.title, exact: true }).click();
+      await page.waitForURL(url => new URL(url).searchParams.get("order_id") === order);
       await page.locator(".live-table").waitFor();
       assert.equal(new URL(page.url()).searchParams.get("order_id"), order);
       const crumb = page.getByRole("navigation", { name: "Breadcrumb", exact: true });
       assert.equal(await crumb.count(), 1);
       assert.ok((await crumb.innerText()).includes(order));
       await page.getByRole("button", { name: "Làm mới", exact: true }).click();
+      await page.waitForURL(url => new URL(url).searchParams.get("order_id") === order);
       await page.locator(".live-table").waitFor();
       await page.getByRole("button", { name: "Tìm kiếm", exact: true }).click();
+      await page.waitForURL(url => new URL(url).searchParams.get("order_id") === order);
       await page.locator(".live-table").waitFor();
       await page.locator(".live-table").getByRole("link", { name: "Chi tiết", exact: true }).click();
       await page.locator(".live-field").first().waitFor();
       assert.equal(new URL(page.url()).searchParams.get("order_id"), order);
       await page.getByRole("button", { name: "← Quay lại", exact: true }).click();
+      await page.waitForURL(url => new URL(url).searchParams.get("order_id") === order);
       await page.locator(".live-table").waitFor();
       assert.equal(new URL(page.url()).searchParams.get("order_id"), order);
       await page.getByRole("navigation", { name: "Breadcrumb", exact: true }).getByRole("link", { name: order, exact: true }).click();

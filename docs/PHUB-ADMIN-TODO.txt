@@ -54,20 +54,20 @@ Nghiệm thu:
 ============================================================
 3. THANH THAO TÁC THEO BƯỚC TIẾP THEO
 ============================================================
-[ ] Mỗi trạng thái có một nút chính dễ nhận biết:
+[x] Mỗi trạng thái có một nút chính dễ nhận biết:
     MOI             : Xác nhận đơn.
     XAC_NHAN        : Chuẩn bị hàng.
     DANG_CHUAN_BI   : Xác nhận xuất kho.
     DA_XUAT_KHO     : Hoàn thành đơn khi đã giao xong và đủ điều kiện.
     HOAN_THANH/HUY  : Xem kết quả và lịch sử; không hiện thao tác sai trạng thái.
-[ ] Đưa Phân công, Hủy và Hoàn tiền vào nhóm Thao tác khác.
-[ ] Chỉ cho ghi nhận thêm tiền khi còn phải thu; khi đủ tiền hiện Đã thanh toán đủ.
-[ ] Thiếu điều kiện phải giải thích rõ ngay cạnh thao tác, ví dụ còn thiếu tiền,
+[x] Đưa Phân công, Hủy và Hoàn tiền vào nhóm Thao tác khác.
+[x] Chỉ cho ghi nhận thêm tiền khi còn phải thu; khi đủ tiền hiện Đã thanh toán đủ.
+[x] Thiếu điều kiện phải giải thích rõ ngay cạnh thao tác, ví dụ còn thiếu tiền,
     chưa có hóa đơn, thiếu tồn hoặc trạng thái vừa thay đổi.
-[ ] Tách trạng thái giao hàng và trạng thái thanh toán. Đơn COD có thể xuất kho
+[x] Tách trạng thái giao hàng và trạng thái thanh toán. Đơn COD có thể xuất kho
     trước khi thu tiền theo quy định hiện tại; hoàn thành phải kiểm tra thu đủ.
-[ ] Không tự hoàn thành đơn chỉ vì thanh toán hoặc bypass thành công.
-[ ] Sau thao tác thành công, cập nhật nội dung tại chỗ, giữ vị trí cuộn.
+[x] Không tự hoàn thành đơn chỉ vì thanh toán hoặc bypass thành công.
+[x] Sau thao tác thành công, cập nhật nội dung tại chỗ, giữ vị trí cuộn.
     Lỗi backend phải giữ trạng thái lỗi, không báo lưu thành công.
 
 ============================================================

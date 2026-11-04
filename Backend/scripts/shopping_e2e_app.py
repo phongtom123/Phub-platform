@@ -163,7 +163,7 @@ def database(request):
             payload = json.loads(request.content)
             if table == "customer_address_v1":
                 return httpx.Response(200, json=addresses(payload))
-            if table in {"customer_checkout_v2", "customer_checkout_multi_warehouse_v1"}:
+            if table in {"customer_checkout_v2", "customer_checkout_multi_warehouse_v1", "customer_checkout_fulfillment_v1"}:
                 return httpx.Response(200, json=checkout(payload))
             if table == "customer_cancel_order_v1":
                 owner, order_id = payload["p_customer_id"], payload["p_order_id"]
@@ -185,7 +185,7 @@ def database(request):
                         "ma_giao_dich": f"REFUND-{order_id}", "ma_thanh_toan": f"REFUND-PAYMENT-{order_id}",
                     })
                 return httpx.Response(200, json={"order": public_detail(order)})
-            if table == "customer_read_orders_v2":
+            if table in {"customer_read_orders_v2", "customer_read_orders_v4"}:
                 owned = [order for order in state["orders"].values() if order["owner"] == payload["p_customer_id"]]
                 if payload["p_order_id"] is not None:
                     order = next((order for order in owned if order["id"] == payload["p_order_id"]), None)
