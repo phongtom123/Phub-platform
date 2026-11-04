@@ -1,9 +1,17 @@
+from datetime import datetime
 from decimal import Decimal, InvalidOperation, localcontext
 
 from fastapi import HTTPException
 
 from phub_api.models.resources import RESOURCES, public_columns
 from phub_api.repositories.tables import clean
+
+
+ORDER_STATUSES = {"MOI", "XAC_NHAN", "DANG_CHUAN_BI", "DA_XUAT_KHO", "HOAN_THANH", "HUY"}
+STATUS_BEFORE_ACTION = {
+    "confirm": "MOI", "prepare": "XAC_NHAN", "dispatch": "DANG_CHUAN_BI",
+    "complete": "DA_XUAT_KHO", "create": None, "cancel": None,
+}
 
 
 def money(value):
@@ -56,6 +64,40 @@ def public_row(name, row):
     return {key: value for key, value in clean([row])[0].items() if key in allowed}
 
 
+def order_history(rows):
+    if not isinstance(rows, list) or len(rows) > 100_000:
+        raise HTTPException(409, "Lịch sử xử lý đơn không hợp lệ hoặc quá lớn.")
+    result, keys = [], set()
+    for row in rows:
+        if not isinstance(row, dict):
+            raise HTTPException(409, "Lịch sử xử lý đơn không hợp lệ.")
+        key, action = row.get("key"), row.get("action")
+        actor_id, actor_name = row.get("actor_id"), row.get("actor_name")
+        occurred_at, to_status = row.get("occurred_at"), row.get("to_status")
+        try:
+            parsed_at = datetime.fromisoformat(occurred_at.replace("Z", "+00:00"))
+        except (AttributeError, ValueError):
+            parsed_at = None
+        if (not isinstance(key, str) or not key or key in keys or
+                not isinstance(action, str) or not action or
+                not isinstance(actor_id, str) or not actor_id or
+                actor_name is not None and (not isinstance(actor_name, str) or not actor_name.strip()) or
+                parsed_at is None or parsed_at.tzinfo is None or
+                to_status not in ORDER_STATUSES):
+            raise HTTPException(409, "Lịch sử xử lý đơn không hợp lệ.")
+        keys.add(key)
+        result.append({
+            "key": key, "actor_id": actor_id, "actor_name": actor_name,
+            "occurred_at": occurred_at, "action": action,
+            # State-changing actions are guarded by the transaction's exact
+            # source state. Cancel accepts several source states, so it stays
+            # unknown instead of fabricating one from surrounding events.
+            "from_status": STATUS_BEFORE_ACTION.get(action, to_status),
+            "to_status": to_status,
+        })
+    return result
+
+
 class AdminOrderDetailService:
     def __init__(self, repository, user):
         self.repository, self.user = repository, user
@@ -102,10 +144,12 @@ class AdminOrderDetailService:
         vouchers = self.children("voucher-uses", order_id)
         customer = self.repository.customer(order.get("ma_kh"))
         employee = self.repository.employee(order.get("ma_nhan_vien"))
+        history = order_history(self.repository.history(order_id, self.user.account_id))
         return {
             "order_id": order_id, "order": order,
             "customer": {k: customer.get(k) for k in ("ma_kh", "ten_kh", "sdt")} if customer else None,
             "employee": {k: employee.get(k) for k in ("ma_nhan_vien", "ho_ten")} if employee else None,
             "lines": lines, "invoice": invoice, "payments": payments, "voucher_uses": vouchers,
+            "history": history,
             "financial": financial_summary(invoice, payments),
         }

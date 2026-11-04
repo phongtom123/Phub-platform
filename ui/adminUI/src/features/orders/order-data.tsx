@@ -95,7 +95,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     {Object.values(names).some(name => name === null) && <p className="live-note" role="status">
       Chưa tải được tên của một số hồ sơ. <button type="button" onClick={retry}>Tải lại tên</button>
     </p>}
-    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} financial={detailData?.financial} onRefresh={onRefresh} /> : <ScrollableTable><table>
+    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} detailData={detailData} onRefresh={onRefresh} /> : <ScrollableTable><table>
       <thead><tr>{visibleColumns.map(column => <th key={column.name}>{nameLabel(column.name)}</th>)}<th>Thao tác</th></tr></thead>
       <tbody>{rows.map(row => <tr key={JSON.stringify(keys.map(key => row[key]))}>
         {visibleColumns.map(column => <td key={column.name}>{cell(row, column)}</td>)}

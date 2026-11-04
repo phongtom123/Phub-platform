@@ -565,5 +565,15 @@ tổng và số còn phải thu được ghi rõ là chưa xác định, không 
 Khối tự cập nhật theo phiên bản trang sau thao tác, thăm dò 10 giây theo
 `useAdminPolling`, và có nút cập nhật thủ công. Lỗi đọc dữ liệu được hiển thị rõ.
 
+Từ ngày 04/11/2026, trang này cũng hiển thị trực tiếp các dòng sản phẩm theo
+kho xuất, thông tin và chức năng in hóa đơn, lịch sử thu/hoàn tiền cùng lịch sử
+xử lý của Admin. Các trang Hóa đơn và Thanh toán riêng vẫn được giữ cho tra cứu
+và báo cáo. Khi aggregate xác nhận đã có hóa đơn hoặc đã thu đủ, thanh thao tác
+không mời lập hóa đơn hay ghi nhận thêm khoản thu. Backend phải cùng phiên bản
+và đã áp dụng migration `20261104100000_admin_order_history.sql` để cung cấp
+lịch sử xử lý thật; giao diện không tự dựng lịch sử cũ.
+
 Kiểm thử với HTTP fixtures, không ghi dữ liệu thật:
-`node tests/order-financial-summary.e2e.cjs` (đặt `PHUB_ADMIN_TEST_URL` theo port admin).
+`node tests/order-detail-format.test.cjs`, `node tests/order-financial-summary.e2e.cjs`
+và `node tests/order-navigation.e2e.cjs` (đặt `PHUB_ADMIN_TEST_URL` theo port admin
+cho các bài E2E).

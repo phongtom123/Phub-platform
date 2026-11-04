@@ -21,6 +21,7 @@ import { useAdminAuth } from "../../components/admin/auth-provider";
 import { ReceiptPricing, ReceiptPricingSummary } from "../pricing/pricing-editor";
 import { pricingRequest, confirmationMessage, type PriceInputs, type ReceiptPriceQuote } from "../../../../shared/pricing";
 import { InvoiceCreator } from "./invoice-creator";
+import type { AdminOrderDetailData } from "../orders/order-detail-data";
 
 const actions: Record<
   string,
@@ -71,12 +72,14 @@ export function OperationPanel({
   create = false,
   onChanged,
   onEditingChange,
+  orderDetail,
 }: {
   resource: string;
   row?: DataRow;
   create?: boolean;
   onChanged: () => void;
   onEditingChange?: (editing: boolean) => void;
+  orderDetail?: AdminOrderDetailData;
 }) {
   const router = useRouter();
   const { user } = useAdminAuth();
@@ -108,6 +111,10 @@ export function OperationPanel({
     submitting = useRef(false);
   const status = String(row?.trang_thai ?? ""),
     id = row && ids[resource] ? String(row[ids[resource]]) : null;
+  const invoiceExists = Boolean(
+    orderDetail?.invoice || orderDetail?.financial.invoice_id,
+  );
+  const fullyPaid = orderDetail?.financial.remaining === "0.00";
   const recordIdentity = resource === "inventory"
     ? JSON.stringify([row?.ma_kho, row?.sku])
     : id ?? "new";
@@ -336,6 +343,14 @@ export function OperationPanel({
       <div className="live-tools">
         {(actions[resource] ?? [])
           .filter((a) => a.states.includes(status))
+          .filter(
+            (a) =>
+              !(
+                resource === "orders" &&
+                a.action === "invoice" &&
+                invoiceExists
+              ),
+          )
           .map((a) => (
             <button
               key={a.action}
@@ -371,12 +386,18 @@ export function OperationPanel({
           )}
         {resource === "orders" && status !== "HUY" && !create && (
           <>
-            <button
-              disabled={busy || Boolean(pending.current)}
-              onClick={() => { if (mode !== "payment") setCollectionReady(false); setMode("payment"); }}
-            >
-              Ghi nhận thu tiền
-            </button>
+            {fullyPaid ? (
+              <span className="live-note" role="status">
+                Đã thanh toán đủ
+              </span>
+            ) : (
+              <button
+                disabled={busy || Boolean(pending.current)}
+                onClick={() => { if (mode !== "payment") setCollectionReady(false); setMode("payment"); }}
+              >
+                Ghi nhận thu tiền
+              </button>
+            )}
             <button
               disabled={busy || Boolean(pending.current)}
               onClick={() => { setAmount(""); setMethod("TIEN_MAT"); setReference(""); setMode("refund"); }}
@@ -638,7 +659,7 @@ export function OperationPanel({
               orderId={id}
               disabled={busy || Boolean(pending.current)}
               onChange={updateCollection}
-              onInvoice={actions.orders.find(action => action.action === "invoice")?.states.includes(status)
+              onInvoice={!invoiceExists && actions.orders.find(action => action.action === "invoice")?.states.includes(status)
                 ? () => { if (window.confirm("Lập hóa đơn từ thông tin đơn hàng?")) void run("invoice"); }
                 : undefined}
             />}
