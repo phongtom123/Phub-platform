@@ -26,3 +26,13 @@ class AdminOrderDetailRepository:
         rows = (self.client.table("NHAN_VIEN").select("ma_nhan_vien,ho_ten")
                 .eq("ma_nhan_vien", employee_id).limit(1).execute().data)
         return rows[0] if rows else None
+
+    def history(self, order_id, actor_id):
+        """Read the projection exposed by the service-only audit RPC.
+
+        The RPC deliberately returns neither request hashes nor saved command
+        results because those contain more order data than the timeline needs.
+        """
+        return self.client.rpc("admin_order_history_v1", {
+            "p_actor": actor_id, "p_order_id": order_id,
+        }).execute().data

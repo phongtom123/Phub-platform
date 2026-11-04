@@ -24,10 +24,16 @@ const payment = (id, amount, type='THU', status='THANH_CONG', method='TIEN_MAT')
       const json=(body,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
       if(path==='auth/me')return json({account_id:'AD1',username:'admin',name:'Admin',role:'ADMIN',employee_id:'NV1'});
       if(path==='data/resources')return json(resources);
-      if(path===`admin/orders/${order.ma_donhang}/detail`)return json({
-        order_id:order.ma_donhang,order,customer:null,employee:null,lines:[],invoice:null,payments:[],voucher_uses:[],
-        financial:{invoice_id:'HD-TEST',invoice_status:'DA_LAP',payment_status:'THU_MOT_PHAN',total:'1000.30',collected:'200.10',refunded:'50.05',paid:'150.05',remaining:'850.25'},
-      });
+      if(path===`admin/orders/${order.ma_donhang}/detail`){
+        const paid=mode==='aggregate-paid',missing=mode==='aggregate-missing';
+        return json({
+          order_id:order.ma_donhang,order,customer:null,employee:null,lines:[],payments:[],voucher_uses:[],history:[],
+          invoice:missing?null:{ma_hoadon:'HD-TEST',ma_donhang:order.ma_donhang,tong_tien_sau_thue:'1000.30'},
+          financial:{invoice_id:missing?null:'HD-TEST',invoice_status:missing?'CHUA_LAP':'DA_LAP',
+            payment_status:missing?'CHUA_CO_HOA_DON':paid?'DA_THU_DU':'THU_MOT_PHAN',total:missing?null:'1000.30',
+            collected:paid?'1000.30':'200.10',refunded:paid?'0.00':'50.05',paid:paid?'1000.30':'150.05',remaining:missing?null:paid?'0.00':'850.25'},
+        });
+      }
       if(request.method()==='POST'){
         assert.equal(path,'admin/operations/orders');
         writes.push({body:request.postDataJSON(),key:request.headers()['idempotency-key']});
@@ -92,7 +98,7 @@ const payment = (id, amount, type='THU', status='THANH_CONG', method='TIEN_MAT')
 
     mode='paid';await open();await page.getByText('Đơn hàng đã thu đủ tiền',{exact:true}).waitFor();assert.ok(await submit.isDisabled());await close();
     mode='missing';await open();await page.getByText('Đơn hàng chưa có hóa đơn',{exact:true}).waitFor();assert.ok(await submit.isDisabled());
-    await page.getByRole('button',{name:'Lập hóa đơn từ đơn hàng',exact:true}).waitFor();assert.equal(writes.length,2,'missing invoice must never create an automatic payment or invoice');await close();
+    assert.equal(await page.getByRole('button',{name:'Lập hóa đơn từ đơn hàng',exact:true}).count(),0,'an aggregate that already has an invoice must never offer duplicate issuance');assert.equal(writes.length,2,'missing invoice must never create an automatic payment or invoice');await close();
     for(const invalid of ['wrong','incomplete','unavailable']){
       mode=invalid;await open();await page.getByRole('button',{name:'Tải lại thông tin thanh toán',exact:true}).waitFor();assert.ok(await submit.isDisabled());await close();
     }
@@ -113,7 +119,21 @@ const payment = (id, amount, type='THU', status='THANH_CONG', method='TIEN_MAT')
     await page.getByRole('status').filter({hasText:'không ghi lặp'}).waitFor();
     assert.deepEqual(writes.at(-1).body.data,{amount:'5.25',method:'TIEN_MAT'});
     assert.notEqual(writes.at(-1).key,writes[0].key,'a different payment uses a new idempotency key');
+
+    mode='aggregate-paid';await page.reload();
+    await page.getByRole('status').filter({hasText:'Đã thanh toán đủ'}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Ghi nhận thu tiền',exact:true}).count(),0,'a fully paid aggregate must not offer another collection');
+    assert.equal(await page.getByRole('button',{name:'Lập hóa đơn',exact:true}).count(),0,'an existing invoice must not offer duplicate issuance');
+    assert.equal(await page.getByRole('button',{name:'Ghi nhận hoàn tiền',exact:true}).count(),1,'a paid order still permits a real refund');
+
+    mode='aggregate-missing';await page.reload();
+    await page.getByRole('button',{name:'Lập hóa đơn',exact:true}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Ghi nhận thu tiền',exact:true}).count(),1,'an unpaid order keeps its collection workflow');
+
+    mode='aggregate-outstanding';await page.reload();
+    await page.getByRole('button',{name:'Ghi nhận thu tiền',exact:true}).waitFor();
+    assert.equal(await page.getByRole('button',{name:'Lập hóa đơn',exact:true}).count(),0,'an outstanding order with an invoice must not offer duplicate issuance');
     assert.deepEqual(errors,[]);assert.deepEqual(consoleErrors,[]);
-    console.log('PASS: exact outstanding balance/refunds, suggested method, no repeated input, optional partial payment, immutable retry, paid/missing/invalid states, pagination, large amounts, mobile, no runtime errors');
+    console.log('PASS: exact outstanding balance/refunds, suggested method, no repeated input, optional partial payment, immutable retry, aggregate action gating, paid/missing/invalid states, pagination, large amounts, mobile, no runtime errors');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

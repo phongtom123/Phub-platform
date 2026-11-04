@@ -40,8 +40,15 @@ async function main() {
         order_id: order,
         order: { ma_donhang: order, ma_kh: "CUST-1", ma_nhan_vien: "EMP-1", kenh_ban: "ONLINE", trang_thai: "HOAN_THANH", thoi_gian_dat: "2026-10-25T08:30:00", ten_nguoi_nhan: "Người nhận đơn", sdt_nguoi_nhan: "0901234567" },
         customer: { ma_kh: "CUST-1", ten_kh: "Nguyễn Văn Khách" }, employee: { ma_nhan_vien: "EMP-1", ho_ten: "Trần Thị Nhân Viên" },
-        lines: [], invoice: null, payments: [], voucher_uses: [],
-        financial: { invoice_id: null, invoice_status: "CHUA_LAP", payment_status: "CHUA_CO_HOA_DON", total: null, collected: "0.00", refunded: "0.00", paid: "0.00", remaining: null },
+        lines: [{ ma_ct_donhang: 1, ma_donhang: order, sku: "SKU-1", ma_kho_xuat: 2, ten_sp_luc_ban: "Sản phẩm thử", don_vi_luc_ban: "Cái", so_luong: 1,
+          don_gia: "1000.30", giam_gia: "50.05", giam_gia_voucher: "0.00", thue_suat: "0.00", tien_thue: "0.00", thanh_tien: "950.25" }],
+        invoice: { ma_hoadon: "INV-INLINE", ma_donhang: order, thoi_gian_lap: "2026-10-25T09:00:00+07:00", ten_nguoi_mua: "Nguyễn Văn Khách",
+          dia_chi_nguoi_mua: "Địa chỉ hóa đơn", tong_tien_giam: "50.05", tong_tien_truoc_thue: "950.25", tong_tien_thue: "0.00", tong_tien_sau_thue: "950.25",
+          nguoi_lap: "EMP-1", nguon_lap: "QUAN_TRI", ma_tk_lap: null },
+        payments: [{ ma_thanh_toan: 1, ma_donhang: order, so_tien: "950.25", loai_giao_dich: "THU", phuong_thuc: "TIEN_MAT", trang_thai: "THANH_CONG",
+          thoi_gian: "2026-10-25T09:05:00+07:00", la_bypass: true, ma_tk_ghi_nhan: "TK-TEST" }], voucher_uses: [],
+        history: [{ key: "history-1", actor_id: "TK-TEST", actor_name: "Admin Test", occurred_at: "2026-10-25T09:10:00+07:00", action: "complete", from_status: "DA_XUAT_KHO", to_status: "HOAN_THANH" }],
+        financial: { invoice_id: "INV-INLINE", invoice_status: "DA_LAP", payment_status: "DA_THU_DU", total: "950.25", collected: "950.25", refunded: "0.00", paid: "950.25", remaining: "0.00" },
       });
       if (url.pathname === "/api/backend/admin/operations/read/settings") return respond({store_name:"PHUB",store_address:"",store_phone:"",low_stock_threshold:5});
       if (url.pathname === "/api/backend/admin/operations/read/summary") return respond({counts:{orders:2,products:1,customers:1,inventory:1},orders:[],statuses:[],channels:[],inventory:[],revenue:"0",collected:"0",top_products:[],start:"2026-10-01",end:"2026-10-28"});
@@ -87,6 +94,11 @@ async function main() {
     await page.locator(".live-field").getByRole("link", { name: "Nguyễn Văn Khách", exact: true }).waitFor();
     const detailText = await page.locator(".order-detail").innerText();
     for (const full of ["CUST-1", "EMP-1", "Hoàn thành", "Người nhận đơn", "0901234567"]) assert.ok(detailText.includes(full));
+    for (const heading of ["Sản phẩm trong đơn", "Hóa đơn INV-INLINE", "Lịch sử thu và hoàn tiền", "Lịch sử xử lý"]) {
+      await page.getByRole("heading", { name: heading, exact: true }).waitFor();
+    }
+    await page.getByRole("button", { name: "In / lưu PDF", exact: true }).waitFor();
+    for (const text of ["SKU-1", "Kho xuất", "Tiền mặt", "Admin Test", "Đã xuất kho → Hoàn thành", "Hóa đơn: Đã lập"]) assert.ok(detailText.includes(text));
     assert.equal(await related.getByRole("link").count(), 4);
     const detailUrl = page.url();
     for (const resource of resources.slice(1, 5)) {

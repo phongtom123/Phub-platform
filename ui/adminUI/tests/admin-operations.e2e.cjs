@@ -181,7 +181,7 @@ const rows = {
       if (p === "data/resources") return respond(resources);
       if (p === "admin/orders/DH1/detail") return respond({
         order_id: "DH1", order: rows.orders[0], customer: rows.customers[0], employee: rows.employees[0],
-        lines: [], invoice: null, payments: [], voucher_uses: [],
+        lines: [], invoice: null, payments: [], voucher_uses: [], history: [],
         financial: { invoice_id: null, invoice_status: "CHUA_LAP", payment_status: "CHUA_CO_HOA_DON",
           total: null, collected: "0.00", refunded: "0.00", paid: "0.00", remaining: null },
       });

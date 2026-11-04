@@ -1,5 +1,5 @@
 PHUB — DANH SÁCH VIỆC CẦN LÀM TIẾP CHO ADMIN
-Cập nhật: 02/11/2026
+Cập nhật: 04/11/2026
 Mục tiêu: xử lý trọn một đơn hàng trên một trang, rõ hóa đơn, tiền và tồn kho.
 Đây là danh sách công việc dự kiến; [ ] nghĩa là chưa đánh dấu hoàn tất.
 
@@ -21,27 +21,30 @@ Hủy đơn và hoàn tiền phải tuân theo trạng thái, số tiền và l�
 ============================================================
 2. ƯU TIÊN CAO NHẤT — GOM XỬ LÝ VÀO CHI TIẾT ĐƠN
 ============================================================
-[ ] Dùng trang Chi tiết đơn hiện tại làm nơi xử lý chính, không tạo thêm trang
+[x] Dùng trang Chi tiết đơn hiện tại làm nơi xử lý chính, không tạo thêm trang
     trung gian bắt Admin phải chuyển qua lại.
-[ ] Hiện khối tóm tắt: mã đơn, khách hàng, trạng thái đơn, trạng thái hóa đơn,
+[x] Hiện khối tóm tắt: mã đơn, khách hàng, trạng thái đơn, trạng thái hóa đơn,
     tổng hóa đơn, đã thu, đã hoàn và số còn phải thu.
     Đã bổ sung ngày 03/11/2026: bốn số Tổng hóa đơn sau thuế / Đã thu /
     Đã hoàn / Còn phải thu ngay trong Chi tiết đơn, không cần mở form thu tiền.
     Dùng chung logic tiền chính xác với form thu tiền; chỉ tính giao dịch thành công.
     Tự tải lại sau thao tác, kiểm tra mỗi 10 giây khi trang đang hiển thị và
-    không nhập liệu; có nút Cập nhật thanh toán. Trạng thái hóa đơn còn cần bổ sung.
+    không nhập liệu; có nút Cập nhật thanh toán. Đã bổ sung trạng thái hóa đơn ngày
+    04/11/2026.
 [x] API tổng hợp một đơn: GET /api/admin/orders/{order_id}/detail (03/11/2026).
     Trả đơn, khách, nhân viên, dòng sản phẩm theo kho, hóa đơn, giao dịch,
     voucher và số tổng hợp tiền. Trang Chi tiết đơn Admin đã dùng API này.
     Chỉ ADMIN; phân trang nội bộ, không trả kết quả thiếu khi đọc lỗi.
-[ ] Hiện bảng sản phẩm ngay trong trang: SKU, số lượng, đơn giá, giảm giá,
+[x] Hiện bảng sản phẩm ngay trong trang: SKU, số lượng, đơn giá, giảm giá,
     thuế, thành tiền và kho xuất.
-[ ] Nhúng phần hóa đơn vào cùng trang: mã hóa đơn, ngày lập, người/nguồn lập,
+[x] Nhúng phần hóa đơn vào cùng trang: mã hóa đơn, ngày lập, người/nguồn lập,
     tổng tiền và chức năng xem/in. Đã có hóa đơn thì không hiện nút lập lại.
-[ ] Nhúng lịch sử thu/hoàn tiền của đúng đơn. Ghi nhận tiền bằng form hoặc
+[x] Nhúng lịch sử thu/hoàn tiền của đúng đơn. Ghi nhận tiền bằng form hoặc
     ngăn bên trong trang, không điều hướng sang danh sách giao dịch chung.
-[ ] Thêm lịch sử xử lý: ai thực hiện, thời điểm, thao tác và trạng thái thay đổi.
-[ ] Giữ các trang Hóa đơn và Thanh toán riêng để tra cứu, báo cáo; không bắt buộc
+[x] Thêm lịch sử xử lý: ai thực hiện, thời điểm, thao tác và trạng thái thay đổi.
+    Hoàn tất ngày 04/11/2026 bằng lịch sử lệnh thành công từ admin_ops.requests;
+    không dựng lại lịch sử cũ hoặc đoán trạng thái trước của thao tác hủy.
+[x] Giữ các trang Hóa đơn và Thanh toán riêng để tra cứu, báo cáo; không bắt buộc
     đi qua các trang đó khi xử lý một đơn.
 
 Nghiệm thu:

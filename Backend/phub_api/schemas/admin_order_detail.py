@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel
@@ -14,6 +15,16 @@ class OrderFinancialSummary(BaseModel):
     remaining: str | None
 
 
+class OrderHistoryEvent(BaseModel):
+    key: str
+    actor_id: str | None
+    actor_name: str | None
+    occurred_at: datetime
+    action: str
+    from_status: str | None
+    to_status: str | None
+
+
 class AdminOrderDetail(BaseModel):
     order_id: str
     order: dict[str, Any]
@@ -23,4 +34,5 @@ class AdminOrderDetail(BaseModel):
     invoice: dict[str, Any] | None
     payments: list[dict[str, Any]]
     voucher_uses: list[dict[str, Any]]
+    history: list[OrderHistoryEvent]
     financial: OrderFinancialSummary

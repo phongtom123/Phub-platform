@@ -356,6 +356,13 @@
           "financial": {
             "$ref": "#/components/schemas/OrderFinancialSummary"
           },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/OrderHistoryEvent"
+            },
+            "title": "History",
+            "type": "array"
+          },
           "invoice": {
             "anyOf": [
               {
@@ -411,6 +418,7 @@
           "invoice",
           "payments",
           "voucher_uses",
+          "history",
           "financial"
         ],
         "title": "AdminOrderDetail",
@@ -5308,6 +5316,78 @@
           "remaining"
         ],
         "title": "OrderFinancialSummary",
+        "type": "object"
+      },
+      "OrderHistoryEvent": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "from_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Status"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "to_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Status"
+          }
+        },
+        "required": [
+          "key",
+          "actor_id",
+          "actor_name",
+          "occurred_at",
+          "action",
+          "from_status",
+          "to_status"
+        ],
+        "title": "OrderHistoryEvent",
         "type": "object"
       },
       "OrderItem": {

@@ -18,6 +18,7 @@ export function OrderFinancialSummary({ orderId, version, financial, onRefresh }
     if (canApply()) setSnapshot({ identity, data });
   });
   const data = financial ?? (snapshot?.identity === identity ? snapshot.data : null);
+  const invoiceIssued = data ? ("invoice_status" in data ? data.invoice_status === "DA_LAP" : data.invoiceId !== null) : false;
   const values = data ? [
     ["Tổng hóa đơn", data.total === null ? "Chưa có hóa đơn" : formatMoney(data.total)],
     ["Đã thu", formatMoney(data.collected)],
@@ -27,7 +28,9 @@ export function OrderFinancialSummary({ orderId, version, financial, onRefresh }
 
   return <section className={styles.summary} aria-label="Tổng hợp hóa đơn và thanh toán" aria-busy={!data && !error}>
     <div className={styles.heading}>
-      <h2>Hóa đơn và thanh toán</h2>
+      <div className={styles.title}><h2>Hóa đơn và thanh toán</h2>{data && <span className={invoiceIssued ? styles.issued : styles.missing}>
+        Hóa đơn: {invoiceIssued ? "Đã lập" : "Chưa lập"}
+      </span>}</div>
       <button type="button" onClick={() => financial && onRefresh ? onRefresh() : setRetry(value => value + 1)}>Cập nhật thanh toán</button>
     </div>
     {data && <>

@@ -1,4 +1,5 @@
 from copy import deepcopy
+import json
 
 import httpx
 import pytest
@@ -21,7 +22,11 @@ def detail_client():
         "ma_thanh_toan": id, "ma_donhang": ORDER, "so_tien": amount,
         "loai_giao_dich": kind, "trang_thai": status,
     }
-    state = {"actor": ADMIN, "bad_count": False, "db_error": False, "tables": {
+    state = {"actor": ADMIN, "bad_count": False, "db_error": False, "history": [{
+        "key": "11111111-1111-4111-8111-111111111111", "actor_id": "TK1",
+        "actor_name": "Admin", "occurred_at": "2026-11-04T01:02:03Z",
+        "action": "confirm", "to_status": "XAC_NHAN",
+    }], "tables": {
         "DON_HANG": [{"ma_donhang": ORDER, "ma_kh": "KH1", "ma_nhan_vien": "NV1", "trang_thai": "XAC_NHAN", "secret": "hidden"}],
         "KHACH_HANG": [{"ma_kh": "KH1", "ten_kh": "Customer", "sdt": "123", "mat_khau": "hidden"}],
         "NHAN_VIEN": [{"ma_nhan_vien": "NV1", "ho_ten": "Admin", "luong": "hidden", "cccd": "hidden"}],
@@ -33,6 +38,12 @@ def detail_client():
     requests = []
     def handle(request):
         requests.append(request)
+        if request.url.path.endswith("/rpc/admin_order_history_v1"):
+            assert request.method == "POST"
+            assert json.loads(request.read()) == {"p_actor": "TK1", "p_order_id": ORDER}
+            if state["db_error"]:
+                return httpx.Response(500, json={"code": "XX000", "message": "internal db error"})
+            return httpx.Response(200, json=deepcopy(state["history"]))
         assert request.method == "GET"
         name = request.url.path.rsplit("/", 1)[-1]
         if state["db_error"] and name == "THANH_TOAN":
@@ -67,12 +78,17 @@ def test_full_aggregate_is_scoped_private_and_exact(detail_client):
     assert body["invoice"]["ma_hoadon"] == "HD1" and body["voucher_uses"] == []
     assert body["customer"] == {"ma_kh": "KH1", "ten_kh": "Customer", "sdt": "123"}
     assert body["employee"] == {"ma_nhan_vien": "NV1", "ho_ten": "Admin"}
+    assert body["history"] == [{
+        "key": "11111111-1111-4111-8111-111111111111", "actor_id": "TK1",
+        "actor_name": "Admin", "occurred_at": "2026-11-04T01:02:03Z",
+        "action": "confirm", "from_status": "MOI", "to_status": "XAC_NHAN",
+    }]
     assert "hidden" not in response.text
     assert body["financial"] == {
         "invoice_id": "HD1", "invoice_status": "DA_LAP", "payment_status": "THU_MOT_PHAN",
         "total": "1000.30", "collected": "200.10", "refunded": "50.05", "paid": "150.05", "remaining": "850.25",
     }
-    assert len(requests) == 7
+    assert len(requests) == 8
     assert "tong_tien_sau_thue::text" in next(r for r in requests if r.url.path.endswith("HOA_DON")).url.params["select"]
 
 
@@ -114,6 +130,30 @@ def test_no_invoice_and_guest_order(detail_client):
     assert body["invoice"] is body["customer"] is body["employee"] is None
     assert body["financial"]["total"] is body["financial"]["remaining"] is None
     assert body["financial"]["payment_status"] == "CHUA_CO_HOA_DON"
+
+
+def test_history_keeps_exact_transitions_and_does_not_invent_cancel_source(detail_client):
+    client, state, _ = detail_client
+    state["history"] = [
+        {"key": "1", "actor_id": "TK1", "actor_name": "Admin", "occurred_at": "2026-11-04T01:00:00Z", "action": "prepare", "to_status": "DANG_CHUAN_BI"},
+        {"key": "2", "actor_id": "TK1", "actor_name": "Admin", "occurred_at": "2026-11-04T02:00:00Z", "action": "invoice", "to_status": "DANG_CHUAN_BI"},
+        {"key": "3", "actor_id": "TK1", "actor_name": "Admin", "occurred_at": "2026-11-04T03:00:00Z", "action": "cancel", "to_status": "HUY"},
+    ]
+    history = client.get(URL).json()["history"]
+    assert history[0]["from_status"] == "XAC_NHAN"
+    assert history[1]["from_status"] == history[1]["to_status"] == "DANG_CHUAN_BI"
+    assert history[2]["from_status"] is None and history[2]["to_status"] == "HUY"
+
+
+@pytest.mark.parametrize("patch", [
+    {"to_status": "UNKNOWN"}, {"actor_id": ""}, {"occurred_at": None},
+])
+def test_invalid_processing_history_is_not_returned(detail_client, patch):
+    client, state, _ = detail_client
+    state["history"][0].update(patch)
+    response = client.get(URL)
+    assert response.status_code == 409
+    assert "history" not in response.json()
 
 
 @pytest.mark.parametrize("role", ["KHACH_HANG", "NHAN_VIEN"])

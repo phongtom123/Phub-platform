@@ -25,7 +25,7 @@ const order = { ma_donhang: 'SUMMARY-TEST', trang_thai: 'XAC_NHAN', kenh_ban: 'O
         detailReads++;
         if (mode === 'error') return json({ detail: 'Lỗi kiểm thử tải thanh toán' }, 503);
         const paid = mode === 'paid', missing = mode === 'missing';
-        return json({ order_id: order.ma_donhang, order, customer: null, employee: null, lines: [], payments: [], voucher_uses: [],
+        return json({ order_id: order.ma_donhang, order, customer: null, employee: null, lines: [], payments: [], voucher_uses: [], history: [],
           invoice: missing ? null : { ma_hoadon: 'HD1', ma_donhang: order.ma_donhang, tong_tien_sau_thue: '1000.30' },
           financial: { invoice_id: missing ? null : 'HD1', invoice_status: missing ? 'CHUA_LAP' : 'DA_LAP',
             payment_status: missing ? 'CHUA_CO_HOA_DON' : paid ? 'DA_THU_DU' : 'THU_MOT_PHAN',

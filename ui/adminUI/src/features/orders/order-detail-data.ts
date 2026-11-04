@@ -9,6 +9,15 @@ export type AdminOrderDetailData = {
   invoice: DataRow | null;
   payments: DataRow[];
   voucher_uses: DataRow[];
+  history: Array<{
+    key: string;
+    actor_id: string | null;
+    actor_name: string | null;
+    occurred_at: string;
+    action: string;
+    from_status: string | null;
+    to_status: string | null;
+  }>;
   financial: {
     invoice_id: string | null; invoice_status: "DA_LAP" | "CHUA_LAP";
     payment_status: "CHUA_CO_HOA_DON" | "CHUA_THU" | "THU_MOT_PHAN" | "DA_THU_DU" | "THU_THUA";

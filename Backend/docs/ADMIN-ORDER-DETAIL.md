@@ -14,6 +14,10 @@ Một HTTP request từ UI nhận toàn bộ dữ liệu đơn:
 - `invoice`: hóa đơn đã lập hoặc null.
 - `payments`: toàn bộ giao dịch, bao gồm chờ xử lý và thất bại để đối chiếu.
 - `voucher_uses`: các lượt voucher thuộc đúng đơn.
+- `history`: thao tác Admin thành công đã được sổ chống trùng `admin_ops.requests`
+  ghi nhận cho đúng đơn. Mỗi mục chỉ trả khóa sự kiện, tài khoản/tên người thực
+  hiện, thời điểm, thao tác và trạng thái trước/sau; không trả hash hay payload
+  kết quả của lệnh.
 - `financial`: tổng tiền và trạng thái được backend tính, ví dụ:
 
 ```json
@@ -47,12 +51,24 @@ Response thành công có Cache-Control: no-store. Không có thao tác ghi dữ
 Chưa phải snapshot database trong một transaction. Kiểm tra phân trang phát hiện
 thay đổi số dòng/trùng khóa, không đảm bảo phát hiện mọi cập nhật đồng thời giữ
 nguyên số dòng. Giao dịch thu tiền/xuất kho vẫn kiểm tra lại tại transaction hiện có.
-Không tạo lịch sử thao tác giả: API chưa cung cấp audit log vì chưa có nguồn dữ liệu đó.
+Lịch sử xử lý đọc qua RPC service-only `admin_order_history_v1`. Chỉ lệnh có
+`result` (transaction đã thành công) được hiển thị; lần retry cùng idempotency key
+không sinh thêm sự kiện. Trạng thái trước chỉ được điền với chuyển trạng thái có
+nguồn bắt buộc rõ trong transaction. Riêng hủy có thể bắt đầu từ nhiều trạng thái
+nên `from_status` là null thay vì suy đoán. Các thao tác trước khi bảng audit được
+cài đặt không được dựng lại giả từ trạng thái hiện tại.
 
-Trang Chi tiết đơn dùng kết quả này cho thông tin đơn, tên khách/nhân viên và
-khối tiền; không gọi riêng từng bảng khi mở đơn. Auth và metadata màn hình vẫn
-có request riêng. Khi mở form thu tiền, form vẫn đọc lại số dư để đối chiếu trước khi ghi.
+Trang Chi tiết đơn dùng kết quả này cho thông tin đơn, tên khách/nhân viên,
+khối tiền, bảng sản phẩm theo kho, hóa đơn, lịch sử thu/hoàn và lịch sử xử lý;
+không gọi riêng từng bảng khi mở đơn. Auth và metadata màn hình vẫn có request
+riêng. Khi mở form thu tiền, form vẫn đọc lại số dư để đối chiếu trước khi ghi.
+
+Áp dụng migration `20261104100000_admin_order_history.sql` cùng phiên bản backend.
 
 Kiểm thử offline: `python -m pytest tests/test_admin_order_detail.py tests/test_architecture.py -q`.
-Kiểm thử UI: `node tests/order-financial-summary.e2e.cjs` với PHUB_ADMIN_TEST_URL
-trỏ đến Admin local. Các test dùng MockTransport/HTTP fixtures, không ghi dữ liệu thật.
+Kiểm thử quyền và projection của RPC trên PostgreSQL RAM:
+`node tests/admin-order-history-sql.test.cjs` (có thể đặt `PHUB_PGLITE_MODULE`
+trỏ tới bản `@electric-sql/pglite` cài trong thư mục công cụ riêng).
+Kiểm thử UI: `node tests/order-financial-summary.e2e.cjs` và
+`node tests/order-navigation.e2e.cjs` với PHUB_ADMIN_TEST_URL trỏ đến Admin local.
+Các test dùng MockTransport/HTTP fixtures, không ghi dữ liệu thật.

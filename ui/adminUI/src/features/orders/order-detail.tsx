@@ -10,20 +10,21 @@ import { orderValue } from "./order-presentation";
 import styles from "./order-detail.module.css";
 import { OrderFinancialSummary } from "./order-financial-summary";
 import type { AdminOrderDetailData } from "./order-detail-data";
+import { OrderEmbeddedSections } from "./order-embedded-sections";
 
 type RelatedResource = { name: string; title: string };
 type Props = {
   row: DataRow; columns: DataColumn[]; related: RelatedResource[]; version: number;
-  financial?: AdminOrderDetailData["financial"]; onRefresh?: () => void;
+  detailData?: AdminOrderDetailData; onRefresh?: () => void;
   label: (field: string) => string;
   personName: (row: DataRow, field: "ma_kh" | "ma_nhan_vien") => ReactNode;
 };
 
 const relatedInfo = {
-  "order-lines": { icon: Package, description: "Sản phẩm và số lượng trong đơn" },
-  invoices: { icon: ReceiptText, description: "Hóa đơn và tổng tiền của đơn" },
-  payments: { icon: CreditCard, description: "Lịch sử giao dịch thanh toán" },
-  "voucher-uses": { icon: TicketPercent, description: "Mã giảm giá đã áp dụng" },
+  "order-lines": { icon: Package, description: "Tra cứu riêng các dòng sản phẩm" },
+  invoices: { icon: ReceiptText, description: "Tra cứu và báo cáo hóa đơn" },
+  payments: { icon: CreditCard, description: "Tra cứu giao dịch thanh toán" },
+  "voucher-uses": { icon: TicketPercent, description: "Tra cứu mã giảm giá đã áp dụng" },
 };
 const groupedFields = new Set([
   "ma_donhang", "ma_kh", "ma_nhan_vien", "kenh_ban", "trang_thai", "thoi_gian_dat",
@@ -36,7 +37,7 @@ const fieldLabels: Record<string, string> = {
   phuong_thuc_nhan: "Phương thức nhận hàng",
 };
 
-export function OrderDetail({ row, columns, related, label, personName, version, financial, onRefresh }: Props) {
+export function OrderDetail({ row, columns, related, label, personName, version, detailData, onRefresh }: Props) {
   const status = String(row.trang_thai ?? "");
   const complete = status === "HOAN_THANH";
   const cancelled = status === "HUY";
@@ -65,7 +66,7 @@ export function OrderDetail({ row, columns, related, label, personName, version,
       </div>
     </header>
 
-    <OrderFinancialSummary orderId={String(row.ma_donhang)} version={version} financial={financial} onRefresh={onRefresh} />
+    <OrderFinancialSummary orderId={String(row.ma_donhang)} version={version} financial={detailData?.financial} onRefresh={onRefresh} />
 
     <div className={styles.grid}>
       <section className={styles.card} aria-labelledby="order-delivery-title">
@@ -108,6 +109,8 @@ export function OrderDetail({ row, columns, related, label, personName, version,
       </section>
     </div>
 
+    {detailData && <OrderEmbeddedSections detail={detailData} />}
+
     {extraColumns.length > 0 && <section className={styles.card} aria-labelledby="order-additional-title">
       <h2 id="order-additional-title" className={styles.cardTitle}><FileText size={20} aria-hidden="true" />Thông tin bổ sung</h2>
       <dl className={styles.fields}>{extraColumns.map(column => field(column.name))}</dl>
@@ -115,8 +118,8 @@ export function OrderDetail({ row, columns, related, label, personName, version,
 
     {related.length > 0 && <section className={styles.relatedSection} aria-labelledby="order-related-title">
       <div className={styles.relatedHeading}>
-        <h2 id="order-related-title">Hồ sơ liên quan</h2>
-        <p>Sản phẩm, hóa đơn và các giao dịch của đơn hàng</p>
+        <h2 id="order-related-title">Trang tra cứu riêng</h2>
+        <p>Giữ lại cho tra cứu và báo cáo; không cần rời trang này để xử lý đơn.</p>
       </div>
       <nav className={styles.related} aria-label="Thông tin đơn hàng">
         {related.map(item => {

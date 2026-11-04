@@ -55,6 +55,50 @@
 .detail .date:last-child { padding-bottom: 0; border: 0; }
 .date dt { display: flex; align-items: center; gap: 8px; margin: 0; }
 .date dd { margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.sectionHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.sectionHeading h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 18px; }
+.sectionHeading h2 svg { color: #607b52; flex-shrink: 0; }
+.sectionHeading p { margin: 4px 0 0; color: #737e70; font-size: 13px; }
+.sectionActions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.sectionActions button, .sectionActions a { min-height: 37px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 11px; border: 1px solid #cbd8c7; border-radius: 8px; background: #fff; color: #295d27; cursor: pointer; font: inherit; font-size: 13px; font-weight: 650; text-decoration: none; }
+.sectionActions button:hover, .sectionActions a:hover { border-color: #80a777; background: #f8fcf6; }
+.tableCard { overflow: hidden; }
+.orderTable { border: 1px solid #e3e8e0; border-radius: 11px; }
+.orderTable table { min-width: 910px; width: 100%; border-collapse: collapse; }
+.orderTable th, .orderTable td { padding: 12px 13px; border-bottom: 1px solid #ebeee9; text-align: right; white-space: nowrap; vertical-align: top; }
+.orderTable th:first-child, .orderTable td:first-child { min-width: 190px; text-align: left; white-space: normal; }
+.orderTable th { background: #f5f8f3; color: #576351; font-size: 12px; font-weight: 700; }
+.orderTable td { font-size: 13px; }
+.orderTable tbody tr:last-child td { border-bottom: 0; }
+.orderTable small { display: block; margin-top: 3px; color: #7d8578; font-size: 11px; }
+.invoiceCard { background: linear-gradient(180deg, #fbfef9, #fff 150px); }
+.invoiceMeta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0 0 18px; }
+.invoiceMeta > div { min-width: 0; padding: 14px 15px; border: 1px solid #e5eae2; border-radius: 10px; background: #fff; }
+.invoiceMeta dt, .invoiceTotals dt { color: #747f70; font-size: 12px; }
+.invoiceMeta dd, .invoiceTotals dd { margin: 5px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+.invoiceAddress { grid-column: span 2; }
+.invoiceTotals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid #dfe6dc; border-radius: 11px; background: #dfe6dc; }
+.invoiceTotals > div { min-width: 0; padding: 15px; background: #fff; }
+.invoiceTotals > div:last-child { background: #eaf5e7; color: #285c24; }
+.invoiceTotals dd { font-size: 17px; font-variant-numeric: tabular-nums; }
+.cancelledInvoice { margin: 0 0 18px; padding: 11px 14px; border: 1px solid #eccdca; border-radius: 8px; background: #fff1ef; color: #a73535; font-weight: 700; }
+.printLineCount { margin: 13px 0 0; color: #737d70; font-size: 12px; }
+.historyGrid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr); gap: 24px; align-items: start; }
+.historyGrid .card { height: 100%; box-sizing: border-box; }
+.transactionType { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.collection { background: #e9f6e8; color: #2a702b; }
+.refund { background: #fff0ed; color: #aa4036; }
+.negativeMoney { color: #a53a32; font-weight: 700; }
+.timeline { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.timeline li { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 11px; padding-bottom: 20px; }
+.timeline li:not(:last-child)::before { content: ""; position: absolute; top: 28px; bottom: 0; left: 14px; width: 1px; background: #dce4d8; }
+.timelineIcon { position: relative; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #edf5e9; color: #577a47; }
+.timelineHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.timelineHeading strong { font-size: 14px; }
+.timelineHeading time { color: #727d6e; font-size: 11px; }
+.timeline p { margin: 4px 0 0; color: #5f695c; font-size: 12px; line-height: 1.5; }
+.timeline .transition { color: #344b31; font-weight: 600; }
+.empty { margin: 0; padding: 20px; border: 1px dashed #d6dfd2; border-radius: 10px; background: #fafcf9; color: #6f796c; text-align: center; }
 .relatedHeading { margin-bottom: 16px; }
 .detail .relatedHeading h2 { margin: 0 0 3px; font-size: 18px; }
 .relatedHeading p { margin: 0; color: #7a8274; font-size: 14px; }
@@ -71,9 +115,13 @@
 @media (max-width: 1300px) {
   .related { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 18px; }
+  .historyGrid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 1050px) {
   .grid { grid-template-columns: minmax(0, 1fr); }
+  .invoiceMeta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .invoiceAddress { grid-column: span 2; }
+  .invoiceTotals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
   .detail { gap: 20px; }
@@ -84,4 +132,21 @@
   .related { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .detail .relatedLink { padding: 16px; }
   .date dd { font-size: 14px; }
+  .sectionActions { width: 100%; }
+  .sectionActions button, .sectionActions a { flex: 1; }
+  .invoiceMeta, .invoiceTotals { grid-template-columns: minmax(0, 1fr); }
+  .invoiceAddress { grid-column: auto; }
+}
+
+@media print {
+  :global(body.phub-order-invoice-print) .detail { display: block !important; color: #000; }
+  :global(body.phub-order-invoice-print) .detail > * { display: none !important; }
+  :global(body.phub-order-invoice-print) .detail > :global(.order-invoice-block),
+  :global(body.phub-order-invoice-print) .detail > :global(.order-lines-block) { display: block !important; margin: 0 0 18px; padding: 0; border: 0; box-shadow: none; }
+  :global(body.phub-order-invoice-print) .detail :global(.order-invoice-actions) { display: none !important; }
+  :global(body.phub-order-invoice-print) .detail :global([data-table-scrollbar]) { display: none !important; }
+  :global(body.phub-order-invoice-print) .detail :global([data-table-scroll-viewport]) { overflow: visible !important; }
+  :global(body.phub-order-invoice-print) .detail :global(.order-lines-block table) { width: 100% !important; min-width: 0 !important; font-size: 10px; }
+  :global(body.phub-order-invoice-print) .detail :global(.order-lines-block th),
+  :global(body.phub-order-invoice-print) .detail :global(.order-lines-block td) { padding: 7px 6px; white-space: normal; }
 }

@@ -86,7 +86,10 @@ async function readDataPage(resource: string, params: URLSearchParams, options: 
   if (!Array.isArray(keys) || keys.length !== 1 || typeof keys[0] !== "string" || !keys[0]) throw new Error("Mã đơn hàng không hợp lệ.");
   const detail = await api<AdminOrderDetailData>(`admin/orders/${encodeURIComponent(keys[0])}/detail`, options);
   if (detail.order_id !== keys[0] || detail.order?.ma_donhang !== keys[0] || !detail.financial ||
-      !Array.isArray(detail.lines) || !Array.isArray(detail.payments)) throw new Error("API chưa trả đúng chi tiết đơn hàng.");
+      !Array.isArray(detail.lines) || !Array.isArray(detail.payments) || !Array.isArray(detail.voucher_uses) ||
+      !Array.isArray(detail.history) || !(detail.invoice === null || typeof detail.invoice === "object")) {
+    throw new Error("API chưa trả đúng chi tiết đơn hàng.");
+  }
   return { data: [detail.order], total: 1, page: 1, page_size: 1, order_id: detail.order_id, order_detail: detail };
 }
 
@@ -310,7 +313,8 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {notice && <p className="live-note image-save-error" role="status">{notice} {result?.data[0] && <Link prefetch={false} href={href(result.data[0])}>Xem chi tiết</Link>}</p>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving || (resource === "products" && (!galleryReady || ((!view.create || persistedKey.current !== null) && !galleryDirty && !dirty.length)))}>{uploading ? "Đang lưu ảnh…" : saving ? "Đang lưu…" : "Lưu dữ liệu"}</button>{!saving && <Link href={dataHref(resource, { key: persistedKey.current ?? view.key, orderId: view.orderId })}>Hủy</Link>}</div>
       </form> : view.key && result?.data[0] ? <>
-        {["orders", "receipts", "inventory"].includes(resource) && <OperationPanel key={`${resource}:${view.key}`} resource={resource} row={result.data[0]} onChanged={refresh} onEditingChange={setInlineEditing} />}
+        {["orders", "receipts", "inventory"].includes(resource) && <OperationPanel key={`${resource}:${view.key}`} resource={resource} row={result.data[0]}
+          orderDetail={resource === "orders" ? result.order_detail : undefined} onChanged={refresh} onEditingChange={setInlineEditing} />}
         {resource === "promotions" && <PromotionBannerPreview mediaId={String(result.data[0].ma_media_banner ?? "")} name={String(result.data[0].ten_chuong_trinh ?? "")} />}
         <div className={resource === "products" ? "product-detail-layout" : undefined}>
         {resource === "products" && <ProductGalleryPreview key={String(result.data[0].ma_sp)} productId={String(result.data[0].ma_sp)}

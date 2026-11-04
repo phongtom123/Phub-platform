@@ -1,6 +1,10 @@
 .summary { border: 1px solid #dce5de; border-radius: 16px; padding: 22px; background: #fff; min-width: 0; }
 .heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .heading h2 { margin: 0; font-size: 18px; }
+.title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.title span { display: inline-flex; align-items: center; min-height: 27px; padding: 3px 9px; border: 1px solid; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.issued { color: #28643a; background: #edf8ef; border-color: #cce5d1 !important; }
+.missing { color: #895f13; background: #fff7e4; border-color: #eadcad !important; }
 .heading button { border: 1px solid #cbd9ce; border-radius: 8px; padding: 8px 12px; background: #fff; color: #286141; cursor: pointer; font: inherit; }
 .heading button:focus-visible { outline: 2px solid #286141; outline-offset: 3px; }
 .values { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; }
