@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useState } from "react";
 import { cancelOrder, validateOrder } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
@@ -9,6 +9,7 @@ import { CustomerGate, useShopping } from "./ShoppingProvider";
 import { useCustomerResource } from "./useCustomerResource";
 import { PaymentPanel } from "./PaymentPanel";
 import { InvoicePanel } from "./InvoicePanel";
+import type { PaymentDeadline } from "@/lib/shopping/types";
 import { orderStatus } from "./OrderHistory";
 import styles from "./shopping.module.css";
 export function OrderView({ id }: { id: string }) {
@@ -25,6 +26,8 @@ export function OrderView({ id }: { id: string }) {
   );
 }
 function Details({ id }: { id: string }) {
+  const [deadlineSnapshot, setDeadlineSnapshot] = useState<{ id: string; value: PaymentDeadline | null } | null>(null);
+  const receiveDeadline = useCallback((value: PaymentDeadline | null) => setDeadlineSnapshot({ id, value }), [id]);
   const { data, error, loading, reload } = useCustomerResource(
     `orders/${encodeURIComponent(id)}`,
     validateOrder,
@@ -95,11 +98,12 @@ function Details({ id }: { id: string }) {
             <h2>Đơn {data.id}</h2>
             <p>{orderStatus[data.status] || orderStatus.UNKNOWN}</p>
             <p>{data.created_at.replace("T", " ")}</p>
+            {data.fulfillment_method && <p><strong>{data.fulfillment_method === "TAI_CUA_HANG" ? "Nhận tại cửa hàng" : "Giao hàng tận nơi"}</strong></p>}
             <p>
               Người nhận: {data.recipient.name || "Chưa ghi nhận"} ·{" "}
               {data.recipient.phone || "Chưa ghi nhận"}
             </p>
-            <p>
+            {data.fulfillment_method !== "TAI_CUA_HANG" && <p>
               {[
                 data.recipient.address_line,
                 data.recipient.ward,
@@ -107,7 +111,7 @@ function Details({ id }: { id: string }) {
               ]
                 .filter(Boolean)
                 .join(", ") || "Chưa ghi nhận địa chỉ"}
-            </p>
+            </p>}
             {data.note && <p>Ghi chú: {data.note}</p>}
             <div className={styles.tableWrap}>
               <table className={styles.table}>
@@ -148,8 +152,9 @@ function Details({ id }: { id: string }) {
               hóa đơn, nếu có, được xác nhận tại bước lập hóa đơn.
             </p>
           </section>
-          <InvoicePanel orderId={data.id} />
-          <PaymentPanel orderId={data.id} orderStatus={data.status} />
+          <InvoicePanel orderId={data.id} onDeadlineChange={receiveDeadline} />
+          <PaymentPanel orderId={data.id} orderStatus={data.status}
+            paymentDeadline={deadlineSnapshot?.id === id ? deadlineSnapshot.value : data.payment_deadline} />
         </>
       )}
     </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
 import { PaymentPanel } from "@/components/shopping/PaymentPanel";
@@ -15,7 +15,8 @@ import {
   updateAddress,
 } from "@/lib/shopping/client";
 import { money, invoiceTotals } from "@/lib/shopping/money";
-import type { AddressBook, CustomerAddress, OrderRequest, Receipt } from "@/lib/shopping/types";
+import type { AddressBook, CustomerAddress, FulfillmentMethod, OrderRequest, PaymentDeadline, Receipt } from "@/lib/shopping/types";
+import { FulfillmentChoice } from "./FulfillmentChoice";
 import styles from "./checkout.module.css";
 
 // The address book used to live in localStorage; that stale copy of personal data is removed.
@@ -57,6 +58,13 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   // Order & Payment states. The note belongs to this order only (DON_HANG.ghi_chu).
   const [orderNote, setOrderNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer">("cod");
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>("GIAO_HANG");
+  const [pickupName, setPickupName] = useState<string | null>(null);
+  const [pickupPhone, setPickupPhone] = useState<string | null>(null);
+  const contactName = pickupName ?? shop.customer?.name ?? "";
+  const contactPhone = pickupPhone ?? shop.customer?.phone ?? "";
+  const normalizedPickupPhone = contactPhone.replace(/[ ()-]/g, "").trim();
+  const isPickup = fulfillmentMethod === "TAI_CUA_HANG";
   const [voucherCode, setVoucherCode] = useState("");
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
 
@@ -66,6 +74,11 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [orderReceipt, setOrderReceipt] = useState<Receipt | null>(null);
+  const [paymentDeadline, setPaymentDeadline] = useState<{ id: string; value: PaymentDeadline | null } | null>(null);
+  const receiptId = orderReceipt?.id;
+  const receiveDeadline = useCallback((value: PaymentDeadline | null) => {
+    if (receiptId) setPaymentDeadline({ id: receiptId, value });
+  }, [receiptId]);
   const placingOrder = useRef(false);
 
   // Show the book returned by the server and keep the selection when it still exists.
@@ -111,6 +124,12 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
 
   // Currently selected address
   const currentAddress = addresses.find((a) => a.id === selectedAddressId) || addresses[0] || null;
+  const recipientReady = isPickup ? !!contactName.trim() && PHONE_PATTERN.test(normalizedPickupPhone) : !!currentAddress;
+  const chooseFulfillment = (method: FulfillmentMethod) => {
+    setFulfillmentMethod(method);
+    setViewMode(method === "TAI_CUA_HANG" || addresses.length > 0 ? "order" : "shipping_form");
+    setSubmitError("");
+  };
 
   // Handle open shipping form for Add New (prefilled with the account name/phone)
   const handleOpenAddAddress = (first = addresses.length === 0) => {
@@ -220,7 +239,11 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   // 4. Handle "Đặt hàng" tại trang Đặt hàng
   const handlePlaceOrder = async () => {
     if (placingOrder.current) return;
-    if (!currentAddress) {
+    if (!recipientReady) {
+      if (isPickup) {
+        setSubmitError("Vui lòng nhập tên và số điện thoại hợp lệ của người đến nhận.");
+        return;
+      }
       setSubmitError("Vui lòng nhập và chọn thông tin giao hàng trước khi đặt hàng.");
       setViewMode("shipping_form");
       return;
@@ -235,13 +258,9 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
     setSubmitError("");
 
     const orderBody: OrderRequest = {
-      recipient: {
-        name: currentAddress.name,
-        phone: currentAddress.phone,
-        address_line: currentAddress.address_line,
-        province: currentAddress.province,
-        ward: currentAddress.ward,
-      },
+      ...(isPickup ? { fulfillment_method: "TAI_CUA_HANG" as const, recipient: { name: contactName.trim(), phone: normalizedPickupPhone } } :
+        { recipient: { name: currentAddress!.name, phone: currentAddress!.phone, address_line: currentAddress!.address_line,
+          province: currentAddress!.province, ward: currentAddress!.ward } }),
       note: orderNote.trim() || null,
       voucher_code: quote.voucher_code,
       expected_discount: quote.discount_total,
@@ -305,6 +324,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
             <p style={{ fontSize: 16, margin: "0 0 8px" }}>
               Mã đơn hàng: <strong>{orderReceipt.id}</strong>
             </p>
+            <p>{orderReceipt.fulfillment_method === "TAI_CUA_HANG" ? "Nhận tại cửa hàng" : "Giao hàng tận nơi"} · {orderReceipt.recipient.name} · {orderReceipt.recipient.phone}</p>
             <p style={{ color: "#555", fontSize: 14, margin: "0 0 20px" }}>
               Thành tiền sau thuế: <strong>{money(invoiceTotals(orderReceipt).total, orderReceipt.currency)}</strong>
             </p>
@@ -353,8 +373,9 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               </Link>
             </div>
           </div>
-          <InvoicePanel orderId={orderReceipt.id} />
-          {shop.customer?.payment_bypass_enabled && <PaymentPanel orderId={orderReceipt.id} />}
+          <InvoicePanel orderId={orderReceipt.id} onDeadlineChange={receiveDeadline} />
+          {shop.customer?.payment_bypass_enabled && <PaymentPanel orderId={orderReceipt.id}
+            paymentDeadline={paymentDeadline?.id === orderReceipt.id ? paymentDeadline.value : undefined} />}
         </div>
       </main>
     );
@@ -441,11 +462,12 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
     );
   }
 
-  if (addressError && addresses.length === 0) {
+  if (addressError && addresses.length === 0 && !isPickup) {
     return (
       <main className={styles.page}>
         <div className={styles.container}>
           <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <FulfillmentChoice value={fulfillmentMethod} onChange={chooseFulfillment} disabled={submitting} />
             <p style={{ color: "#c62828" }}>⚠️ {addressError}</p>
             <button
               type="button"
@@ -469,7 +491,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   // GIAO DIỆN 1: FORM "THÔNG TIN GIAO HÀNG"
   // (Không có phương thức thanh toán, không có cột bên phải, tiêu đề "Thông tin giao hàng", nút "Xác nhận")
   // ==========================================
-  if (viewMode === "shipping_form") {
+  if (viewMode === "shipping_form" && !isPickup) {
     return (
       <main className={styles.page}>
         <div className={styles.container}>
@@ -486,6 +508,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
           </div>
 
           <div className={styles.singleFormContainer}>
+            <FulfillmentChoice value={fulfillmentMethod} onChange={chooseFulfillment} disabled={savingAddress} />
             {formError && (
               <div
                 style={{
@@ -650,8 +673,16 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
 
         <div className={styles.layout}>
           <div className={styles.checkoutMain}>
+            <FulfillmentChoice value={fulfillmentMethod} onChange={chooseFulfillment} disabled={submitting || savingAddress} />
             {/* 1. KHỐI THÔNG TIN GIAO HÀNG */}
-            <div className={styles.addressBox}>
+            {isPickup ? <section className={styles.addressBox} aria-label="Thông tin nhận tại cửa hàng">
+              <div className={styles.addressBoxHeader}><h3>Nhận tại cửa hàng</h3></div>
+              <p>Đến cửa hàng nhận hàng sau khi đơn được xác nhận. Vui lòng cung cấp thông tin người đến nhận.</p>
+              <div className={styles.pickupContact}>
+                <label>Tên người đến nhận *<input value={contactName} maxLength={100} autoComplete="name" onChange={e => setPickupName(e.target.value)} /></label>
+                <label>Số điện thoại người đến nhận *<input type="tel" value={contactPhone} maxLength={20} autoComplete="tel" onChange={e => setPickupPhone(e.target.value)} /></label>
+              </div>
+            </section> : <div className={styles.addressBox}>
               <div className={styles.addressBoxHeader}>
                 <h3>📍 Thông tin nhận hàng</h3>
                 <button
@@ -758,6 +789,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               )}
             </div>
 
+            }
             {/* 2. KHỐI GHI CHÚ ĐƠN HÀNG: thuộc đơn đang đặt, lưu ở DON_HANG.ghi_chu */}
             <div className={styles.addressBox}>
               <div className={styles.addressBoxHeader}>
@@ -804,10 +836,10 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                   />
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>
-                      Thanh toán khi nhận hàng (COD)
+                      {isPickup ? "Thanh toán tại cửa hàng" : "Thanh toán khi nhận hàng (COD)"}
                     </div>
                     <div style={{ fontSize: 12, color: "#666" }}>
-                      Thanh toán bằng tiền mặt khi shipper giao hàng đến nơi.
+                      {isPickup ? "Thanh toán khi đến cửa hàng nhận sản phẩm." : "Thanh toán bằng tiền mặt khi shipper giao hàng đến nơi."}
                     </div>
                   </div>
                 </label>
@@ -978,7 +1010,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               <button
                 type="button"
                 className={styles.placeOrder}
-                disabled={submitting || savingAddress || quoteLoading || !quote || !currentAddress}
+                disabled={submitting || savingAddress || quoteLoading || !quote || !recipientReady}
                 onClick={handlePlaceOrder}
                 style={{ width: "100%", fontSize: 16, height: 48 }}
               >

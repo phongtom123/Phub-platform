@@ -34,7 +34,7 @@ class OrderReadService:
         return result
 
     def summary(self, row, lines):
-        return dict(id=row["ma_donhang"], status=row["trang_thai"] if row["trang_thai"] in STATUSES else "UNKNOWN",
+        return dict(id=row["ma_donhang"], fulfillment_method=row.get("phuong_thuc_nhan"), status=row["trang_thai"] if row["trang_thai"] in STATUSES else "UNKNOWN",
                     created_at=row["thoi_gian_dat"], currency=self.currency,
                     total=sum((line.line_total for line in lines), Decimal(0)))
 
@@ -68,4 +68,5 @@ class OrderReadService:
             invoice = dict(issued_at=row["thoi_gian_lap"], discount_total=row["tong_tien_giam"],
                            subtotal=row["tong_tien_truoc_thue"], tax_total=row["tong_tien_thue"], total=row["tong_tien_sau_thue"])
         return InvoiceOverview(order_id=order_id, currency=self.currency, invoice=invoice,
-                               items=self.lines(order_id, owner) if invoice else [])
+                               items=self.lines(order_id, owner) if invoice else [],
+                               payment_deadline=self.repository.payment_deadline(order_id, owner) if invoice else None)

@@ -20,6 +20,10 @@ const products = [
         if (req.method() !== "GET") writes.push(endpoint);
         assert.equal(req.method(), "GET");
         if (endpoint.endsWith("/me")) return route.fulfill({ status: 401, json: { error: { message: "Guest" } } });
+        if (endpoint === "/api/catalog/purchase-states") return failed
+          ? route.fulfill({ status: 503, json: { error: { message: "Fixture offline" } } })
+          : route.fulfill({ json: { items: products.filter(p => url.searchParams.getAll("sku").includes(p.sku)).map(p => ({ id: p.id, sku: p.sku,
+            is_active: p.id !== "PAUSED" || !paused, available_quantity: p.id === "EMPTY" && empty ? 0 : 10 })) } });
         if (endpoint.match(/\/products\/[^/]+\/availability$/)) {
           const id = endpoint.split("/").at(-2), quantity = Number(url.searchParams.get("quantity"));
           requested.push([id, quantity]);
@@ -48,6 +52,7 @@ const products = [
       assert.equal(await stopped.getByRole("button").count(), 0);
       await add.click();
       await page.waitForFunction(() => JSON.parse(localStorage.getItem("phub-cart-guest-v1") || "[]")[0]?.quantity === 1);
+      await page.waitForFunction(() => document.querySelector('[aria-label="Thêm vào giỏ"]')?.disabled === false);
       assert.equal(new URL(page.url()).pathname, "/main/product");
       shouldFailAdd = true;
       await buy.click();
@@ -61,6 +66,7 @@ const products = [
       assert.equal(await active.getByRole("status").count(), 0, "Network error is not sold out");
       failed = false;
       await active.getByRole("button", { name: "Thử lại", exact: true }).click();
+      await buy.waitFor();
       empty = false; paused = false;
       await page.evaluate(() => window.dispatchEvent(new Event("focus")));
       await out.getByRole("button", { name: "Mua ngay", exact: true }).waitFor();

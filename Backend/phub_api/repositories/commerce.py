@@ -20,10 +20,11 @@ class CommerceRepository:
         return self.client.rpc("customer_address_v1", parameters).execute().data
 
     def checkout(self, parameters):
-        return self.client.rpc("customer_checkout_multi_warehouse_v1", parameters).execute().data
+        name = "customer_checkout_fulfillment_v1" if parameters["p_create"] else "customer_checkout_multi_warehouse_v1"
+        return self.client.rpc(name, parameters).execute().data
 
     def orders(self, parameters):
-        return self.client.rpc("customer_read_orders_v2", parameters).execute().data
+        return self.client.rpc("customer_read_orders_v4", parameters).execute().data
 
     def cancel_order(self, parameters):
         return self.client.rpc("customer_cancel_order_v1", parameters).execute().data

@@ -7,6 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool, field_serializer,
 from phub_api.schemas.catalog import Pagination
 from phub_api.schemas.orders import InputModel, Money, OrderItem, Recipient
 from phub_api.schemas.payments import OrderId
+from phub_api.schemas.payment_deadline import PaymentDeadline
+from phub_api.schemas.fulfillment import FulfillmentMethod, PickupContact, PickupRecipient
 
 
 class CartItem(InputModel):
@@ -34,7 +36,8 @@ class QuoteRequest(VoucherInput):
 
 
 class CustomerOrderRequest(VoucherInput):
-    recipient: Recipient
+    fulfillment_method: FulfillmentMethod = "GIAO_HANG"
+    recipient: Recipient | PickupContact
     items: list[OrderItem] = Field(min_length=1, max_length=1000)
     note: str | None = Field(default=None, max_length=2000)
     expected_discount: Money
@@ -51,12 +54,16 @@ class CustomerOrderRequest(VoucherInput):
 
     @model_validator(mode="after")
     def unique_allocations(self):
+        if (self.fulfillment_method == "GIAO_HANG") != isinstance(self.recipient, Recipient):
+            raise ValueError("Giao hàng cần địa chỉ đầy đủ; nhận tại cửa hàng chỉ cần tên và số điện thoại.")
         if len({(item.sku, item.warehouse_id) for item in self.items}) != len(self.items):
             raise ValueError("Mỗi SKU tại một kho chỉ được xuất hiện một lần trong đơn checkout.")
         return self
 
     def canonical_payload(self):
         payload = self.model_dump(mode="json")
+        if self.fulfillment_method == "GIAO_HANG":
+            payload.pop("fulfillment_method")  # Preserve legacy delivery request fingerprints.
         payload["items"].sort(key=lambda item: (item["sku"], item["warehouse_id"]))
         payload["note"] = payload["note"] or None
         return payload
@@ -122,12 +129,19 @@ class CheckoutQuote(MoneyOutput):
 
 
 class CustomerOrderReceipt(CheckoutQuote):
+    fulfillment_method: FulfillmentMethod = "GIAO_HANG"
     id: OrderId
     status: Literal["MOI"]
     sales_channel: Literal["ONLINE"]
     created_at: str
-    recipient: Recipient
+    recipient: Recipient | PickupRecipient
     note: str | None
+
+    @model_validator(mode="after")
+    def consistent_fulfillment(self):
+        if (self.fulfillment_method == "GIAO_HANG") != isinstance(self.recipient, Recipient):
+            raise ValueError("Receipt recipient does not match fulfillment method")
+        return self
 
 
 class CustomerProfile(BaseModel):
@@ -179,11 +193,13 @@ class OrderQuery(BaseModel):
 
 
 class OrderSummary(MoneyOutput):
+    fulfillment_method: FulfillmentMethod | None = None
     id: OrderId
     status: Literal["MOI", "XAC_NHAN", "DANG_CHUAN_BI", "DA_XUAT_KHO", "HOAN_THANH", "HUY", "UNKNOWN"]
     created_at: str
     currency: str = Field(pattern=r"^[A-Z]{3}$")
     total: Money
+    payment_deadline: "PaymentDeadline | None" = None
 
 
 class OrderPage(BaseModel):
@@ -233,3 +249,4 @@ class InvoiceOverview(BaseModel):
     currency: str = Field(pattern=r"^[A-Z]{3}$")
     invoice: InvoiceTotals | None
     items: list[StoredLine]
+    payment_deadline: "PaymentDeadline | None" = None

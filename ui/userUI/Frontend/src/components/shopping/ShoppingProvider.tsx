@@ -19,6 +19,7 @@ import {
   type StoredCartLine,
 } from "@/lib/shopping/cart-storage";
 import { getProductAvailability, readJson, validateProduct } from "@/lib/catalog/client";
+import { productStock } from "@/lib/catalog/product-stock-store";
 import { safeImageUrl } from "@/lib/catalog/types";
 import type { CartLine, CustomerProfile } from "@/lib/shopping/types";
 import styles from "./shopping.module.css";
@@ -33,6 +34,8 @@ interface ShoppingState {
   lines: CartLine[];
   selectedLines: CartLine[];
   cartLoading: boolean;
+  cartRestoring: boolean;
+  addingProductIds: string[];
   notice: string;
   count: number;
   availability: Record<string, number>;
@@ -80,7 +83,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [authMessage, setAuthMessage] = useState("");
   const [lines, setLines] = useState<CartLine[]>([]);
   const selectedLines = useMemo(() => lines.filter(line => line.selected !== false), [lines]);
-  const [cartLoading, setCartLoading] = useState(false);
+  const [cartRestoring, setCartRestoring] = useState(false);
+  const [addingProductIds, setAddingProductIds] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
   const [stockResult, setStockResult] = useState<{
     key: string; quantities: Record<string, number>; taxRate: string | null; error: string;
@@ -112,7 +116,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const linesRef = useRef<CartLine[]>([]);
   const sessionGeneration = useRef(0);
   const cartGeneration = useRef(0);
-  const adding = useRef(false);
+  const adding = useRef(new Set<string>());
   const persist = useCallback((next: CartLine[]) => {
     linesRef.current = next;
     setLines(next);
@@ -142,7 +146,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       id: string,
     ) => {
       const generation = ++cartGeneration.current;
-      setCartLoading(true);
+      setCartRestoring(true);
       const next: CartLine[] = [];
       try {
         for (const entry of entries) {
@@ -185,7 +189,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
             "Có sản phẩm không thể tải lại. Vui lòng kiểm tra hoặc xóa sản phẩm đó trước khi đặt hàng.",
           );
       } finally {
-        if (generation === cartGeneration.current) setCartLoading(false);
+        if (generation === cartGeneration.current) setCartRestoring(false);
       }
     },
     [],
@@ -252,7 +256,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         ++cartGeneration.current;
         linesRef.current = [];
         setLines([]);
-        setCartLoading(false);
+        setCartRestoring(false);
       }
     }
   }, [loadLines]);
@@ -283,13 +287,14 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       );
       return false;
     }
-    if (cartLoading || adding.current) return false;
+    if (cartRestoring || adding.current.has(product.id)) return false;
     if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY) {
       setNotice("Vui lòng nhập số lượng là số nguyên lớn hơn 0.");
       return false;
     }
-    adding.current = true;
-    setCartLoading(true);
+    const generation = cartGeneration.current;
+    adding.current.add(product.id);
+    setAddingProductIds([...adding.current]);
     try {
       const actual = validateProduct(
         await readJson(
@@ -299,7 +304,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
           ),
         ),
       );
-      if (owner.current !== id) return false;
+      if (owner.current !== id || cartGeneration.current !== generation) return false;
       if (actual.is_active === false) throw new Error("Sản phẩm đang tạm ngừng bán.");
       if (product.sku !== undefined && actual.sku !== product.sku)
         throw new Error("Sản phẩm đã thay đổi. Vui lòng chọn lại.");
@@ -307,7 +312,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       const requested = (before?.quantity || 0) + quantity;
       if (!Number.isSafeInteger(requested) || requested > MAX_QUANTITY) throw new Error("Số lượng quá lớn để xử lý. Vui lòng kiểm tra lại.");
       const available = await getProductAvailability(actual, requested);
-      if (owner.current !== id) return false;
+      if (owner.current !== id || cartGeneration.current !== generation) return false;
       if (!available) throw new Error("Không đủ hàng trong kho cho số lượng yêu cầu (đã tính cả sản phẩm có trong giỏ).");
       const current = linesRef.current;
       const existing = current.find((item) => item.sku === actual.sku);
@@ -352,8 +357,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
       );
       return false;
     } finally {
-      adding.current = false;
-      setCartLoading(false);
+      adding.current.delete(product.id);
+      setAddingProductIds([...adding.current]);
     }
   };
   const refreshCart = async () => {
@@ -363,7 +368,7 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const checkSelectedStock = async () => {
     const id = owner.current;
     const generation = sessionGeneration.current;
-    if (!id || cartLoading || !["authenticated", "guest"].includes(authStatus)) return false;
+    if (!id || cartRestoring || adding.current.size > 0 || !["authenticated", "guest"].includes(authStatus)) return false;
     const selected = linesRef.current.filter(line => line.selected !== false);
     if (!selected.length) return false;
     const selectionKey = (items: CartLine[]) => JSON.stringify(
@@ -418,6 +423,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     if (owner.current !== customerId) return;
     const quantities = new Map<string, number>();
     for (const item of items) quantities.set(item.sku, (quantities.get(item.sku) || 0) + item.quantity);
+    // The committed order may reserve stock. Discard its previous display cache.
+    for (const sku of quantities.keys()) productStock.reload(sku);
     persist(
       linesRef.current.flatMap((line) => {
         const remaining = line.quantity - (quantities.get(line.sku) || 0);
@@ -433,7 +440,11 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         authMessage,
         lines,
         selectedLines,
-        cartLoading,
+        // Checkout remains blocked until all additions finish, while product
+        // buttons use only restoration and their own product's pending state.
+        cartLoading: cartRestoring || addingProductIds.length > 0,
+        cartRestoring,
+        addingProductIds,
         availability,
         stockError,
         taxRate,

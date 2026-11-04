@@ -2253,6 +2253,15 @@
             "title": "Discount Total",
             "type": "string"
           },
+          "fulfillment_method": {
+            "default": "GIAO_HANG",
+            "enum": [
+              "GIAO_HANG",
+              "TAI_CUA_HANG"
+            ],
+            "title": "Fulfillment Method",
+            "type": "string"
+          },
           "id": {
             "maxLength": 100,
             "minLength": 1,
@@ -2280,7 +2289,15 @@
             "title": "Note"
           },
           "recipient": {
-            "$ref": "#/components/schemas/Recipient"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recipient"
+              },
+              {
+                "$ref": "#/components/schemas/PickupRecipient"
+              }
+            ],
+            "title": "Recipient"
           },
           "sales_channel": {
             "const": "ONLINE",
@@ -2378,6 +2395,15 @@
             ],
             "title": "Expected Total"
           },
+          "fulfillment_method": {
+            "default": "GIAO_HANG",
+            "enum": [
+              "GIAO_HANG",
+              "TAI_CUA_HANG"
+            ],
+            "title": "Fulfillment Method",
+            "type": "string"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/OrderItem"
@@ -2400,7 +2426,15 @@
             "title": "Note"
           },
           "recipient": {
-            "$ref": "#/components/schemas/Recipient"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recipient"
+              },
+              {
+                "$ref": "#/components/schemas/PickupContact"
+              }
+            ],
+            "title": "Recipient"
           },
           "voucher_code": {
             "anyOf": [
@@ -2695,6 +2729,7 @@
           "ma_donhang": "DH001",
           "ma_kh": "KH001",
           "ma_nhan_vien": "NV001",
+          "phuong_thuc_nhan": null,
           "sdt_nguoi_nhan": "0900000000",
           "ten_nguoi_nhan": "Khách hàng minh họa",
           "thoi_gian_dat": "2026-10-05T08:00:00+07:00",
@@ -2756,6 +2791,17 @@
               }
             ],
             "description": "ma_nhan_vien"
+          },
+          "phuong_thuc_nhan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "phuong_thuc_nhan"
           },
           "sdt_nguoi_nhan": {
             "anyOf": [
@@ -2840,6 +2886,7 @@
           "ma_kh",
           "ma_nhan_vien",
           "kenh_ban",
+          "phuong_thuc_nhan",
           "trang_thai",
           "thoi_gian_dat",
           "thoi_gian_xuat_kho",
@@ -3135,6 +3182,8 @@
         "additionalProperties": false,
         "example": {
           "dia_chi_nguoi_mua": null,
+          "han_thanh_toan": null,
+          "huy_qua_han_luc": null,
           "ma_donhang": "DH001",
           "ma_hoadon": "HD001",
           "ma_so_thue": null,
@@ -3159,6 +3208,30 @@
               }
             ],
             "description": "dia_chi_nguoi_mua"
+          },
+          "han_thanh_toan": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "han_thanh_toan"
+          },
+          "huy_qua_han_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "huy_qua_han_luc"
           },
           "ma_donhang": {
             "description": "ma_donhang",
@@ -3243,6 +3316,8 @@
           }
         },
         "required": [
+          "han_thanh_toan",
+          "huy_qua_han_luc",
           "ma_hoadon",
           "ma_donhang",
           "thoi_gian_lap",
@@ -3382,6 +3457,16 @@
             "minLength": 1,
             "title": "Order Id",
             "type": "string"
+          },
+          "payment_deadline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentDeadline"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5069,6 +5154,21 @@
             "title": "Currency",
             "type": "string"
           },
+          "fulfillment_method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "GIAO_HANG",
+                  "TAI_CUA_HANG"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fulfillment Method"
+          },
           "id": {
             "maxLength": 100,
             "minLength": 1,
@@ -5092,6 +5192,16 @@
               }
             ],
             "title": "Note"
+          },
+          "payment_deadline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentDeadline"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "recipient": {
             "$ref": "#/components/schemas/StoredRecipient"
@@ -5448,11 +5558,36 @@
             "title": "Currency",
             "type": "string"
           },
+          "fulfillment_method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "GIAO_HANG",
+                  "TAI_CUA_HANG"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fulfillment Method"
+          },
           "id": {
             "maxLength": 100,
             "minLength": 1,
             "title": "Id",
             "type": "string"
+          },
+          "payment_deadline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentDeadline"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "status": {
             "enum": [
@@ -5923,6 +6058,52 @@
         "title": "PasswordReset",
         "type": "object"
       },
+      "PaymentDeadline": {
+        "additionalProperties": false,
+        "properties": {
+          "expired_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expired At"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "server_now": {
+            "format": "date-time",
+            "title": "Server Now",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "awaiting_payment",
+              "payment_received",
+              "processing_expiry",
+              "expired",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expires_at",
+          "expired_at",
+          "server_now",
+          "status"
+        ],
+        "title": "PaymentDeadline",
+        "type": "object"
+      },
       "PaymentOverview": {
         "additionalProperties": false,
         "properties": {
@@ -6054,6 +6235,62 @@
           "message"
         ],
         "title": "PaymentTransaction",
+        "type": "object"
+      },
+      "PickupContact": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "pattern": "^\\+?[0-9]{8,15}$",
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone"
+        ],
+        "title": "PickupContact",
+        "type": "object"
+      },
+      "PickupRecipient": {
+        "additionalProperties": false,
+        "properties": {
+          "address_line": {
+            "title": "Address Line",
+            "type": "null"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "pattern": "^\\+?[0-9]{8,15}$",
+            "title": "Phone",
+            "type": "string"
+          },
+          "province": {
+            "title": "Province",
+            "type": "null"
+          },
+          "ward": {
+            "title": "Ward",
+            "type": "null"
+          }
+        },
+        "required": [
+          "name",
+          "phone"
+        ],
+        "title": "PickupRecipient",
         "type": "object"
       },
       "PricePreview": {
@@ -6361,6 +6598,52 @@
           "unpriced_lines"
         ],
         "title": "ProductProfit",
+        "type": "object"
+      },
+      "ProductPurchaseState": {
+        "properties": {
+          "available_quantity": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Available Quantity",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "is_active",
+          "available_quantity"
+        ],
+        "title": "ProductPurchaseState",
+        "type": "object"
+      },
+      "ProductPurchaseStates": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductPurchaseState"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ProductPurchaseStates",
         "type": "object"
       },
       "QuoteRequest": {
@@ -14563,6 +14846,102 @@
         ]
       }
     },
+    "/api/catalog/purchase-states": {
+      "get": {
+        "operationId": "purchase_states_api_catalog_purchase_states_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sku",
+            "required": true,
+            "schema": {
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 100,
+              "minItems": 1,
+              "title": "Sku",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPurchaseStates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Kiểm tra gộp trạng thái bán và tồn khả dụng của tối đa 100 SKU, không giữ hàng",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
     "/api/crm/customers/{customer_id}": {
       "get": {
         "operationId": "customer_detail_api_crm_customers__customer_id__get",
@@ -20146,6 +20525,8 @@
                   "data": [
                     {
                       "dia_chi_nguoi_mua": null,
+                      "han_thanh_toan": null,
+                      "huy_qua_han_luc": null,
                       "ma_donhang": "DH001",
                       "ma_hoadon": "HD001",
                       "ma_so_thue": null,
@@ -20611,6 +20992,7 @@
                       "ma_donhang": "DH001",
                       "ma_kh": "KH001",
                       "ma_nhan_vien": "NV001",
+                      "phuong_thuc_nhan": null,
                       "sdt_nguoi_nhan": "0900000000",
                       "ten_nguoi_nhan": "Khách hàng minh họa",
                       "thoi_gian_dat": "2026-10-05T08:00:00+07:00",

@@ -181,6 +181,17 @@ class ProductAvailability(BaseModel):
     is_active: bool = True
 
 
+class ProductPurchaseState(BaseModel):
+    id: str
+    sku: str
+    is_active: bool
+    available_quantity: int = Field(ge=0, le=2147483647)
+
+
+class ProductPurchaseStates(BaseModel):
+    items: list[ProductPurchaseState]
+
+
 class Pagination(BaseModel):
     page: int
     page_size: int

@@ -88,6 +88,17 @@ class CatalogService:
                           for sku, quantity in sorted(quantities.items())],
                 "tax_rate": format(settings.tax_rate, ".2f"), "currency": settings.currency}
 
+    def purchase_states(self, skus):
+        # Display-only batch: no media/specification loading, stock writes or
+        # shared server cache. Action/checkout checks remain authoritative.
+        rows = self.repository.purchase_states(skus)
+        active = [row["sku"] for row in rows if row["trang_thai"] == self.active_status]
+        quantities = available_quantities(self.repository, active)
+        return {"items": [{"id": row["ma_sp"], "sku": row["sku"],
+                           "is_active": row["trang_thai"] == self.active_status,
+                           "available_quantity": min(quantities.get(row["sku"], 0), 2147483647)}
+                          for row in rows]}
+
     def list_banners(self) -> list[CatalogBanner]:
         # Promotion timestamps are local wall times, matching checkout rules.
         zone_name = os.getenv("CHECKOUT_PROMOTION_TIMEZONE", "Asia/Ho_Chi_Minh")
