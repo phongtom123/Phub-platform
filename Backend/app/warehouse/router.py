@@ -4,10 +4,10 @@ from postgrest.exceptions import APIError
 from ..auth import User, current_user
 from ..supabase import get_supabase
 from .repository import ReceiptWorkflowError, WarehouseRepository
-from .schemas import OrderDispatchResult, ReceiptConfirmation, ReceiptWorkflowResult
+from .schemas import DispatchDraftRequest, DispatchWorkflowResult, OrderDispatchResult, ReceiptConfirmation, ReceiptWorkflowResult
 from .schemas import TransferWorkflowResult
 from .transfer_repository import TransferRepository, TransferWorkflowError
-from .drafts import DraftWorkflowResult, ReceiptDraftRequest, TransferDraftRequest, WarehouseOptionsResult, StocktakeDraftRequest, StocktakeWorkflowResult
+from .drafts import DraftWorkflowResult, ReceiptDraftRequest, TransferDraftRequest, WarehouseOptionsResult
 
 router = APIRouter(prefix="/api/warehouse", tags=["Warehouse Workflows"])
 
@@ -17,113 +17,31 @@ def get_repository():
 
 
 def _require_warehouse_scope(user: User, warehouse_id: int):
-    if user.role not in {"ADMIN", "THU_KHO"} or not user.employee_id:
+    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"} or not user.employee_id:
         raise HTTPException(403, "Role không được tạo phiếu kho.")
-    if user.role == "THU_KHO" and user.warehouse_id != warehouse_id:
+    if user.role == "NHAN_VIEN_KHO" and user.warehouse_id != warehouse_id:
         raise HTTPException(403, "Kho không thuộc phạm vi được phân quyền.")
 
 
 @router.get("/options", response_model=WarehouseOptionsResult, summary="Danh sách kho và nhà cung cấp dùng khi lập phiếu")
 def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
+    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"}:
         raise HTTPException(403, "Role không được lập phiếu kho.")
-    warehouse_query = db.table("KHO").select("ma_kho,ten_kho").eq("trang_thai", 1).order("ma_kho").limit(500)
-    if user.role == "THU_KHO":
-        if user.warehouse_id is None:
-            raise HTTPException(403, "Tài khoản thủ kho chưa được phân công kho.")
-        warehouse_query = warehouse_query.eq("ma_kho", user.warehouse_id)
-    warehouses = warehouse_query.execute().data
+    warehouses = db.table("KHO").select("ma_kho,ten_kho").eq("trang_thai", 1).order("ma_kho").limit(500).execute().data
     suppliers = db.table("NHA_CUNG_CAP").select("ma_ncc,ten_ncc").eq("trang_thai", 1).order("ma_ncc").limit(500).execute().data
     products = db.table("SAN_PHAM").select("sku,ten_sp").eq("trang_thai", 1).order("sku").limit(1000).execute().data
     return {"warehouses": warehouses, "suppliers": suppliers, "products": products}
 
 
-@router.get("/summary", summary="Tổng quan số liệu kho theo phiên đăng nhập")
-def warehouse_summary(user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
-        raise HTTPException(403, "Role không được xem tổng quan kho.")
-    inventory = db.table("TON_KHO").select("sku,so_luong_ton").limit(5000)
-    receipts = db.table("PHIEU_NHAP").select("trang_thai").limit(5000)
-    transfers = db.table("PHIEU_CHUYEN_KHO").select("trang_thai,ma_kho_xuat,ma_kho_nhan").limit(5000)
-    if user.role == "THU_KHO":
-        if user.warehouse_id is None:
-            raise HTTPException(403, "Tài khoản thủ kho chưa được phân công kho.")
-        inventory = inventory.eq("ma_kho", user.warehouse_id)
-        receipts = receipts.eq("ma_kho", user.warehouse_id)
-        transfers = transfers.or_(f"ma_kho_xuat.eq.{user.warehouse_id},ma_kho_nhan.eq.{user.warehouse_id}")
-    inventory_rows = inventory.execute().data
-    receipt_rows = receipts.execute().data
-    transfer_rows = transfers.execute().data
-    return {
-        "sku_count": len({row.get("sku") for row in inventory_rows}),
-        "total_quantity": sum(int(row.get("so_luong_ton") or 0) for row in inventory_rows),
-        "low_stock_count": sum(1 for row in inventory_rows if int(row.get("so_luong_ton") or 0) <= 0),
-        "pending_receipts": sum(1 for row in receipt_rows if row.get("trang_thai") in {"NHAP", "CHO_DUYET"}),
-        "pending_transfers": sum(1 for row in transfer_rows if row.get("trang_thai") in {"NHAP", "DANG_CHUYEN"}),
-    }
-
-
-@router.get("/stocktakes", summary="Danh sách phiên kiểm kê theo kho")
-def list_stocktakes(user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
-        raise HTTPException(403, "Role không được xem kiểm kê.")
-    query = db.table("PHIEU_KIEM_KE").select("ma_phieu_kiem,ma_phieu_code,ma_kho,ngay_tao,trang_thai,nguoi_tao,nguoi_duyet,ngay_duyet,ghi_chu,warehouse:KHO(ten_kho)").order("ngay_tao", desc=True).limit(500)
-    if user.role == "THU_KHO":
-        query = query.eq("ma_kho", user.warehouse_id)
-    return query.execute().data
-
-
-@router.post("/stocktakes/draft", response_model=StocktakeWorkflowResult, status_code=201,
-             summary="Tạo phiên kiểm kê nháp")
-def create_stocktake(body: StocktakeDraftRequest, user: User = Depends(current_user), db=Depends(get_supabase)):
-    _require_warehouse_scope(user, body.warehouse_id)
-    try:
-        result = db.rpc("create_stocktake_draft", {
-            "p_ma_kho": body.warehouse_id,
-            "p_nguoi_tao": user.employee_id,
-            "p_ghi_chu": body.note,
-            "p_lines": [line.model_dump() for line in body.lines],
-        }).execute().data
-        return {"data": result}
-    except APIError as exc:
-        raise HTTPException(422, "Không thể tạo phiên kiểm kê: " + str(exc.message or exc)) from None
-
-
-@router.post("/stocktakes/{stocktake_id}/submit", response_model=StocktakeWorkflowResult,
-             summary="Gửi phiên kiểm kê chờ duyệt")
-def submit_stocktake(stocktake_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
-        raise HTTPException(403, "Role không được gửi kiểm kê.")
-    if user.role == "THU_KHO":
-        row = db.table("PHIEU_KIEM_KE").select("ma_kho").eq("ma_phieu_kiem", stocktake_id).limit(1).execute().data
-        if not row:
-            raise HTTPException(404, "Không tìm thấy phiên kiểm kê.")
-        if row[0].get("ma_kho") != user.warehouse_id:
-            raise HTTPException(403, "Phiên kiểm kê không thuộc kho được phân quyền.")
-    try:
-        result = db.rpc("submit_stocktake", {"p_ma_phieu_kiem": stocktake_id}).execute().data
-        return {"data": result}
-    except APIError as exc:
-        raise HTTPException(409, "Không thể gửi phiên kiểm kê: " + str(exc.message or exc)) from None
-
-
-@router.post("/stocktakes/{stocktake_id}/approve", response_model=StocktakeWorkflowResult,
-             summary="Admin duyệt và cập nhật tồn kho từ kiểm kê")
-def approve_stocktake(stocktake_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role != "ADMIN":
-        raise HTTPException(403, "Chỉ ADMIN được duyệt kiểm kê.")
-    _require_employee(user)
-    try:
-        result = db.rpc("approve_stocktake", {"p_ma_phieu_kiem": stocktake_id, "p_nguoi_duyet": user.employee_id}).execute().data
-        return {"data": result}
-    except APIError as exc:
-        raise HTTPException(409, "Không thể duyệt phiên kiểm kê: " + str(exc.message or exc)) from None
-
-
 @router.get("/dispatches", summary="Danh sách phiếu xuất theo đơn hàng và kho")
 def list_dispatches(user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
+    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"}:
         raise HTTPException(403, "Role không được xem phiếu xuất.")
+    # Prefer independent dispatch documents created by warehouse staff.
+    documents = db.table("PHIEU_XUAT").select("ma_phieu_xuat,ma_phieu_code,ma_donhang,ma_kho_xuat,trang_thai,ngay_tao,nguoi_tao").order("ngay_tao", desc=True).limit(500).execute().data
+    if documents:
+        return [{"id": row["ma_phieu_code"], "recordId": row["ma_phieu_xuat"], "order": row["ma_donhang"], "warehouse": f"Kho #{row['ma_kho_xuat']}", "employeeCode": row.get("nguoi_tao") or "—", "items": "—", "created": row.get("ngay_tao"), "status": {"NHAP": "Nháp", "DA_XAC_NHAN": "Đã xác nhận", "DA_XUAT": "Đã xuất", "HUY": "Đã hủy"}.get(row["trang_thai"], row["trang_thai"]), "receiver": "—"} for row in documents if user.role == "ADMIN" or row["ma_kho_xuat"] == user.warehouse_id]
+    # Backward-compatible fallback for databases before the dispatch migration.
     # Load the complete allocation of each order. The dispatch RPC is atomic for
     # the whole order, so a warehouse worker must not see a multi-warehouse order
     # as if only the visible subset could be dispatched.
@@ -132,18 +50,18 @@ def list_dispatches(user: User = Depends(current_user), db=Depends(get_supabase)
     order_ids = list(dict.fromkeys(row["ma_donhang"] for row in lines))
     if not order_ids:
         return []
-    orders = db.table("DON_HANG").select("ma_donhang,trang_thai,thoi_gian_dat,ten_nguoi_nhan").in_("ma_donhang", order_ids).execute().data
+    orders = db.table("DON_HANG").select("ma_donhang,trang_thai,thoi_gian_dat,ten_nguoi_nhan,ma_nhan_vien").in_("ma_donhang", order_ids).execute().data
     order_map = {row["ma_donhang"]: row for row in orders}
     status_map = {"MOI": "Chờ xử lý", "XAC_NHAN": "Đã xác nhận", "DANG_CHUAN_BI": "Đang soạn", "DA_XUAT_KHO": "Đã xuất", "HOAN_THANH": "Hoàn tất", "HUY": "Đã hủy"}
     grouped: dict[str, dict] = {}
     for line in lines:
         order_id = line["ma_donhang"]
         order = order_map.get(order_id, {})
-        item = grouped.setdefault(order_id, {"id": f"PX-{order_id}", "recordId": order_id, "order": order_id, "warehouse": f"Kho #{line['ma_kho_xuat']}", "items": "", "created": order.get("thoi_gian_dat"), "status": status_map.get(order.get("trang_thai"), order.get("trang_thai", "—")), "receiver": order.get("ten_nguoi_nhan") or "—", "_sku_count": 0, "_quantity": 0})
+        item = grouped.setdefault(order_id, {"id": f"PX-{order_id}", "recordId": order_id, "order": order_id, "warehouse": f"Kho #{line['ma_kho_xuat']}", "employeeCode": order.get("ma_nhan_vien") or user.employee_id or "—", "items": "", "created": order.get("thoi_gian_dat"), "status": status_map.get(order.get("trang_thai"), order.get("trang_thai", "—")), "receiver": order.get("ten_nguoi_nhan") or "—", "_sku_count": 0, "_quantity": 0})
         item["_sku_count"] += 1
         item["_quantity"] += line["so_luong"]
     for item in grouped.values():
-        if user.role == "THU_KHO":
+        if user.role == "NHAN_VIEN_KHO":
             order_lines = [line for line in lines if line["ma_donhang"] == item["recordId"]]
             warehouses = {line["ma_kho_xuat"] for line in order_lines}
             if warehouses != {user.warehouse_id}:
@@ -151,33 +69,48 @@ def list_dispatches(user: User = Depends(current_user), db=Depends(get_supabase)
         item["items"] = f"{item.pop('_sku_count')} SKU · {item.pop('_quantity')} SP"
     return list(grouped.values())
 
+@router.post("/dispatches/draft", status_code=201)
+def create_dispatch_draft(body: DispatchDraftRequest, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_warehouse_scope(user, body.warehouse_id)
+    order = db.table("DON_HANG").select("ma_donhang,trang_thai").eq("ma_donhang", body.order_id).limit(1).execute().data
+    if not order: raise HTTPException(404, "Không tìm thấy đơn hàng.")
+    if order[0]["trang_thai"] in {"DA_XUAT_KHO", "HOAN_THANH", "HUY"}: raise HTTPException(409, "Đơn hàng không còn ở trạng thái có thể lập phiếu xuất.")
+    try:
+        result = db.rpc("create_dispatch_document", {"p_ma_donhang": body.order_id, "p_ma_kho_xuat": body.warehouse_id, "p_nguoi_tao": user.employee_id, "p_ghi_chu": body.note, "p_lines": [line.model_dump() for line in body.lines]}).execute().data
+        return {"data": result}
+    except APIError as exc:
+        raise HTTPException(409, "Không thể tạo phiếu xuất nháp: " + str(exc.message or exc)) from None
 
-@router.get("/receipts/{receipt_id}", summary="Chi tiết phiếu nhập và các dòng hàng")
-def receipt_detail(receipt_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
-        raise HTTPException(403, "Role không được xem phiếu nhập.")
-    header_rows = db.table("PHIEU_NHAP").select("*").eq("ma_phieu_nhap", receipt_id).limit(1).execute().data
-    if not header_rows:
-        raise HTTPException(404, "Không tìm thấy phiếu nhập.")
-    header = header_rows[0]
-    if user.role == "THU_KHO" and header.get("ma_kho") != user.warehouse_id:
-        raise HTTPException(403, "Phiếu không thuộc kho được phân quyền.")
-    lines = db.table("CT_PHIEU_NHAP").select("sku,so_luong_nhap,gia_nhap").eq("ma_phieu_nhap", receipt_id).order("sku").execute().data
-    return {"header": header, "lines": lines}
+@router.put("/dispatches/{dispatch_id}/draft")
+def update_dispatch_draft(dispatch_id: int, body: DispatchDraftRequest, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_warehouse_scope(user, body.warehouse_id)
+    existing = db.table("PHIEU_XUAT").select("ma_phieu_xuat,trang_thai").eq("ma_phieu_xuat", dispatch_id).limit(1).execute().data
+    if not existing: raise HTTPException(404, "Không tìm thấy phiếu xuất.")
+    if existing[0]["trang_thai"] != "NHAP": raise HTTPException(409, "Phiếu xuất đã xác nhận, không thể chỉnh sửa.")
+    try:
+        result = db.rpc("update_dispatch_document", {"p_ma_phieu_xuat": dispatch_id, "p_ma_donhang": body.order_id, "p_ma_kho_xuat": body.warehouse_id, "p_ghi_chu": body.note, "p_lines": [line.model_dump() for line in body.lines]}).execute().data
+        return {"data": result}
+    except APIError as exc:
+        raise HTTPException(409, "Không thể sửa phiếu xuất nháp: " + str(exc.message or exc)) from None
 
+@router.post("/dispatches/{dispatch_id}/confirm", response_model=DispatchWorkflowResult)
+def confirm_dispatch_document(dispatch_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_employee(user)
+    try:
+        return db.rpc("confirm_dispatch_document", {"p_ma_phieu_xuat": dispatch_id, "p_nguoi_xac_nhan": user.employee_id, "p_ma_kho_duoc_phep": None if user.role == "ADMIN" else user.warehouse_id}).execute().data
+    except APIError as exc:
+        mapping = {"P0070": (404, "Phiếu xuất không tồn tại."), "P0071": (409, "Phiếu xuất đã được xác nhận."), "P0074": (403, "Phiếu xuất ngoài kho được phân quyền."), "P0075": (409, "Kho không đủ tồn để xuất phiếu.")}
+        status, detail = mapping.get(str(exc.code or ""), (503, "Dịch vụ xác nhận phiếu xuất chưa sẵn sàng."))
+        raise HTTPException(status, detail) from None
 
-@router.get("/transfers/{transfer_id}", summary="Chi tiết phiếu chuyển và các dòng hàng")
-def transfer_detail(transfer_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
-        raise HTTPException(403, "Role không được xem phiếu chuyển.")
-    header_rows = db.table("PHIEU_CHUYEN_KHO").select("*").eq("ma_phieu_chuyen", transfer_id).limit(1).execute().data
-    if not header_rows:
-        raise HTTPException(404, "Không tìm thấy phiếu chuyển.")
-    header = header_rows[0]
-    if user.role == "THU_KHO" and header.get("ma_kho_xuat") != user.warehouse_id and header.get("ma_kho_nhan") != user.warehouse_id:
-        raise HTTPException(403, "Phiếu không thuộc kho được phân quyền.")
-    lines = db.table("CT_CHUYEN_KHO").select("sku,so_luong").eq("ma_phieu_chuyen", transfer_id).order("sku").execute().data
-    return {"header": header, "lines": lines}
+@router.get("/dispatches/{dispatch_id}/draft")
+def get_dispatch_draft(dispatch_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_employee(user)
+    docs = db.table("PHIEU_XUAT").select("ma_phieu_xuat,ma_donhang,ma_kho_xuat,ghi_chu,trang_thai").eq("ma_phieu_xuat", dispatch_id).limit(1).execute().data
+    if not docs: raise HTTPException(404, "Không tìm thấy phiếu xuất.")
+    if user.role == "NHAN_VIEN_KHO" and docs[0]["ma_kho_xuat"] != user.warehouse_id: raise HTTPException(403, "Phiếu xuất ngoài kho được phân quyền.")
+    lines = db.table("CT_PHIEU_XUAT").select("sku,ma_kho_xuat,so_luong").eq("ma_phieu_xuat", dispatch_id).limit(500).execute().data
+    return {"dispatch": docs[0], "lines": lines}
 
 
 @router.post("/dispatches/{order_id}/dispatch", response_model=OrderDispatchResult,
@@ -214,7 +147,7 @@ def create_receipt_draft(body: ReceiptDraftRequest, user: User = Depends(current
              summary="Tạo phiếu chuyển kho nháp cùng các dòng hàng trong một transaction")
 def create_transfer_draft(body: TransferDraftRequest, user: User = Depends(current_user), db=Depends(get_supabase)):
     _require_warehouse_scope(user, body.source_warehouse_id)
-    if user.role == "THU_KHO" and user.warehouse_id != body.source_warehouse_id:
+    if user.role == "NHAN_VIEN_KHO" and user.warehouse_id != body.source_warehouse_id:
         raise HTTPException(403, "Kho xuất không thuộc phạm vi được phân quyền.")
     try:
         result = db.rpc("create_transfer_draft", {
@@ -232,7 +165,7 @@ def create_transfer_draft(body: TransferDraftRequest, user: User = Depends(curre
 @router.post("/receipts/{receipt_id}/confirm", response_model=ReceiptConfirmation,
              summary="Xác nhận phiếu nhập và cộng tồn trong một transaction")
 def confirm_receipt(receipt_id: int, user: User = Depends(current_user), repository: WarehouseRepository = Depends(get_repository)):
-    if user.role not in {"ADMIN", "THU_KHO"}:
+    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"}:
         raise HTTPException(403, "Role không được xác nhận phiếu nhập.")
     _require_employee(user)
     try:
@@ -269,10 +202,10 @@ def get_transfer_repository():
 
 
 def _require_employee(user: User):
-    if user.role not in {"ADMIN", "THU_KHO"} or not user.employee_id:
+    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"} or not user.employee_id:
         raise HTTPException(403, "Role không được xử lý phiếu chuyển kho.")
-    if user.role == "THU_KHO" and user.warehouse_id is None:
-        raise HTTPException(403, "Tài khoản thủ kho chưa được phân công kho.")
+    if user.role == "NHAN_VIEN_KHO" and user.warehouse_id is None:
+        raise HTTPException(403, "Tài khoản nhân viên kho chưa được phân công kho.")
 
 
 @router.post("/transfers/{transfer_id}/dispatch", response_model=TransferWorkflowResult,
