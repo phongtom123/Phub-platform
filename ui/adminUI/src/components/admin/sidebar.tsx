@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   Building2,
-  ClipboardCheck,
+  BarChart3,
   ChevronDown,
   CreditCard,
   FileInput,
@@ -15,19 +15,19 @@ import {
   ShoppingBag,
   Sparkles,
   TicketPercent,
+  MessageSquare,
   Truck,
   UserCog,
   UserRound,
   Users,
   Warehouse,
-  Waypoints,
   X,
 } from "lucide-react";
 import type { ModuleKey } from "@/src/types/admin";
 import { Logo } from "./ui";
 
 const navigation = [
-  { label: "TỔNG QUAN", items: [["dashboard", "Tổng quan", LayoutDashboard]] },
+  { label: "TỔNG QUAN", items: [["dashboard", "Tổng quan", LayoutDashboard], ["reports", "Báo cáo kinh doanh", BarChart3]] },
   {
     label: "BÁN HÀNG",
     items: [
@@ -48,8 +48,6 @@ const navigation = [
     items: [
       ["inventory", "Tồn kho", Warehouse],
       ["receipts", "Phiếu nhập", FileInput],
-      ["transfers", "Chuyển kho", Waypoints],
-      ["stocktakes", "Kiểm kê", ClipboardCheck],
       ["suppliers", "Nhà cung cấp", Truck],
     ],
   },
@@ -66,6 +64,7 @@ const navigation = [
     items: [
       ["promotions", "Khuyến mãi", Sparkles],
       ["vouchers", "Voucher", TicketPercent],
+      ["support", "Hỗ trợ khách hàng", MessageSquare],
     ],
   },
 ] as const;

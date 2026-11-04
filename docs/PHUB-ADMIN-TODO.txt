@@ -1,0 +1,226 @@
+PHUB — DANH SÁCH VIỆC CẦN LÀM TIẾP CHO ADMIN
+Cập nhật: 04/11/2026
+Mục tiêu: xử lý trọn một đơn hàng trên một trang, rõ hóa đơn, tiền và tồn kho.
+Đây là danh sách công việc dự kiến; [ ] nghĩa là chưa đánh dấu hoàn tất.
+
+============================================================
+1. NỀN TẢNG ĐÃ CÓ — KHÔNG CẦN LÀM LẠI
+============================================================
+- Bypass bỏ bước qua cổng thanh toán, vẫn ghi THANH_TOAN và HOA_DON vào Supabase.
+- Bypass thành công chuyển đơn sang DANG_CHUAN_BI; có chống ghi trùng và transaction.
+- Checkout giữ hàng ngay khi tạo đơn, kiểm tra tồn khả dụng tại database.
+- Tồn vật lý giảm khi xác nhận xuất kho, không giảm thêm ở bước thanh toán.
+- Backend có xác nhận đơn, chuẩn bị, xuất kho, hoàn thành, thu tiền và hoàn tiền.
+- Đã khôi phục nút Xác nhận xuất kho trên Admin tại commit 7abca12.
+
+Luồng trạng thái hiện tại:
+MOI -> XAC_NHAN -> DANG_CHUAN_BI -> DA_XUAT_KHO -> HOAN_THANH
+Bypass thành công có thể đưa đơn hợp lệ thẳng sang DANG_CHUAN_BI.
+Hủy đơn và hoàn tiền phải tuân theo trạng thái, số tiền và lịch sử thực tế.
+
+============================================================
+2. ƯU TIÊN CAO NHẤT — GOM XỬ LÝ VÀO CHI TIẾT ĐƠN
+============================================================
+[x] Dùng trang Chi tiết đơn hiện tại làm nơi xử lý chính, không tạo thêm trang
+    trung gian bắt Admin phải chuyển qua lại.
+[x] Hiện khối tóm tắt: mã đơn, khách hàng, trạng thái đơn, trạng thái hóa đơn,
+    tổng hóa đơn, đã thu, đã hoàn và số còn phải thu.
+    Đã bổ sung ngày 03/11/2026: bốn số Tổng hóa đơn sau thuế / Đã thu /
+    Đã hoàn / Còn phải thu ngay trong Chi tiết đơn, không cần mở form thu tiền.
+    Dùng chung logic tiền chính xác với form thu tiền; chỉ tính giao dịch thành công.
+    Tự tải lại sau thao tác, kiểm tra mỗi 10 giây khi trang đang hiển thị và
+    không nhập liệu; có nút Cập nhật thanh toán. Đã bổ sung trạng thái hóa đơn ngày
+    04/11/2026.
+[x] API tổng hợp một đơn: GET /api/admin/orders/{order_id}/detail (03/11/2026).
+    Trả đơn, khách, nhân viên, dòng sản phẩm theo kho, hóa đơn, giao dịch,
+    voucher và số tổng hợp tiền. Trang Chi tiết đơn Admin đã dùng API này.
+    Chỉ ADMIN; phân trang nội bộ, không trả kết quả thiếu khi đọc lỗi.
+[x] Hiện bảng sản phẩm ngay trong trang: SKU, số lượng, đơn giá, giảm giá,
+    thuế, thành tiền và kho xuất.
+[x] Nhúng phần hóa đơn vào cùng trang: mã hóa đơn, ngày lập, người/nguồn lập,
+    tổng tiền và chức năng xem/in. Đã có hóa đơn thì không hiện nút lập lại.
+[x] Nhúng lịch sử thu/hoàn tiền của đúng đơn. Ghi nhận tiền bằng form hoặc
+    ngăn bên trong trang, không điều hướng sang danh sách giao dịch chung.
+[x] Thêm lịch sử xử lý: ai thực hiện, thời điểm, thao tác và trạng thái thay đổi.
+    Hoàn tất ngày 04/11/2026 bằng lịch sử lệnh thành công từ admin_ops.requests;
+    không dựng lại lịch sử cũ hoặc đoán trạng thái trước của thao tác hủy.
+[x] Giữ các trang Hóa đơn và Thanh toán riêng để tra cứu, báo cáo; không bắt buộc
+    đi qua các trang đó khi xử lý một đơn.
+
+Nghiệm thu:
+- Admin mở một đơn một lần và làm được toàn bộ thao tác hợp lệ tại đó.
+- Đơn bypass đã đủ tiền và có hóa đơn không bị yêu cầu lập/thu lại.
+
+============================================================
+3. THANH THAO TÁC THEO BƯỚC TIẾP THEO
+============================================================
+[ ] Mỗi trạng thái có một nút chính dễ nhận biết:
+    MOI             : Xác nhận đơn.
+    XAC_NHAN        : Chuẩn bị hàng.
+    DANG_CHUAN_BI   : Xác nhận xuất kho.
+    DA_XUAT_KHO     : Hoàn thành đơn khi đã giao xong và đủ điều kiện.
+    HOAN_THANH/HUY  : Xem kết quả và lịch sử; không hiện thao tác sai trạng thái.
+[ ] Đưa Phân công, Hủy và Hoàn tiền vào nhóm Thao tác khác.
+[ ] Chỉ cho ghi nhận thêm tiền khi còn phải thu; khi đủ tiền hiện Đã thanh toán đủ.
+[ ] Thiếu điều kiện phải giải thích rõ ngay cạnh thao tác, ví dụ còn thiếu tiền,
+    chưa có hóa đơn, thiếu tồn hoặc trạng thái vừa thay đổi.
+[ ] Tách trạng thái giao hàng và trạng thái thanh toán. Đơn COD có thể xuất kho
+    trước khi thu tiền theo quy định hiện tại; hoàn thành phải kiểm tra thu đủ.
+[ ] Không tự hoàn thành đơn chỉ vì thanh toán hoặc bypass thành công.
+[ ] Sau thao tác thành công, cập nhật nội dung tại chỗ, giữ vị trí cuộn.
+    Lỗi backend phải giữ trạng thái lỗi, không báo lưu thành công.
+
+============================================================
+4. TỒN KHO — GIỮ PHƯƠNG ÁN 1, HIỂN THỊ RÕ SỐ LƯỢNG
+============================================================
+PHƯƠNG ÁN 1 LÀ GÌ?
+Giữ hàng ngay khi tạo đơn thành công, chỉ trừ tồn kho vật lý khi xác nhận
+xuất kho. Thanh toán/bypass không tự trừ tồn vật lý và không tự xuất hàng.
+
+Ba số lượng phải phân biệt, tính theo từng SKU tại từng kho:
+- Tồn vật lý: số hàng đang ghi nhận trong kho, lấy từ TON_KHO.so_luong_ton.
+- Đang giữ: tổng số lượng của các dòng CT_DON_HANG thuộc đơn MOI, XAC_NHAN
+  hoặc DANG_CHUAN_BI, đúng SKU và kho xuất.
+- Còn có thể bán (tồn khả dụng) = Tồn vật lý - Đang giữ.
+
+Luồng xử lý cụ thể:
+1) Khách chỉ xem sản phẩm, thêm giỏ hoặc lấy báo giá: chưa giữ hàng.
+2) Khách đặt đơn: backend khóa dữ liệu tồn, kiểm tra lượng còn có thể bán.
+   Đủ hàng mới tạo đơn MOI và chi tiết đơn trong cùng transaction. Các dòng
+   của đơn mới được tính vào lượng đang giữ ngay khi transaction thành công.
+3) Xác nhận đơn hoặc chuẩn bị hàng: vẫn giữ nguyên lượng hàng của đơn.
+4) Xác nhận thanh toán/bypass: ghi khoản thu, bảo đảm có hóa đơn và cập nhật
+   trạng thái theo nghiệp vụ. Không giữ thêm lần nữa và không trừ tồn vật lý.
+5) Admin xác nhận xuất kho: trừ tồn vật lý đúng số lượng trong đơn và chuyển
+   đơn sang DA_XUAT_KHO trong cùng transaction. Đơn không còn thuộc nhóm giữ
+   hàng nên lượng đang giữ giảm tương ứng; không bị trừ hai lần.
+6) Giao hàng xong và đủ điều kiện hóa đơn/thanh toán: hoàn thành đơn.
+   Bước hoàn thành không trừ tồn vật lý lần nữa.
+
+Trường hợp hủy, hết hạn và trả hàng:
+- Hủy hợp lệ trước khi xuất kho: chuyển sang HUY, giải phóng lượng đã giữ;
+  không cộng tồn vật lý vì hàng chưa từng được xuất. Nếu đã thu tiền, phải
+  xử lý hoàn tiền theo quy tắc hủy đơn hiện có.
+- Đơn chưa thanh toán hết thời hạn giữ: dự kiến hủy/giải phóng giữ hàng sau
+  khi kiểm tra lại trạng thái và thanh toán. Cơ chế hết hạn này CHƯA hoàn thiện;
+  thời lượng cần được chốt, không tự đặt một mốc áp dụng cho mọi đơn.
+- Đơn đã xuất kho: không chỉ đổi trạng thái để hoàn tồn. Chỉ tăng lại tồn
+  khi hàng thực sự được nhận lại theo quy trình trả hàng/nhập lại được duyệt.
+
+Cách ngăn nhiều người mua vượt tồn:
+- Mọi yêu cầu tạo đơn phải kiểm tra lượng còn có thể bán tại backend.
+- Database khóa dòng tồn kho khi xử lý các yêu cầu đồng thời. Người đến sau
+  phải chờ, rồi kiểm tra lại sau khi đơn trước được ghi nhận.
+- Thiếu hàng thì từ chối tạo đơn; số lượng trên giao diện/cache chỉ để hiển thị.
+- Thử lại yêu cầu xuất kho phải giữ khóa chống trùng để không trừ tồn lặp.
+
+Ví dụ với một SKU trong cùng một kho, không có biến động khác:
+- Ban đầu: tồn vật lý 48, đang giữ 0, còn bán 48.
+- Người A đặt 4: tồn vật lý 48, đang giữ 4, còn bán 44.
+- Người B đặt 45: bị từ chối vì chỉ còn bán được 44.
+- A thanh toán/bypass: vẫn tồn vật lý 48, đang giữ 4, còn bán 44.
+- A được xuất 4: tồn vật lý 44, đang giữ 0, còn bán vẫn là 44.
+- Nếu A hủy hợp lệ trước xuất: tồn vật lý 48, đang giữ 0, còn bán lại 48.
+
+Hiện lượng giữ được tính từ chi tiết đơn và trạng thái đơn, chưa cần tạo thêm
+bảng/cột giữ hàng chỉ để hiển thị. Phần cần làm tiếp là cung cấp rõ ba số trên
+API/giao diện, cập nhật sau thao tác và bổ sung cơ chế hết hạn giữ hàng.
+
+CÁC VIỆC CẦN LÀM THEO PHƯƠNG ÁN 1:
+[ ] Admin hiển thị riêng: Tồn vật lý / Đang giữ / Còn có thể bán.
+[ ] Website khách hàng dùng lượng còn có thể bán nếu hiển thị số lượng hàng,
+    không dùng trực tiếp tồn vật lý làm lượng còn nhận đơn.
+[ ] API trả số lượng tồn khả dụng cho sản phẩm và dòng đơn; hiện catalog chủ yếu
+    có trạng thái còn/hết hàng, chưa cung cấp đủ ba số để hiển thị.
+[ ] Cập nhật dữ liệu hiển thị sau khi đặt đơn, hủy đơn hoặc xuất kho.
+[ ] Khi hàng vừa hết hoặc người khác đã giữ, trả thông báo rõ và tải lại báo giá.
+[ ] Bổ sung thời hạn giữ hàng cho đơn chưa thanh toán. Cần chốt thời lượng trước
+    khi triển khai; hết hạn phải xử lý trong transaction và kiểm tra lại thanh toán.
+[ ] Hủy/giải phóng giữ hàng đúng một lần; không tự hủy đơn đã thanh toán vì hết giờ.
+[ ] Giữ khóa tồn kho và kiểm tra lại khả dụng ở backend khi nhận đơn đồng thời.
+[ ] Không trừ tồn hai lần ở thanh toán và xuất kho. Hoàn tiền không mặc nhiên
+    đồng nghĩa hàng đã quay về kho; nhập lại phải theo việc nhận hàng thực tế.
+
+============================================================
+5. API VÀ ĐỘ MƯỢT KHI XỬ LÝ ĐƠN
+============================================================
+[ ] Bổ sung API đọc tổng hợp một đơn: thông tin đơn, các dòng hàng, hóa đơn,
+    tổng thu/hoàn, số còn phải thu, tình trạng tồn và thao tác được phép.
+[ ] Các tổng tiền, điều kiện chuyển trạng thái và quyền thao tác do backend
+    quyết định; frontend hiển thị kết quả và gửi yêu cầu nghiệp vụ.
+[ ] Tận dụng các API ghi hiện có; không viết lại các quy tắc tiền/tồn đã kiểm tra.
+[ ] Sau khi ghi, cập nhật dữ liệu/cache của đúng đơn và danh sách liên quan.
+[ ] Tránh tải lại phiên đăng nhập và toàn bộ trang sau mỗi thao tác.
+[ ] Kiểm soát tự cập nhật nền: không gửi chồng request, dừng khi tab ẩn,
+    không làm mất nội dung form đang nhập hoặc tự gửi lại thao tác ghi.
+[ ] Giữ nguyên khóa và nội dung yêu cầu khi thử lại sau timeout để chống ghi trùng.
+
+============================================================
+6. PHÂN QUYỀN VÀ VẬN HÀNH
+============================================================
+[ ] Chốt rõ ai xác nhận xuất kho: hiện thao tác nằm ở Admin. Nếu giao cho thủ kho,
+    bổ sung quyền/backend/UI theo kho phụ trách, không chỉ hiện thêm nút.
+[ ] Đối chiếu lại quy định một kho với mã và dữ liệu hiện tại. Kế hoạch cũ ghi kho 2,
+    nhưng dữ liệu vừa kiểm tra có đơn phân bổ kho 1; chưa tự di chuyển tồn/chứng từ.
+[ ] Chưa mở lại chức năng chuyển kho khi chưa có yêu cầu mới.
+[ ] Giữ dấu vết nguồn bypass, tài khoản thực hiện và thời gian; không gán nhầm
+    hóa đơn tự động cho một Admin bất kỳ.
+[ ] Giữ tiền ở Decimal/numeric và thống nhất quy tắc làm tròn với database.
+
+============================================================
+7. DEPLOY VÀ KIỂM TRA TẬP TRUNG
+============================================================
+[ ] Kiểm tra đúng service backend, Admin và website khách hàng sau khi merge/deploy.
+[ ] Hiện phiên bản/commit đang chạy ở vị trí chẩn đoán để dễ biết server đã cập nhật.
+[ ] Kiểm tra PAYMENT_DEMO_ENABLED ở backend khi cần bật/tắt bypass.
+    Bypass vẫn phải giữ xác thực, chủ đơn và kiểm tra quyền.
+[ ] Chặn commit còn dấu merge conflict; kiểm tra metadata schema và OpenAPI khớp mã.
+[ ] Chạy kiểm tra có mục tiêu cho thay đổi tiền/tồn:
+    - Hai đơn cạnh tranh lượng hàng cuối.
+    - Bấm lại yêu cầu không ghi trùng.
+    - Lỗi giữa transaction không để lại hóa đơn/khoản thu/trạng thái dở dang.
+    - Xuất kho trừ đúng một lần; hoàn thành chỉ khi đủ điều kiện.
+    - Hủy, hết hạn giữ hàng và thanh toán đến cùng lúc.
+[ ] Hạn chế chạy lại toàn bộ test/build nếu không có thay đổi hoặc rủi ro mới.
+
+THỨ TỰ THỰC HIỆN ĐỀ XUẤT
+1) Gom trang chi tiết đơn và thanh thao tác (mục 2, 3).
+2) API tổng hợp và cập nhật nội dung tại chỗ (mục 5).
+3) Hiển thị tồn vật lý/đang giữ/còn bán và cơ chế hết hạn (mục 4).
+4) Chốt phân quyền, phạm vi kho và kiểm tra deploy (mục 6, 7).
+
+Phạm vi trước mắt là Admin và luồng đơn hàng. Chưa mở rộng CRM/HRM hoặc
+thay đổi phương án trừ tồn nếu chưa có yêu cầu mới.
+
+============================================================
+8. ĐỐI CHIẾU CÔNG VIỆC ĐÃ LOG LÊN JIRA
+============================================================
+Project: Phub (KAN). Ngày ghi nhận: 02/11/2026.
+Epic KAN-54 — Xử lý trọn đơn hàng trên một trang và làm rõ tồn kho khả dụng
+https://pc-seller-platform.atlassian.net/browse/KAN-54
+
+KAN-55 — API tổng hợp chi tiết đơn, số tiền và thao tác được phép
+https://pc-seller-platform.atlassian.net/browse/KAN-55
+KAN-56 — Gom thông tin và xử lý đơn vào trang Chi tiết đơn
+https://pc-seller-platform.atlassian.net/browse/KAN-56
+KAN-57 — Thanh thao tác đơn theo bước tiếp theo và điều kiện nghiệp vụ
+https://pc-seller-platform.atlassian.net/browse/KAN-57
+KAN-58 — Xem, lập và in hóa đơn ngay trong chi tiết đơn
+https://pc-seller-platform.atlassian.net/browse/KAN-58
+KAN-59 — Thu, hoàn tiền và lịch sử giao dịch tại chi tiết đơn
+https://pc-seller-platform.atlassian.net/browse/KAN-59
+KAN-60 — Hiển thị tồn vật lý, đang giữ và còn bán theo phương án 1
+https://pc-seller-platform.atlassian.net/browse/KAN-60
+KAN-61 — Hết hạn giữ hàng đơn chưa thanh toán, an toàn với thanh toán đồng thời
+https://pc-seller-platform.atlassian.net/browse/KAN-61
+KAN-62 — Cập nhật đơn tại chỗ và cache/tải nền có giới hạn
+https://pc-seller-platform.atlassian.net/browse/KAN-62
+KAN-63 — Chốt kho vận hành và quyền xác nhận xuất kho
+https://pc-seller-platform.atlassian.net/browse/KAN-63
+KAN-64 — Chẩn đoán phiên bản deploy và nghiệm thu luồng đơn tập trung
+https://pc-seller-platform.atlassian.net/browse/KAN-64
+
+Đã kiểm tra đủ 10 task/story con thuộc Epic KAN-54, trạng thái To Do.
+Các ô [ ] ở trên vẫn giữ nguyên: log Jira không đồng nghĩa đã triển khai.
+Mỗi ticket có phạm vi, tiêu chí nghiệm thu, phụ thuộc và dẫn chiếu công việc cũ.
+Thời hạn giữ hàng và phạm vi kho/quyền xuất còn cần chốt trước khi áp dụng.

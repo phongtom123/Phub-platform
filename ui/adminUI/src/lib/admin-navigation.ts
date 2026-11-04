@@ -2,6 +2,7 @@ import type { ModuleKey } from "@/src/types/admin";
 
 const moduleKeys: ModuleKey[] = [
   "dashboard",
+  "reports",
   "orders",
   "billing",
   "customers",
@@ -9,13 +10,13 @@ const moduleKeys: ModuleKey[] = [
   "categories",
   "inventory",
   "receipts",
-  "transfers",
   "suppliers",
   "branches",
   "employees",
   "accounts",
   "promotions",
   "vouchers",
+  "support",
 ];
 
 const sectionToModule: Record<string, ModuleKey> = {
@@ -34,10 +35,14 @@ const sectionToModule: Record<string, ModuleKey> = {
   transfers: "transfers",
   payments: "billing",
   invoices: "billing",
+  support: "support",
+  reports: "reports",
 };
 
 export function getModuleHref(moduleKey: ModuleKey) {
   if (moduleKey === "accounts") return "/accounts";
+  if (moduleKey === "support") return "/support";
+  if (moduleKey === "reports") return "/reports";
   return moduleKey === "dashboard" ? "/" : `/?module=${moduleKey}`;
 }
 

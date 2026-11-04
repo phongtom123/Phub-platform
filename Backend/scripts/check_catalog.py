@@ -1,11 +1,3 @@
-"""Opt-in, read-only catalog integration check. Run from Backend:
-
-    .venv/Scripts/python.exe scripts/check_catalog.py
-
-Uses existing .env credentials locally; prints no credentials or product data.
-Never imports, inserts, updates, or deletes database records.
-"""
-
 import os
 import sys
 from decimal import Decimal
@@ -16,13 +8,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.supabase import supabase
+from phub_api.main import app
+from phub_api.config.database import supabase
 
 
 def check():
     active = int(os.getenv("CATALOG_ACTIVE_STATUS", "1"))
-    # Small reference sample is independent of the repository's filter logic.
     reference = (
         supabase.table("SAN_PHAM")
         .select("ma_sp,sku,ten_sp,ma_loai_sp,thuong_hieu,gia_ban_hien_tai::text,trang_thai,category:LOAI_SP(trang_thai)", count="exact")
@@ -105,6 +96,5 @@ if __name__ == "__main__":
     try:
         check()
     except Exception as exc:
-        # Avoid dumping credentials, raw response bodies, or private DB details.
         print(f"FAIL: {type(exc).__name__}; inspect locally for schema/configuration differences.")
         raise SystemExit(1) from None

@@ -45,6 +45,7 @@ export function MobileHeader({
             iconSrc="/images/figma-mobile/header-imgGroup1921.svg"
             placeholder="Tìm kiếm sản phẩm"
             onSearch={onSearch}
+            onSelectProduct={product => router.push(`/main/product/${encodeURIComponent(product.id)}`)}
           />
         )}
         {!compact && (
@@ -98,6 +99,7 @@ export function MobileHeader({
           iconSrc="/images/figma-mobile/header-imgGroup1921.svg"
           placeholder="Tìm kiếm sản phẩm"
           onSearch={onSearch}
+          onSelectProduct={product => router.push(`/main/product/${encodeURIComponent(product.id)}`)}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
-import type { ApiProduct, ApiProductPage, CatalogMetadata, CatalogRequest } from "./types";
+import type { ApiProduct, ApiProductPage, CatalogCategory, CatalogMetadata, CatalogRequest } from "./types";
+import type { PurchaseState } from "./stock-batch";
 
 export class CatalogApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -22,7 +23,9 @@ export function validateProduct(value: unknown): ApiProduct {
   const product = value as ApiProduct;
   if (!product || typeof product.id !== "string" || typeof product.sku !== "string"
     || typeof product.name !== "string" || typeof product.category?.id !== "string"
+    || (product.is_active !== undefined && typeof product.is_active !== "boolean")
     || typeof product.category?.name !== "string" || typeof product.price !== "string"
+    || typeof product.subcategory?.id !== "string" || typeof product.subcategory?.name !== "string"
     || !/^\d+(\.\d{1,2})?$/.test(product.price) || !Number.isFinite(Number(product.price))
     || !/^[A-Z]{3}$/.test(product.currency ?? "")
     || !(product.brand === null || typeof product.brand === "string")
@@ -35,11 +38,56 @@ export function validateProduct(value: unknown): ApiProduct {
   return product;
 }
 
+export async function getProductPurchaseState(product: { id: string; sku?: string }, quantity: number, signal?: AbortSignal) {
+  const result = await readJson(await fetch(
+    `/api/catalog/products/${encodeURIComponent(product.id)}/availability?quantity=${quantity}`,
+    { cache: "no-store", signal },
+  )) as { id?: unknown; sku?: unknown; quantity?: unknown; available?: unknown; is_active?: unknown } | null;
+  if (!result || result.id !== product.id || typeof result.sku !== "string" || !result.sku
+      || (product.sku !== undefined && result.sku !== product.sku) || result.quantity !== quantity || typeof result.available !== "boolean"
+      || (result.is_active !== undefined && typeof result.is_active !== "boolean")) {
+    throw new CatalogApiError("Không kiểm tra được tồn kho. Vui lòng thử lại.", 502);
+  }
+  return { available: result.available && result.is_active !== false, isActive: result.is_active !== false };
+}
+
+export async function getProductAvailability(product: { id: string; sku?: string }, quantity: number, signal?: AbortSignal): Promise<boolean> {
+  return (await getProductPurchaseState(product, quantity, signal)).available;
+}
+
+export async function getProductPurchaseStates(skus: string[], signal: AbortSignal): Promise<PurchaseState[]> {
+  const wanted = new Set(skus);
+  const params = new URLSearchParams();
+  [...wanted].sort().forEach(sku => params.append("sku", sku));
+  const body = await readJson(await fetch(`/api/catalog/purchase-states?${params}`, { cache: "no-store", signal })) as { items?: unknown };
+  if (!Array.isArray(body?.items)) throw new CatalogApiError("Không kiểm tra được tồn kho.", 502);
+  const seen = new Set<string>();
+  for (const item of body.items as PurchaseState[]) {
+    if (!item || typeof item.id !== "string" || !item.id || typeof item.sku !== "string" ||
+      !wanted.has(item.sku) || seen.has(item.sku) || typeof item.is_active !== "boolean" ||
+      !Number.isInteger(item.available_quantity) || item.available_quantity < 0 || item.available_quantity > 2147483647) {
+      throw new CatalogApiError("Dữ liệu tồn kho không hợp lệ.", 502);
+    }
+    seen.add(item.sku);
+  }
+  return body.items as PurchaseState[];
+}
+
 export function queryFor(request: CatalogRequest): URLSearchParams {
   const params = new URLSearchParams();
+  params.set("include_inactive", "true");
   if (request.q.trim()) params.set("q", request.q.trim());
   request.filters.categories.forEach(id => params.append("category_id", id));
+  request.filters.subcategories.forEach(id => params.append("subcategory_id", id));
   if (request.filters.brand) params.set("brand", request.filters.brand);
+  if (request.filters.minPrice?.trim()) params.set("min_price", request.filters.minPrice.trim());
+  if (request.filters.maxPrice?.trim()) params.set("max_price", request.filters.maxPrice.trim());
+  if (request.filters.color) params.set("color", request.filters.color);
+  const stockStatus = request.filters.stockStatus || (request.filters.inStock ? "in-stock" : "");
+  if (stockStatus) params.set("stock_status", stockStatus);
+  Object.entries(request.filters.specs ?? {}).sort(([a], [b]) => a.localeCompare(b)).forEach(([key, values]) => {
+    [...new Set(values)].sort().forEach(value => params.append("spec", JSON.stringify([key, value])));
+  });
   params.set("sort", request.sort === "position" ? "default" : request.sort);
   params.set("page", String(request.page));
   params.set("page_size", String(request.pageSize));
@@ -56,17 +104,31 @@ export async function getProducts(request: CatalogRequest, signal?: AbortSignal)
   return { ...data, items: data.items.map(validateProduct) };
 }
 
+export async function getCategories(signal?: AbortSignal): Promise<CatalogCategory[]> {
+  const categories = await readJson(await fetch("/api/catalog/categories", { signal })) as {
+    items: { id: string; name: string; children: { id: string; name: string }[] }[];
+  };
+  if (!Array.isArray(categories?.items) || !categories.items.every(item => item && typeof item.id === "string"
+    && typeof item.name === "string" && Array.isArray(item.children)
+    && item.children.every(child => child && typeof child.id === "string" && typeof child.name === "string"))) {
+    throw new CatalogApiError("Không thể đọc danh mục sản phẩm.", 502);
+  }
+  return categories.items.map(item => ({
+    id: item.id, label: item.name,
+    children: item.children.map(child => ({ id: child.id, label: child.name })),
+  }));
+}
+
 export async function getMetadata(signal?: AbortSignal): Promise<CatalogMetadata> {
   const [categories, brands] = await Promise.all([
-    fetch("/api/catalog/categories", { signal }).then(readJson),
+    getCategories(signal),
     fetch("/api/catalog/brands", { signal }).then(readJson),
-  ]) as [{ items: { id: string; name: string }[] }, { items: { name: string }[] }];
-  if (!Array.isArray(categories?.items) || !categories.items.every(item => item && typeof item.id === "string" && typeof item.name === "string")
-    || !Array.isArray(brands?.items) || !brands.items.every(item => item && typeof item.name === "string")) {
+  ]) as [CatalogCategory[], { items: { name: string }[] }];
+  if (!Array.isArray(brands?.items) || !brands.items.every(item => item && typeof item.name === "string")) {
     throw new CatalogApiError("Không thể đọc danh mục và thương hiệu.", 502);
   }
   return {
-    categories: categories.items.map(item => ({ id: item.id, label: item.name })),
+    categories,
     brands: brands.items.map(item => ({ id: item.name, name: item.name })),
   };
 }

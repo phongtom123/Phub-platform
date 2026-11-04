@@ -1,14 +1,42 @@
-# Account – 1: UI preview
+# Tài khoản khách hàng
 
-Route: `/main/profile`. Reproduces the supplied screenshot's My Dashboard layout; reuses the existing root header/footer and `PageHeading`, `Button`, `TextField`, `Checkbox` components. Figma was quota-limited, so the supplied screenshot is the visual reference.
+Route `/main/profile`, dành cho tài khoản `KHACH_HANG` đã đăng nhập.
 
-- Sidebar includes all 10 entries and the compare/wishlist empty summaries.
-- Default view shows contact information, newsletters, default billing and shipping addresses.
-- Edit buttons open accessible native dialogs. Contact/address validation is browser-side; newsletter is a local checkbox.
-- Save updates React state only. Cancel/Escape discards changes and restores focus. Reload restores the fixture.
-- Password changes show an explicit unavailable message: no passwords are collected or saved.
-- Other navigation entries show empty preview states, not invented orders or payments.
-- No API, authentication, localStorage, cookies, database writes or real subscriptions.
-- Header remains in guest mode; a dashboard preview is not an authenticated session.
+Trang chỉ hiển thị ba mục có chức năng hoạt động:
 
-Data lives in `accountData.ts`; dashboard composition and interactions in `AccountDashboard.tsx`; forms in `AccountEditor.tsx`. The feature-specific components stay here instead of being added to `common` prematurely.
+- **Thông tin cá nhân:** tên, tên đăng nhập, điện thoại, ảnh đại diện và chỉnh sửa hồ sơ.
+- **Địa chỉ giao hàng:** sổ địa chỉ tối đa 10 mục; thêm, sửa, xóa và đặt mặc định. Không sửa địa chỉ của đơn đã đặt.
+- **Đơn hàng của tôi:** danh sách có phân trang, trạng thái bằng tiếng Việt và liên kết đến `/main/orders/{id}`. Trang chi tiết riêng hiển thị hóa đơn và thanh toán.
+
+Không hiển thị các mục tải xuống, phương thức thanh toán đã lưu, thỏa thuận thanh toán, đánh giá, đăng ký bản tin, so sánh và wishlist chưa được kết nối.
+
+`AccountDashboard` quản lý giao diện và hồ sơ; `AccountOrders` chỉ tải danh sách khi được mở. `AccountEditor` lưu hồ sơ qua API và giữ khả năng tải ảnh đại diện. `AccountPanels` chứa các phần hiển thị trạng thái, khung nội dung và phân trang dùng chung. Không tạo đơn hoặc thanh toán khi xem hồ sơ.
+
+`AccountAddresses` dùng chung API sổ địa chỉ với checkout. Trang tổng quan tài khoản
+hiện địa chỉ mặc định lấy từ sổ địa chỉ, gồm đúng tên và điện thoại người nhận.
+Khi xóa địa chỉ mặc định, hiển thị lại địa chỉ được server chọn thay thế.
+
+Dữ liệu đi qua gateway hiện có bằng cookie phiên:
+
+| Tác vụ | Endpoint backend |
+| --- | --- |
+| Phiên / đăng xuất | `GET /api/auth/me`, `POST /api/auth/logout` |
+| Xem / lưu hồ sơ | `GET /api/customer/me`, `PUT /api/customer/me` |
+| Ảnh đại diện | `POST /api/customer/me/avatar` |
+| Sổ địa chỉ | `GET /api/customer/addresses`, `POST /api/customer/addresses` |
+| Sửa / đặt mặc định | `PUT /api/customer/addresses/{id}` |
+| Xóa địa chỉ | `POST /api/customer/addresses/{id}/delete` |
+| Danh sách đơn | `GET /api/customer/orders?page=…&page_size=10` |
+
+Không dùng dữ liệu mẫu khi API lỗi. Phiên hết hạn hoặc không đúng vai trò sẽ ẩn dữ liệu tài khoản. Không suy diễn tên đăng nhập là email.
+
+Kiểm tra từ `ui/userUI/Frontend`, với server local ở cổng 3001:
+
+```sh
+npx tsc --noEmit
+node --test tests/account-client.test.cjs
+node tests/account-dashboard.e2e.cjs
+node tests/account-addresses.e2e.cjs
+```
+
+E2E dùng HTTP fixtures, không ghi dữ liệu thật. Có thể đặt `PHUB_USER_TEST_URL`, `PHUB_PLAYWRIGHT_MODULE` và `PHUB_CHROMIUM_PATH` theo môi trường.

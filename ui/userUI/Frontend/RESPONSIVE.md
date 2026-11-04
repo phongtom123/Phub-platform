@@ -6,8 +6,8 @@ còn các file sinh tự động từ lần chạy cũ, không phải ứng dụ
 ## Quy ước
 
 - Header trắng, logo, icon và màu nhấn theo desktop. Điện thoại mở danh mục
-  bằng hamburger với ngăn kéo hai cấp `MobileCategoryDrawer` như bản cũ;
-  có quay lại, đóng và nền tối. Desktop tiếp tục dùng `MegaMenu`.
+  bằng hamburger với danh sách phẳng trong `MobileCategoryDrawer`;
+  có đóng và nền tối. Desktop hiển thị cùng danh sách loại từ API.
   Giỏ hàng/tài khoản mở bằng chạm, desktop hỗ trợ hover và click.
 - Hai kích thước dùng cùng `AccountMenu`, `CartPreview`,
   `CatalogPage` và `DesktopProductDetail`. Không dùng bộ dữ liệu mobile riêng.
@@ -38,10 +38,11 @@ lọc và đổi kích thước khi các bảng đang mở. Đối chiếu thêm
 
 ## Render
 
-- Root Directory: `ui/userUI/Frontend`.
-- Build Command: `npm ci && npm run build`.
-- Start Command: `npm run start -- --hostname 0.0.0.0 --port $PORT`.
+- Root Directory: để trống hoặc `.` (gốc repository, giữ được `ui/shared`).
+- Build Command: `npm --prefix ui/userUI/Frontend ci && npm --prefix ui/userUI/Frontend run build`.
+- Start Command: `npm --prefix ui/userUI/Frontend run start -- --hostname 0.0.0.0 --port $PORT`.
 - Deploy cùng nhánh và commit với source đã kiểm tra ở local.
+- Xem [hướng dẫn Render](../../../RENDER.md) cho biến môi trường và API service.
 
 Ngày 2026-10-01, HTML lấy từ `https://phub-platform.onrender.com` không có
 `MobileHeader`, có giỏ hàng xem nhanh trống. Source local trước sửa lại có

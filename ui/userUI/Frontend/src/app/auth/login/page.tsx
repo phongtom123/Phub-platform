@@ -1,29 +1,65 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
+import { authPageHref, safeAuthRedirect } from "@/lib/auth/redirect";
+import { getSession, loginSession } from "../../../../../../shared/auth-client";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { refreshSession } = useShopping();
+  const redirectTo = safeAuthRedirect(
+    searchParams.get("redirect") ?? searchParams.get("next"),
+    "/",
+  );
+  const registerHref = authPageHref("/auth/register", redirectTo, "/");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getSession(controller.signal)
+      .then(async (account) => {
+        if (!controller.signal.aborted) {
+          if (account.role === "KHACH_HANG") await refreshSession();
+          router.replace(account.role === "KHACH_HANG" ? redirectTo : "/");
+          router.refresh();
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCheckingSession(false);
+      });
+    return () => controller.abort();
+  }, [redirectTo, refreshSession, router]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const username = String(form.get("username") ?? "").trim();
+    const password = String(form.get("password") ?? "");
     setLoading(true); setError("");
     try {
-      const response = await fetch("/api/backend/auth/login", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: String(form.get("account") ?? "").trim(), password: String(form.get("password") ?? "") }) });
-      const account = await response.json();
-      if (!response.ok) throw new Error(typeof account.detail === "string" ? account.detail : "Thông tin đăng nhập không hợp lệ.");
+      const account = await loginSession(username, password);
       if (account.role === "ADMIN") { window.location.assign(process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000"); return; }
-      if (account.role === "THU_KHO") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
-      router.push("/main/landing"); router.refresh();
+      if (account.role === "NHAN_VIEN") { window.location.assign(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002"); return; }
+      await refreshSession();
+      router.replace(redirectTo);
+      router.refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Không kết nối được backend."); }
     finally { setLoading(false); }
   };
+
+  if (checkingSession) {
+    return (
+      <section className="grid min-h-[68vh] place-items-center px-6" aria-live="polite" aria-busy="true">
+        <p className="text-sm text-zinc-500" role="status">Đang kiểm tra phiên đăng nhập…</p>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto grid min-h-[68vh] w-full max-w-6xl items-center gap-12 px-6 py-14 lg:grid-cols-[1fr_460px]">
@@ -58,7 +94,7 @@ export default function LoginPage() {
           Email hoặc tên tài khoản
           <input
             required
-            name="account"
+            name="username"
             autoComplete="username"
             className="mt-2 h-12 w-full rounded-lg border border-zinc-300 px-4 text-sm text-zinc-950 outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-100"
           />
@@ -75,15 +111,9 @@ export default function LoginPage() {
           />
         </label>
 
-        <div className="mt-5 flex items-center justify-between gap-4 text-sm">
-          <label className="flex items-center gap-2 text-zinc-600">
-            <input type="checkbox" defaultChecked className="size-4 accent-green-700" />
-            Ghi nhớ đăng nhập
-          </label>
-          <button type="button" className="font-medium text-green-700 hover:underline">
-            Quên mật khẩu?
-          </button>
-        </div>
+        <p className="mt-5 text-xs leading-5 text-zinc-500">
+          Phiên đăng nhập được bảo vệ bằng cookie HttpOnly và tự hết hạn sau 8 giờ.
+        </p>
 
         {error && <p role="alert" className="mt-5 text-red-700">{error}</p>}
         <button
@@ -96,11 +126,25 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-zinc-500">
           Chưa có tài khoản?{" "}
-          <Link href="/auth/register" className="font-semibold text-green-700 hover:underline">
+          <Link href={registerHref} className="font-semibold text-green-700 hover:underline">
             Đăng ký ngay
           </Link>
         </p>
       </form>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="grid min-h-[68vh] place-items-center px-6" aria-live="polite" aria-busy="true">
+          <p className="text-sm text-zinc-500" role="status">Đang kiểm tra phiên đăng nhập…</p>
+        </section>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

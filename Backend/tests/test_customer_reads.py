@@ -4,9 +4,11 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
-from app.commerce.repository import CommerceRepository
-from app.commerce.router import router, get_repository
-from app.payments.auth import CurrentCustomer, require_customer
+from phub_api.repositories.commerce import CommerceRepository
+from phub_api.controllers.commerce import router
+from phub_api.dependencies.commerce import get_repository
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
 
 
 @pytest.fixture
@@ -24,7 +26,11 @@ def reads_client():
         requests.append(request)
         table = request.url.path.rsplit("/",1)[-1]
         if request.method == "POST":
-            assert table == "customer_read_orders_v2"
+            if table == "customer_payment_deadline_v1":
+                import json
+                assert json.loads(request.content) == {"p_customer_id": "KH-A", "p_order_id": "ORDER-A"}
+                return httpx.Response(200, content=json.dumps(state.get("deadline")), headers={"content-type": "application/json"})
+            assert table == "customer_read_orders_v4"
             return httpx.Response(404, json={"code":state["rpc_code"], "message":"Unavailable", "details":None, "hint":None})
         assert request.method in {"GET","HEAD"}
         if table == "DON_HANG":
@@ -92,6 +98,28 @@ def test_invoice_absence_is_explicit_and_never_created(reads_client):
     assert all(request.method == "GET" for request in requests)
 
 
+def test_invoice_returns_server_deadline_for_verified_owner(reads_client):
+    web, state, _, _ = reads_client
+    state["deadline"] = {"expires_at": "2026-11-05T09:00:00Z", "expired_at": None,
+                         "server_now": "2026-11-04T09:00:00Z", "status": "awaiting_payment"}
+    result = web.get("/api/customer/orders/ORDER-A/invoice")
+    assert result.status_code == 200
+    assert result.json()["payment_deadline"] == state["deadline"]
+
+
+@pytest.mark.parametrize("change", [
+    {"expires_at": "2026-11-05T09:00:00"},
+    {"status": "expired", "expired_at": None},
+    {"status": "expired", "expired_at": "2026-11-04T09:00:00Z"},
+    {"status": "unexpected"},
+])
+def test_malformed_deadline_is_not_displayed_as_valid(reads_client, change):
+    web, state, _, _ = reads_client
+    state["deadline"] = {"expires_at": "2026-11-05T09:00:00Z", "expired_at": None,
+                         "server_now": "2026-11-04T09:00:00Z", "status": "awaiting_payment", **change}
+    assert web.get("/api/customer/orders/ORDER-A/invoice").status_code == 500
+
+
 @pytest.mark.parametrize("path", ["orders/ORDER-B", "orders/ORDER-B/invoice"])
 def test_foreign_and_missing_orders_share_not_found(reads_client, path):
     web, _, _, _ = reads_client
@@ -119,7 +147,9 @@ def test_invoice_and_order_require_verified_auth_before_db(reads_client, path):
     web, _, requests, app = reads_client
     app.dependency_overrides.pop(require_customer)
     result = web.get("/api/customer/" + path)
-    assert result.status_code == 503 and requests == []
+    assert result.status_code == 401
+    assert result.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
+    assert requests == []
 
 
 def test_invoice_query_validation_and_swagger(reads_client):

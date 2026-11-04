@@ -2,7 +2,7 @@ export type DataCrumb = { label: string; href: string };
 
 export const resourceTitles: Record<string, string> = {
   warehouses: "Kho", employees: "Nhân viên", accounts: "Tài khoản", customers: "Khách hàng",
-  categories: "Loại sản phẩm", products: "Sản phẩm", inventory: "Tồn kho", suppliers: "Nhà cung cấp",
+  categories: "Loại sản phẩm", subcategories: "Loại sản phẩm con", products: "Sản phẩm", inventory: "Tồn kho", suppliers: "Nhà cung cấp",
   receipts: "Phiếu nhập", "receipt-lines": "Chi tiết phiếu nhập", transfers: "Chuyển kho",
   "transfer-lines": "Chi tiết chuyển kho", orders: "Đơn hàng", "order-lines": "Chi tiết đơn hàng",
   invoices: "Hóa đơn", payments: "Thanh toán", promotions: "Khuyến mãi", vouchers: "Voucher",
@@ -10,12 +10,13 @@ export const resourceTitles: Record<string, string> = {
 };
 export const orderChildren = ["order-lines", "invoices", "payments", "voucher-uses"];
 
-export function dataHref(resource: string, options: { key?: string | null; orderId?: string | null; edit?: boolean; create?: boolean } = {}) {
+export function dataHref(resource: string, options: { key?: string | null; orderId?: string | null; edit?: boolean; create?: boolean; filters?: Record<string, unknown> } = {}) {
   const params = new URLSearchParams();
   if (options.orderId) params.set("order_id", options.orderId);
   if (options.key) params.set("key", options.key);
   if (options.edit) params.set("edit", "1");
   if (options.create) params.set("new", "1");
+  if (options.filters && Object.keys(options.filters).length) params.set("filters", JSON.stringify(options.filters));
   return `/data/${resource}${params.size ? "?" + params.toString() : ""}`;
 }
 

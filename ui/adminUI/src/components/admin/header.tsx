@@ -8,7 +8,6 @@ import {
   ChevronRight,
   LogOut,
   Menu,
-  Search,
   Settings,
   UserRound,
   X,
@@ -16,8 +15,12 @@ import {
 import type { ModuleKey } from "@/src/types/admin";
 import { getModuleHref } from "@/src/lib/admin-navigation";
 import { DataBreadcrumb } from "./data-breadcrumb";
+import { AccountBreadcrumb } from "./account-breadcrumb";
+import type { AccountView } from "@/src/features/accounts/types";
+import { NotificationFeed } from "@/src/features/operations/header-tools";
 
 type Props = {
+  accountsPage?: AccountView;
   dataResource?: string;
   user: { name: string; username: string } | null;
   onGoProfile: () => void;
@@ -31,6 +34,7 @@ type Props = {
 };
 
 export function AdminHeader({
+  accountsPage,
   dataResource,
   user,
   onGoProfile,
@@ -64,10 +68,10 @@ export function AdminHeader({
 
   return (
     <header className="topbar">
-      <button className="hamb" onClick={onToggleSidebar}>
+      <button className="hamb" aria-label="Đóng mở thanh điều hướng" onClick={onToggleSidebar}>
         <Menu />
       </button>
-      {dataResource ? <DataBreadcrumb resource={dataResource} /> : <nav className="crumb" aria-label="Breadcrumb">
+      {accountsPage ? <AccountBreadcrumb {...accountsPage} /> : dataResource ? <DataBreadcrumb resource={dataResource} /> : <nav className="crumb" aria-label="Breadcrumb">
         <Link
           href={getModuleHref("dashboard")}
           onClick={(event) => followModuleLink(event, "dashboard")}
@@ -85,11 +89,6 @@ export function AdminHeader({
         </Link>
       </nav>}
       <div className="top-actions">
-        <label>
-          <Search />
-          <input placeholder="Tìm kiếm nhanh..." />
-          <kbd>⌘ K</kbd>
-        </label>
         <div className="header-popup-wrap">
           <button
             className={`bell ${panel === "notifications" ? "pressed" : ""}`}
@@ -138,7 +137,7 @@ export function AdminHeader({
 function NotificationPanel({ onClose }: { onClose: () => void; onGoAccounts: () => void }) {
   return <section className="header-popup notifications-popup">
     <header><b>Thông báo</b><button onClick={onClose} aria-label="Đóng thông báo"><X /></button></header>
-    <p style={{ padding: 16 }}>Chưa kết nối API thông báo.</p>
+    <NotificationFeed onClose={onClose} />
   </section>;
 }
 

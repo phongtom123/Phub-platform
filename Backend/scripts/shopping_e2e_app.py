@@ -1,13 +1,8 @@
-"""Isolated browser fixture server. Never imported by app.main or connected to Supabase.
-
-Requires an explicit mode and a local control key; bind ONLY to 127.0.0.1.
-Real routers/repositories use a MockTransport. Authentication is simulated here
-and cannot certify the other member's password/session implementation.
-"""
 import json
 import os
 import secrets
 import threading
+import uuid
 from copy import deepcopy
 from decimal import Decimal
 
@@ -15,16 +10,20 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from postgrest import SyncPostgrestClient
 
-from app.catalog.repository import CatalogRepository
-from app.catalog.router import get_repository as catalog_repository, router as catalog_router
-from app.commerce.repository import CommerceRepository
-from app.commerce.router import get_repository as commerce_repository, router as commerce_router
-from app.payments.auth import CurrentCustomer, require_customer
-from app.payments.repository import PaymentRepository
-from app.payments.repository import public_transaction
-from app.payments.errors import PaymentError
-from app.payments.requests import get_payment_requests
-from app.payments.router import get_repository as payment_repository, router as payment_router
+from phub_api.repositories.catalog import CatalogRepository
+from phub_api.dependencies.catalog import get_repository as catalog_repository
+from phub_api.controllers.catalog import router as catalog_router
+from phub_api.repositories.commerce import CommerceRepository
+from phub_api.dependencies.commerce import get_repository as commerce_repository
+from phub_api.controllers.commerce import router as commerce_router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.services.payments import public_transaction
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.dependencies.payments import get_payment_requests
+from phub_api.dependencies.payments import get_repository as payment_repository
+from phub_api.controllers.payments import router as payment_router
 
 CONTROL_KEY = os.getenv("PHUB_E2E_CONTROL_KEY", "")
 if os.getenv("PHUB_E2E_MODE") != "isolated-fixtures" or len(CONTROL_KEY) < 32:
@@ -38,7 +37,7 @@ state = {}
 
 def reset():
     state.clear()
-    state.update(price="100000.10", stock=5, products_available=True, orders={}, receipts={}, calls=[], transactions={}, profiles={}, invoices={}, payment_requests={}, fail_after_commit=False)
+    state.update(price="100000.10", stock=5, products_available=True, orders={}, receipts={}, calls=[], transactions={}, profiles={}, invoices={}, payment_requests={}, addresses={}, fail_after_commit=False)
 
 
 reset()
@@ -105,13 +104,87 @@ def checkout(payload):
     return {"order": receipt, "replayed": False}
 
 
+def profile_row(owner):
+    return state["profiles"].setdefault(owner, {"ma_kh": owner, "ten_kh": "Khách thử A" if owner == "KH-A" else "Khách thử B", "sdt": RECIPIENT["phone"], "dia_chi_chi_tiet_md": RECIPIENT["address_line"], "tinh_thanh_md": RECIPIENT["province"], "xa_phuong_md": RECIPIENT["ward"]})
+
+
+def profile_complete(row):
+    return all((row.get(key) or "").strip() for key in ("ten_kh", "sdt", "dia_chi_chi_tiet_md", "tinh_thanh_md", "xa_phuong_md"))
+
+
+def address_from_profile(row):
+    return {"id": str(uuid.uuid4()), "name": row["ten_kh"], "phone": row["sdt"], "address_line": row["dia_chi_chi_tiet_md"],
+            "province": row["tinh_thanh_md"], "ward": row["xa_phuong_md"], "is_default": True}
+
+
+def addresses(payload):
+    """In-memory mirror of customer_address_v1: one default per customer, max 10, default synced to KHACH_HANG."""
+    owner, action, address_id, body = payload["p_customer_id"], payload["p_action"], payload["p_address_id"], payload["p_payload"]
+    if owner not in ("KH-A", "KH-B"):
+        return failure("AUTH_CUSTOMER_UNAVAILABLE")
+    if owner not in state["addresses"]:
+        # Mirrors the migration backfill: only a complete KHACH_HANG default address is copied.
+        state["addresses"][owner] = [address_from_profile(profile_row(owner))] if profile_complete(profile_row(owner)) else []
+    book, item = state["addresses"][owner], None
+    if action == "create":
+        if len(book) >= 10:
+            return failure("ADDRESS_LIMIT_REACHED")
+        item = {"id": str(uuid.uuid4()), **{key: body[key] for key in ("name", "phone", "address_line", "province", "ward")}, "is_default": body["is_default"] or not book}
+        book.insert(0, item)
+    elif action in ("update", "delete"):
+        item = next((entry for entry in book if entry["id"] == address_id), None)
+        if item is None:
+            return failure("ADDRESS_NOT_FOUND")
+        book.remove(item)
+        if action == "update":
+            item.update({key: body[key] for key in ("name", "phone", "address_line", "province", "ward")}, is_default=item["is_default"] or body["is_default"])
+            book.insert(0, item)
+        else:
+            if item["is_default"] and book:
+                book[0]["is_default"] = True
+            item = None
+    elif action != "list":
+        return failure("VALIDATION_ERROR")
+    if item is not None and item["is_default"]:
+        for entry in book:
+            entry["is_default"] = entry is item
+    default = next((entry for entry in book if entry["is_default"]), None)
+    if default is not None:
+        # Mirrors phub_address_sync_customer: recipient name/phone never overwrite account name/phone.
+        profile_row(owner).update(dia_chi_chi_tiet_md=default["address_line"], tinh_thanh_md=default["province"], xa_phuong_md=default["ward"])
+    ordered = sorted(book, key=lambda entry: not entry["is_default"])
+    return {"items": deepcopy(ordered), "item": deepcopy(item)}
+
+
 def database(request):
     with lock:
         table = request.url.path.rsplit("/", 1)[-1]
         if request.method == "POST":
             payload = json.loads(request.content)
-            if table == "customer_checkout_v2":
+            if table == "customer_address_v1":
+                return httpx.Response(200, json=addresses(payload))
+            if table in {"customer_checkout_v2", "customer_checkout_multi_warehouse_v1"}:
                 return httpx.Response(200, json=checkout(payload))
+            if table == "customer_cancel_order_v1":
+                owner, order_id = payload["p_customer_id"], payload["p_order_id"]
+                order = state["orders"].get(order_id)
+                if not order or order.get("owner") != owner:
+                    return httpx.Response(200, json=failure("ORDER_NOT_FOUND"))
+                if order["status"] == "HUY":
+                    return httpx.Response(200, json=failure("ORDER_ALREADY_CANCELLED"))
+                if order["status"] in ("DA_XUAT_KHO", "HOAN_THANH"):
+                    return httpx.Response(200, json=failure("ORDER_NOT_CANCELABLE"))
+                order["status"] = "HUY"
+                txs = state["transactions"].setdefault(order_id, [])
+                paid = sum(Decimal(t["so_tien"]) if t["loai_giao_dich"] == "THU" else -Decimal(t["so_tien"]) for t in txs if t["trang_thai"] == "THANH_CONG")
+                if paid > 0:
+                    txs.append({
+                        "so_tien": format(paid, ".2f"), "loai_giao_dich": "HOAN_TIEN", "phuong_thuc": "CHUYEN_KHOAN",
+                        "trang_thai": "THANH_CONG", "thoi_gian": "2026-10-06T12:00:00",
+                        "owned_order": {"ma_donhang": order_id, "ma_kh": owner},
+                        "ma_giao_dich": f"REFUND-{order_id}", "ma_thanh_toan": f"REFUND-PAYMENT-{order_id}",
+                    })
+                return httpx.Response(200, json={"order": public_detail(order)})
             if table == "customer_read_orders_v2":
                 owned = [order for order in state["orders"].values() if order["owner"] == payload["p_customer_id"]]
                 if payload["p_order_id"] is not None:
@@ -125,15 +198,24 @@ def database(request):
         if table == "KHACH_HANG":
             owner = read_literal(request, "ma_kh")
             if owner in ("KH-A", "KH-B"):
-                row = state["profiles"].setdefault(owner, {"ma_kh": owner, "ten_kh": "Khách thử A" if owner == "KH-A" else "Khách thử B", "sdt": RECIPIENT["phone"], "dia_chi_chi_tiet_md": RECIPIENT["address_line"], "tinh_thanh_md": RECIPIENT["province"], "xa_phuong_md": RECIPIENT["ward"]})
+                row = profile_row(owner)
                 if request.method == "PATCH":
                     row.update(json.loads(request.content))
+                    book = state["addresses"].get(owner)
+                    if book is not None and profile_complete(row):  # Mirrors phub_customer_sync_address.
+                        default = next((entry for entry in book if entry["is_default"]), None)
+                        if default is None:
+                            book.insert(0, address_from_profile(row))
+                        else:
+                            default.update({key: value for key, value in address_from_profile(row).items() if key not in ("id", "is_default")})
                 rows = [row]
         elif table == "SAN_PHAM":
             if state["products_available"] and read_literal(request, "ma_sp") in ("", "P-A"):
-                rows = [{"ma_sp": "P-A", "sku": "SKU-A", "ten_sp": "Laptop thử nghiệm", "thuong_hieu": "PHUB", "gia_ban_hien_tai": state["price"], "mo_ta": "Mô tả từ API fixture", "thong_so_ky_thuat": "CPU: Core i5\nRAM: 16 GB", "don_vi": "Chiếc", "bao_hanh_thang": 12, "duong_dan_anh": "/images/catalog/product-placeholder.svg", "category": {"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop", "trang_thai": 1}}]
+                rows = [{"ma_sp": "P-A", "sku": "SKU-A", "ten_sp": "Laptop thử nghiệm", "thuong_hieu": "PHUB", "gia_ban_hien_tai": state["price"], "mo_ta": "Mô tả từ API fixture", "thong_so_ky_thuat": "CPU: Core i5\nRAM: 16 GB", "don_vi": "Chiếc", "bao_hanh_thang": 12, "duong_dan_anh": "/images/catalog/product-placeholder.svg", "category": {"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop", "trang_thai": 1}, "subcategory": {"ma_loai_sp_con": "LAPTOP-GAMING", "ten_loai_sp_con": "Laptop gaming", "trang_thai": 1}}]
         elif table == "LOAI_SP":
             rows = [{"ma_loai_sp": "LAPTOP", "ten_loai_sp": "Laptop"}]
+        elif table == "LOAI_SP_CON":
+            rows = [{"ma_loai_sp": "LAPTOP", "ma_loai_sp_con": "LAPTOP-GAMING", "ten_loai_sp_con": "Laptop gaming"}]
         elif table == "DON_HANG":
             order = state["orders"].get(read_literal(request, "ma_donhang"))
             if order and order["owner"] == read_literal(request, "ma_kh"):
@@ -260,7 +342,6 @@ class FixturePaymentRequests:
             total = subtotal + tax
             if paid >= total:
                 raise PaymentError(409, "ORDER_ALREADY_PAID", "Đơn đã được thanh toán đủ.")
-            # Invoice and pending transaction exist only in this in-memory fixture.
             state["invoices"][order_id] = {"thoi_gian_lap": "2026-10-07T12:00:00", "tong_tien_giam": order["discount_total"],
                 "tong_tien_truoc_thue": str(subtotal), "tong_tien_thue": str(tax), "tong_tien_sau_thue": str(total),
                 "owned_order": {"ma_donhang": order_id, "ma_kh": owner}}

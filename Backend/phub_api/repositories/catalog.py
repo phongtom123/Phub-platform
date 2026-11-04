@@ -1,0 +1,160 @@
+"""Catalog projections and database filters; public formatting is in CatalogService."""
+import json
+import re
+
+from postgrest.exceptions import APIError
+
+from phub_api.models.resources import public_columns
+from phub_api.repositories.pagination import rows as all_rows
+from phub_api.schemas.catalog import CatalogQuery, CatalogSort
+
+PRODUCT_COLUMNS = (
+    "ma_sp,sku,ten_sp,trang_thai,thuong_hieu,gia_ban_hien_tai::text,mo_ta,"
+    "thong_so_ky_thuat,don_vi,bao_hanh_thang,duong_dan_anh,ma_loai_sp_con,"
+    "category:LOAI_SP!inner(ma_loai_sp,ten_loai_sp,trang_thai),"
+    "subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(ma_loai_sp_con,ten_loai_sp_con,trang_thai),"
+    "product_media:MEDIA!MEDIA_product_fkey(ma_media,url,alt_text,thu_tu,la_anh_chinh)"
+)
+BATCH_SIZE = 500
+
+
+def quoted(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+class CatalogRepository:
+    def __init__(self, client, currency="VND", active_status=1):
+        self.client, self.currency, self.active_status = client, currency, active_status
+
+    def active_products(self, columns: str, **options):
+        return (
+            self.client.table("SAN_PHAM").select(columns, **options)
+            .eq("trang_thai", self.active_status)
+            .eq("category.trang_thai", self.active_status)
+            .eq("subcategory.trang_thai", self.active_status)
+        )
+
+    def visible_products(self, columns: str, include_inactive=False, **options):
+        if not include_inactive:
+            return self.active_products(columns, **options)
+        return (self.client.table("SAN_PHAM").select(columns, **options)
+                # Admin statuses: 0 = hidden, 1 = active, 2 = paused.
+                # Showing paused products must never expose hidden records.
+                .in_("trang_thai", sorted({2, self.active_status}))
+                .eq("category.trang_thai", self.active_status)
+                .eq("subcategory.trang_thai", self.active_status))
+
+    def banners(self, local_now: str):
+        return (self.client.table("CHUONG_TRINH_KHUYEN_MAI").select(
+            "ma_ctkm,ten_chuong_trinh,banner:MEDIA!CHUONG_TRINH_KHUYEN_MAI_banner_media_fkey!inner(url,alt_text,chieu_rong,chieu_cao)"
+        ).eq("trang_thai", "HOAT_DONG")
+            .lte("ngay_bat_dau", local_now).gte("ngay_ket_thuc", local_now)
+            .not_.is_("ma_media_banner", "null")
+            .order("ngay_bat_dau", desc=True).order("ma_ctkm", desc=True).limit(20).execute().data)
+
+    def apply_filters(self, query, filters: CatalogQuery):
+        if filters.q:
+            pattern = quoted(re.escape(filters.q))
+            query = query.or_(f"ten_sp.imatch.{pattern},sku.imatch.{pattern}")
+        category_values = ",".join(quoted(value) for value in filters.category_id)
+        subcategory_values = ",".join(quoted(value) for value in filters.subcategory_id)
+        if category_values:
+            query = query.filter("ma_loai_sp", "in", f"({category_values})")
+        if subcategory_values:
+            query = query.filter("ma_loai_sp_con", "in", f"({subcategory_values})")
+        if filters.brand:
+            query = query.eq("thuong_hieu", filters.brand)
+        if filters.min_price is not None:
+            query = query.gte("gia_ban_hien_tai", str(filters.min_price))
+        if filters.max_price is not None:
+            query = query.lte("gia_ban_hien_tai", str(filters.max_price))
+        return query
+
+    def product_query(self, filters: CatalogQuery):
+        query = self.apply_filters(self.visible_products(PRODUCT_COLUMNS, filters.include_inactive, count="exact"), filters)
+        if filters.sort != CatalogSort.DEFAULT:
+            query = query.order("gia_ban_hien_tai", desc=filters.sort == CatalogSort.PRICE_DESC)
+        return query.order("ma_sp")
+
+    def products(self, filters: CatalogQuery):
+        return list(all_rows(lambda: self.product_query(filters)))
+
+    def page(self, filters: CatalogQuery):
+        start = (filters.page - 1) * filters.page_size
+        try:
+            response = self.product_query(filters).range(start, start + filters.page_size - 1).execute()
+            return response.data, response.count
+        except APIError as exc:
+            if exc.code != "PGRST103":
+                raise
+            query = self.apply_filters(self.visible_products(
+                "ma_sp,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)",
+                filters.include_inactive,
+                count="exact", head=True,
+            ), filters)
+            return [], query.execute().count
+
+    def find(self, identifier, include_inactive=False):
+        rows = self.visible_products(PRODUCT_COLUMNS, include_inactive).eq("ma_sp", identifier).limit(1).execute().data
+        return rows[0] if rows else None
+
+    def public_skus(self, skus):
+        columns = "sku,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)"
+        return [row["sku"] for row in self.active_products(columns).in_("sku", sorted(set(skus))).limit(100).execute().data]
+
+    def purchase_states(self, skus):
+        columns = ("ma_sp,sku,trang_thai,category:LOAI_SP!inner(trang_thai),"
+                   "subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)")
+        return (self.visible_products(columns, include_inactive=True)
+                .in_("sku", sorted(set(skus))).limit(100).execute().data)
+
+    def component_names(self, ids: list[str]) -> dict[str, str]:
+        if not ids:
+            return {}
+        rows = (
+            self.client.table("SAN_PHAM")
+            .select("ma_sp,ten_sp")
+            .in_("ma_sp", sorted(set(ids)))
+            .execute()
+            .data
+        )
+        return {
+            row["ma_sp"]: row["ten_sp"]
+            for row in rows
+            if isinstance(row, dict) and row.get("ma_sp") and row.get("ten_sp")
+        }
+
+    def categories(self):
+        def parents():
+            return self.client.table("LOAI_SP").select("ma_loai_sp,ten_loai_sp").eq("trang_thai", self.active_status).order("ma_loai_sp")
+        def children():
+            return (self.client.table("LOAI_SP_CON").select("ma_loai_sp_con,ten_loai_sp_con,ma_loai_sp")
+                    .eq("trang_thai", self.active_status).order("ma_loai_sp").order("ten_loai_sp_con"))
+        return list(all_rows(parents)), list(all_rows(children))
+
+    def brand_rows(self):
+        return all_rows(lambda: self.active_products(
+            "ma_sp,thuong_hieu,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)"
+        ).order("ma_sp"))
+
+    def specification_rows(self):
+        return all_rows(lambda: self.active_products(
+            "ma_sp,thong_so_ky_thuat,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)"
+        ).order("ma_sp"))
+
+    def reservations(self, values, statuses):
+        return all_rows(lambda: self.client.table("CT_DON_HANG")
+            .select("sku,ma_kho_xuat,so_luong,order:DON_HANG!inner(trang_thai,invoice:HOA_DON(ma_donhang),payments:THANH_TOAN(ma_thanh_toan))")
+            .eq("order.payments.trang_thai", "THANH_CONG").eq("order.payments.loai_giao_dich", "THU")
+            .filter("sku", "in", values).in_("order.trang_thai", statuses).order("ma_ct_donhang"))
+
+    def stock(self, values):
+        return all_rows(lambda: self.client.table("TON_KHO")
+            .select("sku,ma_kho,so_luong_ton,warehouse:KHO!inner(trang_thai)")
+            .filter("sku", "in", values).eq("warehouse.trang_thai", self.active_status)
+            .order("ma_kho").order("sku"))
+
+    def legacy_products(self):
+        columns = [c["name"] + ("::text" if c["type"].startswith("decimal") else "") for c in public_columns("products")]
+        return (self.client.table("SAN_PHAM").select(",".join(columns) + ",category:LOAI_SP!inner(trang_thai)")
+                .eq("trang_thai", 1).eq("category.trang_thai", 1).order("ma_sp").limit(20).execute().data)

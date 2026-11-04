@@ -4,7 +4,8 @@
 
 `LiveHomeProducts` thay dữ liệu mẫu ở các khối sản phẩm bằng API catalog công
 khai. Các khối lấy sản phẩm đang bán và nhóm theo loại thật; nút "Xem tất cả"
-mở catalog tương ứng. Xem nhanh mở chi tiết bằng `ma_sp` thật, giá dùng tiền tệ
+mở catalog tương ứng. Bấm ảnh hoặc tên sản phẩm mở thẳng `/main/product/{ma_sp}`,
+không qua hộp xem nhanh; giá dùng tiền tệ
 API. Không giả định sản phẩm mới nhất, rating, tồn kho hoặc giảm giá.
 Banner và nội dung tĩnh giữ thiết kế hiện có. Xem
 [CATALOG-INTEGRATION.md](../../../CATALOG-INTEGRATION.md) để chạy/kiểm tra.
@@ -26,7 +27,7 @@ Desktop spacing follows the supplied Home screenshot, including the large whites
 
 ## Assets
 
-All assets are served locally from `public/images/home`; no runtime third-party image requests.
+All images are served from `media/products/home` in Supabase Storage; see `MEDIA_STORAGE.md`.
 
 - `banner-msi.png`, `banner-asus.png` and `category-*.png`: copied from the user's existing `C:/xampp/htdocs/web2/asset/public/uploads/images` (`Group 56.png`, `Group 57.png`, `image 30.png`, `image 30 (1).png`, `image 30 (2).png`, `image 30 (3).png`). Promotional wording/dates are baked into these demo images, not a current offer.
 - Custom PC / laptop / desktop SVG images and Zip logo: public Tech Store design reference at https://tech-store-ruby.vercel.app/. Original asset paths are recorded below. These SVGs contain raster product artwork; no website code was imported.

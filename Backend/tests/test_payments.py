@@ -12,10 +12,13 @@ from fastapi.testclient import TestClient
 from postgrest import SyncPostgrestClient
 from postgrest.exceptions import APIError
 
-from app.payments.auth import CurrentCustomer, require_customer
-from app.payments.errors import PaymentError
-from app.payments.repository import PaymentRepository
-from app.payments.router import get_repository, router
+from phub_api.models.customer import CurrentCustomer
+from phub_api.dependencies.customer import require_customer
+from phub_api.middleware.payment_errors import PaymentError
+from phub_api.repositories.payments import PaymentRepository
+from phub_api.services.payments import PaymentService
+from phub_api.dependencies.payments import get_repository
+from phub_api.controllers.payments import router
 
 
 ORDER_ID = "ORDER-A"
@@ -24,12 +27,12 @@ BASE = f"/api/orders/{ORDER_ID}"
 
 
 @pytest.fixture
-def payments_client():
+def payments_client(monkeypatch):
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "false")
     row = {
         "so_tien": "100000.10", "loai_giao_dich": "THU", "phuong_thuc": "CHUYEN_KHOAN",
         "trang_thai": "CHO_XU_LY", "thoi_gian": "2026-10-06T10:00:00",
         "owned_order": {"ma_donhang": ORDER_ID, "ma_kh": CUSTOMER_ID},
-        # Inject extra internal data to ensure it cannot accidentally be returned.
         "ma_thanh_toan": "PRIVATE-PAYMENT", "ma_giao_dich": "PRIVATE-PROVIDER",
         "token": "PRIVATE-TOKEN", "bank_account": "PRIVATE-BANK", "payload": {"secret": "PRIVATE-PAYLOAD"},
     }
@@ -42,6 +45,8 @@ def payments_client():
     def handle(request):
         requests.append(request)
         table = request.url.path.rsplit("/", 1)[-1]
+        if table == "customer_demo_payment_v1":
+            return httpx.Response(200, json=state["demo_result"])
         if state["error"] and (state["error_table"] is None or state["error_table"] == table) and (state.get("error_method") is None or state["error_method"] == request.method):
             raise state["error"]
         if table == "DON_HANG":
@@ -60,20 +65,20 @@ def payments_client():
         app.include_router(router)
         app.dependency_overrides[get_repository] = lambda: repository
         app.dependency_overrides[require_customer] = lambda: CurrentCustomer(customer_id=CUSTOMER_ID)
-        with TestClient(app) as client:
+        with TestClient(app, headers={"Origin": "http://localhost:3000"}) as client:
             yield client, state, requests, repository, app
 
 
 @pytest.mark.parametrize("endpoint", ["payments", "transactions"])
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer forged-token", "X-Customer-Id": CUSTOMER_ID, "Cookie": "ma_kh=CUSTOMER-A"}])
-def test_unconnected_auth_blocks_every_request_before_database(payments_client, endpoint, headers):
+def test_shared_auth_blocks_every_request_without_session_before_database(payments_client, endpoint, headers):
     client, _, requests, _, app = payments_client
     app.dependency_overrides.pop(require_customer)
     response = client.get(f"{BASE}/{endpoint}", headers=headers)
-    assert response.status_code == 503
+    assert response.status_code == 401
     assert response.json() == {"error": {
-        "code": "AUTH_INTEGRATION_REQUIRED",
-        "message": "Chưa kết nối phần xác thực khách hàng. Không thể sử dụng chức năng mua hàng lúc này.", "details": [],
+        "code": "AUTHENTICATION_REQUIRED",
+        "message": "Bạn cần đăng nhập để tra cứu thanh toán.", "details": [],
     }}
     assert response.headers["Cache-Control"] == "no-store"
     assert requests == []
@@ -118,7 +123,7 @@ def test_paginated_history_filters_owner_and_counts_all_types(payments_client):
     assert params["offset"] == "10" and params["limit"] == "10"
     assert params["owned_order.ma_kh"] == 'eq.CUSTOMER-A'
     assert "count=exact" in requests[-1].headers["prefer"]
-    assert "loai_giao_dich" not in params  # includes both collections and refunds
+    assert "loai_giao_dich" not in params
 
 
 @pytest.mark.parametrize("endpoint", ["payments", "transactions"])
@@ -150,6 +155,17 @@ def test_owned_order_without_transactions_is_not_reported_paid(payments_client):
     history = client.get(f"{BASE}/transactions").json()
     assert history["items"] == []
     assert history["pagination"] == {"page": 1, "page_size": 20, "total": 0, "total_pages": 0}
+
+
+def test_bypass_payment_is_read_from_business_table_even_when_mode_is_off(payments_client, monkeypatch):
+    client, state, requests, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "false")
+    state["rows"][0].update(la_bypass=True, trang_thai="THANH_CONG")
+    response = client.get(f"{BASE}/payments")
+    assert response.status_code == 200
+    assert response.json()["latest_transaction"]["status"] == "succeeded"
+    assert "bypass" in response.json()["message"]
+    assert requests[-1].url.path.endswith("/THANH_TOAN")
 
 
 def test_history_page_beyond_end_is_empty(payments_client):
@@ -250,7 +266,7 @@ def test_equality_identifiers_are_encoded_as_single_query_values(payments_client
     customer = CurrentCustomer(customer_id=customer_id)
     state["orders"] = [{"ma_donhang": order_id, "ma_kh": customer_id}]
     state["rows"] = []
-    result = repository.overview(order_id, customer)
+    result = PaymentService(repository).overview(order_id, customer)
     assert result.latest_transaction is None
     for request in requests:
         assert request.url.params["ma_donhang"] == "eq." + order_id
@@ -260,10 +276,10 @@ def test_equality_identifiers_are_encoded_as_single_query_values(payments_client
     assert "or" not in requests[-1].url.params
 
 
-def test_repository_rejects_unverified_customer_dict_before_reading(payments_client):
+def test_service_rejects_unverified_customer_dict_before_reading(payments_client):
     _, _, requests, repository, _ = payments_client
     with pytest.raises(PaymentError) as error:
-        repository.overview(ORDER_ID, {"customer_id": CUSTOMER_ID})
+        PaymentService(repository).overview(ORDER_ID, {"customer_id": CUSTOMER_ID})
     assert error.value.code == "AUTH_INTEGRATION_REQUIRED" and requests == []
 
 
@@ -291,6 +307,9 @@ def test_existing_auth_errors_are_normalized_without_leaking_details(payments_cl
     (APIError({"code": "57014", "message": "PRIVATE-SQL", "details": "PRIVATE", "hint": "PRIVATE"}), 503, "DATA_SERVICE_UNAVAILABLE"),
     (APIError({"code": "40001", "message": "PRIVATE-SQL", "details": "PRIVATE", "hint": "PRIVATE"}), 503, "DATA_SERVICE_UNAVAILABLE"),
     (APIError({"code": "42501", "message": "PRIVATE-SQL", "details": "PRIVATE", "hint": "PRIVATE"}), 500, "INTERNAL_ERROR"),
+    (APIError({"code": "P0001", "message": "INSUFFICIENT_STOCK", "details": "PRIVATE", "hint": "PRIVATE"}), 409, "INSUFFICIENT_STOCK"),
+    (APIError({"code": "P0001", "message": "PAYMENT_DEADLINE_EXPIRED", "details": "PRIVATE", "hint": "PRIVATE"}), 409, "PAYMENT_DEADLINE_EXPIRED"),
+    (APIError({"code": "P0001", "message": "WAREHOUSE_NOT_AVAILABLE", "details": "PRIVATE", "hint": "PRIVATE"}), 409, "WAREHOUSE_NOT_AVAILABLE"),
     (RuntimeError("PRIVATE-PAYMENT"), 500, "INTERNAL_ERROR"),
 ])
 def test_database_and_transport_errors_are_sanitized(payments_client, error, expected_status, expected_code, caplog):
@@ -319,10 +338,9 @@ def test_all_payment_paths_and_contracts_are_in_swagger(payments_client):
     for suffix, schema in [("payments", "PaymentOverview"), ("transactions", "TransactionPage")]:
         operation = spec["paths"][f"/api/orders/{{order_id}}/{suffix}"]["get"]
         assert operation["tags"] == ["Customer Payments"]
-        assert "AUTH_INTEGRATION_REQUIRED" in operation["description"] or "503" in operation["description"]
         assert set(operation["responses"]) == {"200", "401", "403", "404", "422", "500", "503"}
         assert operation["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith(schema)
-        assert operation["responses"]["503"]["content"]["application/json"]["example"]["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+        assert operation["responses"]["503"]["content"]["application/json"]["example"]["error"]["code"] == "PAYMENT_SCHEMA_NOT_READY"
     fields = spec["components"]["schemas"]["PaymentTransaction"]["properties"]
     assert set(fields) == {"type", "method", "amount", "status", "occurred_at", "message"}
     assert fields["amount"]["type"] == "string"
@@ -353,22 +371,67 @@ def test_payment_request_foreign_order_and_invalid_idempotency_are_blocked(payme
     assert result.status_code == 404
     app.dependency_overrides.pop(require_customer)
     requests.clear()
-    assert client.post(f"{BASE}/payment-request", json={"method":"cash"}, headers={"Idempotency-Key":str(uuid4())}).status_code == 503
+    assert client.post(f"{BASE}/payment-request", json={"method":"cash"}, headers={"Idempotency-Key":str(uuid4())}).status_code == 401
     assert requests == []
 
 
+def test_bypass_is_server_enabled_owned_and_returns_atomic_database_result(payments_client, monkeypatch):
+    import json
+    client, state, requests, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "true")
+    key = str(uuid4())
+    transaction = {"type": "collection", "method": "card", "amount": "220.08", "status": "succeeded",
+                   "occurred_at": "2026-11-02T07:30:00Z", "message": "Mô phỏng; không thu tiền thật."}
+    state["demo_result"] = {"replayed": False, "overview": {
+        "order_id": ORDER_ID, "currency": "VND", "latest_transaction": transaction,
+        "message": transaction["message"], "demo": {"request_key": key, "order_status": "DANG_CHUAN_BI"}}}
+    response = client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": key})
+    assert response.status_code == 200
+    assert response.json()["demo"]["order_status"] == "DANG_CHUAN_BI"
+    assert response.json()["latest_transaction"]["amount"] == "220.08"
+    assert response.headers["Idempotency-Replayed"] == "false"
+    payload = json.loads(requests[-1].content)
+    assert payload["p_customer_id"] == CUSTOMER_ID and payload["p_order_id"] == ORDER_ID
+    assert payload["p_key"] == key and payload["p_method"] == "card"
+    assert "amount" not in payload and "status" not in payload
+    state["demo_result"]["replayed"] = True
+    assert client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": key}).headers["Idempotency-Replayed"] == "true"
+    state["orders"] = []
+    requests.clear()
+    assert client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": key}).status_code == 404
+    assert len(requests) == 1 and requests[0].method == "GET"
+
+
+def test_bypass_does_not_return_success_on_database_error(payments_client, monkeypatch):
+    client, state, _, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "true")
+    state["demo_result"] = {"error": "ORDER_NOT_PAYABLE"}
+    response = client.post(f"{BASE}/payment-request", json={"method": "card"}, headers={"Idempotency-Key": str(uuid4())})
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "ORDER_NOT_PAYABLE"
+
+
+def test_bypass_rejects_cross_origin_before_database(payments_client, monkeypatch):
+    client, _, requests, _, _ = payments_client
+    monkeypatch.setenv("PAYMENT_DEMO_ENABLED", "true")
+    response = client.post(f"{BASE}/payment-request", json={"method": "card"},
+                           headers={"Idempotency-Key": str(uuid4()), "Origin": "https://foreign.example"})
+    assert response.status_code == 403 and requests == []
+
+
 def test_main_registers_payments_without_requiring_auth_at_startup(monkeypatch):
-    stub = ModuleType("app.supabase")
+    stub = ModuleType("phub_api.config.database")
     stub.supabase = SimpleNamespace()
     stub.get_supabase = lambda: stub.supabase
-    monkeypatch.setitem(sys.modules, "app.supabase", stub)
-    location = Path(__file__).resolve().parents[1] / "app" / "main.py"
-    spec = importlib.util.spec_from_file_location("app.payment_main_check", location)
+    stub.close_supabase = lambda: None
+    monkeypatch.setitem(sys.modules, "phub_api.config.database", stub)
+    location = Path(__file__).resolve().parents[1] / "phub_api" / "main.py"
+    spec = importlib.util.spec_from_file_location("phub_api.payment_main_check", location)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     with TestClient(module.app) as client:
         assert client.get("/docs").status_code == 200
-        assert client.get(f"{BASE}/payments").json()["error"]["code"] == "AUTH_INTEGRATION_REQUIRED"
+        assert client.get(f"{BASE}/payments").json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
         paths = client.get("/openapi.json").json()["paths"]
         assert "/api/catalog/products" in paths and "/api/orders" in paths
         assert "/api/orders/{order_id}/transactions" in paths

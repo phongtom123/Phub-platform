@@ -7,6 +7,11 @@ export interface PriceProps {
   locale?: string;
   className?: string;
   uiLocale?: "en" | "vi";
+  showTaxNotice?: boolean;
+}
+
+export function TaxNotice() {
+  return null;
 }
 
 export function Price({ amount, originalAmount, currency = "USD", locale = "en-US", className, uiLocale = "en" }: PriceProps) {

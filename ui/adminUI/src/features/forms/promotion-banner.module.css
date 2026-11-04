@@ -1,0 +1,22 @@
+.editor {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border, #dce2d9);
+  border-radius: 10px;
+}
+.editor h3 { margin: 0 0 12px; }
+.dropzone {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  padding: 12px;
+  border: 1px dashed #a9b7a3;
+  border-radius: 8px;
+  background: #f6f8f5;
+  text-align: center;
+}
+.preview { display: block; width: 100%; height: auto; aspect-ratio: 16 / 5; object-fit: contain; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.hint { margin: 10px 0 0; color: #69746a; font-size: 14px; }
+.detail { margin-bottom: 20px; }

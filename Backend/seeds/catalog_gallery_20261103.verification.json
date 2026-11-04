@@ -1,0 +1,365 @@
+{
+  "before": [
+    {
+      "name": "products",
+      "rows": 115,
+      "fingerprint": "b570df7ddf89e381b467a336cd9c23fc"
+    },
+    {
+      "name": "inventory",
+      "rows": 372,
+      "fingerprint": "b0a1adae0f3bee6db232a0b110e675d0"
+    },
+    {
+      "name": "receipts",
+      "rows": 9,
+      "fingerprint": "515389b80d9de998e1c9e51968b80662"
+    },
+    {
+      "name": "receipt_lines",
+      "rows": 65,
+      "fingerprint": "76bbd72ab4c5782a23c56bd8839f3a62"
+    },
+    {
+      "name": "orders",
+      "rows": 31,
+      "fingerprint": "5570271bdb5b9fecfbe364987bf66be2"
+    },
+    {
+      "name": "invoices",
+      "rows": 13,
+      "fingerprint": "c0dd0528fc5022b5ac82adca6214d4bf"
+    },
+    {
+      "name": "payments",
+      "rows": 17,
+      "fingerprint": "0818b238db3f7058af9d6846db96a13d"
+    }
+  ],
+  "after": [
+    {
+      "name": "products",
+      "rows": 115,
+      "fingerprint": "b570df7ddf89e381b467a336cd9c23fc"
+    },
+    {
+      "name": "inventory",
+      "rows": 372,
+      "fingerprint": "b0a1adae0f3bee6db232a0b110e675d0"
+    },
+    {
+      "name": "receipts",
+      "rows": 9,
+      "fingerprint": "515389b80d9de998e1c9e51968b80662"
+    },
+    {
+      "name": "receipt_lines",
+      "rows": 65,
+      "fingerprint": "76bbd72ab4c5782a23c56bd8839f3a62"
+    },
+    {
+      "name": "orders",
+      "rows": 31,
+      "fingerprint": "5570271bdb5b9fecfbe364987bf66be2"
+    },
+    {
+      "name": "invoices",
+      "rows": 13,
+      "fingerprint": "c0dd0528fc5022b5ac82adca6214d4bf"
+    },
+    {
+      "name": "payments",
+      "rows": 17,
+      "fingerprint": "0818b238db3f7058af9d6846db96a13d"
+    }
+  ],
+  "unchanged": true,
+  "api_assets": [
+    {
+      "product_id": "SP092",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP093",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP094",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP095",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP096",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP097",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP098",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP099",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP100",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP101",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP102",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP103",
+      "images": 3,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP104",
+      "images": 1,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP105",
+      "images": 1,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP106",
+      "images": 2,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP107",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP108",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP109",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP110",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP111",
+      "images": 3,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP112",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP113",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP114",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    },
+    {
+      "product_id": "SP115",
+      "images": 4,
+      "public_api": 200,
+      "all_assets": 200,
+      "primary_preserved": true
+    }
+  ],
+  "browser": {
+    "results": [
+      {
+        "id": "SP092",
+        "mobile": false,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": false
+      },
+      {
+        "id": "SP094",
+        "mobile": false,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": false
+      },
+      {
+        "id": "SP098",
+        "mobile": false,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": false
+      },
+      {
+        "id": "SP103",
+        "mobile": false,
+        "images": 3,
+        "thumbnail": true,
+        "next": true,
+        "swipe": false
+      },
+      {
+        "id": "SP107",
+        "mobile": false,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": false
+      },
+      {
+        "id": "SP110",
+        "mobile": false,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": false
+      },
+      {
+        "id": "SP113",
+        "mobile": false,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": false
+      },
+      {
+        "id": "SP092",
+        "mobile": true,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": true
+      },
+      {
+        "id": "SP094",
+        "mobile": true,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": true
+      },
+      {
+        "id": "SP098",
+        "mobile": true,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": true
+      },
+      {
+        "id": "SP103",
+        "mobile": true,
+        "images": 3,
+        "thumbnail": true,
+        "next": true,
+        "swipe": true
+      },
+      {
+        "id": "SP107",
+        "mobile": true,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": true
+      },
+      {
+        "id": "SP110",
+        "mobile": true,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": true
+      },
+      {
+        "id": "SP113",
+        "mobile": true,
+        "images": 4,
+        "thumbnail": true,
+        "next": true,
+        "swipe": true
+      }
+    ],
+    "errors": [],
+    "failed": []
+  }
+}

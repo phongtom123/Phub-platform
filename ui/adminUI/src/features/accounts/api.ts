@@ -1,9 +1,11 @@
+import { adminFetch } from "@/src/lib/admin-fetch";
+
 export class AccountApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
 
 export async function accountApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`/api/backend/admin/${path}`, { ...options, cache: "no-store" });
+  const response = await adminFetch(`/api/backend/admin/${path}`, { cache: "no-store", ...options });
   const body = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = body?.detail;

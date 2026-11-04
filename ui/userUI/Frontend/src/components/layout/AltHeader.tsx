@@ -1,36 +1,40 @@
 "use client";
+import { useShopping } from "@/components/shopping/ShoppingProvider";
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { Suspense, useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { IconButton } from "@/components/common/icon";
-import { SearchInput } from "@/components/common/SearchInput";
+import { HeaderSearch } from "./HeaderSearch";
 import { AccountMenu, CartPreview, GuestAvatar } from "./HeaderPanels";
-import { headerCategories } from "./headerData";
-import { MegaMenu } from "./MegaMenu";
-import { HeaderTopBar } from "./HeaderTopBar";
+import { useCategories } from "@/lib/catalog/useCategories";
+import { categoryHref } from "@/lib/catalog/categories";
 import { MobileCategoryDrawer } from "@/components/mobile/menu/MobileCategoryDrawer";
+import { CatalogMegaMenu, CategoryMenuIcon } from "./CatalogMegaMenu";
 import styles from "./Header.module.css";
 import { useRouter } from "next/navigation";
+import { AUTH_SESSION_EVENT, getSession, logoutSession, type SessionUser } from "../../../../../shared/auth-client";
 
-type Dropdown = "shop" | "account" | "cart" | "mega";
-type Panel = Dropdown | "mobile" | "notice" | null;
+type Dropdown = "account" | "cart";
+type Panel = Dropdown | "categories" | "mobile" | "notice" | null;
 
 export default function AltHeader() {
   const router = useRouter();
+  const shop = useShopping();
   const id = useId();
   const rootRef = useRef<HTMLElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const hoverRef = useRef<Dropdown | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const catalog = useCategories();
+  const [session, setSession] = useState<SessionUser | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
 
   function close(restoreFocus = false) {
     setPanel(null);
-    setSelectedCategoryId(null);
-    setSearchOpen(false);
+    setActiveCategoryId(null);
     hoverRef.current = null;
     if (restoreFocus) triggerRef.current?.focus();
   }
@@ -39,13 +43,13 @@ export default function AltHeader() {
     triggerRef.current = trigger;
     const wasHover = hoverRef.current === next;
     hoverRef.current = null;
-    setSearchOpen(false);
-    if (next === "mobile") setSelectedCategoryId(null);
+    setActiveCategoryId(null);
     setPanel(current => (current === next && !wasHover ? null : next));
   }
 
   function hoverOpen(next: Dropdown, event: ReactPointerEvent<HTMLElement>) {
-    if (event.pointerType !== "mouse" || searchOpen || (panel && hoverRef.current === null)) return;
+    if (!window.matchMedia("(min-width: 1100px) and (hover: hover)").matches) return;
+    if (event.pointerType !== "mouse" || (panel && hoverRef.current === null)) return;
     triggerRef.current =
       event.currentTarget instanceof HTMLButtonElement
         ? event.currentTarget
@@ -61,27 +65,50 @@ export default function AltHeader() {
     }
   }
 
-  function showPreview(label: string) {
-    hoverRef.current = null;
-    setSearchOpen(false);
-    setNotice(label + ": hiện chỉ là giao diện, chưa kết nối chức năng.");
-    setPanel("notice");
-  }
+  useEffect(() => {
+    const controller = new AbortController();
+    function changed(event: Event) {
+      setSession((event as CustomEvent<SessionUser | null>).detail);
+      setSessionLoading(false);
+    }
+    window.addEventListener(AUTH_SESSION_EVENT, changed);
+    getSession(controller.signal)
+      .then(setSession)
+      .catch(() => setSession(null))
+      .finally(() => setSessionLoading(false));
+    return () => {
+      controller.abort();
+      window.removeEventListener(AUTH_SESSION_EVENT, changed);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (panel !== "categories") return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const mobile = window.matchMedia("(max-width: 1099px)");
+    function changed() { setPanel(null); setActiveCategoryId(null); }
+    mobile.addEventListener("change", changed);
+    return () => {
+      document.body.style.overflow = previous;
+      mobile.removeEventListener("change", changed);
+    };
+  }, [panel]);
 
   useEffect(() => {
     function dismissOutside(event: Event) {
       if (!rootRef.current?.contains(event.target as Node)) {
         hoverRef.current = null;
         setPanel(null);
-        setSearchOpen(false);
+        setActiveCategoryId(null);
       }
     }
     function escape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || (!panel && !searchOpen)) return;
+      if (event.key !== "Escape" || (!panel && !activeCategoryId)) return;
       event.preventDefault();
       hoverRef.current = null;
       setPanel(null);
-      setSearchOpen(false);
+      setActiveCategoryId(null);
       triggerRef.current?.focus();
     }
     document.addEventListener("pointerdown", dismissOutside);
@@ -92,115 +119,77 @@ export default function AltHeader() {
       document.removeEventListener("focusin", dismissOutside);
       document.removeEventListener("keydown", escape);
     };
-  }, [panel, searchOpen]);
+  }, [activeCategoryId, panel]);
+
+  async function signOut() {
+    try {
+      await logoutSession();
+      setSession(null);
+      close();
+      router.refresh();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Không thể đăng xuất lúc này.");
+      setPanel("notice");
+    }
+  }
+
+  const activeCategory = catalog.data.find(item => item.id === activeCategoryId) ?? catalog.data[0];
 
   function dropdownProps(name: Dropdown) {
     return { "data-open": panel === name, "aria-hidden": panel !== name, inert: panel !== name };
   }
 
-  function selectCategory(item: typeof headerCategories[number], trigger: HTMLElement) {
-    if (item.id === "parts") toggle("mega", trigger);
-    else {
-      triggerRef.current = trigger;
-      showPreview(item.label);
-    }
-  }
-
   return (
     <header ref={rootRef} className={styles.header}>
-      <HeaderTopBar
-        id={id}
-        open={panel === "shop"}
-        onToggle={trigger => toggle("shop", trigger)}
-        onEnter={event => hoverOpen("shop", event)}
-        onLeave={hoverClose}
-        onClose={() => close()}
-      />
-
-      <div
-        className={styles.mainBar}
-        onPointerLeave={event => {
-          if (hoverRef.current === "mega") hoverClose(event);
-        }}
-      >
+      {panel === "categories" && <button type="button" className={styles.categoryBackdrop}
+        aria-label="Đóng danh mục sản phẩm" tabIndex={-1} onClick={() => close(true)} />}
+      <div className={styles.mainBar}>
         <Link href="/" className={styles.logo} aria-label="Tech Store — Trang chủ" onClick={() => close()}>
-          <Image src="/images/1.png" alt="" width={34} height={41} priority />
+          <Image src="/images/1.png" alt="" width={34} height={41} preload />
         </Link>
-        <IconButton
-          className={styles.mobileToggle}
-          label={panel === "mobile" ? "Đóng danh mục" : "Mở danh mục"}
-          aria-expanded={panel === "mobile"}
-          aria-controls={id + "-mobile"}
-          aria-haspopup="dialog"
-          onClick={event => toggle("mobile", event.currentTarget)}
-        >
-          <span className={styles.hamburger} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
-        </IconButton>
+        <button type="button" className={styles.categoryButton}
+          aria-label={panel === "categories" || panel === "mobile" ? "Đóng danh mục" : "Mở danh mục"}
+          aria-expanded={panel === "categories" || panel === "mobile"}
+          aria-controls={id + (panel === "mobile" ? "-mobile" : "-categories")}
+          onClick={event => toggle(window.matchMedia("(max-width: 1099px)").matches ? "mobile" : "categories", event.currentTarget)}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          Danh mục
+        </button>
 
-        <nav
+        {panel === "categories" && <nav id={id + "-categories"}
           aria-label="Danh mục sản phẩm"
-          className={[styles.navigation, searchOpen && styles.navigationHidden].filter(Boolean).join(" ")}
+          className={styles.categoryMenu}
         >
-          {headerCategories.map(item => (
-            <button
-              key={item.id}
-              type="button"
-              aria-expanded={item.id === "parts" ? panel === "mega" : undefined}
-              aria-controls={item.id === "parts" ? id + "-mega" : undefined}
-              onPointerEnter={event => {
-                if (item.id === "parts") hoverOpen("mega", event);
-              }}
-              onClick={event => selectCategory(item, event.currentTarget)}
-            >
-              {item.label}
-            </button>
+          <div className={styles.categoryList}>
+          {catalog.loading && <p role="status">Đang tải danh mục…</p>}
+          {catalog.error && <p role="alert">Không tải được danh mục. <button type="button" onClick={catalog.retry}>Thử lại</button></p>}
+          {catalog.data.map(item => (
+            <div key={item.id} className={styles.categoryNav} data-active={activeCategory?.id === item.id}
+              onMouseEnter={() => setActiveCategoryId(item.id)}
+              onFocusCapture={() => setActiveCategoryId(item.id)}>
+              <Link href={categoryHref(item.id)} onClick={() => close()}
+                aria-controls={id + "-category-options"} aria-expanded={activeCategory?.id === item.id}>
+                <CategoryMenuIcon label={item.label} /><span>{item.label}</span><span aria-hidden="true">›</span>
+              </Link>
+            </div>
           ))}
-        </nav>
-
-        {searchOpen && (
-          <div id={id + "-search"} className={styles.searchSlot}>
-            <SearchInput
-              autoFocus
-              className={styles.searchForm}
-              placeholder="Tìm theo Tên hoặc Mã SP..."
-              maxLength={100}
-              onSearch={query => { close(); router.push(`/main/product?${new URLSearchParams({ q: query.trim() })}`); }}
-            />
+          <Link className={styles.dealsLink} href="/main/product" onClick={() => close()}>Tất Cả Sản Phẩm</Link>
           </div>
-        )}
+          {activeCategory && <CatalogMegaMenu key={activeCategory.id} id={id + "-category-options"}
+            category={activeCategory} onNavigate={() => close()} />}
+        </nav>}
+
+        <div id={id + "-search"} className={styles.searchSlot} onFocusCapture={() => { setPanel(null); setActiveCategoryId(null); hoverRef.current = null; }}>
+          <Suspense fallback={<span role="status">Đang mở tìm kiếm…</span>}><HeaderSearch onNavigate={href => { close(); router.push(href); }} /></Suspense>
+        </div>
 
         <div className={styles.actions}>
-          <IconButton
-            className={styles.searchToggle}
-            label={searchOpen ? "Đóng tìm kiếm" : "Mở tìm kiếm"}
-            aria-expanded={searchOpen}
-            aria-controls={id + "-search"}
-            onClick={event => {
-              triggerRef.current = event.currentTarget;
-              hoverRef.current = null;
-              setSearchOpen(!searchOpen);
-              setPanel(null);
-            }}
-          >
-            {searchOpen ? (
-              <span aria-hidden="true" className={styles.closeGlyph}>
-                ×
-              </span>
-            ) : (
-              <Image src="/icons/header/search.svg" alt="" width={18} height={18} />
-            )}
-          </IconButton>
-
           <div
             className={styles.actionAnchor}
             onPointerEnter={event => hoverOpen("cart", event)}
             onPointerLeave={hoverClose}
           >
-            <IconButton className={styles.actionButton} label="Giỏ hàng, 0 sản phẩm"
+            <IconButton className={styles.actionButton} label={`Giỏ hàng, ${shop.count} sản phẩm`}
               aria-expanded={panel === "cart"} aria-controls={id + "-cart"}
               onClick={event => toggle("cart", event.currentTarget)}>
               <Image className={styles.cartIcon} src="/icons/header/cart.svg" alt="" width={25} height={25} />
@@ -217,29 +206,30 @@ export default function AltHeader() {
           >
             <IconButton
               className={styles.actionButton}
-              label="Mở tài khoản"
+              label={session ? `Mở tài khoản của ${session.name}` : "Mở tài khoản"}
               aria-expanded={panel === "account"}
               aria-controls={id + "-account"}
               onClick={event => toggle("account", event.currentTarget)}
             >
-              <GuestAvatar />
+              <GuestAvatar name={session?.name} avatarUrl={shop.customer?.avatar_url} />
             </IconButton>
             <div className={styles.accountPanel} id={id + "-account"} {...dropdownProps("account")}>
-              <AccountMenu onNavigate={() => close()} />
+              <AccountMenu
+                onNavigate={() => close()}
+                user={session}
+                loading={sessionLoading}
+                onLogout={signOut}
+              />
             </div>
           </div>
         </div>
 
         <MobileCategoryDrawer
+          catalog={catalog}
           id={id + "-mobile"}
           open={panel === "mobile"}
-          selectedCategoryId={selectedCategoryId}
-          onSelectCategory={setSelectedCategoryId}
           onClose={() => close(true)}
         />
-        <div id={id + "-mega"} className={styles.megaPanel} {...dropdownProps("mega")}>
-          <MegaMenu onClose={() => close(true)} />
-        </div>
         {panel === "notice" && (
           <div className={styles.notice}>
             <p role="status">{notice}</p>
