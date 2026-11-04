@@ -73,6 +73,41 @@ def invoice_options(user: User = Depends(current_user), db=Depends(get_supabase)
     return [{"order_id": order["ma_donhang"], "buyer": order.get("ten_nguoi_nhan") or "Khách lẻ", "total": 0} for order in orders if order["ma_donhang"] not in issued]
 
 
+@router.post("", status_code=201)
+def create_invoice(body: InvoiceCreate, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _employee(user)
+    if db.table("HOA_DON").select("ma_hoadon").eq("ma_donhang", body.order_id).limit(1).execute().data:
+        raise HTTPException(409, "Đơn hàng đã được lập hóa đơn.")
+    orders = db.table("DON_HANG").select(
+        "ma_donhang,trang_thai,ten_nguoi_nhan,dia_chi_chi_tiet"
+    ).eq("ma_donhang", body.order_id).limit(1).execute().data
+    if not orders:
+        raise HTTPException(404, "Không tìm thấy đơn hàng.")
+    if orders[0]["trang_thai"] not in {"DA_XUAT_KHO", "HOAN_THANH"}:
+        raise HTTPException(409, "Chỉ lập hóa đơn cho đơn đã xuất kho hoặc hoàn thành.")
+    lines = db.table("CT_DON_HANG").select(
+        "so_luong,don_gia,giam_gia,giam_gia_voucher"
+    ).eq("ma_donhang", body.order_id).limit(500).execute().data
+    if not lines:
+        raise HTTPException(409, "Đơn hàng chưa có sản phẩm.")
+    discount = sum((Decimal(str(line.get("giam_gia") or 0)) + Decimal(str(line.get("giam_gia_voucher") or 0)) for line in lines), Decimal(0))
+    before_tax = sum((Decimal(str(line["so_luong"])) * Decimal(str(line["don_gia"])) - Decimal(str(line.get("giam_gia") or 0)) - Decimal(str(line.get("giam_gia_voucher") or 0)) for line in lines), Decimal(0))
+    tax = _money(before_tax * Decimal("0.10"))
+    total = _money(before_tax + tax)
+    code = f"HD-{datetime.now(timezone.utc):%Y%m%d}-{uuid4().hex[:6].upper()}"
+    row = {
+        "ma_hoadon": code, "ma_donhang": body.order_id,
+        "thoi_gian_lap": datetime.now(timezone.utc).isoformat(),
+        "ten_nguoi_mua": body.buyer or orders[0].get("ten_nguoi_nhan") or "Khách lẻ",
+        "ma_so_thue": body.tax_id,
+        "dia_chi_nguoi_mua": body.address or orders[0].get("dia_chi_chi_tiet"),
+        "tong_tien_giam": str(_money(discount)), "tong_tien_truoc_thue": str(_money(before_tax)),
+        "tong_tien_thue": str(tax), "tong_tien_sau_thue": str(total), "nguoi_lap": user.employee_id,
+    }
+    db.table("HOA_DON").insert(row).execute()
+    return {"data": {"id": code, "recordId": body.order_id, "order": body.order_id, "buyer": row["ten_nguoi_mua"], "employeeCode": user.employee_id, "total": f"{total:,.0f} ₫", "created": row["thoi_gian_lap"], "status": "Hoàn tất"}}
+
+
 @router.get("/{invoice_id}")
 def invoice_detail(invoice_id: str, user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
