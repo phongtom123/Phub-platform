@@ -46,7 +46,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   invoices: {
     title: "Hóa đơn", description: "Lập và tra cứu hóa đơn bán hàng theo đơn đã xuất kho.", searchPlaceholder: "Tìm mã hóa đơn hoặc đơn hàng...", addLabel: "Lập hóa đơn", filters: ["Trạng thái"],
     columns: [{ key: "id", label: "MÃ HÓA ĐƠN", kind: "link" }, { key: "order", label: "ĐƠN HÀNG", kind: "strong" }, { key: "buyer", label: "NGƯỜI MUA" }, { key: "employeeCode", label: "MÃ NHÂN VIÊN" }, { key: "total", label: "TỔNG THANH TOÁN" }, { key: "created", label: "NGÀY LẬP" }, { key: "status", label: "TRẠNG THÁI", kind: "status" }],
-    rows: [{ id: "HD-DEMO-001", order: "DH-DEMO-001", buyer: "Khách hàng demo", employeeCode: "NV-DEMO", total: "5.500.000 ₫", created: "—", status: "Hoàn tất" }], note: "Mã nhân viên được lấy từ tài khoản đang đăng nhập và lưu cùng hóa đơn.",
+    rows: [], note: "Mã nhân viên được lấy từ tài khoản đang đăng nhập và lưu cùng hóa đơn.",
   },
   products: {
     title: "Sản phẩm", description: "Tra cứu mã hàng, danh mục và thông tin sản phẩm trong kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Danh mục", "Tình trạng tồn"],

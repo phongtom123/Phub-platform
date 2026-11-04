@@ -17,7 +17,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
   const response = await fetch(path, { ...init, headers, credentials: "include", cache: "no-store" });
-  if (!response.ok) throw new WarehouseApiError((await response.json().catch(() => null))?.detail ?? `API error ${response.status}`, response.status);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { detail?: unknown; message?: unknown } | null;
+    const raw = body?.detail ?? body?.message;
+    const detail = typeof raw === "string" ? raw : raw ? JSON.stringify(raw) : `API error ${response.status}`;
+    throw new WarehouseApiError(detail, response.status);
+  }
   return response.json() as Promise<T>;
 }
 

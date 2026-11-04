@@ -49,7 +49,9 @@ def customer_search(q: str = "", user: User = Depends(current_user), db=Depends(
     email = q.strip().lower()[:200]
     if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
         raise HTTPException(422, "Nhập email khách hàng hợp lệ.")
-    accounts = db.table("TAI_KHOAN").select("ma_kh,email").eq("email", email).limit(10).execute().data
+    # Email is normalized at the boundary and matched case-insensitively so
+    # users are not blocked by the casing used when the account was created.
+    accounts = db.table("TAI_KHOAN").select("ma_kh,email").ilike("email", email).limit(10).execute().data
     customer_ids = [row["ma_kh"] for row in accounts if row.get("ma_kh")]
     if len(customer_ids) > 1:
         raise HTTPException(409, "Email khách hàng đang bị trùng dữ liệu.")
