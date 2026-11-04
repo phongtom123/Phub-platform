@@ -22,6 +22,7 @@ const products = ['A', 'B'].map(id => ({ id, sku:id, name:`Product ${id}`, is_ac
           const ok=json=>route.fulfill({json});
           if(p.endsWith('/auth/me')) return authenticated ? ok({account_id:'AC',username:'test',role:'KHACH_HANG',name:'Test',customer_id:'C',employee_id:null,warehouse_id:null}) : route.fulfill({status:401,json:{error:{message:'Guest'}}});
           if(p.endsWith('/customer/me')) return authenticated ? ok({customer_id:'C',name:'Test',phone:null,address_line:null,province:null,ward:null}) : route.fulfill({status:401,json:{error:{message:'Guest'}}});
+          if(p==='/api/catalog/purchase-states') return ok({items:products.filter(p=>url.searchParams.getAll('sku').includes(p.sku)).map(p=>({id:p.id,sku:p.sku,is_active:true,available_quantity:20}))});
           if(p.match(/\/products\/[^/]+\/availability$/)) {
             const id=p.split('/').at(-2);
             return ok({id,sku:id,quantity:Number(url.searchParams.get('quantity')),available:true,is_active:true});

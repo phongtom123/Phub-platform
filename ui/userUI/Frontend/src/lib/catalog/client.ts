@@ -1,4 +1,5 @@
 import type { ApiProduct, ApiProductPage, CatalogCategory, CatalogMetadata, CatalogRequest } from "./types";
+import type { PurchaseState } from "./stock-batch";
 
 export class CatalogApiError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -52,6 +53,24 @@ export async function getProductPurchaseState(product: { id: string; sku?: strin
 
 export async function getProductAvailability(product: { id: string; sku?: string }, quantity: number, signal?: AbortSignal): Promise<boolean> {
   return (await getProductPurchaseState(product, quantity, signal)).available;
+}
+
+export async function getProductPurchaseStates(skus: string[], signal: AbortSignal): Promise<PurchaseState[]> {
+  const wanted = new Set(skus);
+  const params = new URLSearchParams();
+  [...wanted].sort().forEach(sku => params.append("sku", sku));
+  const body = await readJson(await fetch(`/api/catalog/purchase-states?${params}`, { cache: "no-store", signal })) as { items?: unknown };
+  if (!Array.isArray(body?.items)) throw new CatalogApiError("Không kiểm tra được tồn kho.", 502);
+  const seen = new Set<string>();
+  for (const item of body.items as PurchaseState[]) {
+    if (!item || typeof item.id !== "string" || !item.id || typeof item.sku !== "string" ||
+      !wanted.has(item.sku) || seen.has(item.sku) || typeof item.is_active !== "boolean" ||
+      !Number.isInteger(item.available_quantity) || item.available_quantity < 0 || item.available_quantity > 2147483647) {
+      throw new CatalogApiError("Dữ liệu tồn kho không hợp lệ.", 502);
+    }
+    seen.add(item.sku);
+  }
+  return body.items as PurchaseState[];
 }
 
 export function queryFor(request: CatalogRequest): URLSearchParams {

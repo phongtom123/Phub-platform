@@ -15,6 +15,7 @@ from phub_api.schemas.catalog import (
     ProductPage,
     StockAvailability,
     ProductAvailability,
+    ProductPurchaseStates,
 )
 from phub_api.schemas.responses import documented_error
 from phub_api.services.catalog import CatalogService
@@ -41,6 +42,14 @@ StockSku = Annotated[str, Query(min_length=1, max_length=100)]
 @router.get("/availability", response_model=StockAvailability, summary="Tổng tồn khả dụng của sản phẩm tại các kho đang hoạt động")
 def availability(service: Service, sku: Annotated[list[StockSku], Query(min_length=1, max_length=100)]):
     return service.availability(sku)
+
+
+@router.get("/purchase-states", response_model=ProductPurchaseStates,
+            summary="Kiểm tra gộp trạng thái bán và tồn khả dụng của tối đa 100 SKU, không giữ hàng")
+def purchase_states(response: Response, service: Service,
+                    sku: Annotated[list[StockSku], Query(min_length=1, max_length=100)]):
+    response.headers["Cache-Control"] = "no-store"
+    return service.purchase_states(sku)
 
 
 @router.get("/banners", response_model=BannerList, summary="Banner của chương trình đang hoạt động và còn thời hạn")

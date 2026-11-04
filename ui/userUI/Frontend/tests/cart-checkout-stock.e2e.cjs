@@ -24,6 +24,7 @@ const entries = products.map((p, i) => ({ product_id: p.id, sku: p.sku, quantity
       await page.route("**/api/**", async route => {
         const url = new URL(route.request().url()), path = url.pathname;
         const ok = json => route.fulfill({ json });
+        if (path === "/api/catalog/purchase-states") return ok({ items: products.filter(p => url.searchParams.getAll("sku").includes(p.sku)).map(p => ({ id: p.id, sku: p.sku, is_active: true, available_quantity: 200 })) });
         if (route.request().method() !== "GET") writes.push(path);
         if (path.endsWith("/auth/me")) return guest
           ? route.fulfill({ status: 401, json: { error: { message: "Guest" } } })

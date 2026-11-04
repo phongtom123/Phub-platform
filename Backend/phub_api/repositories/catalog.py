@@ -102,6 +102,12 @@ class CatalogRepository:
         columns = "sku,category:LOAI_SP!inner(trang_thai),subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)"
         return [row["sku"] for row in self.active_products(columns).in_("sku", sorted(set(skus))).limit(100).execute().data]
 
+    def purchase_states(self, skus):
+        columns = ("ma_sp,sku,trang_thai,category:LOAI_SP!inner(trang_thai),"
+                   "subcategory:LOAI_SP_CON!SAN_PHAM_loai_sp_con_fkey!inner(trang_thai)")
+        return (self.visible_products(columns, include_inactive=True)
+                .in_("sku", sorted(set(skus))).limit(100).execute().data)
+
     def component_names(self, ids: list[str]) -> dict[str, str]:
         if not ids:
             return {}

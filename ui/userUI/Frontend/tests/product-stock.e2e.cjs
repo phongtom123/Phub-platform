@@ -26,6 +26,11 @@ const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
         const url = new URL(route.request().url()), path = url.pathname;
         assert.equal(route.request().method(), "GET", "Stock display cannot create orders or change inventory");
         if (path.endsWith("/me")) return route.fulfill({ status: 401, json: { error: { message: "Guest" } } });
+        if (path === "/api/catalog/purchase-states") {
+          requests.push(1);
+          return failed ? route.fulfill({ status: 503, json: { error: { message: "Stock fixture unavailable" } } })
+            : route.fulfill({ json: { items: [{ id: product.id, sku: product.sku, is_active: !paused, available_quantity: stock }] } });
+        }
         if (path === "/api/catalog/availability") return failed
           ? route.fulfill({ status: 503, json: { error: { message: "Stock fixture unavailable" } } })
           : route.fulfill({ json: { items: [{ sku: product.sku, available_quantity: stock }], tax_rate: "10.00", currency: "VND" } });
