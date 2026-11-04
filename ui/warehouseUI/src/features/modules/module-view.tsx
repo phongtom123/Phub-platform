@@ -15,6 +15,8 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [reload, setReload] = useState(0);
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -91,7 +93,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     finally { setConfirming(null); }
   }
   const sourceRows = apiRows ?? [];
-  const filteredRows = useMemo(() => sourceRows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))) && Object.entries(filters).every(([filter, value]) => !value || (filter === "created" ? matchesDateRange(String(row.created ?? ""), value) : String(row[filter] ?? "").toLocaleLowerCase("vi") === value.toLocaleLowerCase("vi")))), [sourceRows, query, filters]);
+  const filteredRows = useMemo(() => sourceRows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))) && Object.entries(filters).every(([filter, value]) => !value || (filter === "created" ? matchesDateRange(String(row.created ?? ""), value, dateFrom, dateTo) : String(row[filter] ?? "").toLocaleLowerCase("vi") === value.toLocaleLowerCase("vi")))), [sourceRows, query, filters, dateFrom, dateTo]);
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const rows = useMemo(() => filteredRows.slice((page - 1) * pageSize, page * pageSize), [filteredRows, page]);
   useEffect(() => { setPage(1); }, [section, query, filters]);
@@ -109,7 +111,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     URL.revokeObjectURL(url);
   }
   return <><Panel title={`${definition.title} (${rows.length})`} subtitle="Dữ liệu được cập nhật từ các giao dịch trong kho." action={<div className="module-actions"><button className="button" onClick={exportCsv}><Download size={14}/> Xuất CSV</button>{definition.addLabel && <button className="button primary" onClick={onAdd}><Plus size={15}/>{definition.addLabel}</button>}</div>}>
-      <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder={definition.searchPlaceholder}/></label>{definition.filters?.map(filter => { const key = filterKey(filter, definition.rows); const options = key === "created" ? ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua"] : section === "receipts" && key === "status" ? ["Nháp", "Đã nhập", "Đã hủy"] : Array.from(new Set(sourceRows.map(row => row[key]).filter(value => value !== undefined).map(String))); return <label className="filter-select-wrap" key={filter}><SlidersHorizontal size={13}/><select className="filter-select" aria-label={filter} value={filters[key] ?? ""} onChange={event => setFilters(current => ({ ...current, [key]: event.target.value }))}><option value="">{filter === "Trạng thái" ? "Tất cả trạng thái" : filter === "Khoảng ngày" ? "Tất cả thời gian" : filter}</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>; })}</div>
+      <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder={definition.searchPlaceholder}/></label>{definition.filters?.map(filter => { const key = filterKey(filter, definition.rows); const options = key === "created" ? ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua", "Tùy chỉnh"] : section === "receipts" && key === "status" ? ["Nháp", "Đã nhập", "Đã hủy"] : Array.from(new Set(sourceRows.map(row => row[key]).filter(value => value !== undefined).map(String))); return <label className="filter-select-wrap" key={filter}><SlidersHorizontal size={13}/><select className="filter-select" aria-label={filter} value={filters[key] ?? ""} onChange={event => setFilters(current => ({ ...current, [key]: event.target.value }))}><option value="">{filter === "Trạng thái" ? "Tất cả trạng thái" : filter === "Khoảng ngày" ? "Tất cả thời gian" : filter}</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>; })}{section === "history" && filters.created === "Tùy chỉnh" && <div className="date-range-picker"><label>Từ ngày<input type="date" value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} /></label><label>Đến ngày<input type="date" value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} /></label></div>}</div>
       {loading && <div className="module-note">Đang tải dữ liệu thật từ backend…</div>}
       {apiError && <div className="module-note form-error"><span>!</span><span>{apiError}</span><button className="button" type="button" onClick={() => setReload(value => value + 1)}>Thử lại</button></div>}
       {!loading && !apiError && apiRows && (rows.length ? <><div className="table-wrap"><table><thead><tr>{definition.columns.map(column => <th key={column.key}>{column.label}</th>)}<th/></tr></thead><tbody>{rows.map(row => <DataTableRow key={row.id} row={row} definition={definition} section={section} confirming={confirming === row.id} onConfirm={section === "receipts" || section === "pending" ? handleConfirm : undefined} onTransferAction={section === "transfers" || section === "pending" ? handleTransferAction : undefined} onDispatchOrder={section === "dispatches" ? handleDispatchOrder : undefined} onCancel={section === "receipts" || section === "transfers" || section === "pending" ? handleCancel : undefined} onDelete={section === "receipts" || section === "transfers" || section === "pending" || section === "dispatches" ? handleDelete : undefined}/>)}</tbody></table></div>{pageCount > 1 && <div className="form-actions"><button className="button" type="button" disabled={page <= 1} onClick={() => setPage(current => Math.max(1, current - 1))}><ChevronLeft size={14}/> Trang trước</button><span className="module-note">Trang {page}/{pageCount} · {filteredRows.length} bản ghi</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => setPage(current => Math.min(pageCount, current + 1))}>Trang sau <ChevronRight size={14}/></button></div>}</> : <EmptyState text="Không tìm thấy dữ liệu phù hợp."/>) }
@@ -145,11 +147,16 @@ function filterKey(label: string, rows: DataRow[]) {
   return "status";
 }
 
-function matchesDateRange(value: string, range: string) {
+function matchesDateRange(value: string, range: string, from = "", to = "") {
   const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (!match) return false;
   const date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
   const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (range === "Tùy chỉnh") {
+    const start = from ? new Date(`${from}T00:00:00`) : new Date(0);
+    const end = to ? new Date(`${to}T23:59:59`) : today;
+    return date >= start && date <= end;
+  }
   const days = range === "Hôm nay" ? 0 : range === "7 ngày qua" ? 7 : range === "30 ngày qua" ? 30 : 90;
   const start = new Date(today); start.setDate(today.getDate() - days);
   return date >= start && date <= today;
