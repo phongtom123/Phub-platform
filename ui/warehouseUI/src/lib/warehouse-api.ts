@@ -231,12 +231,12 @@ export async function getPending() {
 }
 
 export async function getHistory() {
-  const movements = await page<{ ma_lich_su: number; sku: string; loai_giao_dich: string; so_luong_thay_doi: number; nguoi_thuc_hien?: string | null; tao_luc: string; ma_tham_chieu?: string | null }>("stock-movements");
-  return movements.data.map(item => ({
-    id: item.ma_tham_chieu ? `${item.loai_giao_dich}-${item.ma_tham_chieu}` : `LS-${item.ma_lich_su}`,
-    type: ({ NHAP_KHO: "Nhập kho", XUAT_CHUYEN_KHO: "Xuất chuyển kho", NHAN_CHUYEN_KHO: "Nhận chuyển kho", XUAT_DON_HANG: "Xuất đơn hàng" } as Record<string, string>)[item.loai_giao_dich] ?? item.loai_giao_dich,
-    product: item.sku, quantity: item.so_luong_thay_doi > 0 ? `+${item.so_luong_thay_doi}` : String(item.so_luong_thay_doi), user: item.nguoi_thuc_hien ?? "—", created: formatDate(item.tao_luc),
-  }));
+  const result = await request<{ data: { id: number; sku: string; product_name?: string | null; before_quantity: number; after_quantity: number; actor_name?: string | null; actor?: string | null; reason: string; reference?: string | null; created_at: string }[] }>("/api/backend/warehouse/history?page=1&page_size=100");
+  const labels: Record<string, string> = { "receipts:confirm": "Nhập kho", "orders:dispatch": "Xuất đơn hàng", "transfers:dispatch": "Xuất chuyển kho", "transfers:receive": "Nhận chuyển kho", "inventory:adjust": "Điều chỉnh tồn" };
+  return result.data.map(item => {
+    const change = item.after_quantity - item.before_quantity;
+    return { id: item.reference ? `${item.reason}-${item.reference}` : `LS-${item.id}`, type: labels[item.reason] ?? item.reason, product: item.product_name ?? item.sku, quantity: change > 0 ? `+${change}` : String(change), user: item.actor_name ?? item.actor ?? "—", created: formatDate(item.created_at) };
+  });
 }
 
 export async function dispatchTransfer(transferId: number) {
