@@ -1,8 +1,10 @@
 // Identity comes from the backend session, never a customer ID supplied by this client.
+import type { FulfillmentMethod, PaymentDeadline } from "../shopping/types";
+import { validPaymentDeadline } from "../shopping/payment-deadline";
 export type Recipient = { name: string; phone: string; address_line: string; province: string; ward: string };
 export type CustomerProfile = { customer_id: string; name: string; phone: string | null; address_line: string | null; province: string | null; ward: string | null; avatar_url?: string | null };
 export type Pagination = { page: number; page_size: number; total: number; total_pages: number };
-export type OrderSummary = { id: string; status: string; created_at: string; currency: string; total: string };
+export type OrderSummary = { id: string; status: string; created_at: string; currency: string; total: string; payment_deadline?: PaymentDeadline | null; fulfillment_method?: FulfillmentMethod | null };
 export type OrderPage = { items: OrderSummary[]; pagination: Pagination };
 export type OrderLine = { sku: string; name: string; unit: string; quantity: number; unit_price: string; discount: string; tax_amount: string; line_total: string };
 export type OrderDetail = OrderSummary & { recipient: { [K in keyof Recipient]: string | null }; note: string | null; items: OrderLine[] };
@@ -47,6 +49,8 @@ function pagination(value: unknown) {
 }
 function order(value: unknown) {
   const o = object(value);
+  check(validPaymentDeadline(o.payment_deadline));
+  check(o.fulfillment_method == null || ["GIAO_HANG", "TAI_CUA_HANG"].includes(String(o.fulfillment_method)));
   check(text(o.id) && text(o.status) && date(o.created_at) && currency(o.currency) && money(o.total));
 }
 function lines(value: unknown) {

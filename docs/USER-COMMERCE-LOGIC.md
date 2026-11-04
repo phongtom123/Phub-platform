@@ -1,5 +1,20 @@
 # Logic mua hàng khách hàng và bàn giao cho AI
 
+**Nhận tại cửa hàng 04/11/2026:** checkout hỗ trợ `TAI_CUA_HANG`, chỉ cần tên
+và số điện thoại; không cần địa chỉ. Đơn vẫn ONLINE, gom tồn mọi kho và có hóa
+đơn/hạn 24 giờ. Xem [hợp đồng, migration và kiểm thử](STORE-PICKUP.md).
+
+**Cập nhật 04/11/2026 — KAN-61:** hóa đơn ONLINE mới có hạn thanh toán 24 giờ.
+Đơn chưa có khoản thu thành công sẽ tự hủy và nhả hàng giữ khi quá hạn; đơn
+đã thu tiền (kể cả một phần), đã xuất kho/hoàn thành và hóa đơn lịch sử không
+bị tự hủy. Xem [chính sách, vị trí mã và kiểm thử](KAN-61-PAYMENT-DEADLINE.md).
+
+**Sửa trạng thái thêm giỏ 04/11/2026:** `ShoppingProvider` theo dõi yêu cầu thêm
+theo từng product ID, không khóa mọi nút mua khi một món đang chờ API. Các món
+khác có thể thêm đồng thời, lưu trên snapshot giỏ mới nhất; chặn thêm trùng món
+đang xử lý và vẫn chặn checkout đến khi các lần thêm hoàn tất. Kiểm thử hồi quy:
+`ui/userUI/Frontend/tests/product-add-isolation.e2e.cjs` (fixtures, không ghi DB).
+
 Cập nhật ngày **02/11/2026**. Phạm vi: trang sản phẩm, giỏ hàng, checkout,
 phân bổ kho, hóa đơn, chi tiết đơn và cách kiểm chứng các thay đổi trong phiên sửa này.
 

@@ -5,8 +5,10 @@ const path = require("node:path");
 const vm = require("node:vm");
 const ts = require("typescript");
 const code = ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/lib/account/client.ts"), "utf8"), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
+const deadlineCode = ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/lib/shopping/payment-deadline.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+const deadlineScope = { exports: {} }; vm.runInNewContext(deadlineCode, deadlineScope);
 function client(fetch = () => { throw new Error("Unexpected network call"); }) {
-  const scope = { exports: {}, fetch, Intl }; vm.runInNewContext(code, scope); return scope.exports;
+  const scope = { exports: {}, fetch, Intl, require: id => { assert.equal(id, "../shopping/payment-deadline"); return deadlineScope.exports; } }; vm.runInNewContext(code, scope); return scope.exports;
 }
 const profile = { customer_id: "KH-TEST", name: "Test", phone: null, address_line: null, province: null, ward: null };
 const order = { id: "ORDER-1", status: "MOI", created_at: "2026-10-14T00:00:00Z", currency: "VND", total: "120000.00" };
@@ -50,6 +52,13 @@ test("null profile fields remain missing; pagination preserves total across all 
   const result = api.parseOrders({ items: [order], pagination });
   assert.equal(result.pagination.total, 25);
   for (const invalid of [{ items: [order], pagination: { ...pagination, total: -1 } }, { items: [{ ...order, total: "NaN" }], pagination }, { items: [{ ...order, created_at: "bad" }], pagination }]) assert.throws(() => api.parseOrders(invalid));
+});
+
+test("order history retains a valid deadline and rejects malformed metadata", () => {
+  const api = client();
+  const payment_deadline = {expires_at:"2026-11-05T00:00:00Z",server_now:"2026-11-04T00:00:00Z",expired_at:null,status:"awaiting_payment"};
+  assert.equal(api.parseOrders({items:[{...order,payment_deadline}],pagination}).items[0].payment_deadline, payment_deadline);
+  assert.throws(() => api.parseOrders({items:[{...order,payment_deadline:{...payment_deadline,status:"invalid"}}],pagination}));
 });
 test("empty invoice/payment are explicit null; refund pending is not converted to paid", () => {
   const api = client();

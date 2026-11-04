@@ -52,6 +52,7 @@ const labels: Record<string, string> = {
   ngay_sinh: "Ngày sinh", ngay_tao: "Ngày tạo", cap_nhat_luc: "Cập nhật lần cuối", luu_tru_luc: "Thời điểm lưu trữ",
   thoi_gian_dat: "Thời gian đặt", thoi_gian_xuat_kho: "Thời gian xuất kho", thoi_gian_hoan_thanh: "Thời gian hoàn thành",
   ten_nguoi_nhan: "Tên người nhận", sdt_nguoi_nhan: "Số điện thoại người nhận", dia_chi_giao_hang: "Địa chỉ giao hàng",
+  phuong_thuc_nhan: "Phương thức nhận hàng",
   ma_hoadon: "Mã hóa đơn", nguoi_lap: "Người lập", thoi_gian_lap: "Thời gian lập",
   nguon_lap: "Nguồn lập", ma_tk_lap: "Tài khoản khởi tạo", la_bypass: "Thanh toán bypass", ma_tk_ghi_nhan: "Tài khoản ghi nhận",
   ten_nguoi_mua: "Tên người mua", ma_so_thue: "Mã số thuế", dia_chi_nguoi_mua: "Địa chỉ người mua",

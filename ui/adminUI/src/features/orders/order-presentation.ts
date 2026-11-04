@@ -5,7 +5,7 @@ const statuses: Record<string, string> = {
   DA_XUAT_KHO: "Đã xuất kho", HOAN_THANH: "Hoàn thành", HUY: "Đã hủy",
 };
 const channels: Record<string, string> = { ONLINE: "Trực tuyến", TAI_QUAY: "Tại quầy" };
-const listFields = ["ma_donhang", "ma_kh", "ma_nhan_vien", "kenh_ban", "trang_thai", "thoi_gian_dat"];
+const listFields = ["ma_donhang", "ma_kh", "ma_nhan_vien", "kenh_ban", "phuong_thuc_nhan", "trang_thai", "thoi_gian_dat"];
 const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
   timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric",
   hour: "2-digit", minute: "2-digit", hourCycle: "h23",
@@ -20,6 +20,7 @@ export function orderValue(row: DataRow, field: string): string {
   if (value === null || value === undefined || value === "") return "—";
   if (field === "trang_thai") return statuses[String(value)] ?? "Chưa xác định";
   if (field === "kenh_ban") return channels[String(value)] ?? "Chưa xác định";
+  if (field === "phuong_thuc_nhan") return value === "TAI_CUA_HANG" ? "Nhận tại cửa hàng" : value === "GIAO_HANG" ? "Giao hàng tận nơi" : "Chưa ghi nhận";
   if (field.startsWith("thoi_gian_")) {
     // Database timestamps without an offset represent Vietnam local time.
     const input = String(value);

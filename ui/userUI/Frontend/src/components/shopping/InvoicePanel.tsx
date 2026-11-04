@@ -1,21 +1,25 @@
 "use client";
 import { useEffect } from "react";
+import type { PaymentDeadline as Deadline } from "@/lib/shopping/types";
+import { PaymentDeadline } from "./PaymentDeadline";
 import { validateInvoice } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
 import { groupInvoiceLines } from "@/lib/shopping/invoice-lines";
 import { useCustomerResource } from "./useCustomerResource";
 import styles from "./shopping.module.css";
 
-export function InvoicePanel({ orderId }: { orderId: string }) {
+export function InvoicePanel({ orderId, onDeadlineChange }: { orderId: string; onDeadlineChange?: (deadline: Deadline | null) => void }) {
   const resource = useCustomerResource(`orders/${encodeURIComponent(orderId)}/invoice`, validateInvoice, 5000);
   const data = resource.data;
   const lines = groupInvoiceLines(data?.items ?? []);
+  useEffect(() => { if (data) onDeadlineChange?.(data.payment_deadline ?? null); }, [data, onDeadlineChange]);
   useEffect(() => {
     window.addEventListener("phub:invoice-changed", resource.reload);
     return () => window.removeEventListener("phub:invoice-changed", resource.reload);
   }, [resource.reload]);
   return <section className={styles.panel} aria-label="Hóa đơn của đơn hàng">
     <h2>Hóa đơn</h2>
+    {data && <PaymentDeadline orderId={orderId} deadline={data.payment_deadline} />}
     <button type="button" disabled={resource.loading} onClick={resource.reload}>Cập nhật hóa đơn</button>
     {resource.loading && <p role="status">Đang tải hóa đơn…</p>}
     {resource.error && <p role="alert" className={styles.error}>{resource.error}</p>}

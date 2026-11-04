@@ -8,6 +8,7 @@ from phub_api.services.pricing import PRICING_ERRORS
 from phub_api.services.warehouse_scope import require_warehouse_id
 
 ERRORS = {
+    'PAYMENT_DEADLINE_EXPIRED': (409, 'Đơn đã hết hạn thanh toán 24 giờ. Không thể thu tiền hoặc tiếp tục xử lý đơn này.'),
     **PRICING_ERRORS,
     'REPORT_TOO_LARGE': (422, 'Lịch sử vượt 20.000 dòng nhập/xuất. Cần tối ưu hoặc chốt kỳ trước khi tính, không trả báo cáo bị cắt thiếu.'),
     'TRANSFER_DISABLED': (410, 'Chức năng chuyển kho đã ngừng sử dụng; chỉ tra cứu chứng từ cũ.'),

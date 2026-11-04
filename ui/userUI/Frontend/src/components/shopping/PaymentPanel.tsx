@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { requestPayment, shoppingRequest, ShoppingError, validatePayments, validateTransactions } from "@/lib/shopping/client";
 import { money } from "@/lib/shopping/money";
-import type { PaymentMethod, Transaction } from "@/lib/shopping/types";
+import type { PaymentDeadline, PaymentMethod, Transaction } from "@/lib/shopping/types";
+import { usePaymentDeadline } from "./usePaymentDeadline";
 import { PaymentMethodField } from "./PaymentMethodField";
 import { useShopping } from "./ShoppingProvider";
 import { useCustomerResource } from "./useCustomerResource";
@@ -54,7 +55,8 @@ function TransactionInfo({
     </div>
   );
 }
-export function PaymentPanel({ orderId, orderStatus }: { orderId: string; orderStatus?: string }) {
+export function PaymentPanel({ orderId, orderStatus, paymentDeadline }: { orderId: string; orderStatus?: string; paymentDeadline?: PaymentDeadline | null }) {
+  const deadline = usePaymentDeadline(paymentDeadline);
   const shop = useShopping();
   const storageKey = `phub-payment-attempt-v1:${shop.customer?.customer_id}:${orderId}`;
   const [attempt, setAttempt] = useState<{ key: string; method: PaymentMethod } | null>(() => {
@@ -96,7 +98,7 @@ export function PaymentPanel({ orderId, orderStatus }: { orderId: string; orderS
     return () => window.removeEventListener("phub:order-changed", onOrderChanged);
   }, [orderId, reloadOverview, reloadHistory]);
   async function sendRequest() {
-    if (busy.current) return;
+    if (busy.current || deadline.blocked || orderStatus === "HUY") return;
     const sent = attempt || { key: crypto.randomUUID(), method };
     try { sessionStorage.setItem(storageKey, JSON.stringify(sent)); }
     catch { setRequestError("Không thể lưu lần yêu cầu thanh toán. Hãy bật lưu trữ trước khi tiếp tục."); return; }
@@ -112,10 +114,14 @@ export function PaymentPanel({ orderId, orderStatus }: { orderId: string; orderS
       window.dispatchEvent(new Event("phub:invoice-changed"));
       window.dispatchEvent(new CustomEvent("phub:order-changed", { detail: { orderId } }));
     } catch (reason) {
-      if (reason instanceof ShoppingError && ["PAYMENT_INTEGRATION_REQUIRED", "AUTH_INTEGRATION_REQUIRED", "AUTHENTICATION_REQUIRED", "AUTH_CUSTOMER_UNAVAILABLE", "ACCESS_DENIED", "ORDER_NOT_FOUND", "VALIDATION_ERROR", "PAYMENT_ALREADY_PENDING", "ORDER_ALREADY_PAID", "ORDER_NOT_PAYABLE", "INVOICE_TOTAL_MISMATCH"].includes(reason.code)) {
+      if (reason instanceof ShoppingError && ["PAYMENT_INTEGRATION_REQUIRED", "AUTH_INTEGRATION_REQUIRED", "AUTHENTICATION_REQUIRED", "AUTH_CUSTOMER_UNAVAILABLE", "ACCESS_DENIED", "ORDER_NOT_FOUND", "VALIDATION_ERROR", "PAYMENT_ALREADY_PENDING", "ORDER_ALREADY_PAID", "ORDER_NOT_PAYABLE", "INVOICE_TOTAL_MISMATCH", "PAYMENT_DEADLINE_EXPIRED"].includes(reason.code)) {
         try { sessionStorage.removeItem(storageKey); } catch {}
         setAttempt(null);
         overview.reload(); history.reload();
+        if (reason.code === "PAYMENT_DEADLINE_EXPIRED") {
+          window.dispatchEvent(new Event("phub:invoice-changed"));
+          window.dispatchEvent(new CustomEvent("phub:order-changed", { detail: { orderId } }));
+        }
       }
       setRequestError(reason instanceof Error ? reason.message : "Chưa xác nhận được yêu cầu thanh toán.");
     } finally { busy.current = false; setSending(false); }
@@ -145,10 +151,10 @@ export function PaymentPanel({ orderId, orderStatus }: { orderId: string; orderS
           Cập nhật thanh toán
         </button>
       </div>
-      {orderStatus === "HUY" ? (
+      {orderStatus === "HUY" || deadline.blocked ? (
         <div className={styles.panel}>
           <p style={{ color: "#c62828", fontWeight: 600, margin: 0 }}>
-            Đơn hàng này đã bị hủy. Không thể thực hiện thanh toán mới.
+            {orderStatus === "HUY" ? "Đơn hàng này đã bị hủy. Không thể thực hiện thanh toán mới." : "Đã hết hạn thanh toán cho đơn hàng này. Vui lòng đặt đơn mới."}
           </p>
         </div>
       ) : (
@@ -165,7 +171,7 @@ export function PaymentPanel({ orderId, orderStatus }: { orderId: string; orderS
           {requestError && <p role="alert" className={styles.error}>{requestError}</p>}
         </div>
       )}
-      {shop.customer?.demo_mode && orderStatus !== "HUY" && <section className={styles.panel} aria-label="Mô phỏng thanh toán">
+      {shop.customer?.demo_mode && orderStatus !== "HUY" && !deadline.blocked && <section className={styles.panel} aria-label="Mô phỏng thanh toán">
         <h3>Mô phỏng thanh toán — không thu tiền thật</h3>
         <div className={styles.inline}>{[
           ["pending", "Đang chờ"], ["succeeded", "Thành công"], ["failed", "Thất bại"], ["refund", "Hoàn tiền"],
