@@ -353,6 +353,11 @@ Không dùng kết quả lịch sử này thay cho xác minh thay đổi mới.
 
 ## 10. Lời nhắn cho AI tiếp theo
 
+Từ 04/11/2026, trạng thái bán/tồn hiển thị dùng batch endpoint và cache RAM theo
+SKU tối đa 15 giây. Cache không thay thế kiểm tra tồn khi thêm giỏ/checkout và
+transaction đặt đơn; không thay chính sách giữ hàng. Xem
+[cách hoạt động và phép đo](USER-STOCK-PERFORMANCE.md) trước khi sửa refresh/cache.
+
 Đọc luồng từ giao diện đang được người dùng mở đến API và transaction trước khi
 sửa. Người dùng có thể đang ở `/main/profile`, trong khi bạn chỉ nhìn component
 hóa đơn sau checkout. Tìm mọi nơi sử dụng cùng dữ liệu, rồi dùng chung logic.

@@ -6520,6 +6520,52 @@
         "title": "ProductProfit",
         "type": "object"
       },
+      "ProductPurchaseState": {
+        "properties": {
+          "available_quantity": {
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Available Quantity",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sku",
+          "is_active",
+          "available_quantity"
+        ],
+        "title": "ProductPurchaseState",
+        "type": "object"
+      },
+      "ProductPurchaseStates": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductPurchaseState"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ProductPurchaseStates",
+        "type": "object"
+      },
       "QuoteRequest": {
         "additionalProperties": false,
         "properties": {
@@ -14715,6 +14761,102 @@
         },
         "security": [],
         "summary": "Kiểm tra đủ hàng cho số lượng muốn thêm vào giỏ, không giữ hàng",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
+    "/api/catalog/purchase-states": {
+      "get": {
+        "operationId": "purchase_states_api_catalog_purchase_states_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sku",
+            "required": true,
+            "schema": {
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 100,
+              "minItems": 1,
+              "title": "Sku",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPurchaseStates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "page",
+                        "message": "Phải lớn hơn hoặc bằng 1."
+                      }
+                    ],
+                    "message": "Tham số không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu catalog."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu catalog."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "DATA_SERVICE_UNAVAILABLE",
+                    "details": [],
+                    "message": "Dịch vụ dữ liệu tạm thời không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Dịch vụ dữ liệu tạm thời không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Kiểm tra gộp trạng thái bán và tồn khả dụng của tối đa 100 SKU, không giữ hàng",
         "tags": [
           "Customer · Catalog"
         ]

@@ -388,7 +388,7 @@ def test_swagger_documents_all_endpoints_parameters_and_error_models(catalog_cli
     client, _, _, _ = catalog_client
     schema = client.get("/openapi.json").json()
     paths = schema["paths"]
-    assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands", "/api/catalog/colors", "/api/catalog/banners", "/api/catalog/availability", "/api/catalog/products/{product_id}/availability", "/api/catalog/facets"}
+    assert set(paths) == {"/api/catalog/products", "/api/catalog/products/{product_id}", "/api/catalog/categories", "/api/catalog/brands", "/api/catalog/colors", "/api/catalog/banners", "/api/catalog/availability", "/api/catalog/products/{product_id}/availability", "/api/catalog/facets", "/api/catalog/purchase-states"}
     operation = paths["/api/catalog/products"]["get"]
     assert operation["tags"] == ["Public Catalog"]
     assert {param["name"] for param in operation["parameters"]} == {"q", "category_id", "subcategory_id", "brand", "page", "page_size", "sort", "min_price", "max_price", "color", "stock_status", "spec", "include_inactive"}

@@ -28,6 +28,9 @@ const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3000";
         const path = url.pathname;
         assert.equal(route.request().method(), "GET", "Adding to cart must not write database records");
         if (path.endsWith("/me")) return route.fulfill({ status: 401, json: { error: { code: "AUTHENTICATION_REQUIRED", message: "Guest" } } });
+        if (path === "/api/catalog/purchase-states") return unavailable
+          ? route.fulfill({ status: 503, json: { error: { message: "Stock fixture unavailable" } } })
+          : route.fulfill({ json: { items: [{ id: product.id, sku: product.sku, is_active: true, available_quantity: stock }] } });
         if (path === "/api/catalog/availability") return unavailable
           ? route.fulfill({ status: 503, json: { error: { message: "Không kiểm tra được tồn kho thử nghiệm." } } })
           : route.fulfill({ json: { items: [{ sku: product.sku, available_quantity: stock }], tax_rate: "10.00", currency: "VND" } });

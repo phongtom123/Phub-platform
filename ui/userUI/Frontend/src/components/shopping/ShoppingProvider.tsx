@@ -19,6 +19,7 @@ import {
   type StoredCartLine,
 } from "@/lib/shopping/cart-storage";
 import { getProductAvailability, readJson, validateProduct } from "@/lib/catalog/client";
+import { productStock } from "@/lib/catalog/product-stock-store";
 import { safeImageUrl } from "@/lib/catalog/types";
 import type { CartLine, CustomerProfile } from "@/lib/shopping/types";
 import styles from "./shopping.module.css";
@@ -422,6 +423,8 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
     if (owner.current !== customerId) return;
     const quantities = new Map<string, number>();
     for (const item of items) quantities.set(item.sku, (quantities.get(item.sku) || 0) + item.quantity);
+    // The committed order may reserve stock. Discard its previous display cache.
+    for (const sku of quantities.keys()) productStock.reload(sku);
     persist(
       linesRef.current.flatMap((line) => {
         const remaining = line.quantity - (quantities.get(line.sku) || 0);

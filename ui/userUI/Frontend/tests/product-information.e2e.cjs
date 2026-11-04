@@ -21,6 +21,7 @@ const base = process.env.PHUB_USER_TEST_URL || "http://localhost:3001";
       await page.route("**/api/**", route => {
         const endpoint = new URL(route.request().url()).pathname;
         if (endpoint.endsWith("/me")) return route.fulfill({ status: 401, json: { error: { message: "Guest" } } });
+        if (endpoint === "/api/catalog/purchase-states") return route.fulfill({ json: { items: [{ id: product.id, sku: product.sku, is_active: true, available_quantity: 10 }] } });
         if (endpoint === "/api/catalog/availability") return route.fulfill({ json: { items: [{ sku: product.sku, available_quantity: 10 }], tax_rate: "10.00", currency: "VND" } });
         if (endpoint.endsWith("/availability")) return route.fulfill({ json: { id: product.id, sku: product.sku, quantity: 1, available: true, is_active: true } });
         return route.continue();
