@@ -22,7 +22,7 @@ from phub_api.services.warehouse_scope import require_warehouse_id
 
 
 def can_write(name: str, user: User) -> bool:
-    return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "NHAN_VIEN" and name == "suppliers"))
+    return RESOURCES[name].writable and user.role == "ADMIN"
 
 
 def access(name: str, user: User, write: bool = False) -> None:

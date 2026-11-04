@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Building2, Check, LockKeyhole, Save, ShieldCheck, UserRound } from "lucide-react";
+import { Bell, Building2, Check, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
 import { Panel } from "@/src/components/warehouse/ui";
 import { changeMyPassword } from "@/src/lib/warehouse-api";
 
@@ -11,7 +11,6 @@ export default function AccountSettings({ section }: { section: "account" | "set
   const [profileError, setProfileError] = useState("");
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [transferAlerts, setTransferAlerts] = useState(true);
-  const [defaultWarehouse, setDefaultWarehouse] = useState("central");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
@@ -20,7 +19,6 @@ export default function AccountSettings({ section }: { section: "account" | "set
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setDefaultWarehouse(window.localStorage.getItem("phub:warehouse:default") ?? "central");
     setEmailAlerts(window.localStorage.getItem("phub:warehouse:email-alerts") !== "false");
     setTransferAlerts(window.localStorage.getItem("phub:warehouse:transfer-alerts") !== "false");
   }, []);
@@ -41,7 +39,6 @@ export default function AccountSettings({ section }: { section: "account" | "set
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isAccount && typeof window !== "undefined") {
-      window.localStorage.setItem("phub:warehouse:default", defaultWarehouse);
       window.localStorage.setItem("phub:warehouse:email-alerts", String(emailAlerts));
       window.localStorage.setItem("phub:warehouse:transfer-alerts", String(transferAlerts));
     }
@@ -84,14 +81,9 @@ export default function AccountSettings({ section }: { section: "account" | "set
         <div className="security-row"><span className="security-icon"><ShieldCheck size={16}/></span><div><strong>Xác thực hai bước</strong><small>Liên hệ quản trị viên để bật xác thực nhiều lớp</small></div><span className="security-status muted">Chưa bật</span></div>
       </Panel>
     </div> : <div className="settings-layout">
-      <Panel title="Thiết lập kho" subtitle="Mặc định sử dụng khi tạo phiếu mới">
-        <form className="account-form" onSubmit={save}>
-          <label className="setting-field"><span>Kho làm việc mặc định</span><select value={defaultWarehouse} onChange={event => setDefaultWarehouse(event.target.value)}><option value="central">Kho trung tâm</option><option value="q1">Kho Quận 1</option><option value="td">Kho Thủ Đức</option></select></label>
-          <div className="form-actions"><button className="button primary" type="submit"><Save size={14}/>{saved ? "Đã lưu" : "Lưu cài đặt"}</button></div>
-        </form>
-      </Panel>
       <Panel title="Thông báo" subtitle="Chọn các loại thông báo muốn nhận">
-        <div className="toggle-list"><Toggle icon={<Bell size={16}/>} title="Thông báo nghiệp vụ qua email" detail="Nhận thông báo khi có phiếu mới cần xử lý" checked={emailAlerts} onChange={setEmailAlerts}/><Toggle icon={<Check size={16}/>} title="Cập nhật phiếu chuyển kho" detail="Thông báo khi phiếu chuyển được giao hoặc xác nhận nhận" checked={transferAlerts} onChange={setTransferAlerts}/></div>
+        <form className="account-form" onSubmit={save}><div className="toggle-list"><Toggle icon={<Bell size={16}/>} title="Thông báo nghiệp vụ qua email" detail="Nhận thông báo khi có phiếu mới cần xử lý" checked={emailAlerts} onChange={setEmailAlerts}/><Toggle icon={<Check size={16}/>} title="Cập nhật phiếu chuyển kho" detail="Thông báo khi phiếu chuyển được giao hoặc xác nhận nhận" checked={transferAlerts} onChange={setTransferAlerts}/></div>
+        <div className="form-actions"><button className="button primary" type="submit">{saved ? "Đã lưu" : "Lưu cài đặt"}</button></div></form>
         <div className="module-note"><span>i</span>Tùy chọn thông báo chỉ áp dụng cho tài khoản của bạn.</div>
       </Panel>
     </div>}

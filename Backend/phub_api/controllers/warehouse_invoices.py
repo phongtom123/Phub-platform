@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
+import re
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -45,15 +46,19 @@ def list_invoices(user: User = Depends(current_user), db=Depends(get_supabase)):
 @router.get("/customer-search")
 def customer_search(q: str = "", user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
-    term = q.strip()[:100].replace(",", " ").replace("%", "")
-    if len(term) < 2:
+    email = q.strip().lower()[:200]
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+        raise HTTPException(422, "Nhập email khách hàng hợp lệ.")
+    accounts = db.table("TAI_KHOAN").select("ma_kh,email").eq("email", email).limit(10).execute().data
+    customer_ids = [row["ma_kh"] for row in accounts if row.get("ma_kh")]
+    if len(customer_ids) > 1:
+        raise HTTPException(409, "Email khách hàng đang bị trùng dữ liệu.")
+    if not customer_ids:
         return {"customers": [], "orders": []}
     customers = db.table("KHACH_HANG").select(
         "ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md"
-    ).or_(f"sdt.ilike.%{term}%,ma_kh.ilike.%{term}%,ten_kh.ilike.%{term}%").limit(50).execute().data
+    ).in_("ma_kh", customer_ids).limit(50).execute().data
     ids = [row["ma_kh"] for row in customers]
-    if not ids:
-        return {"customers": [], "orders": []}
     orders = db.table("DON_HANG").select(
         "ma_donhang,ma_kh,ten_nguoi_nhan,trang_thai"
     ).in_("ma_kh", ids).in_("trang_thai", ["DA_XUAT_KHO", "HOAN_THANH"]).limit(200).execute().data

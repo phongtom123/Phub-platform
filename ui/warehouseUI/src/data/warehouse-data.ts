@@ -60,10 +60,10 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   },
   history: {
     title: "Lịch sử kho", description: "Tra cứu các giao dịch làm thay đổi số lượng tồn kho.", searchPlaceholder: "Tìm mã giao dịch hoặc sản phẩm...", filters: ["Loại giao dịch", "Khoảng ngày"],
-    columns: [{ key: "id", label: "MÃ GIAO DỊCH", kind: "link" }, { key: "type", label: "LOẠI" }, { key: "product", label: "SẢN PHẨM", kind: "strong" }, { key: "quantity", label: "SỐ LƯỢNG" }, { key: "user", label: "NGƯỜI THỰC HIỆN" }, { key: "created", label: "THỜI GIAN" }],
+    columns: [{ key: "id", label: "MÃ GIAO DỊCH", kind: "link" }, { key: "type", label: "LOẠI" }, { key: "product", label: "SẢN PHẨM", kind: "strong" }, { key: "quantity", label: "BIẾN ĐỘNG SỐ LƯỢNG" }, { key: "user", label: "NGƯỜI THỰC HIỆN" }, { key: "created", label: "THỜI GIAN" }],
     rows: [
       { id: "PN-260927-03", type: "Nhập kho", product: "ASUS GeForce RTX 4070", quantity: "8", user: "Trần Đức Phong", created: "27/09/2026 09:42" },
-      { id: "XK-260927-08", type: "Xuất đơn", product: "AMD Ryzen 7 7800X3D", quantity: "2", user: "Trần Đức Phong", created: "27/09/2026 08:22" },
+      { id: "XK-260927-08", type: "Xuất đơn", product: "AMD Ryzen 7 7800X3D", quantity: "−2", user: "Trần Đức Phong", created: "27/09/2026 08:22" },
       { id: "CK-260924-02", type: "Nhận chuyển kho", product: "Corsair Vengeance RGB", quantity: "4", user: "Hoàng Thùy Linh", created: "24/09/2026 14:18" },
     ],
   },
