@@ -21,11 +21,11 @@ CUSTOMER_CHILDREN = {"order-lines", "invoices", "payments", "voucher-uses"}
 
 
 def can_write(name: str, user: User) -> bool:
-    return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "THU_KHO" and name == "suppliers"))
+    return RESOURCES[name].writable and user.role == "ADMIN"
 
 
 def access(name: str, user: User, write: bool = False) -> None:
-    readable = user.role == "ADMIN" or (user.role == "THU_KHO" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
+    readable = user.role == "ADMIN" or (user.role == "NHAN_VIEN_KHO" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
     if not readable or (write and not can_write(name, user)):
         raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này.")
 
@@ -56,12 +56,10 @@ def selected_columns(name: str, user: User) -> str:
     parts = [c["name"] + ("::text" if c["type"].startswith("decimal") else "") for c in public_columns(name)]
     if user.role == "KHACH_HANG" and name in CUSTOMER_CHILDREN:
         parts.append("scope:DON_HANG!inner(ma_kh)")
-    if user.role == "THU_KHO" and name == "receipt-lines":
+    if user.role == "NHAN_VIEN_KHO" and name == "receipt-lines":
         parts.append("scope:PHIEU_NHAP!inner(ma_kho)")
-    if user.role == "THU_KHO" and name == "transfer-lines":
+    if user.role == "NHAN_VIEN_KHO" and name == "transfer-lines":
         parts.append("scope:PHIEU_CHUYEN_KHO!inner(ma_kho_xuat,ma_kho_nhan)")
-    if user.role == "THU_KHO" and name == "stocktake-lines":
-        parts.append("scope:PHIEU_KIEM_KE!inner(ma_kho)")
     return ",".join(parts)
 
 
@@ -69,8 +67,8 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
     query = db.table(RESOURCES[name].table).select(selected_columns(name, user), count="exact")
     if user.role == "KHACH_HANG":
         query = query.eq("scope.ma_kh" if name in CUSTOMER_CHILDREN else "ma_kh", user.customer_id)
-    if user.role == "THU_KHO":
-        if name in {"warehouses", "inventory", "receipts", "stock-history", "stocktakes"}:
+    if user.role == "NHAN_VIEN_KHO":
+        if name in {"warehouses", "receipts", "stock-movements"}:
             query = query.eq("ma_kho", user.warehouse_id)
         elif name == "receipt-lines":
             query = query.eq("scope.ma_kho", user.warehouse_id)
@@ -79,11 +77,9 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
             if name == "transfers" and search:
                 clause = f"and(or({clause}),or({search}))"
             query = query.or_(clause, reference_table="scope") if name == "transfer-lines" else query.or_(clause)
-        elif name == "stocktake-lines":
-            query = query.eq("scope.ma_kho", user.warehouse_id)
     # Exactly one top-level OR parameter. Never merge permission and text OR
     # with duplicate query parameters (PostgREST versions may interpret them differently).
-    if search and not (user.role == "THU_KHO" and name == "transfers"):
+    if search and not (user.role == "NHAN_VIEN_KHO" and name == "transfers"):
         query = query.or_(search)
     return query
 
@@ -181,7 +177,7 @@ def validate_combined(name: str, data: dict, user: User) -> None:
         raise HTTPException(422, "Tài khoản phải thuộc đúng một khách hàng hoặc một nhân viên.")
     if name == "employees":
         if (data["loai_nhan_vien"] == "ADMIN") != (data.get("ma_kho") is None):
-            raise HTTPException(422, "ADMIN không gán kho; THU_KHO phải gán một kho.")
+            raise HTTPException(422, "ADMIN không gán kho; NHAN_VIEN_KHO phải gán một kho.")
     if name == "promotions":
         try:
             valid = datetime.fromisoformat(data["ngay_ket_thuc"]) > datetime.fromisoformat(data["ngay_bat_dau"])
