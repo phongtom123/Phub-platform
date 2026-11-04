@@ -91,7 +91,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     finally { setConfirming(null); }
   }
   const sourceRows = apiRows ?? [];
-  const filteredRows = useMemo(() => sourceRows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))) && Object.entries(filters).every(([filter, value]) => !value || String(row[filter] ?? "").toLocaleLowerCase("vi") === value.toLocaleLowerCase("vi"))), [sourceRows, query, filters]);
+  const filteredRows = useMemo(() => sourceRows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))) && Object.entries(filters).every(([filter, value]) => !value || (filter === "created" ? matchesDateRange(String(row.created ?? ""), value) : String(row[filter] ?? "").toLocaleLowerCase("vi") === value.toLocaleLowerCase("vi")))), [sourceRows, query, filters]);
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const rows = useMemo(() => filteredRows.slice((page - 1) * pageSize, page * pageSize), [filteredRows, page]);
   useEffect(() => { setPage(1); }, [section, query, filters]);
@@ -109,7 +109,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     URL.revokeObjectURL(url);
   }
   return <><Panel title={`${definition.title} (${rows.length})`} subtitle="Dữ liệu được cập nhật từ các giao dịch trong kho." action={<div className="module-actions"><button className="button" onClick={exportCsv}><Download size={14}/> Xuất CSV</button>{definition.addLabel && <button className="button primary" onClick={onAdd}><Plus size={15}/>{definition.addLabel}</button>}</div>}>
-      <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder={definition.searchPlaceholder}/></label>{definition.filters?.map(filter => { const key = filterKey(filter, definition.rows); const options = section === "receipts" && key === "status" ? ["Nháp", "Đã nhập", "Đã hủy"] : Array.from(new Set(sourceRows.map(row => row[key]).filter(value => value !== undefined).map(String))); return <label className="filter-select-wrap" key={filter}><SlidersHorizontal size={13}/><select className="filter-select" aria-label={filter} value={filters[key] ?? ""} onChange={event => setFilters(current => ({ ...current, [key]: event.target.value }))}><option value="">{filter === "Trạng thái" ? "Tất cả trạng thái" : filter}</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>; })}</div>
+      <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder={definition.searchPlaceholder}/></label>{definition.filters?.map(filter => { const key = filterKey(filter, definition.rows); const options = key === "created" ? ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua"] : section === "receipts" && key === "status" ? ["Nháp", "Đã nhập", "Đã hủy"] : Array.from(new Set(sourceRows.map(row => row[key]).filter(value => value !== undefined).map(String))); return <label className="filter-select-wrap" key={filter}><SlidersHorizontal size={13}/><select className="filter-select" aria-label={filter} value={filters[key] ?? ""} onChange={event => setFilters(current => ({ ...current, [key]: event.target.value }))}><option value="">{filter === "Trạng thái" ? "Tất cả trạng thái" : filter === "Khoảng ngày" ? "Tất cả thời gian" : filter}</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>; })}</div>
       {loading && <div className="module-note">Đang tải dữ liệu thật từ backend…</div>}
       {apiError && <div className="module-note form-error"><span>!</span><span>{apiError}</span><button className="button" type="button" onClick={() => setReload(value => value + 1)}>Thử lại</button></div>}
       {!loading && !apiError && apiRows && (rows.length ? <><div className="table-wrap"><table><thead><tr>{definition.columns.map(column => <th key={column.key}>{column.label}</th>)}<th/></tr></thead><tbody>{rows.map(row => <DataTableRow key={row.id} row={row} definition={definition} section={section} confirming={confirming === row.id} onConfirm={section === "receipts" || section === "pending" ? handleConfirm : undefined} onTransferAction={section === "transfers" || section === "pending" ? handleTransferAction : undefined} onDispatchOrder={section === "dispatches" ? handleDispatchOrder : undefined} onCancel={section === "receipts" || section === "transfers" || section === "pending" ? handleCancel : undefined} onDelete={section === "receipts" || section === "transfers" || section === "pending" || section === "dispatches" ? handleDelete : undefined}/>)}</tbody></table></div>{pageCount > 1 && <div className="form-actions"><button className="button" type="button" disabled={page <= 1} onClick={() => setPage(current => Math.max(1, current - 1))}><ChevronLeft size={14}/> Trang trước</button><span className="module-note">Trang {page}/{pageCount} · {filteredRows.length} bản ghi</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => setPage(current => Math.min(pageCount, current + 1))}>Trang sau <ChevronRight size={14}/></button></div>}</> : <EmptyState text="Không tìm thấy dữ liệu phù hợp."/>) }
@@ -143,6 +143,16 @@ function filterKey(label: string, rows: DataRow[]) {
   if (value.includes("loại giao dịch")) return "type";
   if (value.includes("khoảng ngày")) return "created";
   return "status";
+}
+
+function matchesDateRange(value: string, range: string) {
+  const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!match) return false;
+  const date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = range === "Hôm nay" ? 0 : range === "7 ngày qua" ? 7 : range === "30 ngày qua" ? 30 : 90;
+  const start = new Date(today); start.setDate(today.getDate() - days);
+  return date >= start && date <= today;
 }
 
 function DataTableRow({ row, definition, section, confirming, onConfirm, onTransferAction, onDispatchOrder, onCancel, onDelete }: { row: DataRow; definition: ModuleDefinition; section: string; confirming?: boolean; onConfirm?: (row: DataRow) => void; onTransferAction?: (row: DataRow) => void; onDispatchOrder?: (row: DataRow) => void; onCancel?: (row: DataRow) => void; onDelete?: (row: DataRow) => void }) {
