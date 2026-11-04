@@ -3,6 +3,14 @@
 @media(max-width:620px){.container{width:calc(100% - 32px)}.headingRow{flex-wrap:wrap;padding-bottom:105px}.headingRow h1{font-size:28px}.steps{width:100%}.form>label,.divider{width:100%}.shippingMethods label{grid-template-columns:20px 1fr}.shippingMethods strong{grid-column:2;text-align:left}.cardFields{grid-template-columns:1fr}.summary{padding:22px 18px}.bottomSpace{height:90px}}
 
 /* Additional styles for Address Management & Review */
+.fulfillment { display: flex; flex-wrap: wrap; gap: 12px; padding: 0; border: 0; margin: 0 0 24px; }
+.fulfillment legend { margin-bottom: 12px; font-size: 16px; font-weight: 600; }
+.fulfillment label { display: flex; gap: 10px; align-items: center; flex: 1 1 210px; padding: 15px; border: 1px solid #cdd5f0; border-radius: 8px; cursor: pointer; }
+.fulfillment label[data-selected="true"] { border-color: #0156ff; background: #f3f6ff; }
+.fulfillment input { width: 18px; height: 18px; accent-color: #0156ff; }
+.pickupContact { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(230px,100%),1fr)); gap: 16px; margin-top: 18px; }
+.pickupContact label { display: grid; gap: 8px; font-size: 14px; }
+.pickupContact input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cdd5f0; border-radius: 6px; background: white; font: inherit; }
 .addressBox {
   padding: 18px 20px;
   background: #f9faff;

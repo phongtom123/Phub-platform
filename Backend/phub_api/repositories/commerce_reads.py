@@ -3,7 +3,7 @@ from postgrest.exceptions import APIError
 
 from phub_api.repositories.pagination import rows
 
-ORDER_COLUMNS = "ma_donhang,ma_kh,trang_thai,thoi_gian_dat,ten_nguoi_nhan,sdt_nguoi_nhan,dia_chi_chi_tiet,tinh_thanh,xa_phuong,ghi_chu"
+ORDER_COLUMNS = "ma_donhang,ma_kh,trang_thai,thoi_gian_dat,ten_nguoi_nhan,sdt_nguoi_nhan,dia_chi_chi_tiet,tinh_thanh,xa_phuong,ghi_chu,phuong_thuc_nhan"
 LINE_COLUMNS = ("sku,ma_kho_xuat,ten_sp_luc_ban,don_vi_luc_ban,so_luong,don_gia::text,"
                 "giam_gia::text,giam_gia_voucher::text,tien_thue::text,thanh_tien::text,owned_order:DON_HANG!inner(ma_donhang,ma_kh)")
 
@@ -40,3 +40,8 @@ class OrderReadRepository:
             "thoi_gian_lap,tong_tien_giam::text,tong_tien_truoc_thue::text,tong_tien_thue::text,tong_tien_sau_thue::text,owned_order:DON_HANG!inner(ma_donhang,ma_kh)"
         ).eq("ma_donhang", order_id).eq("owned_order.ma_kh", owner)
                 .order("thoi_gian_lap", desc=True).order("ma_hoadon", desc=True).limit(1).execute().data)
+
+    def payment_deadline(self, order_id, owner):
+        return self.client.rpc("customer_payment_deadline_v1", {
+            "p_customer_id": owner, "p_order_id": order_id,
+        }).execute().data

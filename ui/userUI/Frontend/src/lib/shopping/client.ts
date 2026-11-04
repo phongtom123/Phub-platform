@@ -1,4 +1,5 @@
 import { cents } from "./money";
+import { validPaymentDeadline } from "./payment-deadline";
 import type {
   AddressBook,
   AddressInput,
@@ -235,12 +236,20 @@ export function validateReceipt(value: unknown): Receipt {
     !(r.note === null || typeof r.note === "string")
   )
     invalid();
-  recipient(r.recipient);
+  if (r.fulfillment_method !== undefined && !["GIAO_HANG", "TAI_CUA_HANG"].includes(String(r.fulfillment_method))) invalid();
+  recipient(r.recipient, r.fulfillment_method === "TAI_CUA_HANG");
+  if (r.fulfillment_method === "TAI_CUA_HANG") {
+    const contact = record(r.recipient);
+    if (typeof contact.name !== "string" || typeof contact.phone !== "string" ||
+      [contact.address_line, contact.province, contact.ward].some(value => value !== null)) invalid();
+  }
   return r as unknown as Receipt;
 }
 
 function validateSummary(value: unknown) {
   const order = record(value);
+  if (order.fulfillment_method != null && !["GIAO_HANG", "TAI_CUA_HANG"].includes(String(order.fulfillment_method))) invalid();
+  if (!validPaymentDeadline(order.payment_deadline)) invalid();
   if (
     typeof order.id !== "string" ||
     !order.id ||
@@ -355,6 +364,7 @@ export const requestPayment = (orderId: string, method: PaymentMethod, key: stri
 
 export function validateInvoice(value: unknown): InvoiceOverview {
   const result = record(value);
+  if (!validPaymentDeadline(result.payment_deadline)) invalid();
   if (typeof result.order_id !== "string" || !Array.isArray(result.items)) invalid();
   currency(result.currency);
   if (result.invoice !== null) {

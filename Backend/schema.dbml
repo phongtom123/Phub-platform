@@ -256,6 +256,7 @@ Table DON_HANG {
   ma_nhan_vien varchar [note: 'ADMIN xu ly don; NULL khi chua phan cong hoac xu ly tu dong']
 
   kenh_ban varchar [not null, note: 'TAI_QUAY, ONLINE']
+  phuong_thuc_nhan varchar [note: 'GIAO_HANG, TAI_CUA_HANG; NULL cho don cu/chua ghi nhan. Khong phai kho xuat.']
 
   trang_thai varchar [not null, default: 'MOI', note: 'MOI, XAC_NHAN, DANG_CHUAN_BI, DA_XUAT_KHO, HOAN_THANH, HUY']
 
@@ -309,6 +310,8 @@ Table CT_DON_HANG {
 // ======================================
 
 Table HOA_DON {
+  han_thanh_toan timestamptz [note: 'KAN-61: hoa don ONLINE moi co han 24 gio; hoa don cu NULL']
+  huy_qua_han_luc timestamptz [note: 'Thoi diem he thong huy don vi qua han; khong gan cho admin bat ky']
   ma_hoadon varchar [pk]
   ma_donhang varchar [not null, unique]
   thoi_gian_lap datetime [not null]

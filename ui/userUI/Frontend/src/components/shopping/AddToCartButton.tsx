@@ -47,6 +47,7 @@ export function AddToCartButton({
   const ownStock = useProductStock(product, providedStock === undefined);
   const stock = providedStock ?? ownStock;
   const [phase, setPhase] = useState<ButtonPhase>("idle");
+  const addingThisProduct = shop.addingProductIds.includes(product.id);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
@@ -54,7 +55,7 @@ export function AddToCartButton({
   }, []);
 
   const handleAdd = async () => {
-    if (phase === "adding" || stock.status !== "available") return;
+    if (phase === "adding" || addingThisProduct || stock.status !== "available") return;
     if (resetTimer.current) clearTimeout(resetTimer.current);
     setPhase("adding");
     const added = await shop.add(product, quantity);
@@ -88,7 +89,7 @@ export function AddToCartButton({
         phase === "added" && styles.added,
         className,
       ].filter(Boolean).join(" ")}
-      disabled={disabled || stock.status !== "available" || shop.cartLoading || shop.authStatus === "loading"}
+      disabled={disabled || phase === "adding" || addingThisProduct || stock.status !== "available" || shop.cartRestoring || shop.authStatus === "loading"}
       onClick={() => void handleAdd()}
       aria-label={`${visibleLabel}${quantity > 1 ? `, số lượng ${quantity}` : ""}`}
       data-state={phase}

@@ -62,10 +62,11 @@ def commerce_client(monkeypatch):
         payload = json.loads(request.content)
         if state["result"] is not None:
             return httpx.Response(200, json=state["result"])
-        if request.url.path.endswith("/customer_checkout_multi_warehouse_v1"):
+        if request.url.path.endswith(("/customer_checkout_multi_warehouse_v1", "/customer_checkout_fulfillment_v1")):
+            assert request.url.path.endswith("/customer_checkout_fulfillment_v1" if payload["p_create"] else "/customer_checkout_multi_warehouse_v1")
             result = {"order": state["receipt"], "replayed": state["replayed"]} if payload["p_create"] else {"quote": state["quote"]}
         else:
-            assert request.url.path.endswith("/customer_read_orders_v2")
+            assert request.url.path.endswith("/customer_read_orders_v4")
             if payload["p_order_id"]:
                 result = {"order": state["detail"]}
             else:
@@ -152,6 +153,35 @@ def test_pooled_quote_retains_one_product_with_all_warehouse_allocations(commerc
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["allocations"] == allocations
     assert requests[0].url.path.endswith("/customer_checkout_multi_warehouse_v1")
+
+
+def test_pickup_needs_only_contact_and_is_preserved_in_receipt(commerce_client):
+    client, state, requests, body, _ = commerce_client
+    contact = {"name": "Pickup Customer", "phone": "+84 901 234 567"}
+    request = {**body, "fulfillment_method": "TAI_CUA_HANG", "recipient": contact}
+    state["receipt"] = {**state["receipt"], "fulfillment_method": "TAI_CUA_HANG",
+                        "recipient": {"name": contact["name"], "phone": "+84901234567"}}
+    response = client.post("/api/customer/orders", json=request, headers={"Idempotency-Key": str(uuid4())})
+    assert response.status_code == 201
+    assert response.json()["fulfillment_method"] == "TAI_CUA_HANG"
+    assert response.json()["recipient"]["address_line"] is None
+    sent = json.loads(requests[0].content)["p_request"]
+    assert sent["fulfillment_method"] == "TAI_CUA_HANG"
+    assert sent["recipient"] == {"name": contact["name"], "phone": "+84901234567"}
+
+
+@pytest.mark.parametrize("method,recipient", [
+    ("OTHER", {"name": "Test", "phone": "0901234567"}),
+    ("GIAO_HANG", {"name": "Test", "phone": "0901234567"}),
+    ("TAI_CUA_HANG", {"name": "", "phone": "0901234567"}),
+    ("TAI_CUA_HANG", {"name": "Test", "phone": "bad"}),
+    ("TAI_CUA_HANG", {"name": "Test", "phone": "0901234567", "address_line": "Forged", "province": "P", "ward": "W"}),
+])
+def test_fulfillment_validation_precedes_database(commerce_client, method, recipient):
+    client, _, requests, body, _ = commerce_client
+    response = client.post("/api/customer/orders", json={**body, "fulfillment_method": method, "recipient": recipient},
+                           headers={"Idempotency-Key": str(uuid4())})
+    assert response.status_code == 422 and requests == []
 
 
 @pytest.mark.parametrize("allocations", [

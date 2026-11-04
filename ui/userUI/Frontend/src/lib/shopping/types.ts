@@ -65,8 +65,8 @@ export interface AddressBook {
   items: CustomerAddress[];
   item: CustomerAddress | null;
 }
-export interface OrderRequest {
-  recipient: Recipient;
+export type FulfillmentMethod = "GIAO_HANG" | "TAI_CUA_HANG";
+export type OrderRequest = {
   note: string | null;
   voucher_code: string | null;
   expected_discount: string;
@@ -77,13 +77,15 @@ export interface OrderRequest {
     quantity: number;
     expected_unit_price: string;
   }[];
-}
+} & ({ fulfillment_method?: "GIAO_HANG"; recipient: Recipient } |
+  { fulfillment_method: "TAI_CUA_HANG"; recipient: Pick<Recipient, "name" | "phone"> });
 export interface Receipt extends Quote {
+  fulfillment_method?: FulfillmentMethod;
   id: string;
   status: "MOI";
   sales_channel: "ONLINE";
   created_at: string;
-  recipient: Recipient;
+  recipient: { name: string; phone: string; address_line: string | null; province: string | null; ward: string | null };
   note: string | null;
 }
 export interface Pagination {
@@ -93,11 +95,19 @@ export interface Pagination {
   total_pages: number;
 }
 export interface OrderSummary {
+  fulfillment_method?: FulfillmentMethod | null;
   id: string;
   status: string;
   created_at: string;
   currency: string;
   total: string;
+  payment_deadline?: PaymentDeadline | null;
+}
+export interface PaymentDeadline {
+  expires_at: string;
+  expired_at: string | null;
+  server_now: string;
+  status: "awaiting_payment" | "payment_received" | "processing_expiry" | "expired" | "closed";
 }
 export interface OrderPage {
   items: OrderSummary[];
@@ -147,4 +157,5 @@ export interface InvoiceOverview {
   currency: string;
   invoice: { issued_at: string; discount_total: string; subtotal: string; tax_total: string; total: string } | null;
   items: StoredLine[];
+  payment_deadline?: PaymentDeadline | null;
 }

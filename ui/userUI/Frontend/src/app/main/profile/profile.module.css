@@ -143,3 +143,4 @@
   .page .pager .secondaryButton { padding-inline: 10px; }
   .gate { padding: 22px; }
 }
+.orderDeadline { grid-column: 1 / -1; width: 100%; }

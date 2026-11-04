@@ -34,7 +34,8 @@ const receipt = { ...quote, id: "AUTO-ORDER-TEST", status: "MOI", sales_channel:
       if (path.endsWith("/invoice")) {
         invoiceReads++;
         if (failing) return route.fulfill({ status: 503, json: { error: { message: "Test temporary failure" } } });
-        return ok({ order_id: receipt.id, currency: "VND", invoice: present ? { issued_at: receipt.created_at, subtotal: "925000000.00", discount_total: "0.00", tax_total: "92500000.00", total: "1017500000.00" } : null, items: present ? invoiceLines : [] });
+        return ok({ order_id: receipt.id, currency: "VND", invoice: present ? { issued_at: receipt.created_at, subtotal: "925000000.00", discount_total: "0.00", tax_total: "92500000.00", total: "1017500000.00" } : null, items: present ? invoiceLines : [],
+          payment_deadline: present ? { expires_at: new Date(Date.now()+86400000).toISOString(), server_now: new Date().toISOString(), expired_at: null, status: "awaiting_payment" } : null });
       }
       throw new Error(`Unexpected API request: ${route.request().method()} ${path}`);
     });
@@ -43,6 +44,7 @@ const receipt = { ...quote, id: "AUTO-ORDER-TEST", status: "MOI", sales_channel:
     await page.getByRole("heading", { name: /Đặt đơn hàng thành công/ }).waitFor();
     const invoice = page.getByRole("region", { name: "Hóa đơn của đơn hàng" });
     await invoice.getByText(/1\.017\.500\.000/).first().waitFor();
+    await invoice.getByText("Thanh toán trong vòng 24 giờ", {exact:true}).waitFor();
     assert.equal(await invoice.locator("tbody tr").count(), 1, "Four warehouse allocations display as one product");
     await invoice.locator("tbody tr").getByRole("cell", { name: "185", exact: true }).waitFor();
     assert.equal(await invoice.getByText(product.name, { exact: true }).count(), 1);
