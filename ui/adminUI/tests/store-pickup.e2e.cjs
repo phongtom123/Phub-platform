@@ -18,7 +18,7 @@ const base=process.env.PHUB_ADMIN_TEST_URL||'http://localhost:3000';
    if(p.endsWith('/auth/me'))return ok({account_id:'A',name:'Test Admin',username:'admin',role:'ADMIN'});
    if(p.endsWith('/data/resources'))return ok([meta]);
    if(p.endsWith('/admin/orders/PICKUP-TEST/detail'))return ok({order_id:'PICKUP-TEST',order,
-    customer:{ma_kh:'C',ten_kh:'Pickup Customer'},employee:null,lines:[],invoice:null,payments:[],voucher_uses:[],
+    customer:{ma_kh:'C',ten_kh:'Pickup Customer'},employee:null,lines:[],invoice:null,payments:[],voucher_uses:[],history:[],
     financial:{invoice_id:null,invoice_status:'CHUA_LAP',payment_status:'CHUA_CO_HOA_DON',total:null,collected:'0.00',refunded:'0.00',paid:'0.00',remaining:null}});
    if(p.endsWith('/data/orders'))return ok({data:[order],total:1,page:1,page_size:20});
    if(p.endsWith('/read/settings'))return ok({store_name:'PHUB',store_address:'',store_phone:'',low_stock_threshold:5});

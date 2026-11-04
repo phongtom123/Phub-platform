@@ -27,7 +27,7 @@ def local_client(monkeypatch, request):
                 "ma_kh": "KH-FIRST", "ten_kh": "Existing customer", "sdt": "0901234567",
                 "dia_chi_chi_tiet_md": None, "tinh_thanh_md": None, "xa_phuong_md": None,
             }])
-        assert request.url.path.endswith("/customer_checkout_v2")
+        assert request.url.path.endswith(("/customer_checkout_multi_warehouse_v1", "/customer_checkout_fulfillment_v1", "/customer_checkout_v2"))
         return httpx.Response(404, json={"code": "PGRST202", "message": "missing function", "details": None, "hint": None})
 
     with httpx.Client(transport=httpx.MockTransport(handle)) as transport:

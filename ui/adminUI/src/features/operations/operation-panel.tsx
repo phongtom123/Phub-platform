@@ -107,6 +107,26 @@ export function OperationPanel({
     setCollectionReady(draft.ready);
   }, []);
   const [quantity, setQuantity] = useState(String(row?.so_luong_ton ?? ""));
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [moreOpen]);
   const pending = useRef<PendingCommand | null>(null),
     submitting = useRef(false);
   const status = String(row?.trang_thai ?? ""),
@@ -181,6 +201,7 @@ export function OperationPanel({
       remember(
         pendingCommand(resource, action, id, data, expected || undefined),
       );
+    const scrollPos = typeof window !== "undefined" ? window.scrollY : 0;
     submitting.current = true;
     setBusy(true);
     setError("");
@@ -204,7 +225,13 @@ export function OperationPanel({
         );
       } else {
         setMode("");
+        setMoreOpen(false);
         onChanged();
+        if (typeof window !== "undefined") {
+          requestAnimationFrame(() => {
+            window.scrollTo({ top: scrollPos, behavior: "instant" });
+          });
+        }
       }
     } catch (e) {
       if (
@@ -214,7 +241,18 @@ export function OperationPanel({
         e.status !== 408
       )
         remember(null);
-      setError((e as Error).message);
+      setNotice("");
+      const raw = (e as Error).message || "Đã xảy ra lỗi khi xử lý.";
+      const friendly = raw === "STATE_CONFLICT"
+        ? "Trạng thái đơn hàng vừa thay đổi trên hệ thống. Hãy làm mới để cập nhật."
+        : raw === "INSUFFICIENT_STOCK"
+        ? "Không đủ tồn kho khả dụng để xuất hàng. Vui lòng kiểm tra lại tồn kho."
+        : raw === "PAYMENT_REQUIRED"
+        ? "Đơn hàng cần có hóa đơn và thu đủ tiền trước khi hoàn thành."
+        : raw === "PAYMENT_LIMIT"
+        ? "Số tiền không hợp lệ hoặc vượt quá giới hạn thu/hoàn."
+        : raw;
+      setError(friendly);
     } finally {
       submitting.current = false;
       setBusy(false);
@@ -341,86 +379,292 @@ export function OperationPanel({
   return (
     <section className="operation-panel" aria-label="Thao tác nghiệp vụ">
       <div className="live-tools">
-        {(actions[resource] ?? [])
-          .filter((a) => a.states.includes(status))
-          .filter(
-            (a) =>
-              !(
-                resource === "orders" &&
-                a.action === "invoice" &&
-                invoiceExists
-              ),
-          )
-          .map((a) => (
-            <button
-              key={a.action}
-              disabled={busy || Boolean(pending.current)}
-              onClick={() => {
-                if (resource === "orders" && a.action === "invoice") {
-                  setMode("invoice");
-                } else if (resource === "receipts" && a.action === "confirm") {
-                  setBusy(true); setError("");
-                  pricingRequest<ReceiptPriceQuote>(`receipts/${id}`).then(quote => {
-                    const approved = window.confirm(confirmationMessage(quote));
-                    setBusy(false); if (approved) void run(a.action, { pricing_version: quote.version });
-                  }).catch(reason => { setBusy(false); setError(reason.message); });
-                } else if (window.confirm(a.action === "dispatch"
-                  ? "Xác nhận hàng đã sẵn sàng xuất kho? Thao tác này trừ tồn kho theo số lượng trong đơn và chuyển đơn sang Đã xuất kho."
-                  : a.action === "complete"
-                    ? "Xác nhận đơn đã được giao xong? Chỉ hoàn thành khi đã lập hóa đơn và thu đủ tiền."
-                    : `${a.label}?`)) void run(a.action);
-              }}
-            >
-              {a.label}
-            </button>
-          ))}
-        {resource === "orders" &&
-          !["HUY", "HOAN_THANH"].includes(status) &&
-          !create && (
-            <button
-              disabled={busy || Boolean(pending.current)}
-              onClick={() => setMode("assign")}
-            >
-              Phân công phụ trách
-            </button>
-          )}
-        {resource === "orders" && status !== "HUY" && !create && (
+        {resource === "orders" && !create && row ? (
           <>
-            {fullyPaid ? (
-              <span className="live-note" role="status">
-                Đã thanh toán đủ
-              </span>
+            {status === "HOAN_THANH" ? (
+              <div className="operation-terminal-note">
+                <span className="operation-status-badge completed">Đã hoàn thành</span>
+                <span className="operation-condition-hint condition-ready">
+                  Xem kết quả chi tiết và lịch sử xử lý bên dưới.
+                </span>
+              </div>
+            ) : status === "HUY" ? (
+              <div className="operation-terminal-note">
+                <span className="operation-status-badge cancelled">Đã hủy</span>
+                <span className="operation-condition-hint">
+                  Xem thông tin đối chiếu và lịch sử bên dưới.
+                </span>
+              </div>
             ) : (
+              <>
+                {/* 1. Nút chính theo từng trạng thái */}
+                {status === "MOI" && (
+                  <button
+                    className="operation-primary-btn"
+                    disabled={busy || Boolean(pending.current)}
+                    onClick={() => {
+                      if (window.confirm("Xác nhận đơn?")) void run("confirm");
+                    }}
+                  >
+                    Xác nhận đơn
+                  </button>
+                )}
+
+                {status === "XAC_NHAN" && (
+                  <button
+                    className="operation-primary-btn"
+                    disabled={busy || Boolean(pending.current)}
+                    onClick={() => {
+                      if (window.confirm("Chuẩn bị hàng?")) void run("prepare");
+                    }}
+                  >
+                    Chuẩn bị hàng
+                  </button>
+                )}
+
+                {status === "DANG_CHUAN_BI" && (
+                  <button
+                    className="operation-primary-btn"
+                    disabled={busy || Boolean(pending.current)}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Xác nhận hàng đã sẵn sàng xuất kho? Thao tác này trừ tồn kho theo số lượng trong đơn và chuyển đơn sang Đã xuất kho.",
+                        )
+                      ) {
+                        void run("dispatch");
+                      }
+                    }}
+                  >
+                    Xác nhận xuất kho
+                  </button>
+                )}
+
+                {status === "DA_XUAT_KHO" && (
+                  <>
+                    <button
+                      className="operation-primary-btn"
+                      disabled={
+                        busy ||
+                        Boolean(pending.current) ||
+                        !invoiceExists ||
+                        !fullyPaid
+                      }
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            "Xác nhận đơn đã được giao xong? Chỉ hoàn thành khi đã lập hóa đơn và thu đủ tiền.",
+                          )
+                        ) {
+                          void run("complete");
+                        }
+                      }}
+                    >
+                      Hoàn thành đơn
+                    </button>
+                    {!invoiceExists ? (
+                      <span className="operation-condition-hint" role="status">
+                        Chưa có hóa đơn. Hãy lập hóa đơn trước khi hoàn thành đơn.
+                      </span>
+                    ) : !fullyPaid ? (
+                      <span className="operation-condition-hint" role="status">
+                        Còn phải thu{" "}
+                        {orderDetail?.financial.remaining
+                          ? formatMoney(orderDetail.financial.remaining)
+                          : "tiền"}{" "}
+                        trước khi hoàn thành đơn.
+                      </span>
+                    ) : (
+                      <span
+                        className="operation-condition-hint condition-ready"
+                        role="status"
+                      >
+                        Đã thu đủ tiền. Sẵn sàng hoàn thành khi khách đã nhận hàng.
+                      </span>
+                    )}
+                  </>
+                )}
+
+                {/* 2. Nút phụ: Lập hóa đơn (chỉ khi chưa có hóa đơn) */}
+                {!invoiceExists &&
+                  ["XAC_NHAN", "DANG_CHUAN_BI", "DA_XUAT_KHO"].includes(status) && (
+                    <button
+                      className="operation-secondary-btn"
+                      disabled={busy || Boolean(pending.current)}
+                      onClick={() => setMode("invoice")}
+                    >
+                      Lập hóa đơn
+                    </button>
+                  )}
+
+                {/* 3. Tiến trình thanh toán: Thu tiền hoặc Huy hiệu đã thanh toán đủ */}
+                {fullyPaid ? (
+                  <span
+                    className="live-note operation-paid-badge"
+                    role="status"
+                  >
+                    Đã thanh toán đủ
+                  </span>
+                ) : (
+                  <button
+                    className="operation-secondary-btn"
+                    disabled={busy || Boolean(pending.current)}
+                    onClick={() => {
+                      if (mode !== "payment") setCollectionReady(false);
+                      setMode("payment");
+                    }}
+                  >
+                    Ghi nhận thu tiền
+                  </button>
+                )}
+
+                {/* 4. Nhóm Thao tác khác (Phân công, Hủy đơn, Hoàn tiền) */}
+                <div className="operation-more-wrapper" ref={moreRef}>
+                  <button
+                    type="button"
+                    className="operation-more-trigger"
+                    aria-expanded={moreOpen}
+                    aria-haspopup="menu"
+                    disabled={busy || Boolean(pending.current)}
+                    onClick={() => setMoreOpen((prev) => !prev)}
+                  >
+                    Thao tác khác{" "}
+                    <span
+                      className={`operation-caret ${moreOpen ? "open" : ""}`}
+                      aria-hidden="true"
+                    >
+                      ▾
+                    </span>
+                  </button>
+                  <div
+                    className={`operation-more-menu ${moreOpen ? "is-open" : ""}`}
+                    role="menu"
+                  >
+                    {/* Phân công phụ trách */}
+                    <button
+                      type="button"
+                      className="operation-more-item"
+                      disabled={busy || Boolean(pending.current)}
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setMode("assign");
+                      }}
+                    >
+                      Phân công phụ trách
+                    </button>
+
+                    {/* Ghi nhận hoàn tiền */}
+                    <button
+                      type="button"
+                      className="operation-more-item"
+                      disabled={
+                        busy ||
+                        Boolean(pending.current) ||
+                        Number(orderDetail?.financial.paid ?? 0) <= 0
+                      }
+                      title={
+                        Number(orderDetail?.financial.paid ?? 0) <= 0
+                          ? "Chưa có tiền đã thu để hoàn"
+                          : undefined
+                      }
+                      onClick={() => {
+                        setMoreOpen(false);
+                        setAmount("");
+                        setMethod("TIEN_MAT");
+                        setReference("");
+                        setMode("refund");
+                      }}
+                    >
+                      Ghi nhận hoàn tiền
+                    </button>
+
+                    {/* Hủy đơn */}
+                    {["MOI", "XAC_NHAN", "DANG_CHUAN_BI"].includes(status) && (
+                      <button
+                        type="button"
+                        className="operation-more-item operation-more-danger"
+                        disabled={
+                          busy ||
+                          Boolean(pending.current) ||
+                          Number(orderDetail?.financial.paid ?? 0) > 0
+                        }
+                        title={
+                          Number(orderDetail?.financial.paid ?? 0) > 0
+                            ? "Cần hoàn tiền trước khi hủy đơn"
+                            : undefined
+                        }
+                        onClick={() => {
+                          setMoreOpen(false);
+                          if (window.confirm("Hủy đơn?")) void run("cancel");
+                        }}
+                      >
+                        Hủy đơn
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Gợi ý nếu Hủy đơn đang bị khóa do chưa hoàn tiền */}
+                {["MOI", "XAC_NHAN", "DANG_CHUAN_BI"].includes(status) &&
+                  Number(orderDetail?.financial.paid ?? 0) > 0 && (
+                    <span className="operation-condition-hint" role="status">
+                      Đã thu {formatMoney(orderDetail?.financial.paid ?? "0")}. Cần hoàn tiền trước khi hủy đơn.
+                    </span>
+                  )}
+              </>
+            )}
+          </>
+        ) : (
+          /* Tài nguyên khác: receipts, inventory hoặc tạo đơn mới */
+          <>
+            {(actions[resource] ?? [])
+              .filter((a) => a.states.includes(status))
+              .map((a) => (
+                <button
+                  key={a.action}
+                  disabled={busy || Boolean(pending.current)}
+                  onClick={() => {
+                    if (resource === "receipts" && a.action === "confirm") {
+                      setBusy(true);
+                      setError("");
+                      pricingRequest<ReceiptPriceQuote>(`receipts/${id}`)
+                        .then((quote) => {
+                          const approved = window.confirm(
+                            confirmationMessage(quote),
+                          );
+                          setBusy(false);
+                          if (approved)
+                            void run(a.action, {
+                              pricing_version: quote.version,
+                            });
+                        })
+                        .catch((reason) => {
+                          setBusy(false);
+                          setError(reason.message);
+                        });
+                    } else if (window.confirm(`${a.label}?`)) void run(a.action);
+                  }}
+                >
+                  {a.label}
+                </button>
+              ))}
+            {resource === "receipts" && status === "NHAP" && (
               <button
                 disabled={busy || Boolean(pending.current)}
-                onClick={() => { if (mode !== "payment") setCollectionReady(false); setMode("payment"); }}
+                onClick={() => void editLines()}
               >
-                Ghi nhận thu tiền
+                Chỉnh sản phẩm trong phiếu
               </button>
             )}
-            <button
-              disabled={busy || Boolean(pending.current)}
-              onClick={() => { setAmount(""); setMethod("TIEN_MAT"); setReference(""); setMode("refund"); }}
-            >
-              Ghi nhận hoàn tiền
-            </button>
+            {resource === "inventory" && (
+              <button
+                disabled={busy || Boolean(pending.current)}
+                onClick={() => setMode("adjust")}
+              >
+                Kiểm kê / điều chỉnh
+              </button>
+            )}
           </>
-        )}
-        {resource === "receipts" && status === "NHAP" && (
-          <button
-            disabled={busy || Boolean(pending.current)}
-            onClick={() => void editLines()}
-          >
-            Chỉnh sản phẩm trong phiếu
-          </button>
-        )}
-        {resource === "inventory" && (
-          <button
-            disabled={busy || Boolean(pending.current)}
-            onClick={() => setMode("adjust")}
-          >
-            Kiểm kê / điều chỉnh
-          </button>
         )}
       </div>
       {resource === "receipts" && id && <ReceiptPricingSummary receiptId={Number(id)} status={status} />}
