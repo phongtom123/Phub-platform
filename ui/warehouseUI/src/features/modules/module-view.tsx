@@ -134,6 +134,7 @@ function readApiError(error: unknown, fallback: string) {
 function filterKey(label: string, rows: DataRow[]) {
   const value = label.toLocaleLowerCase("vi");
   if (value.includes("trạng thái") || value.includes("tình trạng")) return "status";
+  if (value.includes("khoảng ngày")) return "created";
   if (value.includes("kho nhập")) return "warehouse";
   if (value.includes("kho nhận")) return "to";
   if (value.includes("kho")) return "warehouse";
@@ -141,7 +142,6 @@ function filterKey(label: string, rows: DataRow[]) {
   if (value.includes("danh mục")) return "category";
   if (value.includes("loại phiếu")) return "type";
   if (value.includes("loại giao dịch")) return "type";
-  if (value.includes("khoảng ngày")) return "created";
   return "status";
 }
 
