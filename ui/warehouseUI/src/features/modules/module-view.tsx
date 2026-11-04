@@ -39,7 +39,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
       await confirmReceipt(recordId);
       setApiRows(current => current ? (section === "pending" ? current.filter(item => item.id !== row.id) : current.map(item => item.id === row.id ? { ...item, status: "Đã nhập" } : item)) : null);
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : "Không thể xác nhận phiếu nhập");
+      setApiError(readApiError(error, "Không thể xác nhận phiếu nhập"));
     } finally { setConfirming(null); }
   }
   async function handleTransferAction(row: DataRow) {
@@ -53,7 +53,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
       if (receiving) await receiveTransfer(recordId); else await dispatchTransfer(recordId);
       setApiRows(current => current ? (section === "pending" && receiving ? current.filter(item => item.id !== row.id) : current.map(item => item.id === row.id ? { ...item, status: receiving ? "Đã nhận" : "Đang chuyển" } : item)) : null);
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : "Không thể cập nhật phiếu chuyển kho");
+      setApiError(readApiError(error, "Không thể cập nhật phiếu chuyển kho"));
     } finally { setConfirming(null); }
   }
   async function handleCancel(row: DataRow) {
@@ -66,7 +66,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     try {
       if (receiptAction) await cancelReceipt(recordId); else await cancelTransfer(recordId);
       setApiRows(current => current ? (section === "pending" ? current.filter(item => item.id !== row.id) : current.map(item => item.id === row.id ? { ...item, status: "Đã hủy" } : item)) : null);
-    } catch (error) { setApiError(error instanceof Error ? error.message : "Không thể hủy phiếu."); }
+    } catch (error) { setApiError(readApiError(error, "Không thể hủy phiếu.")); }
     finally { setConfirming(null); }
   }
   async function handleDelete(row: DataRow) {
@@ -78,7 +78,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     try {
       await deleteDraft(source as "receipts" | "transfers", recordId);
       setApiRows(current => current?.filter(item => item.id !== row.id) ?? null);
-    } catch (error) { setApiError(error instanceof Error ? error.message : "Không thể xóa phiếu nháp."); }
+    } catch (error) { setApiError(readApiError(error, "Không thể xóa phiếu nháp.")); }
     finally { setConfirming(null); }
   }
   async function handleDispatchOrder(row: DataRow) {
@@ -86,7 +86,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     if (!orderId) { setApiError("Phiếu xuất thiếu mã đơn hàng nên chưa thể xác nhận."); return; }
     setConfirming(row.id); setApiError("");
     try { if (Number.isInteger(Number(row.recordId))) await confirmDispatch(Number(row.recordId)); else await dispatchOrder(orderId); setApiRows(current => current?.map(item => item.id === row.id ? { ...item, status: "Đã xuất" } : item) ?? null); }
-    catch (error) { setApiError(error instanceof Error ? error.message : "Không thể xuất kho theo đơn hàng"); }
+    catch (error) { setApiError(readApiError(error, "Không thể xuất kho theo đơn hàng")); }
     finally { setConfirming(null); }
   }
   const sourceRows = apiRows ?? definition.rows;
@@ -118,6 +118,16 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
 
 function csvCell(value: unknown) {
   return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function readApiError(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const detail = (error as { detail?: unknown }).detail;
+    if (typeof detail === "string") return detail;
+    try { return JSON.stringify(error); } catch { return fallback; }
+  }
+  return typeof error === "string" ? error : fallback;
 }
 
 function filterKey(label: string, rows: DataRow[]) {

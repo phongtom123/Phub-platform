@@ -236,7 +236,7 @@ export async function getHistory() {
   return movements.data.map(item => ({
     id: item.ma_tham_chieu ? `${item.loai_giao_dich}-${item.ma_tham_chieu}` : `LS-${item.ma_lich_su}`,
     type: ({ NHAP_KHO: "Nhập kho", XUAT_CHUYEN_KHO: "Xuất chuyển kho", NHAN_CHUYEN_KHO: "Nhận chuyển kho", XUAT_DON_HANG: "Xuất đơn hàng" } as Record<string, string>)[item.loai_giao_dich] ?? item.loai_giao_dich,
-    product: item.sku, quantity: item.so_luong_thay_doi > 0 ? `+${item.so_luong_thay_doi}` : String(item.so_luong_thay_doi), user: item.nguoi_thuc_hien ?? "—", created: formatDate(item.tao_luc),
+    product: item.sku, quantity: String(Math.abs(item.so_luong_thay_doi)), user: item.nguoi_thuc_hien ?? "—", created: formatDate(item.tao_luc),
   }));
 }
 
