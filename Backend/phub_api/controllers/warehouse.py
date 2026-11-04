@@ -2,11 +2,14 @@ from datetime import date
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Request, Response
 from starlette.concurrency import run_in_threadpool
 
 from phub_api.dependencies.origin import check_origin
 from phub_api.dependencies.warehouse import get_service
+from phub_api.dependencies.auth import current_user
+from phub_api.config.database import get_supabase
+from phub_api.models.user import User
 from phub_api.schemas.api_contracts import READ_ERRORS, WRITE_ERRORS, error_response
 from phub_api.schemas.warehouse import (
     ReceiptCreate, ReceiptUpdate, ReceiptVersion, ReceiptConfirmVersion, WarehouseHistoryPage, WarehouseReceiptPage, WarehouseReceiptRead,
@@ -17,6 +20,23 @@ Service = Annotated[object, Depends(get_service)]
 ReceiptId = Annotated[int, Path(ge=-(2**31), le=2**31-1)]
 OperationKey = Annotated[UUID, Header(alias='Idempotency-Key')]
 ERRORS = {**WRITE_ERRORS, 404: error_response(404, 'Không có phiếu trong kho được phân công.')}
+
+
+@router.get('/dispatches', summary='Danh sách phiếu xuất theo đơn hàng')
+def dispatches(response: Response, user: User = Depends(current_user), db=Depends(get_supabase)):
+    if user.role not in {"ADMIN", "NHAN_VIEN"} or user.warehouse_id is None:
+        raise HTTPException(403, "Nhân viên chưa được phân công kho.")
+    response.headers['Cache-Control'] = 'no-store'
+    orders = db.table('DON_HANG').select(
+        'ma_donhang,thoi_gian_dat,ten_nguoi_nhan,trang_thai,ma_nhan_vien'
+    ).in_('trang_thai', ['DANG_CHUAN_BI', 'DA_XUAT_KHO', 'HOAN_THANH']).order('thoi_gian_dat', desc=True).limit(500).execute().data
+    status_map = {'DANG_CHUAN_BI': 'Chờ xác nhận', 'DA_XUAT_KHO': 'Đã xuất', 'HOAN_THANH': 'Đã xuất'}
+    return [{
+        'id': f"PX-{order['ma_donhang']}", 'recordId': order['ma_donhang'], 'order': order['ma_donhang'],
+        'warehouse': f'Kho #{user.warehouse_id}', 'employeeCode': order.get('ma_nhan_vien') or '—',
+        'items': '—', 'created': order.get('thoi_gian_dat'), 'status': status_map.get(order.get('trang_thai'), order.get('trang_thai', '—')),
+        'receiver': order.get('ten_nguoi_nhan') or '—',
+    } for order in orders]
 
 
 @router.get('/receipts', response_model=WarehouseReceiptPage, responses=READ_ERRORS, summary='Danh sách phiếu nhập trong kho được phân công')
