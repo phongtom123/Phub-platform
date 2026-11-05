@@ -21,7 +21,7 @@ router = APIRouter(prefix='/api/warehouse', tags=['Kho · Nghiệp vụ'])
 Service = Annotated[object, Depends(get_service)]
 ReceiptId = Annotated[int, Path(ge=-(2**31), le=2**31-1)]
 OperationKey = Annotated[UUID, Header(alias='Idempotency-Key')]
-ERRORS = {**WRITE_ERRORS, 404: error_response(404, 'Không có phiếu trong kho được phân công.')}
+ERRORS = {**WRITE_ERRORS, 404: error_response(404, 'Không tìm thấy phiếu nhập.')}
 
 
 class DispatchLine(BaseModel):

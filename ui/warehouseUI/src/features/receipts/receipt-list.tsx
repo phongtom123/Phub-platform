@@ -21,7 +21,7 @@ export default function ReceiptList() {
     return () => controller.abort();
   }, [search, status, page, refresh]);
   return <section className="warehouse-workspace">
-    <div className="page-heading"><div><h1>Phiếu nhập</h1><p>Lập phiếu, đối chiếu hàng và xác nhận nhập tại kho được phân công.</p></div></div>
+    <div className="page-heading"><div><h1>Phiếu nhập</h1><p>Tra cứu phiếu nhập của tất cả kho; thao tác ghi vẫn theo kho được phân công.</p></div></div>
     <form className="warehouse-toolbar" onSubmit={event => { event.preventDefault(); setSearch(query.trim()); setPage(1); }}>
       <input aria-label="Tìm phiếu nhập" placeholder="Tìm mã phiếu hoặc nhà cung cấp…" value={query} onChange={event => setQuery(event.target.value)} />
       <select aria-label="Trạng thái phiếu nhập" value={status} onChange={event => { setStatus(event.target.value); setPage(1); }}><option value="">Tất cả trạng thái</option>{Object.entries(receiptStatus).map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select>

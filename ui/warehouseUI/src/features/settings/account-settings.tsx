@@ -19,6 +19,7 @@ export default function AccountSettings({ section }: { section: "account" | "set
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    window.localStorage.removeItem("phub:warehouse:default");
     setEmailAlerts(window.localStorage.getItem("phub:warehouse:email-alerts") !== "false");
     setTransferAlerts(window.localStorage.getItem("phub:warehouse:transfer-alerts") !== "false");
   }, []);
