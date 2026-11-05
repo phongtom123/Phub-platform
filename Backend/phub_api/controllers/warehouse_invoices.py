@@ -127,6 +127,33 @@ def invoice_order_preview(order_id: str, user: User = Depends(current_user), db=
     }
 
 
+def _create_manual_invoice_legacy(body: ManualInvoiceCreate, user: User, db):
+    """Fallback for Supabase projects where migration 011 is not deployed yet."""
+    created = datetime.now(timezone.utc).isoformat()
+    order_id = f"MAN-{uuid4().hex.upper()}"
+    invoice_id = f"HD-{datetime.now(timezone.utc):%Y%m%d}-{uuid4().hex[:6].upper()}"
+    products = db.table("SAN_PHAM").select("sku,ten_sp,don_vi").in_("sku", [line.sku.strip() for line in body.lines]).eq("trang_thai", 1).limit(500).execute().data
+    product_map = {row["sku"]: row for row in products}
+    if any(line.sku.strip() not in product_map for line in body.lines):
+        raise HTTPException(404, "Không tìm thấy sản phẩm hoặc SKU không hợp lệ.")
+    subtotal = Decimal("0"); discount_total = Decimal("0"); tax_total = Decimal("0"); lines = []
+    for line in body.lines:
+        quantity = Decimal(line.quantity); unit_price = line.unit_price; discount = line.discount
+        base = quantity * unit_price - discount
+        tax = _money(base * Decimal("0.10")); total = base + tax
+        subtotal += base; discount_total += discount; tax_total += tax
+        product = product_map[line.sku.strip()]
+        lines.append({"ma_donhang": order_id, "sku": product["sku"], "ma_kho_xuat": user.warehouse_id, "ten_sp_luc_ban": product["ten_sp"], "don_vi_luc_ban": product.get("don_vi") or "Cái", "so_luong": line.quantity, "don_gia": str(unit_price), "giam_gia": str(discount), "giam_gia_voucher": "0", "thue_suat": "10", "tien_thue": str(tax), "thanh_tien": str(total)})
+    db.table("DON_HANG").insert({"ma_donhang": order_id, "kenh_ban": "TAI_QUAY", "trang_thai": "DA_XUAT_KHO", "thoi_gian_dat": created, "thoi_gian_xuat_kho": created, "ten_nguoi_nhan": body.buyer.strip(), "dia_chi_chi_tiet": body.address.strip() if body.address else None, "ma_nhan_vien": user.employee_id}).execute()
+    db.table("CT_DON_HANG").insert(lines).execute()
+    invoice = {"ma_hoadon": invoice_id, "ma_donhang": order_id, "thoi_gian_lap": created, "ten_nguoi_mua": body.buyer.strip(), "ma_so_thue": body.tax_id.strip() if body.tax_id else None, "dia_chi_nguoi_mua": body.address.strip() if body.address else None, "tong_tien_giam": str(_money(discount_total)), "tong_tien_truoc_thue": str(_money(subtotal)), "tong_tien_thue": str(_money(tax_total)), "tong_tien_sau_thue": str(_money(subtotal + tax_total)), "nguoi_lap": user.employee_id}
+    try:
+        db.table("HOA_DON").insert({**invoice, "email_nguoi_mua": body.email.strip().lower()}).execute()
+    except APIError:
+        db.table("HOA_DON").insert(invoice).execute()
+    return {"data": {"id": invoice_id, "recordId": order_id, "order": order_id, "buyer": body.buyer.strip(), "employeeCode": user.employee_id, "total": f"{_money(subtotal + tax_total):,.0f} ₫", "created": created, "status": "Hoàn tất"}}
+
+
 @router.post("/manual", status_code=201)
 def create_manual_invoice(body: ManualInvoiceCreate, user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
@@ -145,6 +172,8 @@ def create_manual_invoice(body: ManualInvoiceCreate, user: User = Depends(curren
         message = str(exc.message or "")
         if message == "PRODUCT_NOT_FOUND": raise HTTPException(404, "Không tìm thấy sản phẩm hoặc SKU không hợp lệ.") from None
         if message == "INVALID_DISCOUNT": raise HTTPException(422, "Giảm giá không được lớn hơn thành tiền dòng hàng.") from None
+        if "create_manual_invoice" in message.lower() or "does not exist" in message.lower() or "schema cache" in message.lower():
+            return _create_manual_invoice_legacy(body, user, db)
         raise HTTPException(409, "Không thể lập hóa đơn thủ công.") from None
 
 
