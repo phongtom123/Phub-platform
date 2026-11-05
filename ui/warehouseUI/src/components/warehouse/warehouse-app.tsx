@@ -21,8 +21,8 @@ export default function WarehouseApp() {
   function addRecord() { router.push(`/${section}/new`); }
 
   let content: React.ReactNode;
-  if (pathname === "/" || safeSection === "receipts") content = <ReceiptList />;
-  else if (pathname.endsWith("/new")) content = <FormView section={safeSection ?? "receipts"} />;
+  if (pathname.endsWith("/new")) content = <FormView section={safeSection ?? "receipts"} />;
+  else if (pathname === "/" || safeSection === "receipts") content = <ReceiptList />;
   else if (safeSection === "account" || safeSection === "settings") content = <AccountSettings section={safeSection} />;
   else if (safeSection === "suppliers") content = <SupplierView />;
   else if (definition) content = <ModuleView definition={definition} section={safeSection!} onAdd={addRecord} />;
