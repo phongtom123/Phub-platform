@@ -40,7 +40,7 @@ def list_dispatches(user: User = Depends(current_user), db=Depends(get_supabase)
     # Prefer independent dispatch documents created by warehouse staff.
     documents = db.table("PHIEU_XUAT").select("ma_phieu_xuat,ma_phieu_code,ma_donhang,ma_kho_xuat,trang_thai,ngay_tao,nguoi_tao").order("ngay_tao", desc=True).limit(500).execute().data
     if documents:
-        return [{"id": row["ma_phieu_code"], "recordId": row["ma_phieu_xuat"], "order": row["ma_donhang"], "warehouse": f"Kho #{row['ma_kho_xuat']}", "employeeCode": row.get("nguoi_tao") or "—", "items": "—", "created": row.get("ngay_tao"), "status": {"NHAP": "Nháp", "DA_XAC_NHAN": "Đã xác nhận", "DA_XUAT": "Đã xuất", "HUY": "Đã hủy"}.get(row["trang_thai"], row["trang_thai"]), "receiver": "—"} for row in documents if user.role == "ADMIN" or row["ma_kho_xuat"] == user.warehouse_id]
+        return [{"id": row["ma_phieu_code"], "recordId": row["ma_phieu_xuat"], "order": row["ma_donhang"], "warehouse": f"Kho #{row['ma_kho_xuat']}", "employeeCode": row.get("nguoi_tao") or "—", "items": "—", "created": row.get("ngay_tao"), "status": {"NHAP": "Nháp", "DA_XAC_NHAN": "Đã xác nhận", "DA_XUAT": "Đã xuất", "HUY": "Đã hủy"}.get(row["trang_thai"], row["trang_thai"]), "receiver": "—"} for row in documents]
     # Backward-compatible fallback for databases before the dispatch migration.
     # Load the complete allocation of each order. The dispatch RPC is atomic for
     # the whole order, so a warehouse worker must not see a multi-warehouse order
@@ -61,11 +61,6 @@ def list_dispatches(user: User = Depends(current_user), db=Depends(get_supabase)
         item["_sku_count"] += 1
         item["_quantity"] += line["so_luong"]
     for item in grouped.values():
-        if user.role == "NHAN_VIEN_KHO":
-            order_lines = [line for line in lines if line["ma_donhang"] == item["recordId"]]
-            warehouses = {line["ma_kho_xuat"] for line in order_lines}
-            if warehouses != {user.warehouse_id}:
-                continue
         item["items"] = f"{item.pop('_sku_count')} SKU · {item.pop('_quantity')} SP"
     return list(grouped.values())
 

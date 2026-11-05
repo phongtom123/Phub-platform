@@ -11,7 +11,6 @@ export default function AccountSettings({ section }: { section: "account" | "set
   const [profileError, setProfileError] = useState("");
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [transferAlerts, setTransferAlerts] = useState(true);
-  const [defaultWarehouse, setDefaultWarehouse] = useState("central");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
@@ -20,7 +19,7 @@ export default function AccountSettings({ section }: { section: "account" | "set
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setDefaultWarehouse(window.localStorage.getItem("phub:warehouse:default") ?? "central");
+    window.localStorage.removeItem("phub:warehouse:default");
     setEmailAlerts(window.localStorage.getItem("phub:warehouse:email-alerts") !== "false");
     setTransferAlerts(window.localStorage.getItem("phub:warehouse:transfer-alerts") !== "false");
   }, []);
@@ -41,7 +40,6 @@ export default function AccountSettings({ section }: { section: "account" | "set
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isAccount && typeof window !== "undefined") {
-      window.localStorage.setItem("phub:warehouse:default", defaultWarehouse);
       window.localStorage.setItem("phub:warehouse:email-alerts", String(emailAlerts));
       window.localStorage.setItem("phub:warehouse:transfer-alerts", String(transferAlerts));
     }
@@ -75,7 +73,7 @@ export default function AccountSettings({ section }: { section: "account" | "set
         </div>}
       </Panel>
       <Panel title="Quyền và phân công" subtitle="Thông tin vai trò hiện tại">
-        <div className="access-list"><div><ShieldCheck size={17}/><span><small>VAI TRÒ</small><strong>NHAN_VIEN_KHO · Nhân viên kho</strong></span></div><div><Building2 size={17}/><span><small>PHẠM VI KHO</small><strong>Kho trung tâm</strong></span></div><div><UserRound size={17}/><span><small>CHI NHÁNH</small><strong>Trung tâm phân phối PHUB</strong></span></div></div>
+        <div className="access-list"><div><ShieldCheck size={17}/><span><small>VAI TRÒ</small><strong>NHAN_VIEN_KHO · Nhân viên kho</strong></span></div><div><Building2 size={17}/><span><small>PHẠM VI XEM</small><strong>Tất cả kho · Chỉ đọc</strong></span></div><div><UserRound size={17}/><span><small>CHI NHÁNH</small><strong>Trung tâm phân phối PHUB</strong></span></div></div>
         <div className="module-note"><span>i</span>Quyền truy cập do quản trị viên cấp. Liên hệ quản trị viên nếu cần thay đổi vai trò hoặc kho được phân công.</div>
       </Panel>
       <Panel title="Bảo mật tài khoản" subtitle="Cài đặt bảo vệ tài khoản">
@@ -84,15 +82,12 @@ export default function AccountSettings({ section }: { section: "account" | "set
         <div className="security-row"><span className="security-icon"><ShieldCheck size={16}/></span><div><strong>Xác thực hai bước</strong><small>Liên hệ quản trị viên để bật xác thực nhiều lớp</small></div><span className="security-status muted">Chưa bật</span></div>
       </Panel>
     </div> : <div className="settings-layout">
-      <Panel title="Thiết lập kho" subtitle="Mặc định sử dụng khi tạo phiếu mới">
+      <Panel title="Thông báo" subtitle="Chọn các loại thông báo muốn nhận">
         <form className="account-form" onSubmit={save}>
-          <label className="setting-field"><span>Kho làm việc mặc định</span><select value={defaultWarehouse} onChange={event => setDefaultWarehouse(event.target.value)}><option value="central">Kho trung tâm</option><option value="q1">Kho Quận 1</option><option value="td">Kho Thủ Đức</option></select></label>
+          <div className="toggle-list"><Toggle icon={<Bell size={16}/>} title="Thông báo nghiệp vụ qua email" detail="Nhận thông báo khi có phiếu mới cần xử lý" checked={emailAlerts} onChange={setEmailAlerts}/><Toggle icon={<Check size={16}/>} title="Cập nhật phiếu chuyển kho" detail="Thông báo khi phiếu chuyển được giao hoặc xác nhận nhận" checked={transferAlerts} onChange={setTransferAlerts}/></div>
+          <div className="module-note"><span>i</span>Tùy chọn thông báo chỉ áp dụng cho tài khoản của bạn.</div>
           <div className="form-actions"><button className="button primary" type="submit"><Save size={14}/>{saved ? "Đã lưu" : "Lưu cài đặt"}</button></div>
         </form>
-      </Panel>
-      <Panel title="Thông báo" subtitle="Chọn các loại thông báo muốn nhận">
-        <div className="toggle-list"><Toggle icon={<Bell size={16}/>} title="Thông báo nghiệp vụ qua email" detail="Nhận thông báo khi có phiếu mới cần xử lý" checked={emailAlerts} onChange={setEmailAlerts}/><Toggle icon={<Check size={16}/>} title="Cập nhật phiếu chuyển kho" detail="Thông báo khi phiếu chuyển được giao hoặc xác nhận nhận" checked={transferAlerts} onChange={setTransferAlerts}/></div>
-        <div className="module-note"><span>i</span>Tùy chọn thông báo chỉ áp dụng cho tài khoản của bạn.</div>
       </Panel>
     </div>}
   </>;
