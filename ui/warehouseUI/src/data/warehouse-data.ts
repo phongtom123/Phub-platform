@@ -95,7 +95,6 @@ export const formFields: Partial<Record<ModuleKey, FormFieldDefinition[]>> = {
   ],
   dispatches: [
     { name: "order", label: "Mã đơn hàng", placeholder: "Nhập hoặc tìm mã đơn hàng" },
-    { name: "warehouse", label: "Kho xuất", placeholder: "Kho trung tâm" },
     { name: "items", label: "Sản phẩm và số lượng", placeholder: "Thêm sản phẩm, số lượng cần xuất", wide: true },
     { name: "receiver", label: "Người nhận / đơn vị vận chuyển", placeholder: "Nhập tên người nhận" },
     { name: "note", label: "Ghi chú xuất hàng", placeholder: "Ghi chú nếu có", type: "textarea", wide: true },

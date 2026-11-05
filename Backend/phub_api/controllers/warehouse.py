@@ -26,13 +26,13 @@ ERRORS = {**WRITE_ERRORS, 404: error_response(404, 'Không tìm thấy phiếu n
 
 class DispatchLine(BaseModel):
     sku: str = Field(min_length=1, max_length=200)
-    warehouse_id: int
+    warehouse_id: int | None = None
     quantity: int = Field(gt=0)
 
 
 class DispatchDraft(BaseModel):
     order_id: str = Field(min_length=1, max_length=100)
-    warehouse_id: int
+    warehouse_id: int | None = None
     note: str | None = Field(default=None, max_length=5000)
     lines: list[DispatchLine] = Field(min_length=1, max_length=500)
 
@@ -48,6 +48,26 @@ def _require_warehouse_scope(user: User, warehouse_id: int):
     _require_employee(user)
     if user.role == 'NHAN_VIEN' and user.warehouse_id != warehouse_id:
         raise HTTPException(403, 'Kho không thuộc phạm vi được phân quyền.')
+
+
+def _dispatch_warehouse(user: User, requested: int | None, existing: int | None = None) -> int:
+    if user.role == 'NHAN_VIEN':
+        if user.warehouse_id is None:
+            raise HTTPException(403, 'Tài khoản nhân viên kho chưa được phân công kho.')
+        return user.warehouse_id
+    warehouse_id = requested or existing
+    if warehouse_id is None:
+        raise HTTPException(422, 'ADMIN phải chỉ định kho xuất.')
+    return warehouse_id
+
+
+@router.get('/options', summary='Danh sách dữ liệu dùng khi lập phiếu kho')
+def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_employee(user)
+    warehouses = db.table('KHO').select('ma_kho,ten_kho').eq('trang_thai', 1).order('ma_kho').limit(500).execute().data
+    suppliers = db.table('NHA_CUNG_CAP').select('ma_ncc,ten_ncc').eq('trang_thai', 1).order('ma_ncc').limit(500).execute().data
+    products = db.table('SAN_PHAM').select('sku,ten_sp').eq('trang_thai', 1).order('sku').limit(1000).execute().data
+    return {'warehouses': warehouses, 'suppliers': suppliers, 'products': products}
 
 
 @router.get('/dispatches', summary='Danh sách phiếu xuất theo đơn hàng')
@@ -83,7 +103,8 @@ def dispatches(response: Response, user: User = Depends(current_user), db=Depend
 
 @router.post('/dispatches/draft', status_code=201)
 def create_dispatch_draft(body: DispatchDraft, user: User = Depends(current_user), db=Depends(get_supabase)):
-    _require_warehouse_scope(user, body.warehouse_id)
+    warehouse_id = _dispatch_warehouse(user, body.warehouse_id)
+    _require_warehouse_scope(user, warehouse_id)
     order = db.table('DON_HANG').select('ma_donhang,trang_thai').eq('ma_donhang', body.order_id).limit(1).execute().data
     if not order:
         raise HTTPException(404, 'Không tìm thấy đơn hàng.')
@@ -91,9 +112,9 @@ def create_dispatch_draft(body: DispatchDraft, user: User = Depends(current_user
         raise HTTPException(409, 'Đơn hàng không còn ở trạng thái có thể lập phiếu xuất.')
     try:
         result = db.rpc('create_dispatch_document', {
-            'p_ma_donhang': body.order_id, 'p_ma_kho_xuat': body.warehouse_id,
+            'p_ma_donhang': body.order_id, 'p_ma_kho_xuat': warehouse_id,
             'p_nguoi_tao': user.employee_id, 'p_ghi_chu': body.note,
-            'p_lines': [line.model_dump() for line in body.lines],
+            'p_lines': [{**line.model_dump(), 'warehouse_id': warehouse_id} for line in body.lines],
         }).execute().data
         return {'data': result}
     except APIError as exc:
@@ -102,19 +123,20 @@ def create_dispatch_draft(body: DispatchDraft, user: User = Depends(current_user
 
 @router.put('/dispatches/{dispatch_id}/draft')
 def update_dispatch_draft(dispatch_id: int, body: DispatchDraft, user: User = Depends(current_user), db=Depends(get_supabase)):
-    _require_warehouse_scope(user, body.warehouse_id)
     existing = db.table('PHIEU_XUAT').select('ma_phieu_xuat,trang_thai,ma_kho_xuat').eq('ma_phieu_xuat', dispatch_id).limit(1).execute().data
     if not existing:
         raise HTTPException(404, 'Không tìm thấy phiếu xuất.')
     if user.role == 'NHAN_VIEN' and existing[0]['ma_kho_xuat'] != user.warehouse_id:
         raise HTTPException(403, 'Phiếu xuất ngoài kho được phân quyền.')
+    warehouse_id = _dispatch_warehouse(user, body.warehouse_id, existing[0]['ma_kho_xuat'])
+    _require_warehouse_scope(user, warehouse_id)
     if existing[0]['trang_thai'] != 'NHAP':
         raise HTTPException(409, 'Phiếu xuất đã xác nhận, không thể chỉnh sửa.')
     try:
         result = db.rpc('update_dispatch_document', {
             'p_ma_phieu_xuat': dispatch_id, 'p_ma_donhang': body.order_id,
-            'p_ma_kho_xuat': body.warehouse_id, 'p_ghi_chu': body.note,
-            'p_lines': [line.model_dump() for line in body.lines],
+            'p_ma_kho_xuat': warehouse_id, 'p_ghi_chu': body.note,
+            'p_lines': [{**line.model_dump(), 'warehouse_id': warehouse_id} for line in body.lines],
         }).execute().data
         return {'data': result}
     except APIError as exc:
