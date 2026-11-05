@@ -268,6 +268,7 @@
     font-size:13px
   }
 }
+.receipt-pricing-note{display:flex;align-items:center;gap:10px;margin-top:16px;padding:11px 14px;border:1px solid #dce8f5;border-radius:9px;background:#f7faff;color:#687b94;font-size:12px}.receipt-pricing-note span{font-weight:800;color:#315b91}.receipt-pricing-note p{margin:0;flex:1}.receipt-pricing-note a{color:#2864e8;font-weight:700;white-space:nowrap}
 .warehouse-table td {
   font-size:14px
 }

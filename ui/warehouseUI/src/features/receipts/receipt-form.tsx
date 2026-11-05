@@ -7,7 +7,6 @@ import { ArrowLeft, PackagePlus, Save, Trash2, Truck } from "lucide-react";
 import { operationKey, warehouseApi, WarehouseApiError } from "@/src/lib/warehouse-api";
 import LookupSelect from "./lookup-select";
 import type { Receipt, ReceiptLine } from "./types";
-import { WarehousePricePreview } from "./receipt-pricing";
 
 type EditableLine = ReceiptLine & { quantityInput: string };
 
@@ -73,7 +72,7 @@ export default function ReceiptForm({ id }: { id?: number }) {
       <LookupSelect resource="products" label="Thêm sản phẩm nhập" onSelect={addProduct} disabled={lines.length >= 100} />
       <div className="receipt-summary-strip"><span><PackagePlus size={16}/> {lines.length} SKU</span><span>{totalQuantity.toLocaleString("vi-VN")} sản phẩm</span><strong>{totalValue.toLocaleString("vi-VN")} ₫</strong></div>
       <div className="warehouse-table receipt-lines-table"><table><thead><tr><th>SẢN PHẨM / SKU</th><th>ĐƠN VỊ</th><th>SỐ LƯỢNG</th><th>ĐƠN GIÁ NHẬP</th><th>THÀNH TIỀN</th><th /></tr></thead><tbody>{lines.map((line, index) => <tr key={line.sku}><td><strong>{line.product_name}</strong><small>{line.sku}</small></td><td>{line.unit}</td><td><input aria-label={`Số lượng ${line.sku}`} type="number" min={1} max={1000000} step={1} required value={line.quantityInput} onChange={event => setLines(current => current.map((item, i) => i === index ? { ...item, quantityInput: event.target.value } : item))} /></td><td><input aria-label={`Giá nhập ${line.sku}`} type="text" inputMode="decimal" required value={line.unit_price} onChange={event => setLines(current => current.map((item, i) => i === index ? { ...item, unit_price: event.target.value } : item))} /></td><td className="receipt-line-total">{((Number(line.quantityInput) || 0) * (Number(line.unit_price) || 0)).toLocaleString("vi-VN")} ₫</td><td><button className="icon-button receipt-remove" title="Bỏ sản phẩm" type="button" onClick={() => setLines(current => current.filter((_, i) => i !== index))}><Trash2 size={16}/></button></td></tr>)}</tbody></table>{!lines.length && <div className="warehouse-empty receipt-empty"><PackagePlus size={24}/><strong>Chưa có sản phẩm</strong><span>Dùng ô “Thêm sản phẩm nhập” phía trên để bắt đầu.</span></div>}</div>
-      <div className="receipt-pricing-list">{lines.map(line => <WarehousePricePreview key={line.sku} sku={line.sku} cost={line.unit_price} receiptId={id} />)}</div>
+      <div className="receipt-pricing-note"><span>Định giá</span><p>Giá bán dự kiến sẽ được tính tự động khi xác nhận nhập kho.</p><Link href="/settings">Xem cấu hình</Link></div>
       <div className="receipt-form-footer"><div><strong>Phiếu nháp</strong><span>Tồn kho chỉ tăng sau khi xác nhận nhập hàng.</span></div><div className="warehouse-toolbar"><Link className="button" href={id !== undefined ? `/receipts/${id}` : "/receipts"}>Hủy chỉnh sửa</Link><button className="button primary" disabled={!supplier || !lines.length}><Save size={15}/>{saving ? "Đang lưu…" : "Lưu phiếu nháp"}</button></div></div>
     </fieldset>{error && <p className="warehouse-error" role="alert">{error}</p>}{conflict && <button className="button" type="button" onClick={() => window.location.reload()}>Tải lại phiếu</button>}</form>
   </section>;
