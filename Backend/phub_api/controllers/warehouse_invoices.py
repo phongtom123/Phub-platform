@@ -48,8 +48,10 @@ def _money(value: Decimal) -> Decimal:
 @router.get("")
 def list_invoices(user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
+    # The email column is introduced by the manual-invoice migration. Keep the
+    # list endpoint usable while an older Supabase schema is still deployed.
     rows = db.table("HOA_DON").select(
-        "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,email_nguoi_mua,tong_tien_sau_thue,nguoi_lap"
+        "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,tong_tien_sau_thue,nguoi_lap"
     ).order("thoi_gian_lap", desc=True).limit(500).execute().data
     return [{
         "id": row["ma_hoadon"], "recordId": row["ma_donhang"], "order": row["ma_donhang"],
@@ -184,9 +186,14 @@ def create_invoice(body: InvoiceCreate, user: User = Depends(current_user), db=D
 @router.get("/{invoice_id}")
 def invoice_detail(invoice_id: str, user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
-    rows = db.table("HOA_DON").select(
-        "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,email_nguoi_mua,ma_so_thue,dia_chi_nguoi_mua,tong_tien_giam,tong_tien_truoc_thue,tong_tien_thue,tong_tien_sau_thue,nguoi_lap"
-    ).eq("ma_hoadon", invoice_id).limit(1).execute().data
+    try:
+        rows = db.table("HOA_DON").select(
+            "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,email_nguoi_mua,ma_so_thue,dia_chi_nguoi_mua,tong_tien_giam,tong_tien_truoc_thue,tong_tien_thue,tong_tien_sau_thue,nguoi_lap"
+        ).eq("ma_hoadon", invoice_id).limit(1).execute().data
+    except APIError:
+        rows = db.table("HOA_DON").select(
+            "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,ma_so_thue,dia_chi_nguoi_mua,tong_tien_giam,tong_tien_truoc_thue,tong_tien_thue,tong_tien_sau_thue,nguoi_lap"
+        ).eq("ma_hoadon", invoice_id).limit(1).execute().data
     if not rows:
         raise HTTPException(404, "Không tìm thấy hóa đơn.")
     row = rows[0]
