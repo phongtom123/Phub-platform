@@ -55,7 +55,7 @@ export default function ReceiptForm({ id }: { id?: number }) {
 
   function addProduct(row: Record<string, string | number | null>) {
     if (lines.some(line => line.sku === row.sku)) { setError("Sản phẩm đã có trong phiếu. Hãy sửa số lượng ở dòng tương ứng."); return; }
-    setError(""); setLines(current => [...current, { sku: String(row.sku), product_name: String(row.ten_sp), quantity: 1, quantityInput: "1", unit_price: "0", unit: String(row.don_vi ?? "") }]);
+    setError(""); setLines(current => [...current, { sku: String(row.sku), product_name: String(row.ten_sp), quantity: 1, quantityInput: "1", unit_price: String(row.gia_nhap ?? row.gia_ban_hien_tai ?? "0"), unit: String(row.don_vi ?? "") }]);
   }
 
   return <section className="warehouse-workspace receipt-form-workspace">
