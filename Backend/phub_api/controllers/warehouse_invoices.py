@@ -144,7 +144,7 @@ def _create_manual_invoice_legacy(body: ManualInvoiceCreate, user: User, db):
         subtotal += base; discount_total += discount; tax_total += tax
         product = product_map[line.sku.strip()]
         lines.append({"ma_donhang": order_id, "sku": product["sku"], "ma_kho_xuat": user.warehouse_id, "ten_sp_luc_ban": product["ten_sp"], "don_vi_luc_ban": product.get("don_vi") or "Cái", "so_luong": line.quantity, "don_gia": str(unit_price), "giam_gia": str(discount), "giam_gia_voucher": "0", "thue_suat": "10", "tien_thue": str(tax), "thanh_tien": str(total)})
-    db.table("DON_HANG").insert({"ma_donhang": order_id, "kenh_ban": "TAI_QUAY", "trang_thai": "DA_XUAT_KHO", "thoi_gian_dat": created, "thoi_gian_xuat_kho": created, "ten_nguoi_nhan": body.buyer.strip(), "dia_chi_chi_tiet": body.address.strip() if body.address else None, "ma_nhan_vien": user.employee_id}).execute()
+    db.table("DON_HANG").insert({"ma_donhang": order_id, "kenh_ban": "TAI_QUAY", "trang_thai": "DA_XUAT_KHO", "thoi_gian_dat": created, "thoi_gian_xuat_kho": created, "ten_nguoi_nhan": body.buyer.strip(), "dia_chi_chi_tiet": body.address.strip() if body.address else None, "ghi_chu": f"EMAIL_HOA_DON:{body.email.strip().lower()}", "ma_nhan_vien": user.employee_id}).execute()
     db.table("CT_DON_HANG").insert(lines).execute()
     invoice = {"ma_hoadon": invoice_id, "ma_donhang": order_id, "thoi_gian_lap": created, "ten_nguoi_mua": body.buyer.strip(), "ma_so_thue": body.tax_id.strip() if body.tax_id else None, "dia_chi_nguoi_mua": body.address.strip() if body.address else None, "tong_tien_giam": str(_money(discount_total)), "tong_tien_truoc_thue": str(_money(subtotal)), "tong_tien_thue": str(_money(tax_total)), "tong_tien_sau_thue": str(_money(subtotal + tax_total)), "nguoi_lap": user.employee_id}
     try:
@@ -226,6 +226,11 @@ def invoice_detail(invoice_id: str, user: User = Depends(current_user), db=Depen
     if not rows:
         raise HTTPException(404, "Không tìm thấy hóa đơn.")
     row = rows[0]
+    if not row.get("email_nguoi_mua"):
+        order_rows = db.table("DON_HANG").select("ghi_chu").eq("ma_donhang", row["ma_donhang"]).limit(1).execute().data
+        note = (order_rows[0].get("ghi_chu") or "") if order_rows else ""
+        if note.startswith("EMAIL_HOA_DON:"):
+            row["email_nguoi_mua"] = note.removeprefix("EMAIL_HOA_DON:").strip()
     lines = db.table("CT_DON_HANG").select(
         "sku,ten_sp_luc_ban,don_vi_luc_ban,so_luong,don_gia,giam_gia,giam_gia_voucher"
     ).eq("ma_donhang", row["ma_donhang"]).limit(1000).execute().data

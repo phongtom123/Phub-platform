@@ -8,12 +8,13 @@ import { modules, moduleNames } from "@/src/data/warehouse-data";
 import type { ModuleKey } from "@/src/types/warehouse";
 import type { DataRow } from "@/src/types/warehouse";
 import { StatusBadge } from "@/src/components/warehouse/ui";
+import InvoiceDetailViewUpdated from "./invoice-detail-view-updated";
 import { getDispatchDraft, getDispatches, getHistory, getInventory, getInvoiceDetail, getPending, getProducts, getReceiptDraft, getReceipts, getTransferDraft, getTransfers, getWarehouseOptions, updateDispatchDraft, updateReceiptDraft, updateTransferDraft, type SupplierOption, type WarehouseOption } from "@/src/lib/warehouse-api";
 
 export default function DetailView({ section, id, edit = false }: { section: string; id: string; edit?: boolean }) {
   const router = useRouter(); const [saved, setSaved] = useState(false); const [apiRow, setApiRow] = useState<DataRow | null>(null); const [loading, setLoading] = useState(false); const [apiError, setApiError] = useState("");
   const definition = modules[section as ModuleKey];
-  if (section === "invoices") return <InvoiceDetailView id={id} />;
+  if (section === "invoices") return <InvoiceDetailViewUpdated id={id} />;
   if (section === "dispatches" && edit) return <DispatchDraftEditor id={Number(id)} />;
   useEffect(() => {
     if (!definition || !["inventory", "products", "receipts", "transfers", "dispatches", "pending", "history"].includes(section)) return;
