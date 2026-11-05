@@ -1,5 +1,6 @@
 import WarehouseFrame from "@/src/components/warehouse/warehouse-frame";
 import BackendDataView from "@/src/components/backend-data-view";
+import { redirect } from "next/navigation";
 
 export default async function DataPage({ params, searchParams }: { params: Promise<{ resource: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { resource } = await params;

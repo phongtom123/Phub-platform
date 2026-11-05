@@ -1,3 +1,55 @@
+export class WarehouseApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
+export async function warehouseApi<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`/api/backend/${path}`, {
+    ...options,
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail = body?.detail;
+    throw new WarehouseApiError(
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((issue: { msg: string }) => issue.msg).join("; ")
+          : "Không xử lý được yêu cầu. Vui lòng thử lại.",
+      response.status,
+    );
+  }
+  return body as T;
+}
+
+export function displayDate(value?: string | null) {
+  if (!value) return "—";
+  const normalized = /(?:Z|[+-]\d\d:\d\d)$/.test(value) ? value : `${value}Z`;
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(normalized));
+}
+
+export function cents(value: string): bigint {
+  const [whole, fraction = ""] = value.split(".");
+  return BigInt(whole || "0") * BigInt(100) + BigInt(fraction.padEnd(2, "0").slice(0, 2));
+}
+
+export function displayMoney(value: bigint) {
+  const sign = value < BigInt(0) ? "-" : "";
+  const positive = value < BigInt(0) ? -value : value;
+  return `${sign}${(positive / BigInt(100)).toLocaleString("vi-VN")}${positive % BigInt(100) ? `,${String(positive % BigInt(100)).padStart(2, "0")}` : ""} ₫`;
+}
+
+export function operationKey(previous: { body: string; key: string } | null, body: string) {
+  return previous?.body === body ? previous : { body, key: crypto.randomUUID() };
+}
+
 export type InventoryApiItem = { ma_kho: number; sku: string; so_luong_ton: number; cap_nhat_luc?: string | null };
 export type ProductApiItem = { ma_sp: string; sku: string; ten_sp: string; ma_loai_sp?: string | null; thuong_hieu?: string | null; don_vi?: string | null };
 export type CategoryApiItem = { ma_loai_sp: string; ten_loai_sp: string };
@@ -8,7 +60,7 @@ export type ReceiptApiItem = { ma_phieu_nhap: number; ma_phieu_code: string; ma_
 export type ReceiptLineApiItem = { ma_phieu_nhap: number; sku: string; so_luong_nhap: number; gia_nhap?: string | number | null };
 export type TransferApiItem = { ma_phieu_chuyen: number; ma_kho_xuat: number; ma_kho_nhan: number; ngay_tao: string; trang_thai: string; ghi_chu?: string | null };
 export type TransferLineApiItem = { ma_phieu_chuyen: number; sku: string; so_luong: number };
-type Page<T> = { data: T[]; total: number; page: number; page_size: number };
+export type Page<T> = { data: T[]; total: number; page: number; page_size: number };
 export type WarehouseOption = { ma_kho: number; ten_kho: string };
 export type SupplierOption = { ma_ncc: number; ten_ncc: string };
 export type ProductOption = { sku: string; ten_sp: string };
@@ -114,9 +166,7 @@ function formatDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("vi-VN").format(date);
 }
 
-function receiptStatus(value: string) {
-  return ({ NHAP: "Nháp", DA_NHAP: "Đã nhập", HUY: "Đã hủy" } as Record<string, string>)[value] ?? value;
-}
+export const receiptStatus: Record<string, string> = { NHAP: "Nháp", DA_NHAP: "Đã nhập", HUY: "Đã hủy" };
 
 function transferStatus(value: string) {
   return ({ NHAP: "Nháp", DANG_CHUYEN: "Đang chuyển", DA_NHAN: "Đã nhận", HUY: "Đã hủy" } as Record<string, string>)[value] ?? value;
@@ -144,7 +194,7 @@ export async function getReceipts() {
   return receipts.data.map(receipt => {
     const receiptLines = lineMap.get(receipt.ma_phieu_nhap) ?? [];
     const totalQuantity = receiptLines.reduce((sum, line) => sum + line.so_luong_nhap, 0);
-    return { id: receipt.ma_phieu_code, recordId: receipt.ma_phieu_nhap, supplier: supplierMap.get(receipt.ma_ncc) ?? `NCC #${receipt.ma_ncc}`, warehouse: warehouseMap.get(receipt.ma_kho) ?? `Kho #${receipt.ma_kho}`, employeeCode: receipt.nguoi_tao ?? receipt.nguoi_xac_nhan ?? "—", items: `${receiptLines.length} SKU · ${totalQuantity} SP`, created: formatDate(receipt.ngay_tao), status: receiptStatus(receipt.trang_thai) };
+    return { id: receipt.ma_phieu_code, recordId: receipt.ma_phieu_nhap, supplier: supplierMap.get(receipt.ma_ncc) ?? `NCC #${receipt.ma_ncc}`, warehouse: warehouseMap.get(receipt.ma_kho) ?? `Kho #${receipt.ma_kho}`, employeeCode: receipt.nguoi_tao ?? receipt.nguoi_xac_nhan ?? "—", items: `${receiptLines.length} SKU · ${totalQuantity} SP`, created: formatDate(receipt.ngay_tao), status: receiptStatus[receipt.trang_thai] ?? receipt.trang_thai };
   });
 }
 
