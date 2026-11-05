@@ -22,7 +22,7 @@ export default function ReceiptList() {
     return () => controller.abort();
   }, [search, status, page, refresh]);
   async function cancelDraft(id: number) {
-    if (!window.confirm("Hủy phiếu nhập nháp này? Tồn kho sẽ không thay đổi.")) return;
+    if (!window.confirm("Xóa phiếu nhập nháp này? Phiếu sẽ được lưu trạng thái Đã hủy để bảo toàn lịch sử.")) return;
     setBusy(id); setError("");
     try {
       const current = await warehouseApi<Receipt>(`warehouse/receipts/${id}`);
@@ -42,7 +42,7 @@ export default function ReceiptList() {
     </form>
     {error && <p role="alert" className="warehouse-error">{error}</p>}
     <div className="warehouse-table" aria-busy={loading}><table><thead><tr><th>Mã phiếu</th><th>Nhà cung cấp</th><th>Số SKU</th><th>Người lập</th><th>Trạng thái</th><th>Ngày tạo</th><th /></tr></thead>
-      <tbody>{result?.data.map(row => <tr key={row.ma_phieu_nhap}><td><Link href={`/receipts/${row.ma_phieu_nhap}`}>{row.ma_phieu_code}</Link></td><td>{row.supplier_name}</td><td>{row.line_count}</td><td>{row.creator_name ?? row.nguoi_tao}</td><td><StatusBadge value={receiptStatus[row.trang_thai]} /></td><td>{displayDate(row.ngay_tao)}</td><td className="warehouse-row-actions"><Link href={`/receipts/${row.ma_phieu_nhap}`}>Chi tiết</Link>{row.trang_thai === "NHAP" && <><Link href={`/receipts/${row.ma_phieu_nhap}/edit`}>Sửa</Link><button type="button" disabled={busy === row.ma_phieu_nhap} onClick={() => void cancelDraft(row.ma_phieu_nhap)}>{busy === row.ma_phieu_nhap ? "Đang hủy…" : "Hủy"}</button></>}</td></tr>)}</tbody></table>
+      <tbody>{result?.data.map(row => <tr key={row.ma_phieu_nhap}><td><Link href={`/receipts/${row.ma_phieu_nhap}`}>{row.ma_phieu_code}</Link></td><td>{row.supplier_name}</td><td>{row.line_count}</td><td>{row.creator_name ?? row.nguoi_tao}</td><td><StatusBadge value={receiptStatus[row.trang_thai]} /></td><td>{displayDate(row.ngay_tao)}</td><td className="warehouse-row-actions"><Link href={`/receipts/${row.ma_phieu_nhap}`}>Chi tiết</Link>{row.trang_thai === "NHAP" && <><Link href={`/receipts/${row.ma_phieu_nhap}/edit`}>Sửa</Link><button type="button" title="Xóa phiếu nháp" disabled={busy === row.ma_phieu_nhap} onClick={() => void cancelDraft(row.ma_phieu_nhap)}>{busy === row.ma_phieu_nhap ? "Đang xóa…" : "Xóa"}</button></>}</td></tr>)}</tbody></table>
       {loading ? <p role="status" className="warehouse-empty">Đang tải phiếu nhập…</p> : !error && !result?.data.length && <p className="warehouse-empty">Chưa có phiếu nhập phù hợp.</p>}
     </div>
     <div className="warehouse-pagination"><span>{result?.total ?? 0} phiếu · Trang {page}</span><button className="button" disabled={loading || page === 1} onClick={() => setPage(v => v - 1)}>Trước</button><button className="button" disabled={loading || !result || page * 20 >= result.total} onClick={() => setPage(v => v + 1)}>Sau</button></div>
