@@ -8,15 +8,19 @@ const resources = new Set([
 
 function allowed(path: string[], method: string) {
   const base = path[0] === "warehouse";
-  if (path.length === 2) return (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) || (path[0] === "data" && resources.has(path[1])) || (base && ["options", "dispatches", "invoices"].includes(path[1]) && method === "GET");
+  if (path.length === 2) return (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) || (path[0] === "data" && resources.has(path[1])) || (path[0] === "pricing" && ["config", "preview", "taxes"].includes(path[1]) && ((path[1] === "config" && ["GET", "PUT"].includes(method)) || (path[1] === "preview" && method === "POST") || (path[1] === "taxes" && method === "POST"))) || (base && ["options", "receipts", "dispatches", "invoices", "history"].includes(path[1]) && ["GET", "POST"].includes(method));
   if (path.length === 3 && path[0] === "auth" && path[1] === "me" && path[2] === "password") return method === "POST";
-  if (path.length === 3 && base && path[2] === "draft") return method === "POST" && ["receipts", "transfers", "dispatches"].includes(path[1]);
+  if (path.length === 3 && base && path[1] === "receipts" && /^\d+$/.test(path[2])) return method === "GET" || method === "PATCH";
+  if (path.length === 3 && base && path[1] === "dispatches" && path[2] === "order-options") return method === "GET";
   if (path.length === 3 && base && path[1] === "invoices" && path[2] === "customer-search") return method === "GET";
+  if (path.length === 3 && base && path[2] === "draft") return method === "POST" && ["receipts", "transfers", "dispatches"].includes(path[1]);
+  if (path.length === 3 && base && path[1] === "invoices" && path[2] === "manual") return method === "POST";
   if (path.length === 3 && base && path[1] === "invoices") return method === "GET";
   if (path.length === 4 && base && path[1] === "dispatches" && path[3] === "draft") return method === "GET" || method === "PUT";
   if (path.length === 4 && base && path[1] === "receipts" && path[3] === "draft") return method === "PUT";
   if (path.length === 4 && base && path[1] === "transfers" && path[3] === "draft") return method === "PUT";
-  if (path.length === 4 && base && method === "POST") return (path[1] === "receipts" && ["confirm", "cancel"].includes(path[3])) || (path[1] === "transfers" && ["dispatch", "receive", "cancel"].includes(path[3])) || (path[1] === "dispatches" && ["dispatch", "confirm"].includes(path[3]));
+  if (path.length === 4 && base && method === "POST") return (path[1] === "receipts" && ["confirm", "cancel"].includes(path[3])) || (path[1] === "transfers" && ["dispatch", "receive", "cancel"].includes(path[3])) || (path[1] === "dispatches" && ["dispatch", "confirm", "cancel"].includes(path[3]));
+  if (path.length === 3 && path[0] === "pricing" && path[1] === "receipts" && /^\d+$/.test(path[2])) return method === "GET";
   return false;
 }
 

@@ -1,4 +1,5 @@
 from datetime import date
+from uuid import uuid4
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -66,7 +67,7 @@ def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabas
     _require_employee(user)
     warehouses = db.table('KHO').select('ma_kho,ten_kho').eq('trang_thai', 1).order('ma_kho').limit(500).execute().data
     suppliers = db.table('NHA_CUNG_CAP').select('ma_ncc,ten_ncc').eq('trang_thai', 1).order('ma_ncc').limit(500).execute().data
-    products = db.table('SAN_PHAM').select('sku,ten_sp,don_vi,gia_ban_hien_tai').eq('trang_thai', 1).order('sku').limit(1000).execute().data
+    products = db.table('SAN_PHAM').select('ma_sp,sku,ten_sp,don_vi,gia_ban_hien_tai').eq('trang_thai', 1).order('sku').limit(1000).execute().data
     inventory_query = db.table('TON_KHO').select('ma_kho,sku,so_luong_ton')
     if user.role == 'NHAN_VIEN' and user.warehouse_id is not None:
         inventory_query = inventory_query.eq('ma_kho', user.warehouse_id)
@@ -110,25 +111,51 @@ def dispatches(response: Response, user: User = Depends(current_user), db=Depend
 
 
 @router.get('/dispatches/order-options')
-def dispatch_order_options(sku: str, user: User = Depends(current_user), db=Depends(get_supabase)):
+def dispatch_order_options(sku: str = '', user: User = Depends(current_user), db=Depends(get_supabase)):
     _require_employee(user)
-    line_rows = db.table('CT_DON_HANG').select('ma_donhang').eq('sku', sku.strip()).limit(500).execute().data
+    if sku.strip():
+        line_rows = db.table('CT_DON_HANG').select('ma_donhang,sku,don_gia,don_vi_luc_ban,so_luong,thanh_tien').eq('sku', sku.strip()).limit(500).execute().data
+    else:
+        eligible_orders = db.table('DON_HANG').select('ma_donhang').in_('trang_thai', ['MOI', 'XAC_NHAN', 'DANG_CHUAN_BI']).limit(500).execute().data
+        order_ids = [row['ma_donhang'] for row in eligible_orders]
+        return _dispatch_order_options_for_ids(order_ids, db)
     order_ids = [row['ma_donhang'] for row in line_rows]
     if not order_ids:
         return []
-    orders = db.table('DON_HANG').select('ma_donhang,ten_nguoi_nhan,trang_thai').in_('ma_donhang', order_ids).in_('trang_thai', ['MOI', 'XAC_NHAN', 'DANG_CHUAN_BI']).limit(500).execute().data
-    return [{'order_id': row['ma_donhang'], 'receiver': row.get('ten_nguoi_nhan') or 'Khách hàng', 'status': row['trang_thai']} for row in orders]
+    orders = _dispatch_order_options_for_ids(order_ids, db)
+    lines_by_order = {row['ma_donhang']: row for row in line_rows}
+    for order in orders:
+        line = lines_by_order.get(order['order_id'], {})
+        order.update({
+            'sku': line.get('sku'),
+            'unit': line.get('don_vi_luc_ban') or '—',
+            'unit_price': line.get('don_gia') or 0,
+            'ordered_quantity': line.get('so_luong') or 0,
+            'line_total': line.get('thanh_tien') or 0,
+        })
+    return orders
+
+
+def _dispatch_order_options_for_ids(order_ids: list[str], db):
+    if not order_ids:
+        return []
+    orders = db.table('DON_HANG').select('ma_donhang,ten_nguoi_nhan,trang_thai').in_('ma_donhang', order_ids).limit(500).execute().data
+    return [{'order_id': row['ma_donhang'], 'receiver': row.get('ten_nguoi_nhan') or 'Khách hàng', 'status': row['trang_thai'], 'dispatchable': row['trang_thai'] in ['MOI', 'XAC_NHAN', 'DANG_CHUAN_BI']} for row in orders if row['trang_thai'] in ['MOI', 'XAC_NHAN', 'DANG_CHUAN_BI']]
 
 
 @router.post('/dispatches/draft', status_code=201)
 def create_dispatch_draft(body: DispatchDraft, user: User = Depends(current_user), db=Depends(get_supabase)):
-    warehouse_id = _dispatch_warehouse(user, body.warehouse_id)
-    _require_warehouse_scope(user, warehouse_id)
     order = db.table('DON_HANG').select('ma_donhang,trang_thai').eq('ma_donhang', body.order_id).limit(1).execute().data
     if not order:
         raise HTTPException(404, 'Không tìm thấy đơn hàng.')
     if order[0]['trang_thai'] in {'DA_XUAT_KHO', 'HOAN_THANH', 'HUY'}:
         raise HTTPException(409, 'Đơn hàng không còn ở trạng thái có thể lập phiếu xuất.')
+    warehouse_id = body.warehouse_id
+    if warehouse_id is None and user.role == 'ADMIN':
+        order_line = db.table('CT_DON_HANG').select('ma_kho_xuat').eq('ma_donhang', body.order_id).in_('sku', [line.sku for line in body.lines]).limit(1).execute().data
+        warehouse_id = order_line[0].get('ma_kho_xuat') if order_line else None
+    warehouse_id = _dispatch_warehouse(user, warehouse_id)
+    _require_warehouse_scope(user, warehouse_id)
     try:
         result = db.rpc('create_dispatch_document', {
             'p_ma_donhang': body.order_id, 'p_ma_kho_xuat': warehouse_id,
@@ -137,7 +164,32 @@ def create_dispatch_draft(body: DispatchDraft, user: User = Depends(current_user
         }).execute().data
         return {'data': result}
     except APIError as exc:
-        raise HTTPException(409, 'Không thể tạo phiếu xuất nháp.') from exc
+        # Older deployments may have the dispatch tables but not the RPC yet.
+        # Keep draft creation usable while the SQL migration is being applied.
+        if 'Could not find the function' in str(exc):
+            code = f"PX-{body.order_id}-{uuid4().hex[:8].upper()}"
+            try:
+                document = db.table('PHIEU_XUAT').insert({
+                    'ma_phieu_code': code,
+                    'ma_donhang': body.order_id,
+                    'ma_kho_xuat': warehouse_id,
+                    'nguoi_tao': user.employee_id,
+                    'ghi_chu': body.note,
+                }).execute().data
+                dispatch_id = document[0]['ma_phieu_xuat']
+                db.table('CT_PHIEU_XUAT').insert([{
+                    'ma_phieu_xuat': dispatch_id,
+                    'sku': line.sku,
+                    'ma_kho_xuat': warehouse_id,
+                    'so_luong': line.quantity,
+                } for line in body.lines]).execute()
+                return {'data': {'ma_phieu_xuat': dispatch_id, 'ma_phieu_code': code, 'trang_thai': 'NHAP'}}
+            except APIError as fallback_exc:
+                if 'dispatch_id' in locals():
+                    db.table('PHIEU_XUAT').delete().eq('ma_phieu_xuat', dispatch_id).execute()
+                raise HTTPException(409, f'Không thể tạo phiếu xuất nháp: {getattr(fallback_exc, "message", None) or str(fallback_exc)}') from fallback_exc
+        detail = getattr(exc, 'message', None) or str(exc)
+        raise HTTPException(409, f'Không thể tạo phiếu xuất nháp: {detail}') from exc
 
 
 @router.put('/dispatches/{dispatch_id}/draft')
@@ -171,6 +223,11 @@ def get_dispatch_draft(dispatch_id: int, user: User = Depends(current_user), db=
     if user.role == 'NHAN_VIEN' and docs[0]['ma_kho_xuat'] != user.warehouse_id:
         raise HTTPException(403, 'Phiếu xuất ngoài kho được phân quyền.')
     lines = db.table('CT_PHIEU_XUAT').select('sku,ma_kho_xuat,so_luong').eq('ma_phieu_xuat', dispatch_id).limit(500).execute().data
+    products = db.table('SAN_PHAM').select('ma_sp,sku,ten_sp,don_vi').in_('sku', [line['sku'] for line in lines]).limit(500).execute().data if lines else []
+    order_lines = db.table('CT_DON_HANG').select('sku,don_gia,don_vi_luc_ban').eq('ma_donhang', docs[0]['ma_donhang']).limit(500).execute().data
+    product_map = {product['sku']: product for product in products}
+    order_line_map = {line['sku']: line for line in order_lines}
+    lines = [{**line, 'ma_sp': product_map.get(line['sku'], {}).get('ma_sp'), 'ten_sp': product_map.get(line['sku'], {}).get('ten_sp'), 'don_vi': order_line_map.get(line['sku'], {}).get('don_vi_luc_ban') or product_map.get(line['sku'], {}).get('don_vi'), 'don_gia': order_line_map.get(line['sku'], {}).get('don_gia') or 0} for line in lines]
     return {'dispatch': docs[0], 'lines': lines}
 
 
@@ -186,6 +243,20 @@ def confirm_dispatch(dispatch_id: int, user: User = Depends(current_user), db=De
         raise HTTPException(409, 'Không thể xác nhận phiếu xuất.') from exc
 
 
+@router.post('/dispatches/{dispatch_id}/cancel')
+def cancel_dispatch(dispatch_id: int, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_employee(user)
+    docs = db.table('PHIEU_XUAT').select('ma_phieu_xuat,ma_phieu_code,ma_kho_xuat,trang_thai').eq('ma_phieu_xuat', dispatch_id).limit(1).execute().data
+    if not docs:
+        raise HTTPException(404, 'Không tìm thấy phiếu xuất.')
+    if user.role == 'NHAN_VIEN' and docs[0]['ma_kho_xuat'] != user.warehouse_id:
+        raise HTTPException(403, 'Phiếu xuất ngoài kho được phân quyền.')
+    if docs[0]['trang_thai'] != 'NHAP':
+        raise HTTPException(409, 'Chỉ có thể xóa phiếu xuất nháp.')
+    db.table('PHIEU_XUAT').update({'trang_thai': 'HUY'}).eq('ma_phieu_xuat', dispatch_id).execute()
+    return {'ma_phieu_xuat': dispatch_id, 'ma_phieu_code': docs[0]['ma_phieu_code'], 'trang_thai': 'HUY'}
+
+
 @router.post('/dispatches/{order_id}/dispatch')
 def dispatch_order(order_id: str, user: User = Depends(current_user), db=Depends(get_supabase)):
     _require_employee(user)
@@ -195,7 +266,8 @@ def dispatch_order(order_id: str, user: User = Depends(current_user), db=Depends
             'p_ma_kho_duoc_phep': None if user.role == 'ADMIN' else user.warehouse_id,
         }).execute().data
     except APIError as exc:
-        raise HTTPException(409, 'Không thể xuất kho theo đơn hàng.') from exc
+        detail = getattr(exc, 'message', None) or str(exc)
+        raise HTTPException(409, f'Không thể xuất kho theo đơn hàng: {detail}') from exc
 
 
 @router.get('/receipts', response_model=WarehouseReceiptPage, responses=READ_ERRORS, summary='Danh sách phiếu nhập của tất cả kho')

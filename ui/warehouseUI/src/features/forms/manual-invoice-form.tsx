@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, FileDown, Plus, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { createManualInvoice, getWarehouseOptions, type ManualInvoiceLine, type ProductOption } from "@/src/lib/warehouse-api";
+import { createManualInvoice, getWarehouseOptions, searchInvoiceCustomers, type CustomerInvoiceSearch, type ManualInvoiceLine, type ProductOption } from "@/src/lib/warehouse-api";
 
 type DraftLine = { sku: string; quantity: string; unitPrice: string; discount: string };
 const blankLine = (): DraftLine => ({ sku: "", quantity: "1", unitPrice: "", discount: "0" });
@@ -22,10 +22,19 @@ export default function ManualInvoiceForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [createdInvoiceId, setCreatedInvoiceId] = useState("");
+  const [customerMatches, setCustomerMatches] = useState<CustomerInvoiceSearch["customers"]>([]);
+  const [searchingCustomer, setSearchingCustomer] = useState(false);
 
   useEffect(() => {
     getWarehouseOptions().then(result => setProducts(result.products)).catch(err => setError(err instanceof Error ? err.message : "Không tải được danh sách sản phẩm.")).finally(() => setProductsLoading(false));
   }, []);
+
+  useEffect(() => {
+    const query = email.trim();
+    if (query.length < 2) { setCustomerMatches([]); return; }
+    const timer = window.setTimeout(() => { searchInvoiceCustomers(query).then(result => setCustomerMatches(result.customers)).catch(() => undefined); }, 250);
+    return () => window.clearTimeout(timer);
+  }, [email]);
 
   const totals = useMemo(() => {
     const subtotal = lines.reduce((sum, line) => sum + numberValue(line.quantity) * numberValue(line.unitPrice), 0);
@@ -42,6 +51,19 @@ export default function ManualInvoiceForm() {
   function selectProduct(index: number, sku: string) {
     const product = products.find(item => item.sku === sku);
     setLines(current => current.map((line, lineIndex) => lineIndex === index ? { ...line, sku, unitPrice: product?.gia_ban_hien_tai == null ? line.unitPrice : String(product.gia_ban_hien_tai), discount: line.discount || "0" } : line));
+  }
+
+  async function searchCustomer() {
+    const query = email.trim().toLowerCase();
+    setError(""); setCustomerMatches([]);
+    if (query.length < 2) { setError("Nhập ít nhất 2 ký tự email để tìm kiếm, hoặc tiếp tục nhập tay."); return; }
+    try { setSearchingCustomer(true); const result = await searchInvoiceCustomers(query); setCustomerMatches(result.customers); if (!result.customers.length) setError("Không tìm thấy email này trong database. Bạn vẫn có thể lập hóa đơn bằng thông tin nhập tay."); }
+    catch (err) { setError(err instanceof Error ? err.message : "Không tìm được khách hàng."); }
+    finally { setSearchingCustomer(false); }
+  }
+
+  function chooseCustomer(customer: CustomerInvoiceSearch["customers"][number]) {
+    setBuyer(customer.ten_kh); setEmail(customer.email ?? email); setAddress(customer.dia_chi_chi_tiet_md ?? ""); setCustomerMatches([]); setError("");
   }
 
   function validate(): ManualInvoiceLine[] {
@@ -69,7 +91,7 @@ export default function ManualInvoiceForm() {
     <div className="page-heading"><div><Link className="back-link" href="/invoices"><ArrowLeft size={14}/> Hóa đơn</Link><h1>Lập hóa đơn</h1></div></div>
     <section className="form-panel invoice-create-panel"><div className="form-panel-head"><h2>Thông tin hóa đơn</h2><p>Nhập trực tiếp thông tin khách hàng và sản phẩm. Không cần tra cứu đơn hàng.</p></div>
       <form onSubmit={submit}>
-        <div className="form-grid invoice-form-grid"><label><span>Tên khách hàng</span><input value={buyer} onChange={event => setBuyer(event.target.value)} placeholder="Nhập tên khách hàng" /></label><label><span>Email khách hàng</span><input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="Nhập email khách hàng" /></label><label><span>Mã số thuế <small>(không bắt buộc)</small></span><input value={taxId} onChange={event => setTaxId(event.target.value)} placeholder="Nhập mã số thuế" /></label><label className="wide"><span>Địa chỉ khách hàng <small>(không bắt buộc)</small></span><textarea value={address} onChange={event => setAddress(event.target.value)} placeholder="Nhập địa chỉ khách hàng" /></label></div>
+        <div className="form-grid invoice-form-grid"><label><span>Tên khách hàng</span><input value={buyer} onChange={event => setBuyer(event.target.value)} placeholder="Nhập tên khách hàng" /></label><label><span>Email khách hàng</span><div className="invoice-email-search"><input type="email" value={email} onChange={event => { setEmail(event.target.value); setCustomerMatches([]); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); void searchCustomer(); } }} placeholder="Nhập email hoặc tìm trong database" /><button type="button" className="button" onClick={() => void searchCustomer()} disabled={searchingCustomer}>{searchingCustomer ? "Đang tìm…" : "Tìm email"}</button></div>{customerMatches.length > 0 && <div className="invoice-results">{customerMatches.map(customer => <button type="button" className="button" key={customer.ma_kh} onClick={() => chooseCustomer(customer)}>{customer.ten_kh} · {customer.email ?? email}</button>)}</div>}</label><label><span>Mã số thuế <small>(không bắt buộc)</small></span><input value={taxId} onChange={event => setTaxId(event.target.value)} placeholder="Nhập mã số thuế" /></label><label className="wide"><span>Địa chỉ khách hàng <small>(không bắt buộc)</small></span><textarea value={address} onChange={event => setAddress(event.target.value)} placeholder="Nhập địa chỉ khách hàng" /></label></div>
         <div className="invoice-manual-lines"><div className="invoice-section-title"><div><h2>Sản phẩm hóa đơn</h2><p>Chọn sản phẩm từ database để tự điền tên, SKU, đơn vị và đơn giá.</p></div><button type="button" className="button" onClick={() => setLines(current => [...current, blankLine()])}><Plus size={15}/> Thêm dòng</button></div><div className="table-wrap"><table><thead><tr><th>SẢN PHẨM</th><th>SKU</th><th>ĐƠN VỊ</th><th>SỐ LƯỢNG</th><th>ĐƠN GIÁ (₫)</th><th>GIẢM GIÁ (₫)</th><th>THÀNH TIỀN</th><th></th></tr></thead><tbody>{lines.map((line, index) => { const amount = numberValue(line.quantity) * numberValue(line.unitPrice) - numberValue(line.discount); const product = products.find(item => item.sku === line.sku); return <tr key={index}><td><select className="product-select" value={line.sku} onChange={event => selectProduct(index, event.target.value)} required><option value="">{productsLoading ? "Đang tải sản phẩm…" : "Chọn sản phẩm"}</option>{products.map(item => <option key={item.sku} value={item.sku}>{item.ten_sp}</option>)}</select></td><td><strong>{product?.sku ?? "—"}</strong></td><td>{product?.don_vi ?? "—"}</td><td><input type="number" min="1" step="1" value={line.quantity} onChange={event => updateLine(index, "quantity", event.target.value)} required /><small className="stock-hint">Tồn: {product?.so_luong_ton ?? "—"}</small></td><td><input type="number" min="0" step="0.01" value={line.unitPrice} onChange={event => updateLine(index, "unitPrice", event.target.value)} placeholder="0" required /></td><td><input type="number" min="0" step="0.01" value={line.discount} onChange={event => updateLine(index, "discount", event.target.value)} /></td><td className="line-total">{money(amount)}</td><td><button type="button" className="icon-button" title="Xóa dòng" onClick={() => setLines(current => current.length === 1 ? current : current.filter((_, lineIndex) => lineIndex !== index))}><Trash2 size={16}/></button></td></tr>; })}</tbody></table></div></div>
         <div className="invoice-summary"><span>Tổng trước thuế <strong>{money(totals.beforeTax)}</strong></span><span>Giảm giá <strong>{money(totals.discount)}</strong></span><span>Tiền thuế (10%) <strong>{money(totals.tax)}</strong></span><span className="invoice-total">Tổng thanh toán <strong>{money(totals.total)}</strong></span></div>
         {error && <div className="module-note form-error">{error}</div>}{success && <div className="module-note form-success"><span>{success}</span>{createdInvoiceId && <Link className="button" href={`/invoices/${encodeURIComponent(createdInvoiceId)}`}><FileDown size={14}/> Xem và xuất hóa đơn</Link>}</div>}<div className="form-actions"><Link href="/invoices" className="button"><ArrowLeft size={14}/> Quay lại</Link><button className="button primary" type="submit" disabled={saving}><Save size={14}/>{saving ? "Đang lập hóa đơn…" : "Lập hóa đơn"}</button></div>

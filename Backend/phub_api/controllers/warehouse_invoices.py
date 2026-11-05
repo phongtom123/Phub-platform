@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
-import re
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -65,13 +64,14 @@ def list_invoices(user: User = Depends(current_user), db=Depends(get_supabase)):
 def customer_search(q: str = "", user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
     email = q.strip().lower()[:200]
-    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
-        raise HTTPException(422, "Nhập email khách hàng hợp lệ.")
+    if len(email) < 2:
+        return {"customers": [], "orders": []}
     # Email is normalized at the boundary and matched case-insensitively so
     # users are not blocked by the casing used when the account was created.
-    accounts = db.table("TAI_KHOAN").select("ma_kh,email").ilike("email", email).limit(10).execute().data
-    customer_ids = [row["ma_kh"] for row in accounts if row.get("ma_kh")]
-    if len(customer_ids) > 1:
+    accounts = db.table("TAI_KHOAN").select("ma_kh,email").ilike("email", f"%{email}%").limit(10).execute().data
+    exact_customer_ids = [row["ma_kh"] for row in accounts if row.get("ma_kh") and (row.get("email") or "").lower() == email]
+    customer_ids = list(dict.fromkeys(row["ma_kh"] for row in accounts if row.get("ma_kh")))
+    if len(exact_customer_ids) > 1:
         raise HTTPException(409, "Email khách hàng đang bị trùng dữ liệu.")
     if not customer_ids:
         return {"customers": [], "orders": []}

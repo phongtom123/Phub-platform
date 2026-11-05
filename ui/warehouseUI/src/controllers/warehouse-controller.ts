@@ -1,5 +1,5 @@
 /** Controller layer: translates a screen section into model operations. */
-import { deleteReceiptDraft, deleteTransferDraft, getDispatches, getHistory, getInventory, getInvoices, getPending, getProducts, getReceipts, getTransfers, type WarehouseSection } from "@/src/models/warehouse-model";
+import { cancelDispatchDraft, deleteReceiptDraft, deleteTransferDraft, getDispatches, getHistory, getInventory, getInvoices, getPending, getProducts, getReceipts, getTransfers, type WarehouseSection } from "@/src/models/warehouse-model";
 import type { DataRow } from "@/src/types/warehouse";
 
 export function isDataSection(section: string): section is WarehouseSection {
@@ -22,6 +22,6 @@ export async function loadSectionRows(section: WarehouseSection): Promise<DataRo
   }
 }
 
-export function deleteDraft(section: "receipts" | "transfers", recordId: number) {
-  return section === "receipts" ? deleteReceiptDraft(recordId) : deleteTransferDraft(recordId);
+export function deleteDraft(section: "receipts" | "transfers" | "dispatches", recordId: number) {
+  return section === "receipts" ? deleteReceiptDraft(recordId) : section === "transfers" ? deleteTransferDraft(recordId) : cancelDispatchDraft(recordId);
 }

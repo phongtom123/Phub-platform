@@ -38,6 +38,7 @@ export {
   getInvoiceOptions,
   createDispatchDraft,
   confirmDispatch,
+  cancelDispatchDraft,
   updateDispatchDraft,
 } from "@/src/lib/warehouse-api";
 
