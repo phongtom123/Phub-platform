@@ -7,6 +7,8 @@ from phub_api.models.user import User
 
 def selected_columns(name: str, user: User) -> str:
     parts = [c["name"] + ("::text" if c["type"].startswith("decimal") else "") for c in public_columns(name)]
+    if name == "customers" and user.role == "ADMIN":
+        parts.append("linked_account:TAI_KHOAN(ma_tk,trang_thai)")
     if user.role == "KHACH_HANG" and name in CUSTOMER_CHILDREN:
         parts.append("scope:DON_HANG!inner(ma_kh)")
     if user.role == "NHAN_VIEN" and name == "receipt-lines":

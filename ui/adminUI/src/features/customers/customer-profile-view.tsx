@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays, Clock3, KeyRound, MapPin, UserRound } from "lucide-react";
 import type { CustomerDetail } from "../../lib/customer-profile";
+import { statusLabels, type AccountStatus } from "../accounts/types";
 import styles from "./customer-detail.module.css";
 
 type Props = {
   data: CustomerDetail; age: number | null;
   formatDate: (value: string | null, dateOnly?: boolean) => string;
+  statusSaving: boolean; statusError: string; onAccountStatusChange: (value: AccountStatus) => void;
 };
-const statuses: Record<number, string> = { 0: "Đã ẩn", 1: "Hoạt động", 2: "Tạm khóa" };
 
-export function CustomerProfileView({ data: { profile, account }, age, formatDate }: Props) {
+export function CustomerProfileView({ data: { profile, account }, age, formatDate, statusSaving, statusError, onAccountStatusChange }: Props) {
   return <div className={styles.profile}>
     <header className={styles.header}>
       <span className={styles.avatar}><UserRound size={30} aria-hidden="true" /></span>
@@ -46,7 +47,7 @@ export function CustomerProfileView({ data: { profile, account }, age, formatDat
           <div className={styles.cardHeading}>
             <h2 id="customer-account-title"><KeyRound size={20} aria-hidden="true" />Tài khoản liên kết</h2>
             {account && <span className={`${styles.badge} ${account.trang_thai === 1 ? styles.active : account.trang_thai === 2 ? styles.locked : styles.inactive}`}>
-              <span aria-hidden="true" />{statuses[account.trang_thai] ?? "Không xác định"}
+              <span aria-hidden="true" />{statusLabels[account.trang_thai as AccountStatus] ?? "Không xác định"}
             </span>}
           </div>
           {account ? <>
@@ -54,6 +55,23 @@ export function CustomerProfileView({ data: { profile, account }, age, formatDat
               <div className={`live-field ${styles.field}`}><dt>Tên đăng nhập</dt><dd>{account.ten_tai_khoan}</dd></div>
               <div className={`live-field ${styles.field} ${styles.wide}`}><dt>Email</dt><dd>{account.email || <span className={styles.missing}>Chưa có thông tin</span>}</dd></div>
             </dl>
+            <div className={styles.accountStatusControl}>
+              <label htmlFor="customer-account-status">Trạng thái tài khoản khách hàng</label>
+              <select id="customer-account-status" value={account.trang_thai} disabled={statusSaving}
+                aria-invalid={Boolean(statusError)} aria-describedby="customer-account-status-help customer-account-status-result"
+                onChange={event => {
+                  const value = Number(event.currentTarget.value) as AccountStatus;
+                  event.currentTarget.value = String(account.trang_thai);
+                  onAccountStatusChange(value);
+                }}>
+                {([1, 2, 0] as AccountStatus[]).map(value => <option value={value} key={value}>{statusLabels[value]}</option>)}
+              </select>
+              <p id="customer-account-status-help">Khóa hoặc ẩn tài khoản sẽ chặn khách đăng nhập. Hồ sơ, đơn hàng và lịch sử vẫn được giữ.</p>
+              <div id="customer-account-status-result">
+                {statusSaving && <p role="status">Đang lưu trạng thái…</p>}
+                {statusError && <p className="live-error" role="alert">{statusError}</p>}
+              </div>
+            </div>
             <Link className={styles.accountLink} href={`/accounts/${encodeURIComponent(account.ma_tk)}`}>
               <div><span>Mã tài khoản</span><strong>{account.ma_tk}</strong></div>
               <span className={styles.accountAction}>Xem tài khoản <ArrowUpRight size={17} aria-hidden="true" /></span>

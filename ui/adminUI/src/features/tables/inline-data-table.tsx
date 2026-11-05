@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ScrollableTable } from "./scrollable-table";
@@ -10,11 +10,13 @@ import { dataRowKey, editableDataColumns, inlinePatch, inlineOptions, inlineChoi
 type Props = { resource: string; rows: DataRow[]; columns: DataColumn[]; keys: string[];
   quickEditFields?: readonly string[];
   editableFields?: readonly string[]; writePath?: string; canEditRow?: (row: DataRow) => boolean;
+  externalBusy?: boolean;
+  extraColumns?: readonly { key: string; title: string; render: (row: DataRow, disabled: boolean) => ReactNode }[];
   label: (name: string) => string; href: (row: DataRow) => string;
   onSaved: (row: DataRow) => void; onEditingChange: (editing: boolean) => void };
 type Editor = { key: string; draft: Record<string, string>; field: string };
 
-export function InlineDataTable({ resource, rows, columns, keys, label, href, onSaved, onEditingChange, quickEditFields, editableFields, writePath, canEditRow }: Props) {
+export function InlineDataTable({ resource, rows, columns, keys, label, href, onSaved, onEditingChange, quickEditFields, editableFields, writePath, canEditRow, externalBusy = false, extraColumns = [] }: Props) {
   const router = useRouter();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [saving, setSaving] = useState(false);
@@ -40,7 +42,7 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
   useEffect(() => { if (editor) inputNodes.current.get(editor.field)?.focus(); }, [editor?.key, editor?.field]);
 
   function edit(row: DataRow, field?: string) {
-    if (controller.current || editor || !textColumns.length || canEditRow?.(row) === false) return;
+    if (externalBusy || controller.current || editor || !textColumns.length || canEditRow?.(row) === false) return;
     setEditor({ key: dataRowKey(row, keys), field: textColumns.find(column => column.name === field)?.name ?? textColumns[0].name,
       draft: Object.fromEntries(textColumns.map(column => [column.name, inlineDraftValue(column, row[column.name])])) });
     outsideAttempt.current = null; outsideDestination.current = null; setError(""); setNotice("");
@@ -120,7 +122,7 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
 
   async function changeStatus(row: DataRow, value: string | number) {
     const column = editable.find(column => column.name === "trang_thai");
-    if (!column || editor || controller.current || canEditRow?.(row) === false || !inlineOptions(column).some(option => option.value === value) || value === row.trang_thai) return;
+    if (externalBusy || !column || editor || controller.current || canEditRow?.(row) === false || !inlineOptions(column).some(option => option.value === value) || value === row.trang_thai) return;
     if (![1, "HOAT_DONG"].includes(value) && !window.confirm(`Chuyển trạng thái thành "${inlineChoiceLabel("trang_thai", value)}"?`)) return;
     const request = new AbortController(); controller.current = request; setSaving(true); setError(""); setNotice("");
     try { await write(row, { trang_thai: value }, request); }
@@ -142,8 +144,8 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
     <p className={quickEditFields ? "inline-data-help" : "admin-sr-only"} id={`${id}-help`}>{quickEditFields ? "Sửa nhanh tên, thương hiệu, giá bán, đơn vị, bảo hành và trạng thái. " : ""}Nhấp đúp hoặc nhấn F2 để sửa. Bấm ra ngoài hàng hoặc Enter để lưu; Esc để hủy.</p>
     {error && <p className="live-error" role="alert" id={`${id}-error`}>{error}</p>}
     {notice && <p className="live-note" role="status">{notice}</p>}
-    <ScrollableTable className="inline-data-table"><table aria-describedby={`${id}-help`} aria-busy={saving}>
-      <thead><tr>{columns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead>
+    <ScrollableTable className="inline-data-table"><table aria-describedby={`${id}-help`} aria-busy={saving || externalBusy}>
+      <thead><tr>{columns.map(column => <th key={column.name}>{label(column.name)}</th>)}{extraColumns.map(column => <th key={column.key}>{column.title}</th>)}<th>Thao tác</th></tr></thead>
       <tbody>{rows.map(row => {
         const key = dataRowKey(row, keys); const editing = editor?.key === key;
         return <tr key={key} ref={node => { if (node) rowNodes.current.set(key, node); else rowNodes.current.delete(key); }}
@@ -153,7 +155,7 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
             {keys.includes(column.name) ? <Link href={href(row)}>{String(row[column.name] ?? "—")}</Link>
             : column.name === "trang_thai" && editable.some(item => item.name === column.name) && inlineOptions(column).length ? <select
               className={`inline-data-status status-${row.trang_thai}`} aria-label={`${label(column.name)} ${keys.map(name => row[name]).join(" / ")}`}
-              value={String(row[column.name])} disabled={Boolean(editor) || saving || canEditRow?.(row) === false}
+              value={String(row[column.name])} disabled={Boolean(editor) || saving || externalBusy || canEditRow?.(row) === false}
               onChange={event => { const value = column.type === "int" ? Number(event.currentTarget.value) : event.currentTarget.value; event.currentTarget.value = String(row[column.name]); void changeStatus(row, value); }}>
               {inlineOptions(column).map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select> : editing && textColumns.some(item => item.name === column.name) && column.choices ? <select
@@ -170,6 +172,7 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
               value={editor.draft[column.name] ?? ""} onChange={event => { const value = event.target.value; setEditor(current => current && ({ ...current, draft: { ...current.draft, [column.name]: value } })); setError(""); }} />
             : inlineChoiceLabel(column.name, row[column.name])}
           </td>)}
+          {extraColumns.map(column => <td key={column.key}>{column.render(row, Boolean(editor) || saving || externalBusy || canEditRow?.(row) === false)}</td>)}
           <td><div className="inline-data-actions"><Link href={href(row)}>Chi tiết</Link>
             {quickEditFields && editing && <>
               <button type="button" disabled={saving} onClick={() => void save(true)}>{saving ? "Đang lưu…" : "Lưu"}</button>

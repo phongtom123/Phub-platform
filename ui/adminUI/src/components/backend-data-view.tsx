@@ -15,6 +15,7 @@ import { ScrollableTable } from "@/src/features/tables/scrollable-table";
 import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
 import { listDataColumns } from "@/src/lib/table-presentation";
 import { CustomerDetail } from "@/src/features/customers/customer-detail";
+import { CustomerStatusCell, type CustomerLinkedAccount } from "@/src/features/customers/customer-status-cell";
 import { OrderData } from "@/src/features/orders/order-data";
 import type { AdminOrderDetailData } from "@/src/features/orders/order-detail-data";
 import { InvoiceDetail } from "@/src/features/billing/invoice-detail";
@@ -31,7 +32,8 @@ type Row = DataRow;
 type Column = DataColumn;
 type Resource = { name: string; title: string; keys: string[]; columns: Column[]; writable: boolean;
   draft_update_path?: string | null; draft_update_fields?: string[] | null };
-type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string; order_detail?: AdminOrderDetailData };
+type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string; order_detail?: AdminOrderDetailData;
+  customer_accounts?: Record<string, CustomerLinkedAccount | null> };
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
 
 const labels: Record<string, string> = {
@@ -127,7 +129,12 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [notice, setNotice] = useState("");
-  const [inlineEditing, setInlineEditing] = useState(false);
+  const [inlineRowEditing, setInlineEditing] = useState(false);
+  const [customerStatusSaving, setCustomerStatusSaving] = useState(false);
+  const inlineEditing = inlineRowEditing || customerStatusSaving;
+  const savedCustomerStatus = useCallback((customerId: string, account: CustomerLinkedAccount) => {
+    setResult(current => current && ({ ...current, customer_accounts: { ...current.customer_accounts, [customerId]: account } }));
+  }, []);
   const draftPath = resource === "receipts" && meta?.draft_update_path === `/api/admin/warehouse-drafts/${resource}` ? meta.draft_update_path : null;
   const canEditRow = (row: Row) => !draftPath || row.trang_thai === "NHAP";
   const canUpdate = Boolean(meta?.writable || draftPath);
@@ -344,6 +351,11 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           quickEditFields={resource === "products" ? ["ten_sp", "thuong_hieu", "gia_ban_hien_tai", "don_vi", "bao_hanh_thang", "trang_thai"] : undefined}
           editableFields={draftPath ? meta.draft_update_fields ?? [] : undefined}
           writePath={draftPath ? "/api/backend/" + draftPath.slice(5) : undefined} canEditRow={canEditRow}
+          externalBusy={customerStatusSaving}
+          extraColumns={resource === "customers" ? [{ key: "customer-account-status", title: "Trạng thái tài khoản", render: (row, blocked) =>
+            <CustomerStatusCell customerId={String(row.ma_kh)} customerName={String(row.ten_kh ?? row.ma_kh)}
+              account={result?.customer_accounts?.[String(row.ma_kh)]} disabled={blocked}
+              onSaved={savedCustomerStatus} onSavingChange={setCustomerStatusSaving} /> }] : undefined}
           label={label} href={href} onSaved={savedInline} onEditingChange={setInlineEditing} />
         : <ScrollableTable><table><thead><tr>{listColumns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{listColumns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <Link href={href(row)}>{displayValue(row, column)}</Link> : displayValue(row, column)}</td>)}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
         <div className="live-tools"><span>{result?.total ?? 0} kết quả · Trang {page}</span><button disabled={inlineEditing || page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={inlineEditing || page * 20 >= (result?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Sau</button></div>

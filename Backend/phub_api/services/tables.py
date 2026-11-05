@@ -176,6 +176,21 @@ class TablesService:
         selection = table_filters(name, filters)
         result = self.repository.page(name, self.user, page, page_size, q, keys, order_id, selection) if selection else self.repository.page(name, self.user, page, page_size, q, keys, order_id)
         body = {"data": clean(result.data), "total": result.count or 0, "page": page, "page_size": page_size}
+        if name == "customers" and self.user.role == "ADMIN":
+            accounts = {}
+            for row in body["data"]:
+                linked = row.pop("linked_account", None)
+                if isinstance(linked, list):
+                    if len(linked) > 1:
+                        raise HTTPException(409, "Khách hàng có nhiều tài khoản liên kết; cần đối chiếu dữ liệu.")
+                    linked = linked[0] if linked else None
+                if linked is not None:
+                    if (not isinstance(linked, dict) or not isinstance(linked.get("ma_tk"), str)
+                            or type(linked.get("trang_thai")) is not int or linked["trang_thai"] not in {0, 1, 2}):
+                        raise HTTPException(409, "Trạng thái tài khoản khách hàng không hợp lệ.")
+                    linked = {"ma_tk": linked["ma_tk"], "trang_thai": linked["trang_thai"]}
+                accounts[row["ma_kh"]] = linked
+            body["customer_accounts"] = accounts
         if filters:
             body['filters'] = json.loads(filters)
         if order_id is not None:

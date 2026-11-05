@@ -10,8 +10,8 @@ async function main() {
   const browser = await chromium.launch({ headless: true, executablePath: process.env.PHUB_CHROMIUM_EXECUTABLE || undefined });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-    const errors = [], patches = [], orderPages = [];
-    let reads = 0, failSave = false;
+    const errors = [], patches = [], orderPages = [], statusWrites = [];
+    let reads = 0, listReads = 0, failSave = false, failStatus = false, acceptStatus = true;
     const data = {
       profile: { ma_kh: "KH1", ten_kh: "Khách kiểm thử", sdt: "09001", ngay_sinh: null, ngay_tao: null,
         cap_nhat_luc: null, luu_tru_luc: null, dia_chi_chi_tiet_md: null, tinh_thanh_md: null, xa_phuong_md: null },
@@ -20,11 +20,19 @@ async function main() {
     const admin = { ma_tk: "TK1", ten_tai_khoan: "admin.test", email: null, ma_nhan_vien: "NV1", ma_kh: null,
       trang_thai: 1, role: "ADMIN", ho_ten: "Admin Test", ma_kho: null, owner_active: true, is_self: true };
     page.on("pageerror", error => errors.push(error.message));
+    page.on("dialog", dialog => acceptStatus ? dialog.accept() : dialog.dismiss());
     await page.route("**/*", async route => {
       const request = route.request(), url = new URL(request.url());
       if (url.origin !== new URL(base).origin) return route.abort();
       if (!url.pathname.startsWith("/api/")) return route.continue();
       const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
+      if (url.pathname === "/api/backend/admin/accounts/CUSTOMER-TK1/status") {
+        assert.equal(request.method(), "POST");
+        statusWrites.push(request.postDataJSON());
+        if (failStatus) return respond({ detail: "Không thể đổi trạng thái kiểm thử." }, 503);
+        data.account.trang_thai = request.postDataJSON().trang_thai;
+        return respond({ ...data.account, ma_kh: "KH1", role: "KHACH_HANG" });
+      }
       if (url.pathname === "/api/backend/crm/customers/KH1") {
         if (request.method() === "GET") { reads++; return respond(data); }
         assert.equal(request.method(), "PATCH");
@@ -43,7 +51,13 @@ async function main() {
       if (url.pathname.endsWith("/auth/me")) return respond({ account_id: "TK1", username: "admin.test", role: "ADMIN", name: "Admin Test" });
       if (url.pathname === "/api/backend/admin/accounts/TK1" || url.pathname === "/api/backend/admin/me") return respond(admin);
       if (url.pathname === "/api/backend/admin/accounts") return respond({ data: [admin], total: 1, page: 1, page_size: 20 });
-      if (url.pathname === "/api/backend/data/resources") return respond([]);
+      if (url.pathname === "/api/backend/data/resources") return respond([{ name: "customers", title: "Khách hàng", keys: ["ma_kh"], writable: true,
+        columns: [{ name: "ma_kh", type: "varchar", required: true, generated: true }, { name: "ten_kh", type: "varchar", required: true }] }]);
+      if (url.pathname === "/api/backend/data/customers") {
+        listReads++;
+        return respond({ data: [{ ma_kh: "KH1", ten_kh: data.profile.ten_kh }, { ma_kh: "KH2", ten_kh: "Khách chưa có tài khoản" }],
+          customer_accounts: { KH1: { ma_tk: data.account.ma_tk, trang_thai: data.account.trang_thai }, KH2: null }, total: 2, page: 1, page_size: 20 });
+      }
       if (url.pathname.startsWith("/api/backend/data/")) return respond({ data: [], total: 0, page: 1, page_size: 20 });
       throw new Error("Unexpected API: " + url.pathname);
     });
@@ -53,12 +67,37 @@ async function main() {
     assert.ok(await page.getByText("Chưa có thông tin").count() > 0);
     assert.equal(orderPages.length, 0, "Orders are lazy-loaded");
     assert.equal(await page.locator('a[href="/accounts/CUSTOMER-TK1"]').count(), 1);
+    const status = page.getByLabel("Trạng thái tài khoản khách hàng", { exact: true });
+    const beforeStatus = reads;
+    await page.evaluate(() => window.__crmDocumentMarker = "same-document");
+    await status.selectOption("2");
+    await page.getByText("Đã cập nhật trạng thái tài khoản khách hàng: Tạm khóa.", { exact: true }).waitFor();
+    assert.equal(await status.inputValue(), "2");
+    assert.equal(reads, beforeStatus, "Status updates in place without a CRM refetch");
+    acceptStatus = false;
+    await status.selectOption("0");
+    assert.equal(await status.inputValue(), "2");
+    assert.equal(statusWrites.length, 1, "Cancel confirmation does not write");
+    acceptStatus = true; failStatus = true;
+    await status.selectOption("0");
+    await page.getByRole("alert").filter({ hasText: "Không thể đổi trạng thái kiểm thử." }).waitFor();
+    assert.equal(await status.inputValue(), "2", "Failed API does not change displayed status");
+    assert.equal(await page.getByText("Đã cập nhật trạng thái tài khoản khách hàng: Tạm khóa.", { exact: true }).count(), 0);
+    failStatus = false;
+    await status.selectOption("1");
+    await page.getByText("Đã cập nhật trạng thái tài khoản khách hàng: Hoạt động.", { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => window.__crmDocumentMarker), "same-document");
+    assert.deepEqual(statusWrites, [{ trang_thai: 2 }, { trang_thai: 0 }, { trang_thai: 1 }]);
     const back = await page.getByRole("button", { name: "← Quay lại", exact: true }).boundingBox();
     const edit = await page.getByRole("link", { name: "Chỉnh sửa", exact: true }).boundingBox();
     assert.ok(edit.x > back.x && Math.abs(edit.y - back.y) < 1);
     await page.evaluate(() => window.__crmDocumentMarker = "same-document");
     await page.getByRole("link", { name: "Chỉnh sửa", exact: true }).click();
     await page.getByLabel("Ngày sinh", { exact: true }).fill("2000-02-29");
+    await status.selectOption("2");
+    await page.getByText("Đã cập nhật trạng thái tài khoản khách hàng: Tạm khóa.", { exact: true }).waitFor();
+    assert.equal(await page.getByLabel("Ngày sinh", { exact: true }).inputValue(), "2000-02-29", "Saving status preserves the profile draft");
+    assert.equal(patches.length, 0, "Status changes do not submit the profile form");
     assert.equal(await page.getByText("Sở thích", { exact: true }).count(), 0);
     assert.equal(await page.getByRole("checkbox").count(), 0);
     const beforeSave = reads;
@@ -98,8 +137,34 @@ async function main() {
     assert.ok(overflow.profileWidth >= 300, JSON.stringify(overflow));
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.screenshot({ path: path.join(os.tmpdir(), "phub-customer-profile-desktop.png"), fullPage: true, animations: "disabled" });
+    await page.getByRole("button", { name: "← Quay lại", exact: true }).click();
+    await page.getByRole("columnheader", { name: "Trạng thái tài khoản", exact: true }).waitFor();
+    const listStatus = page.getByLabel("Trạng thái tài khoản KH1", { exact: true });
+    assert.equal(await listStatus.inputValue(), "2");
+    await page.getByText("Chưa có tài khoản", { exact: true }).waitFor();
+    const beforeListStatus = listReads;
+    await listStatus.selectOption("1");
+    await page.getByText("Đã lưu: Hoạt động.", { exact: true }).waitFor();
+    assert.equal(await listStatus.inputValue(), "1");
+    assert.equal(listReads, beforeListStatus, "List status updates without a list refetch");
+    acceptStatus = false;
+    const beforeCancel = statusWrites.length;
+    await listStatus.selectOption("0");
+    assert.equal(statusWrites.length, beforeCancel);
+    assert.equal(await listStatus.inputValue(), "1");
+    acceptStatus = true; failStatus = true;
+    await listStatus.selectOption("2");
+    await page.getByRole("alert").filter({ hasText: "Không thể đổi trạng thái kiểm thử." }).waitFor();
+    assert.equal(await listStatus.inputValue(), "1");
+    assert.equal(await page.getByText("Đã lưu: Hoạt động.", { exact: true }).count(), 0);
+    failStatus = false;
+    await page.getByRole("cell", { name: data.profile.ten_kh, exact: true }).dblclick();
+    assert.equal(await listStatus.isDisabled(), true, "Status is disabled while editing a profile row");
+    await page.getByRole("textbox", { name: "Tên khách hàng KH1", exact: true }).press("Escape");
+    assert.equal(await listStatus.isEnabled(), true);
+    assert.equal(await page.evaluate(() => window.__crmDocumentMarker), "same-document");
     assert.deepEqual(errors, []);
-    console.log("PASS: customer detail/edit/save without interests, reload or refetch; account link, null dates, lazy/paginated orders, draft and mobile. Mocked HTTP only.");
+    console.log("PASS: customer status in detail, edit form and list; draft preservation, cancel/error rollback, lazy orders and mobile. Mocked HTTP only.");
   } finally { await browser.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
