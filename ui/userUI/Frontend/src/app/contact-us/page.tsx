@@ -13,7 +13,6 @@ export default function ContactUsPage() {
           <strong>Liên hệ & Hỗ trợ</strong>
         </nav>
         <h1>Liên hệ & Hỗ trợ khách hàng</h1>
-        <div className={styles.layout}>
           <section className={styles.content}>
             <div className={styles.intro}>
               <p>
@@ -21,9 +20,7 @@ export default function ContactUsPage() {
                 Mỗi yêu cầu được cấp mã theo dõi riêng và lưu trong lịch sử tài khoản của bạn.
               </p>
             </div>
-            <ContactForm />
-          </section>
-          <aside className={styles.contactCard}>
+            <ContactForm sidebar={<section className={styles.contactCard} aria-label="Thông tin cửa hàng">
             <div className={styles.contactItem}>
               <span className={styles.icon} aria-hidden="true">📍</span>
               <div>
@@ -62,8 +59,8 @@ export default function ContactUsPage() {
                 </p>
               </div>
             </div>
-          </aside>
-        </div>
+            </section>} />
+          </section>
         <div className={styles.bottomSpace} />
       </div>
     </div>

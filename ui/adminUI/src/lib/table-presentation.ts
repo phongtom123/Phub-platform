@@ -1,7 +1,7 @@
 import type { DataColumn } from "./inline-table-data";
 
 const hiddenColumns: Record<string, string[]> = {
-  customers: ["ngay_tao", "cap_nhat_luc", "luu_tru_luc"],
+  customers: ["ngay_tao", "cap_nhat_luc", "luu_tru_luc", "tinh_thanh_md", "xa_phuong_md"],
   products: ["mo_ta", "duong_dan_anh"],
   invoices: ["tong_tien_giam"],
   receipts: ["ghi_chu"], transfers: ["ghi_chu"],

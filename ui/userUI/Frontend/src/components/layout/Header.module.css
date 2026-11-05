@@ -64,7 +64,7 @@
 .categoryMenu .categoryNav > a { gap: 12px; min-height: 50px; padding: 10px 16px; border-radius: 0; white-space: normal; font-size: 13px; font-weight: 400; }
 .categoryMenu .categoryNav > a > span:first-of-type { flex: 1; }
 .categoryMenu .categoryNav > a > span:last-child { margin-left: auto; font-size: 20px; color: #6b7280; }
-.categoryMenu .categoryNav[data-active=true] > a { background: #f3f4f6; color: #1f2937; box-shadow: inset 3px 0 #ed1b24; }
+.categoryMenu .categoryNav[data-active=true] > a { background: #f3f4f6; color: #1f2937; box-shadow: inset 3px 0 var(--brand-primary); }
 .categoryMenu .dealsLink { display: block; padding: 14px 18px; color: #0156ff; font-size: 13px; font-weight: 600; border-top: 1px solid #edf0f5; }
 
 /* Persistent, inert panels allow both enter and exit transitions without JS timers. */
@@ -130,7 +130,7 @@
 .cartLineCopy strong { overflow: hidden; color: #171a21; font-size: 12px; font-weight: 650; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .cartLineCopy small { overflow: hidden; color: #8b91a0; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .cartLineRemove { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #9aa0ad; font-size: 19px; line-height: 1; cursor: pointer; }
-.cartLineRemove:hover { background: #fff0f0; color: #c53030; }
+.cartLineRemove:hover { background: var(--brand-primary-soft); color: var(--brand-primary-strong); }
 .cartLineRemove:focus-visible { outline: 2px solid var(--header-blue); outline-offset: 2px; }
 .cartFoot { padding: 13px 16px 16px; border-top: 1px solid #edf0f5; background: #fafbfe; }
 .subtotal { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0; padding: 0 2px 11px; }

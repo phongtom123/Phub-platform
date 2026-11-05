@@ -28,10 +28,13 @@ const image='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.
   await first.waitFor();await first.evaluate(img=>img.decode());
   async function assertBannerFits() {
    const imageBox=await first.boundingBox(),frame=await hero.boundingBox();
-   const ratio=await first.evaluate(img=>img.naturalWidth/img.naturalHeight);
+   const imageStyle=await first.evaluate(img=>({fit:getComputedStyle(img).objectFit,position:getComputedStyle(img).objectPosition}));
+   const expectedRatio=page.viewportSize().width<=760?16/7:1398/328;
    assert.ok(Math.abs(imageBox.width-frame.width)<1,'image fills banner width');
    assert.ok(Math.abs(imageBox.height-frame.height)<1,'banner has no empty bands');
-   assert.ok(Math.abs(imageBox.width/imageBox.height-ratio)<0.01,'image preserves its natural aspect ratio');
+   assert.equal(imageStyle.fit,'cover','scale uniformly and crop excess image');
+   assert.equal(imageStyle.position,'50% 50%','crop from the center');
+   assert.ok(Math.abs(frame.width/frame.height-expectedRatio)<0.01,'banner frame follows the viewport, not source dimensions');
   }
   await assertBannerFits();
   assert.equal(await hero.getByRole('link').getAttribute('href'),'/main/product');

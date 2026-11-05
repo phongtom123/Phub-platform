@@ -15,7 +15,7 @@
 .navigation button:hover { background: #f3f6fc; color: #0156ff; }
 .navigation .navArrow { margin-left: auto; font-size: 21px; }
 .sidebarActions { border-top: 1px solid #eef0f4; padding: 10px 12px 2px; }
-.logout { padding: 10px 0; border: 0; background: transparent; color: #c3373d; font: inherit; font-size: 13px; cursor: pointer; }
+.logout { padding: 10px 0; border: 0; background: transparent; color: var(--brand-primary); font: inherit; font-size: 13px; cursor: pointer; }
 .content { display: grid; gap: 24px; min-width: 0; }
 .panel { min-width: 0; padding: 28px; border: 1px solid #e7eaf0; border-radius: 16px; background: white; }
 .panelHeading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
@@ -43,12 +43,12 @@
 .addressCard .address { margin: 0; padding: 0 0 20px; border: 0; }
 .addressCard .address h3 { margin-top: 12px; }
 .addressActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: auto; padding-top: 14px; border-top: 1px solid #e7ecf4; }
-.dangerAction { border: 0; background: none; color: #bc3540; padding: 5px 0; font: inherit; font-size: 13px; cursor: pointer; margin-left: auto; }
+.dangerAction { border: 0; background: none; color: var(--brand-primary); padding: 5px 0; font: inherit; font-size: 13px; cursor: pointer; margin-left: auto; }
 .addressDialogBody { display: grid; gap: 18px; margin-top: 20px; }
 .dialog .addressDialogBody .note { margin: 0; }
 .defaultCheckbox { display: flex; gap: 10px; align-items: center; line-height: 1.6; }
 .defaultCheckbox input { width: 17px; height: 17px; accent-color: #0156ff; flex-shrink: 0; }
-.deleteButton { min-height: 42px; padding: 10px 18px; border: 0; border-radius: 9px; background: #bc3540; color: white; font: inherit; font-size: 13px; cursor: pointer; }
+.deleteButton { min-height: 42px; padding: 10px 18px; border: 0; border-radius: 9px; background: var(--brand-primary); color: white; font: inherit; font-size: 13px; cursor: pointer; }
 .dialog .secondaryButton { font: inherit; font-size: 13px; cursor: pointer; }
 .emptyAddress { padding: 28px 0 8px; color: #697586; font-size: 13px; line-height: 1.8; }
 .emptyAddress svg { margin-bottom: 8px; }
@@ -74,7 +74,7 @@
 .badge[data-status="DANG_CHUAN_BI"] { background: #fff7e6; color: #986b12; }
 .badge[data-status="DA_XUAT_KHO"] { background: #f1ecff; color: #7352ac; }
 .badge[data-status="HOAN_THANH"] { background: #eaf8ef; color: #208046; }
-.badge[data-status="HUY"] { background: #fef0f0; color: #b43d42; }
+.badge[data-status="HUY"] { background: var(--brand-primary-soft); color: var(--brand-primary-strong); }
 .orderLink { display: inline-flex; align-items: center; gap: 9px; color: #0156ff; text-decoration: none; font-size: 12px; white-space: nowrap; }
 .orderLink:hover { text-decoration: underline; }
 .pager { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 24px; color: #697586; font-size: 12px; }
@@ -85,7 +85,7 @@
 .note { color: #697586; margin: 0; font-size: 13px; line-height: 1.8; }
 .notice, .error { padding: 14px 18px; border-radius: 10px; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; margin: 0; }
 .notice { background: #eaf7ee; color: #257541; border: 1px solid #d8eddf; }
-.error { color: #a12622; background: #fff3f2; border: 1px solid #f8dfdd; }
+.error { color: var(--brand-primary-strong); background: var(--brand-primary-soft); border: 1px solid var(--brand-primary-border); }
 .error p { margin: 0 0 12px; }
 .gate { width: min(720px, calc(100% - 32px)); margin: 8px auto 0; padding: 32px; border: 1px solid #e7eaf0; border-radius: 16px; background: white; }
 .gate h2 { font-size: 22px; font-weight: 600; }

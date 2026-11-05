@@ -468,7 +468,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
         <div className={styles.container}>
           <div style={{ padding: "60px 20px", textAlign: "center" }}>
             <FulfillmentChoice value={fulfillmentMethod} onChange={chooseFulfillment} disabled={submitting} />
-            <p style={{ color: "#c62828" }}>⚠️ {addressError}</p>
+            <p style={{ color: "var(--brand-primary-strong)" }}>⚠️ {addressError}</p>
             <button
               type="button"
               className={styles.placeOrder}
@@ -513,8 +513,8 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               <div
                 style={{
                   padding: "12px 18px",
-                  background: "#ffebee",
-                  color: "#c62828",
+                  background: "var(--brand-primary-soft)",
+                  color: "var(--brand-primary-strong)",
                   borderRadius: 6,
                   marginBottom: 20,
                   fontSize: 14,
@@ -660,8 +660,8 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
           <div
             style={{
               padding: "12px 18px",
-              background: "#ffebee",
-              color: "#c62828",
+              background: "var(--brand-primary-soft)",
+              color: "var(--brand-primary-strong)",
               borderRadius: 6,
               marginBottom: 20,
               fontSize: 14,
@@ -695,7 +695,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               </div>
 
               {addressError && (
-                <div style={{ color: "#c62828", fontSize: 13, marginBottom: 8 }}>⚠️ {addressError}</div>
+                <div style={{ color: "var(--brand-primary-strong)", fontSize: 13, marginBottom: 8 }}>⚠️ {addressError}</div>
               )}
 
               {currentAddress ? (
@@ -710,7 +710,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                   </div>
                 </div>
               ) : (
-                <div style={{ color: "#c62828", fontSize: 14 }}>
+                <div style={{ color: "var(--brand-primary-strong)", fontSize: 14 }}>
                   Chưa có thông tin nhận hàng. Vui lòng thêm thông tin để tiếp tục.
                 </div>
               )}
@@ -963,7 +963,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                     style={{
                       border: 0,
                       background: "transparent",
-                      color: "#c62828",
+                      color: "var(--brand-primary-strong)",
                       fontSize: 12,
                       textDecoration: "underline",
                       cursor: "pointer",
@@ -980,7 +980,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
               {quoteLoading ? (
                 <p style={{ textAlign: "center", color: "#666" }}>Đang tính toán giá đơn hàng...</p>
               ) : quoteError ? (
-                <p role="alert" style={{ color: "#c62828", fontSize: 13 }}>⚠️ {quoteError}</p>
+                <p role="alert" style={{ color: "var(--brand-primary-strong)", fontSize: 13 }}>⚠️ {quoteError}</p>
               ) : quote ? (
                 <>
                   <p>

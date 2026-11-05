@@ -1,7 +1,7 @@
 .notice { display: grid; gap: 8px; margin: 16px 0; padding: 18px 20px; background: #f0f5ff; border: 1px solid #c9d9ff; border-radius: 12px; color: #18375c; font-size: 15px; line-height: 1.6; }
 .notice strong { font-size: 17px; }
 .countdown { font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; color: #0156ff; }
-.expired { background: #fff2f1; border-color: #f4c1bc; color: #a52920; }
+.expired { background: var(--brand-primary-soft); border-color: var(--brand-primary-border); color: var(--brand-primary-strong); }
 .received { background: #eff8f2; border-color: #c4e3ce; color: #24623c; }
 .compact { margin: 8px 0; padding: 10px 12px; font-size: 13px; }
 .compact strong { font-size: 14px; }

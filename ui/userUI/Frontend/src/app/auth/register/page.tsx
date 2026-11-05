@@ -107,7 +107,7 @@ function RegisterForm() {
           <input required name="terms" type="checkbox" className="mt-1 size-4 shrink-0 accent-green-700" />
           <span>Tôi đồng ý với điều khoản sử dụng và xác nhận thông tin đăng ký là chính xác.</span>
         </label>
-        {error && <p role="alert" aria-live="polite" className="mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+        {error && <p role="alert" aria-live="polite" className="mt-5 rounded-lg bg-[var(--brand-primary-soft)] px-4 py-3 text-sm text-[var(--brand-primary-strong)]">{error}</p>}
         <button type="submit" disabled={loading} className="mt-7 h-12 w-full rounded-lg bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-wait disabled:opacity-60">
           {loading ? "Đang tạo tài khoản…" : "Tạo tài khoản"}
         </button>

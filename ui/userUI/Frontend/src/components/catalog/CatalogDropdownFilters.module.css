@@ -19,7 +19,7 @@
 .typeFields { display: grid; gap: 18px; }
 .clear { padding: 8px 3px; border: 0; background: none; color: #0156ff; font: inherit; font-size: 12px; cursor: pointer; }
 .hint, .error { margin: 10px 0; color: #66758b; font-size: 12px; line-height: 1.7; }
-.error { color: #b42318; }
+.error { color: var(--brand-primary-strong); }
 .error button { border: 0; background: none; color: #0156ff; cursor: pointer; text-decoration: underline; }
 @media (max-width: 760px) { .row { gap: 8px; } .trigger { min-height: 40px; max-width: 180px; padding: 9px 11px; font-size: 12px; } .root { margin-bottom: 14px; } }
 @media (max-width: 480px) { .bar { flex-direction: column-reverse; gap: 12px; } .applyButton { align-self: flex-end; min-height: 40px; } }

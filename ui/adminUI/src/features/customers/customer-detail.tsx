@@ -10,6 +10,8 @@ import { dataHref } from "@/src/lib/data-navigation";
 import { customerAge, customerFields, customerIdFromKey, customerPatch, vietnamDate,
   type CustomerDetail as Detail, type CustomerField, type CustomerOrderPage } from "@/src/lib/customer-profile";
 import { CustomerProfileView } from "./customer-profile-view";
+import { accountApi, jsonRequest } from "../accounts/api";
+import { statusLabels, type Account, type AccountStatus } from "../accounts/types";
 import { ScrollableTable } from "../tables/scrollable-table";
 import styles from "./customer-detail.module.css";
 
@@ -36,12 +38,15 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   const id = customerIdFromKey(recordKey);
   const path = `crm/customers/${encodeURIComponent(id ?? "")}`;
   const [data, setData] = useState<Detail | null>(null);
+  const profile = data?.profile;
   const [draft, setDraft] = useState<Record<CustomerField, string>>({ ten_kh: "", sdt: "", ngay_sinh: "", dia_chi_chi_tiet_md: "", tinh_thanh_md: "", xa_phuong_md: "" });
   const [error, setError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusError, setStatusError] = useState("");
   const [version, setVersion] = useState(0);
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [orders, setOrders] = useState<CustomerOrderPage | null>(null);
@@ -49,8 +54,13 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [page, setPage] = useState(1);
   const saveController = useRef<AbortController | null>(null);
+  const statusController = useRef<AbortController | null>(null);
   const detailHref = dataHref("customers", { key: recordKey });
   useEffect(() => () => saveController.current?.abort(), []);
+  useEffect(() => {
+    setStatusSaving(false); setStatusError("");
+    return () => { statusController.current?.abort(); statusController.current = null; };
+  }, [id]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -64,11 +74,11 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   }, [id, path, version]);
 
   useEffect(() => {
-    if (data && editMode) {
-      setDraft(Object.fromEntries(fields.map(field => [field, data.profile[field] ?? ""])) as Record<CustomerField, string>);
+    if (profile && editMode) {
+      setDraft(Object.fromEntries(fields.map(field => [field, profile[field] ?? ""])) as Record<CustomerField, string>);
       setSaveError("");
     }
-  }, [editMode, data]);
+  }, [editMode, profile]);
 
   useEffect(() => {
     if (!ordersOpen || !id) return;
@@ -81,7 +91,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
     return () => controller.abort();
   }, [id, path, ordersOpen, page, version]);
 
-  const pollError = useAdminPolling(`${path}:${page}:${ordersOpen}`, Boolean(data) && !loading && !error && !editMode && !saving,
+  const pollError = useAdminPolling(`${path}:${page}:${ordersOpen}`, Boolean(data) && !loading && !error && !editMode && !saving && !statusSaving,
     async (signal, canApply) => {
       const fresh = await request<Detail>(path, { signal, cache: "no-cache" });
       if (canApply()) setData(current => sameAdminData(current, fresh) ? current : fresh);
@@ -93,7 +103,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
 
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (!data || saving || saveController.current) return;
+    if (!data || saving || saveController.current || statusController.current) return;
     setSaveError(""); setNotice("");
     let patch;
     try { patch = customerPatch(data, draft); }
@@ -110,28 +120,69 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
     finally { if (!controller.signal.aborted) { saveController.current = null; setSaving(false); } }
   }
 
+  async function changeAccountStatus(value: AccountStatus) {
+    if (!data?.account || saving || statusController.current || ![0, 1, 2].includes(value) || value === data.account.trang_thai) return;
+    const account = data.account, customerId = data.profile.ma_kh;
+    if (value !== 1 && !window.confirm(`Chuyển tài khoản của ${data.profile.ten_kh} sang “${statusLabels[value]}”? Khách sẽ không đăng nhập được; đơn hàng và lịch sử vẫn được giữ.`)) return;
+    const controller = new AbortController(); statusController.current = controller;
+    setStatusSaving(true); setStatusError(""); setNotice("");
+    try {
+      const saved = await accountApi<Account>(`accounts/${encodeURIComponent(account.ma_tk)}/status`, {
+        ...jsonRequest("POST", { trang_thai: value }), signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      if (saved.ma_tk !== account.ma_tk || saved.ma_kh !== customerId || saved.role !== "KHACH_HANG" || saved.trang_thai !== value) {
+        throw new Error("API chưa xác nhận đúng trạng thái tài khoản của khách hàng này. Hãy tải lại để đối chiếu.");
+      }
+      setData(current => current?.profile.ma_kh === customerId && current.account?.ma_tk === account.ma_tk ? {
+        ...current, account: { ma_tk: saved.ma_tk, ten_tai_khoan: saved.ten_tai_khoan, email: saved.email, trang_thai: saved.trang_thai },
+      } : current);
+      setNotice(`Đã cập nhật trạng thái tài khoản khách hàng: ${statusLabels[saved.trang_thai]}.`);
+    } catch (cause) {
+      if (!controller.signal.aborted) setStatusError(cause instanceof Error ? cause.message : "Không thể cập nhật trạng thái tài khoản.");
+    } finally {
+      if (statusController.current === controller) { statusController.current = null; setStatusSaving(false); }
+    }
+  }
+
   const age = customerAge(data?.profile.ngay_sinh ?? null);
   return <section className={`live-data customer-detail ${styles.page}`}>
     <div className="live-page-actions">
-      <button type="button" disabled={saving} onClick={() => router.push(dataHref("customers"))}>← Quay lại</button>
-      {data && !editMode && !error && <Link className="live-primary" href={dataHref("customers", { key: recordKey, edit: true })}>Chỉnh sửa</Link>}
+      <button type="button" disabled={saving || statusSaving} onClick={() => router.push(dataHref("customers"))}>← Quay lại</button>
+      {data && !editMode && !error && (statusSaving ? <button className="live-primary" disabled>Chỉnh sửa</button>
+        : <Link className="live-primary" href={dataHref("customers", { key: recordKey, edit: true })}>Chỉnh sửa</Link>)}
     </div>
     {notice && <p className="live-note" role="status">{notice}</p>}
     {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi, đang hiển thị dữ liệu lần trước. {pollError}</p>}
     {error && <p className="live-error" role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button></p>}
     {loading ? <p role="status">Đang tải hồ sơ khách hàng…</p> : data && !error && <>
       {editMode ? <form className={`live-form ${styles.editForm}`} onSubmit={save}>
-        <fieldset className="live-form-fields" disabled={saving}>
+        <fieldset className="live-form-fields" disabled={saving || statusSaving}>
           {fields.map(field => <label key={field}>{customerFields[field]}{field === "ten_kh" && " *"}
             <input aria-label={customerFields[field]} type={field === "ngay_sinh" ? "date" : field === "sdt" ? "tel" : "text"}
               required={field === "ten_kh"} max={field === "ngay_sinh" ? vietnamDate() : undefined} maxLength={field === "sdt" ? 100 : 2000}
               value={draft[field]} onChange={e => setDraft(current => ({ ...current, [field]: e.target.value }))} />
           </label>)}
+          <label>Trạng thái tài khoản khách hàng
+            {data.account ? <>
+              <select aria-label="Trạng thái tài khoản khách hàng" value={data.account.trang_thai}
+                aria-invalid={Boolean(statusError)} onChange={event => {
+                  const value = Number(event.currentTarget.value) as AccountStatus;
+                  event.currentTarget.value = String(data.account!.trang_thai);
+                  void changeAccountStatus(value);
+                }}>
+                {([1, 2, 0] as AccountStatus[]).map(value => <option key={value} value={value}>{statusLabels[value]}</option>)}
+              </select>
+              <small>{statusSaving ? "Đang lưu trạng thái…" : "Trạng thái được lưu ngay khi chọn; các thông tin đang nhập vẫn được giữ."}</small>
+            </> : <span>Khách hàng chưa có tài khoản liên kết.</span>}
+          </label>
         </fieldset>
+        {statusError && <p className="live-error customer-wide" role="alert">{statusError}</p>}
         {saveError && <p className="live-error customer-wide" role="alert">{saveError}</p>}
-        <div className="live-form-actions"><button className="live-primary" disabled={saving}>{saving ? "Đang lưu…" : "Lưu hồ sơ"}</button>
-          {!saving && <Link href={detailHref}>Hủy</Link>}</div>
-      </form> : <CustomerProfileView data={data} age={age} formatDate={displayDate} />}
+        <div className="live-form-actions"><button className="live-primary" disabled={saving || statusSaving}>{saving ? "Đang lưu…" : "Lưu hồ sơ"}</button>
+          {!saving && !statusSaving && <Link href={detailHref}>Hủy</Link>}</div>
+      </form> : <CustomerProfileView data={data} age={age} formatDate={displayDate}
+        statusSaving={statusSaving} statusError={statusError} onAccountStatusChange={value => void changeAccountStatus(value)} />}
       <section className={`${styles.card} ${styles.history}`}><div className={styles.historyHeading}>
         <div><h2><ShoppingBag size={20} aria-hidden="true" />Lịch sử đơn hàng</h2><p>Tra cứu các đơn hàng của khách hàng này</p></div>
         <button className={styles.historyToggle} type="button" aria-expanded={ordersOpen} aria-controls="customer-order-history" onClick={() => setOrdersOpen(value => !value)}>

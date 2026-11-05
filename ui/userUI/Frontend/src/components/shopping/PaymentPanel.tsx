@@ -153,7 +153,7 @@ export function PaymentPanel({ orderId, orderStatus, paymentDeadline }: { orderI
       </div>
       {orderStatus === "HUY" || deadline.blocked ? (
         <div className={styles.panel}>
-          <p style={{ color: "#c62828", fontWeight: 600, margin: 0 }}>
+          <p style={{ color: "var(--brand-primary-strong)", fontWeight: 600, margin: 0 }}>
             {orderStatus === "HUY" ? "Đơn hàng này đã bị hủy. Không thể thực hiện thanh toán mới." : "Đã hết hạn thanh toán cho đơn hàng này. Vui lòng đặt đơn mới."}
           </p>
         </div>

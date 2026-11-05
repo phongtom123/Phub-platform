@@ -48,6 +48,46 @@ def test_health_is_offline():
         assert client.get("/api/health").json() == {"status": "ok"}
 
 
+@pytest.mark.parametrize("linked,expected", [
+    ({"ma_tk": "TK3", "trang_thai": 2}, {"ma_tk": "TK3", "trang_thai": 2}),
+    ([{"ma_tk": "TK3", "trang_thai": 0}], {"ma_tk": "TK3", "trang_thai": 0}),
+    (None, None), ([], None),
+])
+def test_customer_account_status_is_loaded_with_admin_page(platform_client, linked, expected):
+    client, state, requests = platform_client
+    state["rows"] = [{"ma_kh": "KH3", "ten_kh": "Customer", "linked_account": linked}]
+    state["total"] = 1
+    response = client.get("/api/data/customers")
+    assert response.status_code == 200
+    assert response.json()["customer_accounts"] == {"KH3": expected}
+    assert response.json()["data"] == [{"ma_kh": "KH3", "ten_kh": "Customer"}]
+    assert len(requests) == 1
+    projection = requests[0].url.params["select"]
+    assert "linked_account:TAI_KHOAN(ma_tk,trang_thai)" in projection
+    assert "mat_khau" not in projection
+
+
+@pytest.mark.parametrize("linked", [
+    {"ma_tk": "TK3", "trang_thai": -1}, {"ma_tk": "TK3", "trang_thai": True},
+    [{"ma_tk": "TK3", "trang_thai": 1}, {"ma_tk": "OTHER", "trang_thai": 2}],
+])
+def test_customer_account_status_rejects_ambiguous_or_invalid_data(platform_client, linked):
+    client, state, _ = platform_client
+    state["rows"] = [{"ma_kh": "KH3", "linked_account": linked}]
+    assert client.get("/api/data/customers").status_code == 409
+
+
+def test_customer_account_status_mapping_is_admin_only(platform_client):
+    client, state, requests = platform_client
+    state["actor"] = CUSTOMER
+    state["rows"] = [{"ma_kh": "KH3", "ten_kh": "Customer"}]
+    response = client.get("/api/data/customers")
+    assert response.status_code == 200
+    assert "customer_accounts" not in response.json()
+    assert "linked_account" not in requests[0].url.params["select"]
+    assert requests[0].url.params["ma_kh"] == "eq.KH3"
+
+
 @pytest.mark.parametrize("query,identifier", [("12", 12), ("0012", 12), ("-5", -5), ("2147483647", 2147483647)])
 def test_supplier_search_matches_numeric_id_and_text_fields(platform_client, query, identifier):
     client, state, requests = platform_client
