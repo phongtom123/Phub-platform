@@ -39,11 +39,14 @@ def customer_search(q: str = "", user: User = Depends(current_user), db=Depends(
     term = q.strip()[:100].replace(",", " ").replace("%", "")
     if len(term) < 2: return {"customers": [], "orders": []}
     account_matches = db.table("TAI_KHOAN").select("ma_kh,email").ilike("email", f"%{term}%").limit(50).execute().data
-    account_customer_ids = [row["ma_kh"] for row in account_matches if row.get("ma_kh")]
+    email_by_customer = {row["ma_kh"]: row.get("email") for row in account_matches if row.get("ma_kh")}
+    account_customer_ids = list(email_by_customer)
     customers = db.table("KHACH_HANG").select("ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md").or_(f"sdt.ilike.%{term}%,ma_kh.ilike.%{term}%,ten_kh.ilike.%{term}%").limit(50).execute().data
     if account_customer_ids:
         customers += db.table("KHACH_HANG").select("ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md").in_("ma_kh", account_customer_ids).limit(50).execute().data
         customers = list({row["ma_kh"]: row for row in customers}.values())
+    for customer in customers:
+        customer["email"] = email_by_customer.get(customer["ma_kh"])
     ids = [row["ma_kh"] for row in customers]
     if not ids: return {"customers": [], "orders": []}
     orders = db.table("DON_HANG").select("ma_donhang,ma_kh,ten_nguoi_nhan,trang_thai").in_("ma_kh", ids).in_("trang_thai", ["DA_XUAT_KHO", "HOAN_THANH"]).limit(200).execute().data

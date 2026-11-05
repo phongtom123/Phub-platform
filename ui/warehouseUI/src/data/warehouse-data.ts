@@ -6,7 +6,7 @@ export const moduleNames: Record<ModuleKey, string> = {
 
 export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   inventory: {
-    title: "Tồn kho", description: "Theo dõi số lượng sản phẩm tại tất cả kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Tình trạng", "Khu vực"],
+    title: "Tồn kho", description: "Theo dõi số lượng sản phẩm tại tất cả kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Tình trạng"],
     columns: [{ key: "name", label: "SẢN PHẨM", kind: "product" }, { key: "location", label: "VỊ TRÍ" }, { key: "quantity", label: "TỒN HIỆN TẠI", kind: "strong" }, { key: "status", label: "TÌNH TRẠNG", kind: "status" }],
     rows: [
       { id: "SP-001", name: "NVIDIA GeForce RTX 4070 SUPER", code: "SP-001 · Card đồ họa", location: "A-01-02", quantity: 24, status: "Còn hàng" },
