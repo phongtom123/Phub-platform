@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "@/src/features/receipts/receipts.css";
 
 export const metadata: Metadata = {
   title: "PHUB · Kho vận",

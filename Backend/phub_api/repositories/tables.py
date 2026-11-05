@@ -22,16 +22,8 @@ def scoped_query(name: str, user: User, db, search: str | None = None):
     query = db.table(RESOURCES[name].table).select(selected_columns(name, user), count="exact")
     if user.role == "KHACH_HANG":
         query = query.eq("scope.ma_kh" if name in CUSTOMER_CHILDREN else "ma_kh", user.customer_id)
-    if user.role == "NHAN_VIEN":
-        if name in {"warehouses", "inventory", "receipts"}:
-            query = query.eq("ma_kho", user.warehouse_id)
-        elif name == "receipt-lines":
-            query = query.eq("scope.ma_kho", user.warehouse_id)
-        elif name in {"transfers", "transfer-lines"}:
-            clause = f"ma_kho_xuat.eq.{user.warehouse_id},ma_kho_nhan.eq.{user.warehouse_id}"
-            if name == "transfers" and search:
-                clause = f"and(or({clause}),or({search}))"
-            query = query.or_(clause, reference_table="scope") if name == "transfer-lines" else query.or_(clause)
+    # Warehouse staff can read records from every warehouse. Workflow/write
+    # endpoints retain their separate assigned-warehouse guards.
     if search and not (user.role == "NHAN_VIEN" and name == "transfers"):
         query = query.or_(search)
     return query

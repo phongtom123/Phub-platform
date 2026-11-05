@@ -3,28 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Ban, Check, Pencil, Search, Save, X } from "lucide-react";
 import { Panel, StatusBadge, EmptyState } from "@/src/components/warehouse/ui";
-import { createSupplier, deactivateSupplier, getSuppliers, updateSupplier, type SupplierRecord } from "@/src/models/warehouse-model";
-
-type FormState = { ten_ncc: string; sdt: string; email: string; dia_chi: string };
-const emptyForm: FormState = { ten_ncc: "", sdt: "", email: "", dia_chi: "" };
+import { getSuppliers, type SupplierRecord } from "@/src/models/warehouse-model";
 
 export default function SupplierView() {
   const [rows, setRows] = useState<SupplierRecord[]>([]);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("active");
-  const [form, setForm] = useState<FormState>(emptyForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  async function load() {
-    setLoading(true); setError("");
-    try { const result = await getSuppliers(); setRows(result.data); }
-    catch (err) { setError(err instanceof Error ? err.message : "Không thể tải nhà cung cấp."); }
-    finally { setLoading(false); }
-  }
+  const [query, setQuery] = useState(""); const [status, setStatus] = useState("active");
+  const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+  async function load() { setLoading(true); setError(""); try { const result = await getSuppliers(); setRows(result.data); } catch (err) { setError(err instanceof Error ? err.message : "Không thể tải nhà cung cấp."); } finally { setLoading(false); } }
   useEffect(() => { void load(); }, []);
 
   const filtered = useMemo(() => rows.filter(row => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Building2, Check, LockKeyhole, Save, ShieldCheck, UserRound } from "lucide-react";
+import { Bell, Building2, Check, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
 import { Panel } from "@/src/components/warehouse/ui";
 import { changeMyPassword } from "@/src/lib/warehouse-api";
 

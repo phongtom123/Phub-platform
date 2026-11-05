@@ -56,7 +56,7 @@ Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkou
 
 TAGS = [
     {"name": "Admin · Định giá nhập hàng", "description": "Markup/thuế, preview Decimal và snapshot phiếu; ADMIN sửa, kho chỉ xem."},
-    {"name": "Kho · Nghiệp vụ", "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trong kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu."},
+    {"name": "Kho · Nghiệp vụ", "description": "NHAN_VIEN tra cứu dữ liệu của tất cả kho; thao tác ghi/xử lý vẫn kiểm tra kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu."},
     {"name": "Admin · Vận hành", "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key."},
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
     {"name": "Shared · Xác thực", "description": "Login/token/register/me/logout. JWT qua Bearer hoặc cookie HttpOnly, role lấy từ database."},
@@ -69,7 +69,7 @@ TAGS = [
     {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Voucher của đơn tại quầy được chốt qua nghiệp vụ tạo đơn."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
     {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp."},
-    {"name": "Kho · Phiếu nhập", "description": "CRUD bảng chỉ đọc. ADMIN dùng /api/admin/operations/receipts; NHAN_VIEN dùng /api/warehouse/receipts trong kho được phân công."},
+    {"name": "Kho · Phiếu nhập", "description": "CRUD bảng chỉ đọc. ADMIN dùng /api/admin/operations/receipts; NHAN_VIEN dùng /api/warehouse/receipts để xem tất cả kho."},
     {"name": "Kho · Chuyển kho", "description": "Chỉ tra cứu dữ liệu lịch sử. Chức năng tạo, sửa hoặc xử lý chuyển kho đã ngừng sử dụng."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
     {"name": "Bán hàng · Tài chính", "description": "Hóa đơn, thanh toán chỉ đọc. Không ghi tiền qua CRUD tổng quát."},

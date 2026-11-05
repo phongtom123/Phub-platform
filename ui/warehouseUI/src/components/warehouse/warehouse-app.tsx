@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import WarehouseFrame from "@/src/components/warehouse/warehouse-frame";
-import Dashboard from "@/src/features/dashboard/dashboard";
 import ModuleView from "@/src/features/modules/module-view";
 import FormView from "@/src/features/forms/form-view";
 import AccountSettings from "@/src/features/settings/account-settings";
+import ReceiptList from "@/src/features/receipts/receipt-list";
 import SupplierView from "@/src/features/suppliers/supplier-view";
 import { modules } from "@/src/data/warehouse-data";
 import type { ModuleKey } from "@/src/types/warehouse";

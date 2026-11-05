@@ -33,6 +33,8 @@ async function proxyBackend(request: Request, context: Context): Promise<Respons
     if (cookie) headers.set("Cookie", cookie);
     const origin = request.headers.get("origin");
     if (origin) headers.set("Origin", origin);
+    const idempotencyKey = request.headers.get("Idempotency-Key");
+    if (idempotencyKey) headers.set("Idempotency-Key", idempotencyKey);
     const write = request.method !== "GET" && request.method !== "HEAD";
     const body = write ? await request.text() : undefined;
     if (body && new TextEncoder().encode(body).length > 1_048_576) return Response.json({ detail: "Dữ liệu quá lớn." }, { status: 413 });

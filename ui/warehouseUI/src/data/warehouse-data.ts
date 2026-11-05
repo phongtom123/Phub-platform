@@ -46,7 +46,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   invoices: {
     title: "Hóa đơn", description: "Lập và tra cứu hóa đơn bán hàng theo đơn đã xuất kho.", searchPlaceholder: "Tìm mã hóa đơn hoặc đơn hàng...", addLabel: "Lập hóa đơn", filters: ["Trạng thái"],
     columns: [{ key: "id", label: "MÃ HÓA ĐƠN", kind: "link" }, { key: "order", label: "ĐƠN HÀNG", kind: "strong" }, { key: "buyer", label: "NGƯỜI MUA" }, { key: "employeeCode", label: "MÃ NHÂN VIÊN" }, { key: "total", label: "TỔNG THANH TOÁN" }, { key: "created", label: "NGÀY LẬP" }, { key: "status", label: "TRẠNG THÁI", kind: "status" }],
-    rows: [{ id: "HD-DEMO-001", order: "DH-DEMO-001", buyer: "Khách hàng demo", employeeCode: "NV-DEMO", total: "5.500.000 ₫", created: "—", status: "Hoàn tất" }], note: "Mã nhân viên được lấy từ tài khoản đang đăng nhập và lưu cùng hóa đơn.",
+    rows: [], note: "Mã nhân viên được lấy từ tài khoản đang đăng nhập và lưu cùng hóa đơn.",
   },
   products: {
     title: "Sản phẩm", description: "Tra cứu mã hàng, danh mục và thông tin sản phẩm trong kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Danh mục", "Tình trạng tồn"],
@@ -60,7 +60,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   },
   history: {
     title: "Lịch sử kho", description: "Tra cứu các giao dịch làm thay đổi số lượng tồn kho.", searchPlaceholder: "Tìm mã giao dịch hoặc sản phẩm...", filters: ["Loại giao dịch", "Khoảng ngày"],
-    columns: [{ key: "id", label: "MÃ GIAO DỊCH", kind: "link" }, { key: "type", label: "LOẠI" }, { key: "product", label: "SẢN PHẨM", kind: "strong" }, { key: "quantity", label: "SỐ LƯỢNG" }, { key: "user", label: "NGƯỜI THỰC HIỆN" }, { key: "created", label: "THỜI GIAN" }],
+    columns: [{ key: "id", label: "MÃ GIAO DỊCH", kind: "link" }, { key: "type", label: "LOẠI" }, { key: "product", label: "SẢN PHẨM", kind: "strong" }, { key: "quantity", label: "BIẾN ĐỘNG SỐ LƯỢNG" }, { key: "user", label: "NGƯỜI THỰC HIỆN" }, { key: "created", label: "THỜI GIAN" }],
     rows: [
       { id: "PN-260927-03", type: "Nhập kho", product: "ASUS GeForce RTX 4070", quantity: "8", user: "Trần Đức Phong", created: "27/09/2026 09:42" },
       { id: "XK-260927-08", type: "Xuất đơn", product: "AMD Ryzen 7 7800X3D", quantity: "−2", user: "Trần Đức Phong", created: "27/09/2026 08:22" },
@@ -95,7 +95,6 @@ export const formFields: Partial<Record<ModuleKey, FormFieldDefinition[]>> = {
   ],
   dispatches: [
     { name: "order", label: "Mã đơn hàng", placeholder: "Nhập hoặc tìm mã đơn hàng" },
-    { name: "warehouse", label: "Kho xuất", placeholder: "Kho trung tâm" },
     { name: "items", label: "Sản phẩm và số lượng", placeholder: "Thêm sản phẩm, số lượng cần xuất", wide: true },
     { name: "receiver", label: "Người nhận / đơn vị vận chuyển", placeholder: "Nhập tên người nhận" },
     { name: "note", label: "Ghi chú xuất hàng", placeholder: "Ghi chú nếu có", type: "textarea", wide: true },

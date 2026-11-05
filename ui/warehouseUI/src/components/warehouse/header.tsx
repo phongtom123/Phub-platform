@@ -2,12 +2,15 @@
 
 import { Bell, ChevronDown, CircleHelp } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { moduleNames } from "@/src/data/warehouse-data";
 import type { ModuleKey } from "@/src/types/warehouse";
 import type { WarehouseUser } from "@/src/types/warehouse-auth";
 
 export default function Header({ user }: { user: WarehouseUser }) {
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [unread, setUnread] = useState(true);
   const pathname = usePathname(); const section = pathname.split("/")[1] as ModuleKey | undefined;
   const title = pathname === "/" ? "Tổng quan" : moduleNames[section ?? "dashboard"] ?? "Chi tiết";
-  return <header className="topbar"><div className="breadcrumb">Kho vận <span>/</span> <strong>{title}</strong></div><div className="topbar-spacer"/><button className="top-icon" aria-label="Trợ giúp"><CircleHelp size={17}/></button><button className="top-icon notification" aria-label="Thông báo"><Bell size={17}/><i/></button><div className="top-user"><span className="avatar">{user.name.split(" ").slice(-2).map(part => part[0]).join("")}</span><span className="top-user-name">{user.name}</span><ChevronDown size={14}/></div></header>;
+  return <header className="topbar"><div className="breadcrumb">Kho vận <span>/</span> <strong>{title}</strong></div><div className="topbar-spacer"/><button className="top-icon" aria-label="Trợ giúp"><CircleHelp size={17}/></button><div className="notification-wrap"><button className="top-icon notification" aria-label="Thông báo" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen(value => !value); setUnread(false); }}><Bell size={17}/>{unread && <i/>}</button>{notificationsOpen && <div className="notification-popover" role="dialog" aria-label="Thông báo"><strong>Thông báo</strong><p>Chưa có thông báo mới.</p><button className="text-link" type="button" onClick={() => setNotificationsOpen(false)}>Đóng</button></div>}</div><div className="top-user"><span className="avatar">{user.name.split(" ").slice(-2).map(part => part[0]).join("")}</span><span className="top-user-name">{user.name}</span><ChevronDown size={14}/></div></header>;
 }
