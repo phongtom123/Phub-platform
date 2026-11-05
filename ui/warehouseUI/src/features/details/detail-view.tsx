@@ -21,7 +21,7 @@ export default function DetailView({ section, id, edit = false }: { section: str
   useEffect(() => {
     if (!definition || !["inventory", "products", "receipts", "transfers", "dispatches", "pending", "history"].includes(section)) return;
     let cancelled = false; setLoading(true); setApiError("");
-    const load = section === "inventory" ? getInventory().then(result => result.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, location: item.location ?? "—", quantity: item.quantity, status: item.status })))
+    const load = section === "inventory" ? getInventory().then(result => result.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, quantity: item.quantity, status: item.status })))
       : section === "products" ? getProducts() : section === "receipts" ? getReceipts() : section === "transfers" ? getTransfers() : section === "dispatches" ? getDispatches() : section === "pending" ? getPending() : getHistory();
     load.then(rows => { if (!cancelled) setApiRow(rows.find(row => row.id === id) ?? null); }).catch(error => { if (!cancelled) setApiError(error instanceof Error ? error.message : "Không thể tải chi tiết."); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

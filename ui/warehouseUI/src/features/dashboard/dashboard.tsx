@@ -19,7 +19,7 @@ export default function Dashboard() {
     let cancelled = false;
     Promise.all([getInventory(), getReceipts(), getTransfers(), getDispatches()]).then(([inventoryResult, receipts, transfers, dispatches]) => {
       if (cancelled) return;
-      const rows = inventoryResult.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, location: item.location ?? "—", quantity: item.quantity, status: item.status }));
+      const rows = inventoryResult.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, quantity: item.quantity, status: item.status }));
       const pendingReceipts = receipts.filter(item => ["Nháp", "Chờ xác nhận"].includes(String(item.status))).length;
       const pendingTransfers = transfers.filter(item => ["Nháp", "Đang chuyển"].includes(String(item.status))).length;
       const pendingDispatches = dispatches.filter(item => ["Chờ xử lý", "Đã xác nhận", "Đang soạn"].includes(String(item.status))).length;
@@ -50,5 +50,5 @@ export default function Dashboard() {
   </>;
 }
 
-function InventoryTable({ rows }: { rows: DataRow[] }) { return <div className="table-wrap"><table><thead><tr><th>SẢN PHẨM</th><th>VỊ TRÍ</th><th>TỒN HIỆN TẠI</th><th>TÌNH TRẠNG</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><span className="product-cell"><span className="product-thumb"><Package size={16}/></span><span><strong>{row.name}</strong><small>{row.code}</small></span></span></td><td>{row.location}</td><td className="strong-value">{row.quantity}</td><td><StatusBadge value={row.status}/></td></tr>)}</tbody></table></div>; }
+function InventoryTable({ rows }: { rows: DataRow[] }) { return <div className="table-wrap"><table><thead><tr><th>SẢN PHẨM</th><th>TỒN HIỆN TẠI</th><th>TÌNH TRẠNG</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><span className="product-cell"><span className="product-thumb"><Package size={16}/></span><span><strong>{row.name}</strong><small>{row.code}</small></span></span></td><td className="strong-value">{row.quantity}</td><td><StatusBadge value={row.status}/></td></tr>)}</tbody></table></div>; }
 function Activity({ icon, title, detail, code, time }: { icon: React.ReactNode; title: string; detail: string; code: string; time: string }) { return <div className="activity-item"><span className="activity-icon">{icon}</span><div className="activity-copy"><strong>{title}</strong><span>{detail}</span><small>{code}</small></div><time>{time}</time></div>; }

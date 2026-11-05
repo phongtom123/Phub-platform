@@ -10,7 +10,7 @@ export async function loadSectionRows(section: WarehouseSection): Promise<DataRo
   switch (section) {
     case "inventory": {
       const result = await getInventory();
-      return result.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, location: item.location ?? "—", quantity: item.quantity, status: item.status }));
+      return result.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, quantity: item.quantity, status: item.status }));
     }
     case "products": return getProducts();
     case "receipts": return getReceipts();

@@ -7,13 +7,13 @@ export const moduleNames: Record<ModuleKey, string> = {
 export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   inventory: {
     title: "Tồn kho", description: "Theo dõi số lượng sản phẩm tại tất cả kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Tình trạng"],
-    columns: [{ key: "name", label: "SẢN PHẨM", kind: "product" }, { key: "location", label: "VỊ TRÍ" }, { key: "quantity", label: "TỒN HIỆN TẠI", kind: "strong" }, { key: "status", label: "TÌNH TRẠNG", kind: "status" }],
+    columns: [{ key: "name", label: "SẢN PHẨM", kind: "product" }, { key: "quantity", label: "TỒN HIỆN TẠI", kind: "strong" }, { key: "status", label: "TÌNH TRẠNG", kind: "status" }],
     rows: [
-      { id: "SP-001", name: "NVIDIA GeForce RTX 4070 SUPER", code: "SP-001 · Card đồ họa", location: "A-01-02", quantity: 24, status: "Còn hàng" },
-      { id: "SP-002", name: "AMD Ryzen 7 7800X3D", code: "SP-002 · Bộ vi xử lý", location: "A-02-06", quantity: 18, status: "Còn hàng" },
-      { id: "SP-003", name: "Corsair Vengeance RGB 32GB", code: "SP-003 · RAM DDR5", location: "A-02-14", quantity: 5, status: "Còn hàng" },
-      { id: "SP-005", name: "PHUB Creator Pro X1", code: "SP-005 · PC nguyên bộ", location: "—", quantity: 0, status: "Hết hàng" },
-      { id: "SP-028", name: "Samsung 990 PRO 2TB", code: "SP-028 · SSD NVMe", location: "C-03-02", quantity: 4, status: "Còn hàng" },
+      { id: "SP-001", name: "NVIDIA GeForce RTX 4070 SUPER", code: "SP-001 · Card đồ họa", quantity: 24, status: "Còn hàng" },
+      { id: "SP-002", name: "AMD Ryzen 7 7800X3D", code: "SP-002 · Bộ vi xử lý", quantity: 18, status: "Còn hàng" },
+      { id: "SP-003", name: "Corsair Vengeance RGB 32GB", code: "SP-003 · RAM DDR5", quantity: 5, status: "Còn hàng" },
+      { id: "SP-005", name: "PHUB Creator Pro X1", code: "SP-005 · PC nguyên bộ", quantity: 0, status: "Hết hàng" },
+      { id: "SP-028", name: "Samsung 990 PRO 2TB", code: "SP-028 · SSD NVMe", quantity: 4, status: "Còn hàng" },
     ], note: "Tồn kho thay đổi qua phiếu nhập, xuất đơn hoặc chuyển kho.",
   },
   receipts: {
