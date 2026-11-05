@@ -60,6 +60,8 @@ def customer_search(q: str = "", user: User = Depends(current_user), db=Depends(
     customers = db.table("KHACH_HANG").select(
         "ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md"
     ).in_("ma_kh", customer_ids).limit(50).execute().data
+    email_by_customer = {row.get("ma_kh"): row.get("email") for row in accounts}
+    customers = [{**row, "email": email_by_customer.get(row.get("ma_kh"))} for row in customers]
     ids = [row["ma_kh"] for row in customers]
     orders = db.table("DON_HANG").select(
         "ma_donhang,ma_kh,ten_nguoi_nhan,trang_thai"
