@@ -66,7 +66,15 @@ def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabas
     _require_employee(user)
     warehouses = db.table('KHO').select('ma_kho,ten_kho').eq('trang_thai', 1).order('ma_kho').limit(500).execute().data
     suppliers = db.table('NHA_CUNG_CAP').select('ma_ncc,ten_ncc').eq('trang_thai', 1).order('ma_ncc').limit(500).execute().data
-    products = db.table('SAN_PHAM').select('sku,ten_sp').eq('trang_thai', 1).order('sku').limit(1000).execute().data
+    products = db.table('SAN_PHAM').select('sku,ten_sp,don_vi').eq('trang_thai', 1).order('sku').limit(1000).execute().data
+    inventory_query = db.table('TON_KHO').select('ma_kho,sku,so_luong_ton')
+    if user.role == 'NHAN_VIEN' and user.warehouse_id is not None:
+        inventory_query = inventory_query.eq('ma_kho', user.warehouse_id)
+    inventory = inventory_query.limit(5000).execute().data
+    stock = {}
+    for row in inventory:
+        stock[row['sku']] = stock.get(row['sku'], 0) + int(row.get('so_luong_ton') or 0)
+    products = [{**product, 'so_luong_ton': stock.get(product['sku'], 0)} for product in products]
     return {'warehouses': warehouses, 'suppliers': suppliers, 'products': products}
 
 

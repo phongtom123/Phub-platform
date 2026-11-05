@@ -11,7 +11,7 @@ export type TransferLineApiItem = { ma_phieu_chuyen: number; sku: string; so_luo
 type Page<T> = { data: T[]; total: number; page: number; page_size: number };
 export type WarehouseOption = { ma_kho: number; ten_kho: string };
 export type SupplierOption = { ma_ncc: number; ten_ncc: string };
-export type ProductOption = { sku: string; ten_sp: string };
+export type ProductOption = { sku: string; ten_sp: string; don_vi?: string | null; so_luong_ton?: number };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
