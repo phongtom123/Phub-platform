@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { authPageHref } from "@/lib/auth/redirect";
 import { AUTH_SESSION_EVENT, getSession, type SessionUser } from "../../../../../shared/auth-client";
+import { SupportOrderPicker } from "./SupportOrderPicker";
 import styles from "./contact.module.css";
 
 export type TicketStatus = "MOI" | "DANG_XU_LY" | "DA_GIAI_QUYET" | "DA_DONG";
@@ -93,11 +94,13 @@ function ContactWorkspaceInner({
   initialProductName,
   initialOrderId,
   currentPath,
+  sidebar,
 }: {
   initialProductId: string;
   initialProductName: string;
   initialOrderId: string;
   currentPath: string;
+  sidebar?: ReactNode;
 }) {
   const loginHref = authPageHref("/auth/login", currentPath, "/");
   const registerHref = authPageHref("/auth/register", currentPath, "/");
@@ -390,6 +393,7 @@ function ContactWorkspaceInner({
         )}
       </div>
 
+      <div className={styles.layout}>
       <form className={styles.form} onSubmit={handleSubmit}>
         <label>
           Tiêu đề yêu cầu <em>*</em>
@@ -404,6 +408,15 @@ function ContactWorkspaceInner({
           />
         </label>
 
+        {orderId.trim() && <div className={styles.selectedSupportOrder} role="status">
+          <span>Phiếu liên quan đến đơn <strong>{orderId.trim()}</strong></span>
+          <button type="button" disabled={submitting} onClick={() => {
+            setSubject(current => current === `Hỗ trợ đơn hàng ${orderId.trim()}`.slice(0, 200) ? "Yêu cầu hỗ trợ" : current);
+            setOrderId("");
+          }}>Bỏ liên kết</button>
+        </div>}
+        <details className={styles.relatedDetails} open={initialProductId ? true : undefined}>
+          <summary>Liên kết sản phẩm hoặc nhập mã thủ công (tùy chọn)</summary>
         <div className={styles.twoColumns}>
           <label>
             Mã sản phẩm liên quan (tùy chọn)
@@ -428,6 +441,7 @@ function ContactWorkspaceInner({
             />
           </label>
         </div>
+        </details>
 
         <label>
           Nội dung chi tiết <em>*</em>
@@ -458,6 +472,18 @@ function ContactWorkspaceInner({
           )}
         </div>
       </form>
+      <aside className={styles.supportSidebar}>
+        <SupportOrderPicker key={account.account_id} accountId={account.account_id} selectedOrderId={orderId} disabled={submitting}
+          onSelect={order => {
+            setOrderId(order.id);
+            setSubject(current => !current.trim() || current === `Hỗ trợ đơn hàng ${orderId}`.slice(0, 200)
+              ? `Hỗ trợ đơn hàng ${order.id}`.slice(0, 200) : current);
+            setSubmitError("");
+            setSubmitSuccess("");
+          }} />
+        {sidebar}
+      </aside>
+      </div>
 
       <section className={styles.historySection} aria-label="Lịch sử yêu cầu hỗ trợ">
         <div className={styles.historyHeader}>
@@ -713,7 +739,7 @@ function ContactWorkspaceInner({
   );
 }
 
-function ContactWorkspace() {
+function ContactWorkspace({ sidebar }: { sidebar?: ReactNode }) {
   const searchParams = useSearchParams();
   const initialProductId = searchParams.get("product_id")?.trim() ?? "";
   const initialProductName = searchParams.get("product_name")?.trim() ?? "";
@@ -728,11 +754,12 @@ function ContactWorkspace() {
       initialProductName={initialProductName}
       initialOrderId={initialOrderId}
       currentPath={currentPath}
+      sidebar={sidebar}
     />
   );
 }
 
-export function ContactForm() {
+export function ContactForm({ sidebar }: { sidebar?: ReactNode }) {
   return (
     <Suspense
       fallback={
@@ -741,7 +768,7 @@ export function ContactForm() {
         </div>
       }
     >
-      <ContactWorkspace />
+      <ContactWorkspace sidebar={sidebar} />
     </Suspense>
   );
 }

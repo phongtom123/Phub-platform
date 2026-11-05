@@ -1,13 +1,13 @@
 .actions { display: flex; align-items: stretch; gap: 8px; width: 100%; min-height: 42px; }
-.actions .cart { flex: 0 0 42px; width: 42px; min-height: 42px; padding: 0; border: 1px solid #ed1b24; border-radius: 5px; color: #ed1b24; background: #fff; box-shadow: none; }
+.actions .cart { flex: 0 0 42px; width: 42px; min-height: 42px; padding: 0; border: 1px solid var(--brand-primary); border-radius: 5px; color: var(--brand-primary); background: #fff; box-shadow: none; }
 .actions .cart::after { display: none; }
 .cart > span:first-child { width: 30px; height: 30px; flex-basis: 30px; border: 0; border-radius: 0; background: transparent; }
-.buy { display: inline-flex; flex: 1; min-width: 0; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; border: 1px solid #ed1b24; border-radius: 5px; color: #fff; background: #ed1b24; font: 600 12px/1.4 var(--font-poppins), Arial, sans-serif; text-transform: uppercase; cursor: pointer; }
-.buy:hover:not(:disabled) { background: #d5151e; border-color: #d5151e; }
+.buy { display: inline-flex; flex: 1; min-width: 0; align-items: center; justify-content: center; gap: 6px; padding: 9px 6px; border: 1px solid var(--brand-primary); border-radius: 5px; color: #fff; background: var(--brand-primary); font: 600 12px/1.4 var(--font-poppins), Arial, sans-serif; text-transform: uppercase; cursor: pointer; }
+.buy:hover:not(:disabled) { background: var(--brand-primary-hover); border-color: var(--brand-primary-hover); }
 .buy:disabled { opacity: .5; cursor: wait; }
 .buy svg { flex-shrink: 0; }
 .unavailable { display: flex; width: 100%; min-height: 42px; align-items: center; justify-content: center; padding: 8px; border: 1px solid #e2e5e9; border-radius: 5px; color: #697383; background: #f3f4f6; font-size: 13px; font-weight: 600; }
-.error { display: flex; width: 100%; min-height: 42px; gap: 6px; align-items: center; flex-wrap: wrap; color: #8e3a30; font-size: 11px; }
+.error { display: flex; width: 100%; min-height: 42px; gap: 6px; align-items: center; flex-wrap: wrap; color: var(--brand-primary-strong); font-size: 11px; }
 .error button { border: 1px solid #dbe1e9; border-radius: 5px; padding: 5px 8px; background: #fff; color: #0156ff; font-size: inherit; }
 @media (max-width: 600px) {
   .actions { gap: 6px; min-height: 38px; }

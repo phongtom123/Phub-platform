@@ -1,19 +1,19 @@
 .menu { min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 22px 24px 28px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; scrollbar-width: thin; }
 .heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid #eef0f3; }
 .heading h2 { margin: 0; color: #20242c; font-size: 16px; font-weight: 650; }
-.heading > a { flex-shrink: 0; color: #d71922; font-size: 12px; }
+.heading > a { flex-shrink: 0; color: var(--brand-primary); font-size: 12px; }
 .columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .column { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .group h3 { margin: 0 0 10px; color: #50545c; font-size: 13px; font-weight: 500; }
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .tiles a { display: flex; align-items: center; gap: 8px; height: 50px; padding: 7px 9px; border: 1px solid #e3e5e9; border-radius: 6px; color: #353943; font-size: 12px; line-height: 1.45; transition: border-color 120ms, background 120ms; }
-.tiles a:hover, .tiles a:focus-visible { border-color: #ed1b24; background: #fff6f6; color: #c81720; }
+.tiles a:hover, .tiles a:focus-visible { border-color: var(--brand-primary); background: var(--brand-primary-soft); color: var(--brand-primary); }
 .tiles a > span:last-child { display: -webkit-box; flex: 1; min-width: 0; overflow: hidden; overflow-wrap: anywhere; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .visual { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 34px; color: #59708c; }
 .visual img { width: 32px; height: 34px; object-fit: contain; }
 .icon { flex-shrink: 0; color: #5c6b80; }
 .status { margin: 18px 0 0; color: #6b7280; font-size: 12px; line-height: 1.7; }
-.status button { margin-left: 8px; padding: 5px 12px; border: 1px solid #d8dee7; border-radius: 6px; background: white; color: #c81720; }
+.status button { margin-left: 8px; padding: 5px 12px; border: 1px solid #d8dee7; border-radius: 6px; background: white; color: var(--brand-primary); }
 @media (max-width: 1279px) {
   .menu { padding: 20px; }
   .columns { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }

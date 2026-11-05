@@ -1,5 +1,5 @@
 .summary { margin: 20px 0 0; color: #405267; font-family: var(--font-poppins), Arial, sans-serif; font-size: 16px; font-weight: 500; line-height: 1.6; }
 .summary strong { color: #000; font-size: 19px; font-weight: 700; }
-.summary[data-state="inactive"] { color: #b42318; }
+.summary[data-state="inactive"] { color: var(--brand-primary-strong); }
 .summary button { padding: 0; border: 0; background: transparent; color: #0156ff; text-decoration: underline; text-underline-offset: 3px; font: inherit; cursor: pointer; }
 .summary button:focus-visible { outline: 2px solid #0156ff; outline-offset: 3px; }

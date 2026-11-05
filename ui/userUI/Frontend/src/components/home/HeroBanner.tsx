@@ -34,12 +34,12 @@ export function HeroBanner() {
   if (error || banners.length > 0 && !banner) return <section className={styles.error} aria-label="Banner quảng cáo"><p>{error || "Chưa tải được hình ảnh quảng cáo."}</p><button type="button" onClick={retry}>Thử lại</button></section>;
   if (!banner) return null;
 
-  return <section className={styles.hero} style={{ aspectRatio: `${banner.width || 1398} / ${(banner.height || 328) * .7}` }}
+  return <section className={styles.hero}
     aria-label="Banner quảng cáo" aria-roledescription="trình chiếu">
     <h1 className={styles.srOnly}>PHUB Store — PC nguyên bộ và linh kiện máy tính</h1>
     <Link className={styles.link} href="/main/product" aria-label={`Xem sản phẩm: ${banner.title}`}>
       <Image key={banner.image_url} src={banner.image_url} alt={banner.alt_text || banner.title}
-        width={banner.width ?? 1398} height={banner.height ?? 328}
+        fill
         sizes="(max-width: 760px) 100vw, 1398px" unoptimized loading="eager"
         className={styles.image} onError={() => setFailed(current => [...current, banner.image_url])} />
     </Link>

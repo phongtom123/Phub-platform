@@ -7,4 +7,4 @@
 .priceInputs label { display: grid; gap: 6px; color: #66758b; font-size: 12px; min-width: 0; }
 .priceInputs > span { align-self: end; padding-bottom: 12px; color: #8894a6; }
 .priceGroup small { display: block; margin-top: 8px; font-size: 11px; color: #66758b; }
-.error { color: #b42318; font-size: 12px; line-height: 1.6; margin: 8px 0 0; }
+.error { color: var(--brand-primary-strong); font-size: 12px; line-height: 1.6; margin: 8px 0 0; }

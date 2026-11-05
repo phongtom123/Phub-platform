@@ -115,7 +115,7 @@ function LoginForm() {
           Phiên đăng nhập được bảo vệ bằng cookie HttpOnly và tự hết hạn sau 8 giờ.
         </p>
 
-        {error && <p role="alert" className="mt-5 text-red-700">{error}</p>}
+        {error && <p role="alert" className="mt-5 text-[var(--brand-primary-strong)]">{error}</p>}
         <button
           type="submit"
           disabled={loading}
