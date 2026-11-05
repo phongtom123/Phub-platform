@@ -68,14 +68,14 @@ def dispatches(response: Response, user: User = Depends(current_user), db=Depend
             'items': '—', 'created': row.get('ngay_tao'),
             'status': {'NHAP': 'Nháp', 'DA_XAC_NHAN': 'Đã xác nhận', 'DA_XUAT': 'Đã xuất', 'HUY': 'Đã hủy'}.get(row.get('trang_thai'), row.get('trang_thai', '—')),
             'receiver': '—',
-        } for row in documents if user.role == 'ADMIN' or row['ma_kho_xuat'] == user.warehouse_id]
+        } for row in documents]
     orders = db.table('DON_HANG').select(
         'ma_donhang,thoi_gian_dat,ten_nguoi_nhan,trang_thai,ma_nhan_vien'
     ).in_('trang_thai', ['MOI', 'XAC_NHAN', 'DANG_CHUAN_BI', 'DA_XUAT_KHO', 'HOAN_THANH']).order('thoi_gian_dat', desc=True).limit(500).execute().data
     status_map = {'MOI': 'Chờ xử lý', 'XAC_NHAN': 'Đã xác nhận', 'DANG_CHUAN_BI': 'Đang soạn', 'DA_XUAT_KHO': 'Đã xuất', 'HOAN_THANH': 'Hoàn tất'}
     return [{
         'id': f"PX-{order['ma_donhang']}", 'recordId': order['ma_donhang'], 'order': order['ma_donhang'],
-        'warehouse': f'Kho #{user.warehouse_id}', 'employeeCode': order.get('ma_nhan_vien') or '—',
+        'warehouse': 'Tất cả kho', 'employeeCode': order.get('ma_nhan_vien') or '—',
         'items': '—', 'created': order.get('thoi_gian_dat'), 'status': status_map.get(order.get('trang_thai'), order.get('trang_thai', '—')),
         'receiver': order.get('ten_nguoi_nhan') or '—',
     } for order in orders]
@@ -157,7 +157,7 @@ def dispatch_order(order_id: str, user: User = Depends(current_user), db=Depends
         raise HTTPException(409, 'Không thể xuất kho theo đơn hàng.') from exc
 
 
-@router.get('/receipts', response_model=WarehouseReceiptPage, responses=READ_ERRORS, summary='Danh sách phiếu nhập trong kho được phân công')
+@router.get('/receipts', response_model=WarehouseReceiptPage, responses=READ_ERRORS, summary='Danh sách phiếu nhập của tất cả kho')
 def receipts(response: Response, service: Service, q: str = Query('', max_length=100),
              status: Literal['NHAP', 'DA_NHAP', 'HUY'] | None = None,
              page: int = Query(1, ge=1, le=10000), page_size: int = Query(20, ge=1, le=100)):
@@ -199,7 +199,7 @@ async def cancel_receipt(receipt_id: ReceiptId, body: ReceiptVersion, request: R
     return await write(request, response, service, 'cancel', operation_key, receipt_id, body)
 
 
-@router.get('/history', response_model=WarehouseHistoryPage, responses=READ_ERRORS, summary='Lịch sử biến động tồn trong kho được phân công')
+@router.get('/history', response_model=WarehouseHistoryPage, responses=READ_ERRORS, summary='Lịch sử biến động tồn của tất cả kho')
 def history(response: Response, service: Service, q: str = Query('', max_length=100),
             page: int = Query(1, ge=1, le=10000), page_size: int = Query(20, ge=1, le=100),
             start: date | None = None, end: date | None = None):

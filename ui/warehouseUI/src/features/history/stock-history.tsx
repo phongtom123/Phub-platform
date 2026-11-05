@@ -22,7 +22,7 @@ export default function StockHistory() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [search, start, end, page, version]);
-  return <section className="warehouse-workspace"><div className="page-heading"><div><h1>Lịch sử kho</h1><p>Biến động tồn thực tế tại kho được phân công. Thời gian hiển thị theo giờ Việt Nam.</p></div></div>
+  return <section className="warehouse-workspace"><div className="page-heading"><div><h1>Lịch sử kho</h1><p>Biến động tồn thực tế tại tất cả kho. Thời gian hiển thị theo giờ Việt Nam.</p></div></div>
     <form className="warehouse-toolbar" onSubmit={event => { event.preventDefault(); setSearch(query.trim()); setPage(1); }}>
       <input aria-label="Tìm lịch sử kho" placeholder="Tìm SKU, tên sản phẩm hoặc mã tham chiếu…" value={query} onChange={event => setQuery(event.target.value)} />
       <label>Từ ngày<input type="date" value={start} max={end || undefined} onChange={event => { setStart(event.target.value); setPage(1); }} /></label><label>Đến ngày<input type="date" value={end} min={start || undefined} onChange={event => { setEnd(event.target.value); setPage(1); }} /></label>

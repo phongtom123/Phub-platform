@@ -240,7 +240,7 @@ export async function getHistory() {
   const labels: Record<string, string> = { "receipts:confirm": "Nhập kho", "orders:dispatch": "Xuất đơn hàng", "transfers:dispatch": "Xuất chuyển kho", "transfers:receive": "Nhận chuyển kho", "inventory:adjust": "Điều chỉnh tồn" };
   return result.data.map(item => {
     const change = item.after_quantity - item.before_quantity;
-    return { id: item.reference ? `${item.reason}-${item.reference}` : `LS-${item.id}`, type: labels[item.reason] ?? item.reason, product: item.product_name ?? item.sku, quantity: change > 0 ? `+${change}` : String(change), user: item.actor_name ?? item.actor ?? "—", created: formatDate(item.created_at) };
+    return { id: `LS-${item.id}`, reference: item.reference ?? "—", type: labels[item.reason] ?? item.reason, product: item.product_name ?? item.sku, quantity: change > 0 ? `+${change}` : String(change), user: item.actor_name ?? item.actor ?? "—", created: formatDate(item.created_at) };
   });
 }
 

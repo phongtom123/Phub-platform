@@ -72,7 +72,7 @@ export default function AccountSettings({ section }: { section: "account" | "set
         </div>}
       </Panel>
       <Panel title="Quyền và phân công" subtitle="Thông tin vai trò hiện tại">
-        <div className="access-list"><div><ShieldCheck size={17}/><span><small>VAI TRÒ</small><strong>NHAN_VIEN_KHO · Nhân viên kho</strong></span></div><div><Building2 size={17}/><span><small>PHẠM VI KHO</small><strong>Kho trung tâm</strong></span></div><div><UserRound size={17}/><span><small>CHI NHÁNH</small><strong>Trung tâm phân phối PHUB</strong></span></div></div>
+        <div className="access-list"><div><ShieldCheck size={17}/><span><small>VAI TRÒ</small><strong>NHAN_VIEN_KHO · Nhân viên kho</strong></span></div><div><Building2 size={17}/><span><small>PHẠM VI XEM</small><strong>Tất cả kho · Chỉ đọc</strong></span></div><div><UserRound size={17}/><span><small>CHI NHÁNH</small><strong>Trung tâm phân phối PHUB</strong></span></div></div>
         <div className="module-note"><span>i</span>Quyền truy cập do quản trị viên cấp. Liên hệ quản trị viên nếu cần thay đổi vai trò hoặc kho được phân công.</div>
       </Panel>
       <Panel title="Bảo mật tài khoản" subtitle="Cài đặt bảo vệ tài khoản">
