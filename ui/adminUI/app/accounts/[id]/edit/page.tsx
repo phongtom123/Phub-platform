@@ -1,6 +1,7 @@
-import AdminApp from "@/src/components/admin/admin-app";
+import { redirect } from "next/navigation";
+import { accountHref } from "@/src/features/accounts/types";
 
 export default async function EditAccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <AdminApp accountsPage={{ mode: "edit", id }} />;
+  redirect(accountHref(id, true));
 }

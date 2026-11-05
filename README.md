@@ -2,6 +2,9 @@
 
 Ba UI Next.js, một backend FastAPI Python và Supabase PostgreSQL. Chạy local bằng npm/venv/uvicorn, không cần container.
 
+Logic mua hàng đã chốt và hướng dẫn tiếp tục cho AI:
+[giỏ hàng, gom kho, đơn hàng, hóa đơn và hết hàng](docs/USER-COMMERCE-LOGIC.md).
+
 ```text
 Browser → Next.js /api/backend/* → FastAPI :8000 → Supabase
 ```
@@ -10,20 +13,20 @@ Browser → Next.js /api/backend/* → FastAPI :8000 → Supabase
 
 ```text
 Phub-platform/
-├── database/
-│   ├── schema.dbml                  # 19 bảng, không có chi nhánh
-│   └── migrations/001_initial_schema.sql
 ├── Backend/
-│   ├── app/
-│   │   ├── main.py                  # App, CORS, health, routers
-│   │   ├── config.py / supabase.py   # Cấu hình server và client database
-│   │   ├── auth.py                  # Đăng nhập/cookie, role, scope
-│   │   ├── admin_accounts/          # Quản lý tài khoản admin và tự đổi mật khẩu
-│   │   ├── resources.py             # Allowlist bảng và validation models
-│   │   ├── tables.py                # Table APIs
-│   │   ├── errors.py                # Phản hồi lỗi an toàn
-│   │   └── catalog/                 # Catalog công khai
-│   ├── scripts/hash_password.py     # Tạo hash tài khoản đầu tiên
+│   ├── schema.dbml                  # 22 bảng, gồm media dùng chung, không có chi nhánh
+│   ├── migrations/001_initial_schema.sql
+│   ├── phub_api/
+│   │   ├── main.py
+│   │   ├── config/
+│   │   ├── controllers/             # Endpoint + HTTP handler
+│   │   ├── dependencies/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── repositories/            # PostgREST, Storage và SQL RPC
+│   │   ├── schemas/
+│   │   └── services/                # Quy tắc nghiệp vụ
+│   ├── scripts/                     # Kiểm tra API và xuất OpenAPI
 │   ├── tests/
 │   ├── .env.example
 │   └── README.md                    # API, quyền, hướng dẫn database
@@ -47,14 +50,24 @@ Phub-platform/
 
 Các UI giữ dependencies riêng để tránh xung đột Next.js/React. Không chạy `npm install` tại root.
 
+Backend thống nhất **Controller → Service → Repository → Supabase**. Endpoint
+và handler nằm cùng controller; service không truy vấn database trực tiếp.
+Xem [kiến trúc và quy tắc phát triển](Backend/ARCHITECTURE.md). Refactor giữ
+nguyên API/OpenAPI, entrypoint và UI; không yêu cầu migration DB mới.
+
 Phần tài khoản admin đã nối API/Supabase, không dùng dữ liệu mẫu. Hướng dẫn
-và hợp đồng: [Admin UI](ui/adminUI/README.md), [API tài khoản](Backend/app/admin_accounts/README.md).
+và hợp đồng: [Admin UI](ui/adminUI/README.md), [API tài khoản](Backend/docs/modules/admin-accounts.md).
 Không còn bản ghi/số liệu mẫu trong UI. Màn hình đã tích hợp lấy dữ liệu qua API;
 chức năng chưa có API hiển thị trạng thái chưa khả dụng. Điều này không đồng nghĩa
 toàn bộ nghiệp vụ quản trị đã hoàn thành. Fixtures trong tests và ví dụ Swagger
 chỉ phục vụ kiểm thử/tài liệu, không được dùng làm dữ liệu hiển thị thay thế.
 
 ## Chuẩn bị
+
+Triển khai Render: xem [cấu hình hai service](RENDER.md) và [render.yaml](render.yaml).
+Danh mục catalog dùng hai cấp: `LOAI_SP` là danh mục cha, `LOAI_SP_CON` là danh mục con.
+Mỗi sản phẩm phải thuộc một danh mục con của đúng danh mục cha. Migration cho
+database hiện có nằm tại `Backend/migrations/20261015032210_add_product_subcategories.sql`.
 
 - Node.js 20.9+ (khuyến nghị Node.js 22), npm, Python 3.11+.
 - Supabase Project URL và một **secret key mới chỉ dùng phía server**.
@@ -101,7 +114,7 @@ Các lệnh dưới đây bắt đầu từ thư mục repository. Dùng `npm.cm
 cd Backend
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+.venv\Scripts\python.exe -m uvicorn phub_api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 **Terminal 2 — Admin**
@@ -135,17 +148,28 @@ npm.cmd run dev
 | Nhân viên kho | http://localhost:3002 |
 | API / Swagger | http://localhost:8000/docs |
 
-Ba UI dùng cùng hostname `localhost` để chia sẻ cookie đăng nhập. Tài khoản ADMIN vào admin, THU_KHO vào kho, KHACH_HANG vào storefront, kể cả khi đăng nhập nhầm cổng. Role do database quyết định, không lấy từ query string/localStorage. Không còn tài khoản demo `password123`.
+Trang admin là cổng đăng nhập chung cho nhân sự: `ADMIN` vào admin, `NHAN_VIEN` vào kho được phân công. Role do database quyết định, không lấy từ query string/localStorage. Không còn tài khoản demo `password123`.
+
+Admin và kho có thể chạy trên hai domain độc lập. Admin gửi mã chuyển phiên dùng một lần (hết hạn sau 60 giây) bằng POST đến `/auth/complete` của kho; kho đổi mã qua backend rồi đặt cookie HttpOnly riêng. Không truyền JWT/mật khẩu qua URL. Khi đăng xuất ở kho, cookie của cả hai cổng được xóa qua lần lượt hai domain.
+
+Để triển khai luồng đăng nhập chung:
+
+1. Chạy nội dung [migration staff_portal_handoff](Backend/migrations/20261029155128_staff_portal_handoff.sql) trong Supabase SQL Editor. Migration chỉ thêm nơi lưu mã chuyển phiên tạm thời và hai RPC; không đổi tài khoản hoặc dữ liệu nghiệp vụ.
+2. Deploy backend có hai endpoint `POST /api/auth/handoff` và `POST /api/auth/handoff/exchange`, sau đó deploy cả admin và kho.
+3. Hai UI phải dùng cùng `PHUB_API_BASE_URL`. Admin đặt `NEXT_PUBLIC_WAREHOUSE_URL=https://phub-warehouse.onrender.com`; kho đặt `NEXT_PUBLIC_ADMIN_URL=https://phub-platform-admin.onrender.com`. Các biến `NEXT_PUBLIC_*` cần được đặt trước khi build UI.
+4. `FRONTEND_ORIGINS` của backend phải có chính xác cả hai origin trên (không thêm đường dẫn hoặc dấu `/` cuối); production dùng `COOKIE_SECURE=true`. Giữ lại các origin khách/local đang cần dùng. Không đặt cookie domain chung cho `onrender.com`.
+
+Local dùng URL admin `http://localhost:3000`, kho `http://localhost:3002` và cùng backend. Để kiểm tra riêng cookie của hai host, có thể dùng `localhost` cho admin và `127.0.0.1` cho kho; khi đó cập nhật URL cổng và thêm cả hai origin tương ứng vào `FRONTEND_ORIGINS`.
 
 ## Những phần đã nối backend
 
-- Đăng nhập, phiên cookie HttpOnly, kiểm tra role/trạng thái/kho và đăng xuất.
-- API đọc/phân trang/tìm kiếm cho 19 bảng, kiểm tra scope theo role.
+- Đăng nhập, đăng ký khách hàng, phiên cookie HttpOnly, kiểm tra role/trạng thái/kho và đăng xuất.
+- API dữ liệu chung đọc/phân trang/tìm kiếm cho 20 tài nguyên; media và hỗ trợ khách hàng dùng endpoint chuyên biệt, tất cả đều kiểm tra scope theo role.
 - Tạo/sửa 9 bảng dữ liệu nền: kho, nhân viên, tài khoản, khách hàng, loại sản phẩm, sản phẩm, nhà cung cấp, chương trình khuyến mãi, voucher.
 - Danh sách/chi tiết/form dữ liệu thật trên admin và kho, route riêng `/data/{resource}`; URL chi tiết cũ chuyển sang route này.
 - Dashboard không còn dùng các số liệu doanh thu/tồn kho giả; số liệu danh sách lấy qua API.
 - Catalog/chi tiết sản phẩm khách hàng giữ kết nối API có sẵn; đăng nhập và hồ sơ/đơn/hóa đơn/thanh toán của khách đã dùng API theo tài khoản.
-- Sản phẩm sửa ảnh bằng URL `duong_dan_anh`. Upload file và ảnh chương trình chưa có schema/API.
+- Media sản phẩm nằm trực tiếp trong `MEDIA` qua `ma_sp`; `duong_dan_anh` còn dùng để tương thích ảnh chính. Ảnh đại diện tài khoản trỏ tới cùng bảng media.
 
 Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hình/kết nối hoặc danh sách rỗng thực tế. Cài đặt, thông báo, giỏ hàng, checkout và liên hệ chưa kết nối API: không hiển thị dữ liệu mẫu hay báo lưu/gửi thành công giả.
 
@@ -157,7 +181,7 @@ Không dùng mock để che lỗi Supabase: API/UI hiển thị lỗi cấu hìn
 
 Chi tiết endpoint, payload, quyền và backlog: [Backend/README.md](Backend/README.md).
 
-Quản lý đặc tả, đăng nhập trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot 68 thao tác trên 47 đường dẫn: [Backend/docs/openapi.json](Backend/docs/openapi.json).
+Quản lý đặc tả, đăng nhập bằng Bearer/cookie trong Swagger và xuất OpenAPI: [Backend/docs/README.md](Backend/docs/README.md). Snapshot API: [Backend/docs/openapi.json](Backend/docs/openapi.json). Luồng nhập hàng nhân viên kho: [API, migration và kiểm thử](Backend/docs/WAREHOUSE_OPERATIONS.md).
 
 ## Kiểm tra mã
 

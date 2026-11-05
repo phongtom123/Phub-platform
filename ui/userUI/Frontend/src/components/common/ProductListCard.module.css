@@ -8,8 +8,8 @@
 .details { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding-top: 38px; }
 .sku { margin: 0 0 20px; color: #666; font-size: 10px; line-height: 1.5; }
 .details h2 { margin: 0; font-size: 13px; line-height: 21px; font-weight: 400; }
-.details h2 button { border: 0; padding: 0; background: transparent; color: inherit; text-align: left; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
-.details h2 button:hover { color: #0156ff; }
+.details h2 a { color: inherit; text-align: left; font: inherit; text-decoration: none; overflow-wrap: anywhere; }
+.details h2 a:hover { color: #0156ff; }
 .price { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .cart { align-self: flex-start; display: inline-flex; gap: 10px; margin-top: auto; padding: 7px 18px; min-height: 38px; white-space: nowrap; }
 .cart img { filter: invert(26%) sepia(100%) saturate(5000%) hue-rotate(218deg); }
@@ -21,7 +21,7 @@
 .actions { display: flex; align-self: flex-end; gap: 6px; }
 .actions button { width: 30px; height: 30px; border: 2px solid #a2a6b0; border-radius: 50%; color: #a2a6b0; padding: 3px; }
 .actions button:hover, .actions button[aria-pressed=true] { color: #0156ff; border-color: #0156ff; background: #f5f7ff; }
-.card button:focus-visible { outline: 2px solid #0156ff; outline-offset: 4px; }
+.card button:focus-visible, .card a:focus-visible { outline: 2px solid #0156ff; outline-offset: 4px; }
 @container (max-width: 930px) {
   .body { grid-template-columns: minmax(160px, 220px) minmax(200px, 1fr) minmax(145px, 190px); gap: 20px; padding-inline: 20px; }
   .details { padding-top: 28px; }

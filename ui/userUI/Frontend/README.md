@@ -2,7 +2,9 @@
 
 Frontend khách hàng tại `ui/userUI/Frontend`. Home, catalog và chi tiết sản phẩm lấy dữ liệu API; hồ sơ/đơn hàng dùng phiên đăng nhập thật. Không có sản phẩm, đánh giá, giỏ hàng hay hồ sơ mẫu thay thế.
 
-`/main/landing` hiển thị cùng Home với `/`. Giỏ hàng, checkout, đăng ký và liên hệ chưa kết nối đầy đủ nghiệp vụ API; không báo gửi/đặt hàng thành công giả.
+`/main/landing` hiển thị cùng Home với `/`. Đăng nhập, đăng ký khách hàng, hồ sơ và phiên cookie HttpOnly đã kết nối backend thật. Giỏ hàng, checkout và liên hệ chưa kết nối đầy đủ nghiệp vụ API; không báo gửi/đặt hàng thành công giả.
+
+Trang `/auth/register` tạo đồng thời hồ sơ khách hàng và tài khoản, sau đó đăng nhập ngay. Trước khi dùng cần chạy migration `Backend/migrations/20261011080003_customer_self_registration.sql`; Supabase secret chỉ nằm ở backend.
 
 Hướng dẫn chạy catalog với Backend, bao gồm cách xử lý Windows chặn SWC native
 và PowerShell chặn script, nằm trong [CATALOG-INTEGRATION.md](CATALOG-INTEGRATION.md#chạy-local).

@@ -13,9 +13,12 @@
   .page *, .page *::before, .page *::after { box-sizing: border-box; }
   .page a { text-decoration: none; }
   .page button { font-family: inherit; }
+  .breadcrumb { margin: 0; padding: 16px 30px 8px; overflow-wrap: anywhere; }
+  .breadcrumb ol { gap: 4px 8px; }
+  .breadcrumb li { min-width: 0; max-width: 100%; }
   .page a:focus-visible, .page button:focus-visible { outline: 2px solid #0156ff; outline-offset: 2px; }
 
-  .gallery { position: relative; display: grid; place-items: center; height: 230px; background: #fff; }
+  .gallery { position: relative; display: grid; place-items: center; min-height: 230px; padding-block: 12px; background: #fff; }
   .galleryImage { display: block; width: 210px; height: 210px; object-fit: contain; }
   .galleryActions { position: absolute; top: 28px; left: 30px; width: 31px; height: 103px; }
   .gallerySparkle { position: absolute; top: 20px; right: 39px; color: #0156ff; font: 27px/1 Arial, sans-serif; }
@@ -31,6 +34,7 @@
   .info h1 { margin: 11px 0 7px; font-size: 22px; font-weight: 600; line-height: 1.3; }
   .reviewPrompt { margin: 0; color: #0156ff; font-size: 10px; line-height: 17px; }
   .summary { margin: 19px 0 13px; font-size: 12px; line-height: 1.57; }
+  .info .summary { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 4; -webkit-box-orient: vertical; font-size: 14px; line-height: 1.7; }
   .swatches { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
   .swatches label > span { width: 27px; height: 27px; }
   .detailList { margin: 18px 0; padding-left: 18px; font-size: 12px; line-height: 1.9; }
@@ -80,6 +84,7 @@
 }
 
 @media (max-width: 350px) {
+  .breadcrumb { padding-inline: 18px; }
   .info { padding-inline: 18px; }
   .tabs { gap: 13px; }
   .tabs a { font-size: 11px; }
@@ -88,4 +93,9 @@
   .quantity { width: 50px; }
   .paypalButton, .paypalButton img { width: 105px; height: 31px; }
   .supportLinks { margin-left: 20px; }
+}
+
+@media (max-width: 760px) {
+  .purchaseControls { display: block; }
+  .purchaseControls .cartButton { width: 100%; min-height: 46px; padding: 6px 16px 6px 7px; font-size: 13px; }
 }

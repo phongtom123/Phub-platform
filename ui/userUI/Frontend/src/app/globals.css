@@ -3,6 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --brand-primary: #0156ff;
+  --brand-primary-hover: #0047d7;
+  --brand-primary-strong: #003aaf;
+  --brand-primary-soft: #f5f7ff;
+  --brand-primary-border: #b4c7ff;
+  --brand-primary-light: #9fc0ff;
+  --brand-primary-shadow: #0156ff17;
+  --brand-primary-focus: #0156ff26;
   color-scheme: light;
 }
 

@@ -1,7 +1,3 @@
-"""Local manual testing only. Requires the isolated fixture server's explicit mode.
-
-Never imported by app.main. No Supabase credentials or password implementation.
-"""
 import html
 import os
 import secrets

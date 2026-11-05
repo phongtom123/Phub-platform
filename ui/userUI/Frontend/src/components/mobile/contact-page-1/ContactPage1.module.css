@@ -49,7 +49,7 @@
 }
 
 .required {
-  color: #c94a49;
+  color: var(--brand-primary-strong);
   font-style: normal;
   margin-left: 2px;
 }

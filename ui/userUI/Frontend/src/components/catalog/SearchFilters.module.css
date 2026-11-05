@@ -1,0 +1,10 @@
+.field { display: grid; align-content: start; gap: 8px; min-width: 0; font-size: 13px; font-weight: 500; }
+.field select, .priceInputs input { width: 100%; min-width: 0; height: 42px; padding: 9px 11px; background: white; color: #172033; border: 1px solid #dce3ef; border-radius: 8px; font: inherit; font-size: 13px; }
+.field select:focus, .priceInputs input:focus { outline: 2px solid #2563eb; outline-offset: 1px; }
+.priceGroup { margin: 0; padding: 0; min-width: 0; border: 0; }
+.priceGroup legend { margin-bottom: 10px; font-size: 13px; font-weight: 500; }
+.priceInputs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; align-items: end; }
+.priceInputs label { display: grid; gap: 6px; color: #66758b; font-size: 12px; min-width: 0; }
+.priceInputs > span { align-self: end; padding-bottom: 12px; color: #8894a6; }
+.priceGroup small { display: block; margin-top: 8px; font-size: 11px; color: #66758b; }
+.error { color: var(--brand-primary-strong); font-size: 12px; line-height: 1.6; margin: 8px 0 0; }

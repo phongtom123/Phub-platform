@@ -1,0 +1,110 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Path, Query, Response
+
+from phub_api.dependencies.catalog import get_service
+from phub_api.middleware.catalog_errors import CatalogRoute
+from phub_api.schemas.catalog import (
+    BrandList,
+    BannerList,
+    CatalogProduct,
+    CatalogQuery,
+    CatalogFacets,
+    CategoryList,
+    ColorList,
+    ProductPage,
+    StockAvailability,
+    ProductAvailability,
+    ProductPurchaseStates,
+)
+from phub_api.schemas.responses import documented_error
+from phub_api.services.catalog import CatalogService
+
+
+ERROR_RESPONSES = {
+    422: documented_error(
+        "VALIDATION_ERROR", "Tham số không hợp lệ.",
+        [{"field": "page", "message": "Phải lớn hơn hoặc bằng 1."}],
+    ),
+    500: documented_error("INTERNAL_ERROR", "Không thể xử lý yêu cầu catalog."),
+    503: documented_error("DATA_SERVICE_UNAVAILABLE", "Dịch vụ dữ liệu tạm thời không khả dụng."),
+}
+
+router = APIRouter(
+    prefix="/api/catalog", tags=["Public Catalog"], route_class=CatalogRoute,
+    responses=ERROR_RESPONSES,
+)
+
+Service = Annotated[CatalogService, Depends(get_service)]
+StockSku = Annotated[str, Query(min_length=1, max_length=100)]
+
+
+@router.get("/availability", response_model=StockAvailability, summary="Tổng tồn khả dụng của sản phẩm tại các kho đang hoạt động")
+def availability(service: Service, sku: Annotated[list[StockSku], Query(min_length=1, max_length=100)]):
+    return service.availability(sku)
+
+
+@router.get("/purchase-states", response_model=ProductPurchaseStates,
+            summary="Kiểm tra gộp trạng thái bán và tồn khả dụng của tối đa 100 SKU, không giữ hàng")
+def purchase_states(response: Response, service: Service,
+                    sku: Annotated[list[StockSku], Query(min_length=1, max_length=100)]):
+    response.headers["Cache-Control"] = "no-store"
+    return service.purchase_states(sku)
+
+
+@router.get("/banners", response_model=BannerList, summary="Banner của chương trình đang hoạt động và còn thời hạn")
+def list_banners(service: Service):
+    return BannerList(items=service.list_banners())
+
+
+@router.get("/products", response_model=ProductPage, summary="Danh sách sản phẩm đang bán")
+def list_products(filters: Annotated[CatalogQuery, Query()], service: Service):
+    return service.list_products(filters)
+
+
+@router.get("/facets", response_model=CatalogFacets, summary="Bộ lọc thông số và thương hiệu theo loại sản phẩm; số lượng xét các điều kiện khác")
+def catalog_facets(filters: Annotated[CatalogQuery, Query()], service: Service):
+    return service.facets(filters)
+
+
+@router.get(
+    "/products/{product_id}", response_model=CatalogProduct,
+    summary="Chi tiết sản phẩm công khai, ảnh và thông số",
+    responses={404: documented_error("PRODUCT_NOT_FOUND", "Không tìm thấy sản phẩm.")},
+)
+def get_product(
+    product_id: Annotated[str, Path(min_length=1, max_length=100, description="ma_sp trong SAN_PHAM, không phải SKU")],
+    service: Service,
+    include_inactive: bool = False,
+):
+    return service.get_product(product_id, include_inactive=include_inactive)
+
+
+@router.get(
+    "/products/{product_id}/availability", response_model=ProductAvailability,
+    summary="Kiểm tra đủ hàng cho số lượng muốn thêm vào giỏ, không giữ hàng",
+    responses={404: documented_error("PRODUCT_NOT_FOUND", "Không tìm thấy sản phẩm.")},
+)
+def check_product_availability(
+    response: Response,
+    product_id: Annotated[str, Path(min_length=1, max_length=100)],
+    quantity: Annotated[int, Query(ge=1, le=9_007_199_254_740_991)],
+    service: Service,
+):
+    response.headers["Cache-Control"] = "no-store"
+    return service.check_availability(product_id, quantity)
+
+
+@router.get("/categories", response_model=CategoryList, summary="Các loại sản phẩm đang hoạt động")
+def list_categories(service: Service):
+    return CategoryList(items=service.list_categories())
+
+
+@router.get("/brands", response_model=BrandList, summary="Thương hiệu của sản phẩm công khai")
+def list_brands(service: Service):
+    return BrandList(items=service.list_brands())
+
+
+@router.get("/colors", response_model=ColorList, summary="Các màu đã ghi trong thông số sản phẩm đang bán")
+def list_colors(service: Service):
+    return ColorList(items=service.list_colors())

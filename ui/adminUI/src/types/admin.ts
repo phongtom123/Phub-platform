@@ -1,5 +1,6 @@
 export type ModuleKey =
   | "dashboard"
+  | "reports"
   | "orders"
   | "billing"
   | "customers"
@@ -8,13 +9,13 @@ export type ModuleKey =
   | "inventory"
   | "receipts"
   | "transfers"
-  | "stocktakes"
   | "suppliers"
   | "branches"
   | "employees"
   | "accounts"
   | "promotions"
-  | "vouchers";
+  | "vouchers"
+  | "support";
 
 export type DataValue = string | number | boolean;
 export type DataRow = Record<string, DataValue> & { id: string };

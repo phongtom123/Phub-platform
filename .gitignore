@@ -8,3 +8,8 @@ __pycache__
 *.tsbuildinfo
 .env*
 !.env.example
+.customer-runtime/
+/TAI_KHOAN_TEST.local.txt
+/.password-migration-local/
+/.id-normalization-local/
+/Backend/supabase/.temp/

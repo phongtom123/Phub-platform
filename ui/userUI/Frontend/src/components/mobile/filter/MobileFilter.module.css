@@ -64,6 +64,8 @@
   font-weight: 400;
 }
 .options .option[aria-pressed="true"] { color: #0156ff; font-weight: 600; }
+.categoryTree + .categoryTree { margin-top: 4px; }
+.categoryChildren { padding-left: 15px; border-left: 1px solid #d9e1ee; }
 .colors { display: flex; align-items: center; gap: 2px; min-height: 31px; }
 .colors label > span { width: 24px; height: 24px; }
 .apply {

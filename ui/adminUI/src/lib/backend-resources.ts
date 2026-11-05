@@ -4,7 +4,6 @@ export const moduleResources: Partial<Record<ModuleKey, string>> = {
   orders: "orders", billing: "invoices", customers: "customers", products: "products",
   categories: "categories", inventory: "inventory", receipts: "receipts", transfers: "transfers",
   suppliers: "suppliers", branches: "warehouses", employees: "employees", accounts: "accounts",
-  stocktakes: "stocktakes",
   promotions: "promotions", vouchers: "vouchers",
 };
 
@@ -15,7 +14,6 @@ export function resourceModule(resource: string): ModuleKey {
   if (resource === "order-lines") return "orders";
   if (resource === "receipt-lines") return "receipts";
   if (resource === "transfer-lines") return "transfers";
-  if (resource === "stocktake-lines") return "stocktakes";
   if (resource === "voucher-uses") return "vouchers";
   return "dashboard";
 }

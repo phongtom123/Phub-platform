@@ -1,0 +1,4 @@
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.actions > a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 20px; border: 2px solid #0156ff; border-radius: 24px; font: 600 14px var(--font-poppins), Arial, sans-serif; text-align: center; text-decoration: none; background: #fff; color: #0156ff; }
+.actions > a:focus-visible { outline: 2px solid #0156ff; outline-offset: 3px; }
+@media (max-width: 520px) { .actions > a { flex: 1 1 100%; font-size: 12px; } }
