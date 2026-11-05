@@ -4,6 +4,7 @@ import re
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
+from postgrest.exceptions import APIError
 from pydantic import BaseModel, Field
 
 from phub_api.config.database import get_supabase
@@ -20,6 +21,21 @@ class InvoiceCreate(BaseModel):
     address: str | None = Field(default=None, max_length=500)
 
 
+class ManualInvoiceLine(BaseModel):
+    sku: str = Field(min_length=1, max_length=100)
+    quantity: int = Field(gt=0, le=1000000)
+    unit_price: Decimal = Field(ge=0, max_digits=18, decimal_places=2)
+    discount: Decimal = Field(default=Decimal("0"), ge=0, max_digits=18, decimal_places=2)
+
+
+class ManualInvoiceCreate(BaseModel):
+    buyer: str = Field(min_length=1, max_length=200)
+    email: str = Field(min_length=3, max_length=200)
+    tax_id: str | None = Field(default=None, max_length=100)
+    address: str | None = Field(default=None, max_length=500)
+    lines: list[ManualInvoiceLine] = Field(min_length=1, max_length=500)
+
+
 def _employee(user: User):
     if user.role not in {"ADMIN", "NHAN_VIEN"} or not user.employee_id:
         raise HTTPException(403, "Tài khoản không có quyền lập hóa đơn.")
@@ -33,7 +49,7 @@ def _money(value: Decimal) -> Decimal:
 def list_invoices(user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
     rows = db.table("HOA_DON").select(
-        "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,tong_tien_sau_thue,nguoi_lap"
+        "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,email_nguoi_mua,tong_tien_sau_thue,nguoi_lap"
     ).order("thoi_gian_lap", desc=True).limit(500).execute().data
     return [{
         "id": row["ma_hoadon"], "recordId": row["ma_donhang"], "order": row["ma_donhang"],
@@ -109,6 +125,27 @@ def invoice_order_preview(order_id: str, user: User = Depends(current_user), db=
     }
 
 
+@router.post("/manual", status_code=201)
+def create_manual_invoice(body: ManualInvoiceCreate, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _employee(user)
+    if user.warehouse_id is None:
+        raise HTTPException(403, "Tài khoản chưa được phân công kho.")
+    try:
+        result = db.rpc("create_manual_invoice", {
+            "p_actor": user.account_id, "p_warehouse": user.warehouse_id,
+            "p_buyer": body.buyer.strip(), "p_email": body.email.strip().lower(),
+            "p_tax_id": body.tax_id.strip() if body.tax_id else None,
+            "p_address": body.address.strip() if body.address else None,
+            "p_lines": [{"sku": line.sku.strip(), "quantity": line.quantity, "unit_price": str(line.unit_price), "discount": str(line.discount)} for line in body.lines],
+        }).execute().data
+        return {"data": result}
+    except APIError as exc:
+        message = str(exc.message or "")
+        if message == "PRODUCT_NOT_FOUND": raise HTTPException(404, "Không tìm thấy sản phẩm hoặc SKU không hợp lệ.") from None
+        if message == "INVALID_DISCOUNT": raise HTTPException(422, "Giảm giá không được lớn hơn thành tiền dòng hàng.") from None
+        raise HTTPException(409, "Không thể lập hóa đơn thủ công.") from None
+
+
 @router.post("", status_code=201)
 def create_invoice(body: InvoiceCreate, user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
@@ -148,7 +185,7 @@ def create_invoice(body: InvoiceCreate, user: User = Depends(current_user), db=D
 def invoice_detail(invoice_id: str, user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
     rows = db.table("HOA_DON").select(
-        "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,ma_so_thue,dia_chi_nguoi_mua,tong_tien_giam,tong_tien_truoc_thue,tong_tien_thue,tong_tien_sau_thue,nguoi_lap"
+        "ma_hoadon,ma_donhang,thoi_gian_lap,ten_nguoi_mua,email_nguoi_mua,ma_so_thue,dia_chi_nguoi_mua,tong_tien_giam,tong_tien_truoc_thue,tong_tien_thue,tong_tien_sau_thue,nguoi_lap"
     ).eq("ma_hoadon", invoice_id).limit(1).execute().data
     if not rows:
         raise HTTPException(404, "Không tìm thấy hóa đơn.")

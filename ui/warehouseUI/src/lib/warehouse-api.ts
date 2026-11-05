@@ -96,7 +96,7 @@ export async function getDispatches() {
 export type InvoiceOption = { order_id: string; buyer: string; total: number };
 export type InvoiceRow = { id: string; recordId: string; order: string; buyer: string; employeeCode: string; total: string; created: string; status: string };
 export async function getInvoices() { return request<InvoiceRow[]>("/api/backend/warehouse/invoices"); }
-export type InvoiceDetail = { invoice: { ma_hoadon: string; ma_donhang: string; thoi_gian_lap?: string; ten_nguoi_mua?: string; ma_so_thue?: string; dia_chi_nguoi_mua?: string; tong_tien_giam?: string; tong_tien_truoc_thue?: string; tong_tien_thue?: string; tong_tien_sau_thue?: string; nguoi_lap?: string }; lines: { sku: string; ten_sp_luc_ban?: string; don_vi_luc_ban?: string; so_luong: number; don_gia: string | number; giam_gia?: string | number; giam_gia_voucher?: string | number }[] };
+export type InvoiceDetail = { invoice: { ma_hoadon: string; ma_donhang: string; thoi_gian_lap?: string; ten_nguoi_mua?: string; email_nguoi_mua?: string; ma_so_thue?: string; dia_chi_nguoi_mua?: string; tong_tien_giam?: string; tong_tien_truoc_thue?: string; tong_tien_thue?: string; tong_tien_sau_thue?: string; nguoi_lap?: string }; lines: { sku: string; ten_sp_luc_ban?: string; don_vi_luc_ban?: string; so_luong: number; don_gia: string | number; giam_gia?: string | number; giam_gia_voucher?: string | number }[] };
 export async function getInvoiceDetail(invoiceId: string) { return request<InvoiceDetail>(`/api/backend/warehouse/invoices/${encodeURIComponent(invoiceId)}`); }
 export async function getInvoiceOptions() { return request<InvoiceOption[]>("/api/backend/warehouse/invoices/options"); }
 export type CustomerInvoiceSearch = { customers: { ma_kh: string; ten_kh: string; email?: string | null; sdt?: string | null }[]; orders: { ma_donhang: string; ma_kh: string; ten_nguoi_nhan?: string | null; trang_thai: string }[] };
@@ -105,6 +105,10 @@ export type InvoiceOrderPreview = { order: { ma_donhang: string; ma_kh?: string 
 export async function getInvoiceOrderPreview(orderId: string) { return request<InvoiceOrderPreview>(`/api/backend/warehouse/invoices/order-preview?order_id=${encodeURIComponent(orderId)}`); }
 export async function createInvoice(body: { order_id: string; buyer?: string; tax_id?: string; address?: string }) {
   return request<{ data: InvoiceRow }>("/api/backend/warehouse/invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+export type ManualInvoiceLine = { sku: string; quantity: number; unit_price: number; discount: number };
+export async function createManualInvoice(body: { buyer: string; email: string; tax_id?: string; address?: string; lines: ManualInvoiceLine[] }) {
+  return request<{ data: InvoiceRow }>("/api/backend/warehouse/invoices/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 }
 
 export async function dispatchOrder(orderId: string) {

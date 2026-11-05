@@ -5,9 +5,10 @@ import Link from "next/link";
 import { formFields, moduleNames } from "@/src/data/warehouse-data";
 import type { ModuleKey } from "@/src/types/warehouse";
 import { createDispatchDraft, createInvoice, createReceiptDraft, createTransferDraft, getInvoiceOrderPreview, getWarehouseOptions, searchInvoiceCustomers, type CustomerInvoiceSearch, type InvoiceOrderPreview, type ProductOption, type SupplierOption, type WarehouseOption } from "@/src/lib/warehouse-api";
+import ManualInvoiceForm from "./manual-invoice-form";
 
 export default function FormView({ section }: { section: string }) {
-  return section === "invoices" ? <InvoiceForm /> : <GenericFormView section={section} />;
+  return section === "invoices" ? <ManualInvoiceForm /> : <GenericFormView section={section} />;
 }
 
 function GenericFormView({ section }: { section: string }) {

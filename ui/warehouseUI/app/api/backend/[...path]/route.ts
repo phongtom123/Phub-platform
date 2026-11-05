@@ -12,6 +12,7 @@ function allowed(path: string[], method: string) {
   if (path.length === 3 && path[0] === "auth" && path[1] === "me" && path[2] === "password") return method === "POST";
   if (path.length === 3 && base && path[1] === "receipts" && /^\d+$/.test(path[2])) return method === "GET" || method === "PATCH";
   if (path.length === 3 && base && path[2] === "draft") return method === "POST" && ["receipts", "transfers", "dispatches"].includes(path[1]);
+  if (path.length === 3 && base && path[1] === "invoices" && path[2] === "manual") return method === "POST";
   if (path.length === 3 && base && path[1] === "invoices") return method === "GET";
   if (path.length === 4 && base && path[1] === "dispatches" && path[3] === "draft") return method === "GET" || method === "PUT";
   if (path.length === 4 && base && path[1] === "receipts" && path[3] === "draft") return method === "PUT";
