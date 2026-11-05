@@ -80,6 +80,33 @@ def invoice_options(user: User = Depends(current_user), db=Depends(get_supabase)
     return [{"order_id": order["ma_donhang"], "buyer": order.get("ten_nguoi_nhan") or "Khách lẻ", "total": 0} for order in orders if order["ma_donhang"] not in issued]
 
 
+@router.get("/order-preview")
+def invoice_order_preview(order_id: str, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _employee(user)
+    orders = db.table("DON_HANG").select(
+        "ma_donhang,ma_kh,trang_thai,ten_nguoi_nhan,dia_chi_chi_tiet"
+    ).eq("ma_donhang", order_id.strip()).limit(1).execute().data
+    if not orders:
+        raise HTTPException(404, "Không tìm thấy đơn hàng.")
+    order = orders[0]
+    if order["trang_thai"] not in {"DA_XUAT_KHO", "HOAN_THANH"}:
+        raise HTTPException(409, "Đơn hàng chưa đủ điều kiện lập hóa đơn.")
+    lines = db.table("CT_DON_HANG").select(
+        "sku,ten_sp_luc_ban,don_vi_luc_ban,so_luong,don_gia,giam_gia,giam_gia_voucher"
+    ).eq("ma_donhang", order_id.strip()).limit(500).execute().data
+    if not lines:
+        raise HTTPException(409, "Đơn hàng chưa có sản phẩm.")
+    discount = sum((Decimal(str(line.get("giam_gia") or 0)) + Decimal(str(line.get("giam_gia_voucher") or 0)) for line in lines), Decimal(0))
+    subtotal = sum((Decimal(str(line["so_luong"])) * Decimal(str(line["don_gia"])) for line in lines), Decimal(0))
+    before_tax = _money(subtotal - discount)
+    tax = _money(before_tax * Decimal("0.10"))
+    return {
+        "order": order,
+        "lines": lines,
+        "summary": {"subtotal": str(_money(subtotal)), "discount": str(_money(discount)), "before_tax": str(before_tax), "tax": str(tax), "total": str(_money(before_tax + tax))},
+    }
+
+
 @router.post("", status_code=201)
 def create_invoice(body: InvoiceCreate, user: User = Depends(current_user), db=Depends(get_supabase)):
     _employee(user)
