@@ -109,6 +109,17 @@ def dispatches(response: Response, user: User = Depends(current_user), db=Depend
     } for order in orders]
 
 
+@router.get('/dispatches/order-options')
+def dispatch_order_options(sku: str, user: User = Depends(current_user), db=Depends(get_supabase)):
+    _require_employee(user)
+    line_rows = db.table('CT_DON_HANG').select('ma_donhang').eq('sku', sku.strip()).limit(500).execute().data
+    order_ids = [row['ma_donhang'] for row in line_rows]
+    if not order_ids:
+        return []
+    orders = db.table('DON_HANG').select('ma_donhang,ten_nguoi_nhan,trang_thai').in_('ma_donhang', order_ids).in_('trang_thai', ['MOI', 'XAC_NHAN', 'DANG_CHUAN_BI']).limit(500).execute().data
+    return [{'order_id': row['ma_donhang'], 'receiver': row.get('ten_nguoi_nhan') or 'Khách hàng', 'status': row['trang_thai']} for row in orders]
+
+
 @router.post('/dispatches/draft', status_code=201)
 def create_dispatch_draft(body: DispatchDraft, user: User = Depends(current_user), db=Depends(get_supabase)):
     warehouse_id = _dispatch_warehouse(user, body.warehouse_id)

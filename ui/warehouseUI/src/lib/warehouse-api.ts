@@ -92,6 +92,8 @@ export async function deactivateSupplier(id: number) {
 export async function getDispatches() {
   return request<{ id: string; recordId: string; order: string; warehouse: string; employeeCode?: string; items: string; created: string; status: string; receiver: string }[]>("/api/backend/warehouse/dispatches");
 }
+export type DispatchOrderOption = { order_id: string; receiver: string; status: string };
+export async function getDispatchOrderOptions(sku: string) { return request<DispatchOrderOption[]>(`/api/backend/warehouse/dispatches/order-options?sku=${encodeURIComponent(sku)}`); }
 
 export type InvoiceOption = { order_id: string; buyer: string; total: number };
 export type InvoiceRow = { id: string; recordId: string; order: string; buyer: string; employeeCode: string; total: string; created: string; status: string };
