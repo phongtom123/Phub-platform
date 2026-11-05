@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import WarehouseFrame from "@/src/components/warehouse/warehouse-frame";
 import ModuleView from "@/src/features/modules/module-view";
 import FormView from "@/src/features/forms/form-view";
