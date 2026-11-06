@@ -19,6 +19,7 @@ import { CustomerStatusCell, type CustomerLinkedAccount } from "@/src/features/c
 import { OrderData } from "@/src/features/orders/order-data";
 import type { AdminOrderDetailData } from "@/src/features/orders/order-detail-data";
 import { InvoiceDetail } from "@/src/features/billing/invoice-detail";
+import { InvoiceCustomerSearch } from "@/src/features/billing/invoice-customer-search";
 import { ProductStock } from "@/src/features/products/product-stock";
 import { ProductSuppliers } from "@/src/features/products/product-suppliers";
 import { CategoryDetail } from "@/src/features/categories/category-detail";
@@ -341,7 +342,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {resource === "promotions" && available.some(item => item.name === "vouchers") && <PromotionVouchers key={`vouchers:${result.data[0].ma_ctkm}`} promotionId={Number(result.data[0].ma_ctkm)} writable={Boolean(available.find(item => item.name === "vouchers")?.writable)} />}
         {!["orders", "invoices", "categories", "promotions"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], vouchers: ["voucher-uses"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={relatedHref(item.name)}>{item.title}</Link>)}</nav>}
       </> : <>
-        {["invoices", "payments"].includes(resource) && <nav className="live-tools" aria-label="Hóa đơn và thanh toán"><Link href={dataHref("invoices")}>Hóa đơn</Link><Link href={dataHref("payments")}>Giao dịch thanh toán</Link></nav>}
+        {resource === "invoices" && <InvoiceCustomerSearch />}{["invoices", "payments"].includes(resource) && <nav className="live-tools" aria-label="Hóa đơn và thanh toán"><Link href={dataHref("invoices")}>Hóa đơn</Link><Link href={dataHref("payments")}>Giao dịch thanh toán</Link></nav>}
         <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : "+ Lập phiếu nhập"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
         <ListFilters columns={meta.columns} values={filters} label={label} disabled={inlineEditing} onChange={next => { setPage(1); router.replace(dataHref(resource, { orderId: view.orderId, filters: next })); }} />
         {resource === "inventory" && <StockHistory />}

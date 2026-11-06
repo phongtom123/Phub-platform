@@ -32,7 +32,7 @@ const navigation = [
     label: "BÁN HÀNG",
     items: [
       ["orders", "Đơn hàng", ShoppingBag],
-      ["billing", "Hóa đơn & thanh toán", CreditCard],
+      ["billing", "Hóa đơn", CreditCard],
       ["customers", "Khách hàng", UserRound],
     ],
   },
