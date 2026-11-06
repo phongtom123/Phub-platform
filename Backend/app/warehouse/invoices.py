@@ -19,7 +19,7 @@ class InvoiceCreate(BaseModel):
 
 
 def _employee(user: User):
-    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"} or not user.employee_id:
+    if user.role not in {"ADMIN", "NHAN_VIEN"} or not user.employee_id:
         raise HTTPException(403, "Tài khoản không có quyền lập hóa đơn.")
 
 

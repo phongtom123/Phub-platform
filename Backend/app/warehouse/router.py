@@ -17,15 +17,15 @@ def get_repository():
 
 
 def _require_warehouse_scope(user: User, warehouse_id: int):
-    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"} or not user.employee_id:
+    if user.role not in {"ADMIN", "NHAN_VIEN"} or not user.employee_id:
         raise HTTPException(403, "Role không được tạo phiếu kho.")
-    if user.role == "NHAN_VIEN_KHO" and user.warehouse_id != warehouse_id:
+    if user.role == "NHAN_VIEN" and user.warehouse_id != warehouse_id:
         raise HTTPException(403, "Kho không thuộc phạm vi được phân quyền.")
 
 
 @router.get("/options", response_model=WarehouseOptionsResult, summary="Danh sách kho và nhà cung cấp dùng khi lập phiếu")
 def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"}:
+    if user.role not in {"ADMIN", "NHAN_VIEN"}:
         raise HTTPException(403, "Role không được lập phiếu kho.")
     warehouses = db.table("KHO").select("ma_kho,ten_kho").eq("trang_thai", 1).order("ma_kho").limit(500).execute().data
     suppliers = db.table("NHA_CUNG_CAP").select("ma_ncc,ten_ncc").eq("trang_thai", 1).order("ma_ncc").limit(500).execute().data
@@ -35,7 +35,7 @@ def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabas
 
 @router.get("/dispatches", summary="Danh sách phiếu xuất theo đơn hàng và kho")
 def list_dispatches(user: User = Depends(current_user), db=Depends(get_supabase)):
-    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"}:
+    if user.role not in {"ADMIN", "NHAN_VIEN"}:
         raise HTTPException(403, "Role không được xem phiếu xuất.")
     # Prefer independent dispatch documents created by warehouse staff.
     documents = db.table("PHIEU_XUAT").select("ma_phieu_xuat,ma_phieu_code,ma_donhang,ma_kho_xuat,trang_thai,ngay_tao,nguoi_tao").order("ngay_tao", desc=True).limit(500).execute().data
@@ -103,7 +103,7 @@ def get_dispatch_draft(dispatch_id: int, user: User = Depends(current_user), db=
     _require_employee(user)
     docs = db.table("PHIEU_XUAT").select("ma_phieu_xuat,ma_donhang,ma_kho_xuat,ghi_chu,trang_thai").eq("ma_phieu_xuat", dispatch_id).limit(1).execute().data
     if not docs: raise HTTPException(404, "Không tìm thấy phiếu xuất.")
-    if user.role == "NHAN_VIEN_KHO" and docs[0]["ma_kho_xuat"] != user.warehouse_id: raise HTTPException(403, "Phiếu xuất ngoài kho được phân quyền.")
+        if user.role == "NHAN_VIEN" and docs[0]["ma_kho_xuat"] != user.warehouse_id: raise HTTPException(403, "Phiếu xuất ngoài kho được phân quyền.")
     lines = db.table("CT_PHIEU_XUAT").select("sku,ma_kho_xuat,so_luong").eq("ma_phieu_xuat", dispatch_id).limit(500).execute().data
     return {"dispatch": docs[0], "lines": lines}
 
@@ -142,7 +142,7 @@ def create_receipt_draft(body: ReceiptDraftRequest, user: User = Depends(current
              summary="Tạo phiếu chuyển kho nháp cùng các dòng hàng trong một transaction")
 def create_transfer_draft(body: TransferDraftRequest, user: User = Depends(current_user), db=Depends(get_supabase)):
     _require_warehouse_scope(user, body.source_warehouse_id)
-    if user.role == "NHAN_VIEN_KHO" and user.warehouse_id != body.source_warehouse_id:
+    if user.role == "NHAN_VIEN" and user.warehouse_id != body.source_warehouse_id:
         raise HTTPException(403, "Kho xuất không thuộc phạm vi được phân quyền.")
     try:
         result = db.rpc("create_transfer_draft", {
@@ -160,7 +160,7 @@ def create_transfer_draft(body: TransferDraftRequest, user: User = Depends(curre
 @router.post("/receipts/{receipt_id}/confirm", response_model=ReceiptConfirmation,
              summary="Xác nhận phiếu nhập và cộng tồn trong một transaction")
 def confirm_receipt(receipt_id: int, user: User = Depends(current_user), repository: WarehouseRepository = Depends(get_repository)):
-    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"}:
+    if user.role not in {"ADMIN", "NHAN_VIEN"}:
         raise HTTPException(403, "Role không được xác nhận phiếu nhập.")
     _require_employee(user)
     try:
@@ -197,9 +197,9 @@ def get_transfer_repository():
 
 
 def _require_employee(user: User):
-    if user.role not in {"ADMIN", "NHAN_VIEN_KHO"} or not user.employee_id:
+    if user.role not in {"ADMIN", "NHAN_VIEN"} or not user.employee_id:
         raise HTTPException(403, "Role không được xử lý phiếu chuyển kho.")
-    if user.role == "NHAN_VIEN_KHO" and user.warehouse_id is None:
+    if user.role == "NHAN_VIEN" and user.warehouse_id is None:
         raise HTTPException(403, "Tài khoản nhân viên kho chưa được phân công kho.")
 
 
