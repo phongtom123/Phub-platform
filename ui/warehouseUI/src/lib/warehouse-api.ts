@@ -162,10 +162,8 @@ export async function getReceipts() {
 }
 
 export async function getReceiptDraft(receiptId: number) {
-  const [receipts, lines] = await Promise.all([page<ReceiptApiItem>("receipts"), page<ReceiptLineApiItem>("receipt-lines")]);
-  const receipt = receipts.data.find(item => item.ma_phieu_nhap === receiptId);
-  if (!receipt) throw new Error("Không tìm thấy phiếu nhập.");
-  return { supplier_id: receipt.ma_ncc, warehouse_id: receipt.ma_kho, note: receipt.ghi_chu ?? "", lines: lines.data.filter(line => line.ma_phieu_nhap === receiptId).map(line => ({ sku: line.sku, quantity: line.so_luong_nhap, unit_price: Number(line.gia_nhap ?? 0) })) };
+  const detail = await warehouseApi<{ receipt: { ma_ncc: number; ma_kho: number; ghi_chu?: string | null }; lines: { sku: string; quantity: number; unit_price: string | number }[] }>(`warehouse/receipts/${receiptId}`);
+  return { supplier_id: detail.receipt.ma_ncc, warehouse_id: detail.receipt.ma_kho, note: detail.receipt.ghi_chu ?? "", lines: detail.lines.map(line => ({ sku: line.sku, quantity: line.quantity, unit_price: Number(line.unit_price ?? 0) })) };
 }
 
 export async function confirmReceipt(receiptId: number) {
