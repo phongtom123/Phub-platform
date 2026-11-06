@@ -70,14 +70,23 @@ export default function ManualInvoiceForm() {
     if (!buyer.trim()) throw new Error("Nhập tên khách hàng.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new Error("Nhập email khách hàng hợp lệ.");
     if (!lines.length) throw new Error("Thêm ít nhất một sản phẩm.");
-    return lines.map((line, index) => {
+    const requested = new Map<string, number>();
+    const payload = lines.map((line, index) => {
       const quantity = Number(line.quantity); const unitPrice = Number(line.unitPrice); const discount = Number(line.discount || 0);
       if (!line.sku.trim()) throw new Error(`Dòng ${index + 1}: nhập SKU sản phẩm.`);
+      const product = products.find(item => item.sku === line.sku.trim());
+      if (!product) throw new Error(`Dòng ${index + 1}: sản phẩm không hợp lệ.`);
       if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`Dòng ${index + 1}: số lượng phải là số nguyên dương.`);
+      requested.set(line.sku.trim(), (requested.get(line.sku.trim()) ?? 0) + quantity);
       if (!Number.isFinite(unitPrice) || unitPrice < 0) throw new Error(`Dòng ${index + 1}: đơn giá không hợp lệ.`);
       if (!Number.isFinite(discount) || discount < 0 || discount > quantity * unitPrice) throw new Error(`Dòng ${index + 1}: giảm giá không được lớn hơn thành tiền.`);
       return { sku: line.sku.trim(), quantity, unit_price: unitPrice, discount };
     });
+    for (const [sku, quantity] of requested) {
+      const stock = Number(products.find(product => product.sku === sku)?.so_luong_ton ?? 0);
+      if (quantity > stock) throw new Error(`Sản phẩm ${sku} chỉ còn ${stock}, cần ${quantity}.`);
+    }
+    return payload;
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {

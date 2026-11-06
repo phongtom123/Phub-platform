@@ -136,6 +136,14 @@ def _create_manual_invoice_legacy(body: ManualInvoiceCreate, user: User, db):
     product_map = {row["sku"]: row for row in products}
     if any(line.sku.strip() not in product_map for line in body.lines):
         raise HTTPException(404, "Không tìm thấy sản phẩm hoặc SKU không hợp lệ.")
+    required: dict[str, int] = {}
+    for line in body.lines:
+        required[line.sku.strip()] = required.get(line.sku.strip(), 0) + line.quantity
+    stock_rows = db.table("TON_KHO").select("sku,so_luong_ton").eq("ma_kho", user.warehouse_id).in_("sku", list(required)).execute().data
+    stock = {row["sku"]: int(row.get("so_luong_ton") or 0) for row in stock_rows}
+    for sku, quantity in required.items():
+        if stock.get(sku, 0) < quantity:
+            raise HTTPException(409, f"Sản phẩm {sku} chỉ còn {stock.get(sku, 0)}, cần {quantity}.")
     subtotal = Decimal("0"); discount_total = Decimal("0"); tax_total = Decimal("0"); lines = []
     for line in body.lines:
         quantity = Decimal(line.quantity); unit_price = line.unit_price; discount = line.discount
@@ -172,6 +180,7 @@ def create_manual_invoice(body: ManualInvoiceCreate, user: User = Depends(curren
         message = str(exc.message or "")
         if message == "PRODUCT_NOT_FOUND": raise HTTPException(404, "Không tìm thấy sản phẩm hoặc SKU không hợp lệ.") from None
         if message == "INVALID_DISCOUNT": raise HTTPException(422, "Giảm giá không được lớn hơn thành tiền dòng hàng.") from None
+        if message == "INSUFFICIENT_STOCK": raise HTTPException(409, "Số lượng sản phẩm vượt quá tồn kho hiện tại.") from None
         if "create_manual_invoice" in message.lower() or "does not exist" in message.lower() or "schema cache" in message.lower():
             return _create_manual_invoice_legacy(body, user, db)
         raise HTTPException(409, "Không thể lập hóa đơn thủ công.") from None
