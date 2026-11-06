@@ -43,7 +43,7 @@ class AccountsService:
                 if not rows:
                     raise HTTPException(422, "Hồ sơ khách hàng không tồn tại.")
                 customer = rows[0]
-            role, name, warehouse, active = "KHACH_HANG", customer["ten_kh"], None, True
+            role, name, warehouse, active = "KHACH_HANG", customer["ten_kh"], None, customer.get("luu_tru_luc") is None
         avatar = row.get("avatar")
         avatar_url = avatar.get("url") if isinstance(avatar, dict) else None
         return AccountRead(**{key: row.get(key) for key in ACCOUNT_COLUMNS.split(",")},
@@ -80,8 +80,10 @@ class AccountsService:
                 warehouses = self.repository.warehouse(profile["ma_kho"])
                 if not warehouses or warehouses[0]["trang_thai"] != 1:
                     raise HTTPException(422, "Kho được phân công không hoạt động.")
-        elif not self.repository.customer(owner):
-            raise HTTPException(422, "Khách hàng không tồn tại.")
+        else:
+            customers = self.repository.customer(owner)
+            if not customers or customers[0].get("luu_tru_luc") is not None:
+                raise HTTPException(422, "Khách hàng không tồn tại hoặc đã xóa mềm.")
         if self.repository.owner_has_account(field, owner):
             raise HTTPException(409, "Người này đã có tài khoản. Mỗi người chỉ được có một tài khoản.")
         values = body.model_dump(exclude={"password"}) | {"mat_khau": body.password, "trang_thai": 1}
@@ -122,7 +124,11 @@ class AccountsService:
         return self.detail(account_id)
 
     def status(self, account_id: str, value: int):
-        self.account(account_id)
+        account = self.account(account_id)
+        if account.get("ma_kh") and value != 0:
+            customers = self.repository.customer(account["ma_kh"])
+            if not customers or customers[0].get("luu_tru_luc") is not None:
+                raise HTTPException(409, "Cần khôi phục hồ sơ khách hàng trước khi thay đổi trạng thái tài khoản.")
         if account_id == self.actor.account_id and value != 1:
             raise HTTPException(409, "Không được khóa hoặc ẩn tài khoản đang đăng nhập.")
         self.repository.update(account_id, {"trang_thai": value})

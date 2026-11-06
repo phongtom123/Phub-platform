@@ -9,12 +9,12 @@ class CommerceRepository:
 
     def profile(self, customer_id):
         return (self.client.table("KHACH_HANG").select(
-                "ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md,tinh_thanh_md,xa_phuong_md,"
+                "ma_kh,ten_kh,sdt,dia_chi_chi_tiet_md,tinh_thanh_md,xa_phuong_md,ngay_sinh,luu_tru_luc,"
                 "account:TAI_KHOAN(avatar:MEDIA!TAI_KHOAN_avatar_media_fkey(url))")
                 .eq("ma_kh", customer_id).limit(1).execute().data)
 
     def save_profile(self, customer_id, values):
-        return self.client.table("KHACH_HANG").update(values).eq("ma_kh", customer_id).execute().data
+        return self.client.table("KHACH_HANG").update(values).eq("ma_kh", customer_id).is_("luu_tru_luc", "null").execute().data
 
     def addresses(self, parameters):
         return self.client.rpc("customer_address_v1", parameters).execute().data

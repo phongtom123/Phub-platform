@@ -1,5 +1,19 @@
 # Kế hoạch phát triển CRM trên nền Phub
 
+> Cập nhật 06/11/2026: đánh giá duy nhất theo `(ma_kh, ma_sp)`, không theo mỗi đơn;
+> mua lại dùng chung đánh giá cũ; gửi/sửa hiển thị ngay, giữ ẩn nếu đã bị quản trị viên ẩn. Database và API đã cập nhật;
+> xem quy tắc hiện hành trong [hướng dẫn khảo sát/đánh giá](CRM-SURVEYS-REVIEWS.md).
+
+> Cập nhật tiếp 05/11/2026: đã triển khai 6 bảng khảo sát/đánh giá, API và giao diện
+> hai phía, đối tượng theo tuổi, lựa chọn Khác và báo cáo CRM. Migration đã áp dụng trên Phub;
+> không gửi/seed khảo sát cho khách thật. Xem [hướng dẫn hiện hành](CRM-SURVEYS-REVIEWS.md).
+> Các checklist cũ bên dưới là lịch sử, chưa phản ánh mọi chức năng đã hoàn thành.
+
+> Cập nhật 05/11/2026: đã bổ sung xóa mềm/khôi phục khách hàng, bộ lọc hồ sơ và
+> tính tuổi từ ngày sinh ở Admin/User. Khách có thể tự sửa ngày sinh. Đã có form
+> ticket và hội thoại trên website khách. Các mục checklist cũ bên dưới là lịch sử;
+> xem [quy tắc xóa mềm và tuổi](CUSTOMER-SOFT-DELETE-AGE.md). Khảo sát và báo cáo phân bố tuổi/sở thích vẫn chưa có.
+
 > Cập nhật 23/10/2026: người dùng bỏ chức năng sở thích. Đã xóa `SO_THICH` và
 > `KHACH_HANG_SO_THICH` trên project Phub sau sao lưu; các mục sở thích bên dưới
 > chỉ còn là lịch sử, không thuộc backlog đang thực hiện. Giữ hồ sơ khách/ngày sinh,

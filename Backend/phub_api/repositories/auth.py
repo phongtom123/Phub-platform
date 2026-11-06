@@ -16,7 +16,7 @@ class AuthRepository:
         return self.client.table("NHAN_VIEN").select("ma_nhan_vien,ho_ten,loai_nhan_vien,ma_kho,trang_thai").eq("ma_nhan_vien", identifier).limit(1).execute().data
 
     def customer(self, identifier):
-        return self.client.table("KHACH_HANG").select("ma_kh,ten_kh").eq("ma_kh", identifier).limit(1).execute().data
+        return self.client.table("KHACH_HANG").select("ma_kh,ten_kh,luu_tru_luc").eq("ma_kh", identifier).limit(1).execute().data
 
     def register_customer(self, parameters):
         return self.client.rpc("customer_register_v2", parameters).execute().data

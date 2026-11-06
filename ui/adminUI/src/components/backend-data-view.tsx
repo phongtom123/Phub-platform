@@ -16,6 +16,8 @@ import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type D
 import { listDataColumns } from "@/src/lib/table-presentation";
 import { CustomerDetail } from "@/src/features/customers/customer-detail";
 import { CustomerStatusCell, type CustomerLinkedAccount } from "@/src/features/customers/customer-status-cell";
+import { CustomerArchiveButton } from "@/src/features/customers/customer-archive-button";
+import { customerAge, type CustomerDetail as CustomerDetailData } from "@/src/lib/customer-profile";
 import { OrderData } from "@/src/features/orders/order-data";
 import type { AdminOrderDetailData } from "@/src/features/orders/order-detail-data";
 import { InvoiceDetail } from "@/src/features/billing/invoice-detail";
@@ -131,18 +133,34 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const [notice, setNotice] = useState("");
   const [inlineRowEditing, setInlineEditing] = useState(false);
   const [customerStatusSaving, setCustomerStatusSaving] = useState(false);
+  const customerMutationSaving = useCallback((value: boolean) => {
+    setCustomerStatusSaving(value);
+    if (value) setNotice("");
+  }, []);
   const inlineEditing = inlineRowEditing || customerStatusSaving;
   const savedCustomerStatus = useCallback((customerId: string, account: CustomerLinkedAccount) => {
     setResult(current => current && ({ ...current, customer_accounts: { ...current.customer_accounts, [customerId]: account } }));
   }, []);
   const draftPath = resource === "receipts" && meta?.draft_update_path === `/api/admin/warehouse-drafts/${resource}` ? meta.draft_update_path : null;
-  const canEditRow = (row: Row) => !draftPath || row.trang_thai === "NHAP";
+  const canEditRow = (row: Row) => (!draftPath || row.trang_thai === "NHAP") && (resource !== "customers" || !row.luu_tru_luc);
   const canUpdate = Boolean(meta?.writable || draftPath);
   const inlineEnabled = ["customers", "warehouses", "products", "categories", "suppliers", "employees", "promotions", "vouchers", "receipts"].includes(resource) && canUpdate;
   const savedInline = useCallback((row: Row) => {
     setResult(current => current && ({ ...current, data: current.data.map(item =>
       dataRowKey(item, meta?.keys ?? []) === dataRowKey(row, meta?.keys ?? []) ? row : item) }));
   }, [meta?.keys]);
+  const savedCustomerArchive = useCallback((saved: CustomerDetailData) => {
+    setResult(current => {
+      if (!current) return current;
+      const archived = Boolean(saved.profile.luu_tru_luc), mode = filters.luu_tru_luc ?? "ACTIVE";
+      const keep = mode === "ALL" || archived === (mode === "ARCHIVED");
+      const present = current.data.some(row => row.ma_kh === saved.profile.ma_kh);
+      return { ...current, data: keep ? current.data.map(row => row.ma_kh === saved.profile.ma_kh ? { ...saved.profile } : row)
+        : current.data.filter(row => row.ma_kh !== saved.profile.ma_kh), total: current.total - (!keep && present ? 1 : 0),
+        customer_accounts: { ...current.customer_accounts, [saved.profile.ma_kh]: saved.account ? { ma_tk: saved.account.ma_tk, trang_thai: saved.account.trang_thai as 0 | 1 | 2 } : null } };
+    });
+    setNotice(saved.profile.luu_tru_luc ? "Đã xóa mềm khách hàng; đơn hàng và hóa đơn vẫn được giữ." : "Đã khôi phục hồ sơ. Tài khoản vẫn bị ẩn cho đến khi Admin bật lại.");
+  }, [filters.luu_tru_luc]);
   const galleryEditor = useRef<GalleryEditorHandle | null>(null);
   const [galleryDirty, setGalleryDirty] = useState(false);
   const [galleryReady, setGalleryReady] = useState(false);
@@ -341,9 +359,14 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {resource === "promotions" && available.some(item => item.name === "vouchers") && <PromotionVouchers key={`vouchers:${result.data[0].ma_ctkm}`} promotionId={Number(result.data[0].ma_ctkm)} writable={Boolean(available.find(item => item.name === "vouchers")?.writable)} />}
         {!["orders", "invoices", "categories", "promotions"].includes(resource) && <nav className="live-tools" aria-label="Bảng liên quan">{available.filter(item => ({ receipts: ["receipt-lines"], transfers: ["transfer-lines"], vouchers: ["voucher-uses"], subcategories: ["categories", "products"] } as Record<string, string[]>)[resource]?.includes(item.name)).map(item => <Link key={item.name} href={relatedHref(item.name)}>{item.title}</Link>)}</nav>}
       </> : <>
+        {resource === "customers" && notice && <p className="live-note" role="status">{notice}</p>}
         {["invoices", "payments"].includes(resource) && <nav className="live-tools" aria-label="Hóa đơn và thanh toán"><Link href={dataHref("invoices")}>Hóa đơn</Link><Link href={dataHref("payments")}>Giao dịch thanh toán</Link></nav>}
         <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : "+ Lập phiếu nhập"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
         <ListFilters columns={meta.columns} values={filters} label={label} disabled={inlineEditing} onChange={next => { setPage(1); router.replace(dataHref(resource, { orderId: view.orderId, filters: next })); }} />
+        {resource === "customers" && <div className="live-tools"><label>Hồ sơ khách hàng <select aria-label="Lọc hồ sơ khách hàng"
+          value={filters.luu_tru_luc ?? "ACTIVE"} disabled={inlineEditing} onChange={event => {
+            setPage(1); router.replace(dataHref(resource, { filters: { ...filters, luu_tru_luc: event.target.value } }));
+          }}><option value="ACTIVE">Đang sử dụng</option><option value="ARCHIVED">Đã xóa mềm</option><option value="ALL">Tất cả</option></select></label></div>}
         {resource === "inventory" && <StockHistory />}
         {draftPath && <p className="inline-data-help">Nhấp đúp để sửa phiếu nháp. Phiếu đã xử lý chỉ xem thông tin; trạng thái được cập nhật qua nghiệp vụ kho.</p>}
         {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label} href={href} />
@@ -352,10 +375,14 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           editableFields={draftPath ? meta.draft_update_fields ?? [] : undefined}
           writePath={draftPath ? "/api/backend/" + draftPath.slice(5) : undefined} canEditRow={canEditRow}
           externalBusy={customerStatusSaving}
-          extraColumns={resource === "customers" ? [{ key: "customer-account-status", title: "Trạng thái tài khoản", render: (row, blocked) =>
+          extraColumns={resource === "customers" ? [{ key: "customer-age", title: "Tuổi", render: row => customerAge(row.ngay_sinh as string | null) ?? "Chưa có thông tin" },
+            { key: "customer-profile-status", title: "Hồ sơ", render: row => row.luu_tru_luc ? "Đã xóa mềm" : "Đang sử dụng" },
+            { key: "customer-account-status", title: "Trạng thái tài khoản", render: (row, blocked) =>
             <CustomerStatusCell customerId={String(row.ma_kh)} customerName={String(row.ten_kh ?? row.ma_kh)}
               account={result?.customer_accounts?.[String(row.ma_kh)]} disabled={blocked}
-              onSaved={savedCustomerStatus} onSavingChange={setCustomerStatusSaving} /> }] : undefined}
+              onSaved={savedCustomerStatus} onSavingChange={customerMutationSaving} /> }] : undefined}
+          rowActions={resource === "customers" ? (row, blocked) => <CustomerArchiveButton customerId={String(row.ma_kh)} archived={Boolean(row.luu_tru_luc)}
+            disabled={blocked} onSaved={savedCustomerArchive} onSavingChange={customerMutationSaving} /> : undefined}
           label={label} href={href} onSaved={savedInline} onEditingChange={setInlineEditing} />
         : <ScrollableTable><table><thead><tr>{listColumns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{listColumns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <Link href={href(row)}>{displayValue(row, column)}</Link> : displayValue(row, column)}</td>)}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
         <div className="live-tools"><span>{result?.total ?? 0} kết quả · Trang {page}</span><button disabled={inlineEditing || page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={inlineEditing || page * 20 >= (result?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Sau</button></div>

@@ -64,7 +64,7 @@ Table KHACH_HANG {
   ngay_sinh date [note: 'CRM; NULL neu chua cung cap']
   ngay_tao timestamptz [note: 'NULL voi ho so cu khong biet ngay tao that']
   cap_nhat_luc timestamptz
-  luu_tru_luc timestamptz [note: 'Chi doc; chua co nghiep vu luu tru/khoa tai khoan']
+  luu_tru_luc timestamptz [note: 'Xoa mem qua RPC: an tai khoan, vo hieu phien cu; khoi phuc khong tu mo tai khoan']
 }
 
 Table PHAN_HOI {
@@ -505,3 +505,103 @@ Ref: CHUONG_TRINH_KHUYEN_MAI.nguoi_tao > NHAN_VIEN.ma_nhan_vien
 Ref: VOUCHER.ma_ctkm > CHUONG_TRINH_KHUYEN_MAI.ma_ctkm
 Ref: SU_DUNG_VOUCHER.ma_voucher > VOUCHER.ma_voucher
 Ref: DON_HANG.ma_donhang - SU_DUNG_VOUCHER.ma_donhang
+
+// CRM: khuyen nghi 05/11/2026. Tuoi tinh tu ngay sinh; khong luu tuoi co dinh.
+Table KHAO_SAT {
+  ma_khao_sat uuid [pk]
+  tieu_de varchar [not null]
+  mo_ta text [not null]
+  trang_thai varchar [not null, note: 'NHAP / DANG_MO / DONG']
+  loai_doi_tuong varchar [not null, note: 'TAT_CA / DO_TUOI / CHUA_NGAY_SINH']
+  tuoi_tu int
+  tuoi_den int
+  han_tra_loi timestamptz [not null]
+  ngay_chot_doi_tuong timestamptz
+  nguoi_tao varchar [not null]
+  ngay_tao timestamptz [not null]
+  cap_nhat_luc timestamptz [not null]
+  phien_ban uuid [not null]
+  hash_tao text [not null, note: 'Chong tao trung request_id']
+  phat_hanh_tu_phien_ban uuid
+  dong_tu_phien_ban uuid
+}
+Table CAU_HOI_KHAO_SAT {
+  ma_cau_hoi uuid [pk]
+  ma_khao_sat uuid [not null]
+  noi_dung varchar [not null]
+  loai_cau_hoi varchar [not null, note: 'MOT_LUA_CHON / DIEM_1_5 / VAN_BAN']
+  nhom_noi_dung varchar [not null, note: 'CHUNG / SO_THICH / HAI_LONG']
+  bat_buoc boolean [not null]
+  thu_tu int [not null]
+  indexes {
+    (ma_cau_hoi, ma_khao_sat) [unique]
+    (ma_khao_sat, thu_tu) [unique]
+  }
+}
+Table LUA_CHON_KHAO_SAT {
+  ma_lua_chon uuid [pk]
+  ma_cau_hoi uuid [not null]
+  noi_dung varchar [not null]
+  cho_phep_nhap_khac boolean [not null, note: 'Toi da 1 lua chon Khac/cau hoi']
+  thu_tu int [not null]
+  indexes {
+    (ma_lua_chon, ma_cau_hoi) [unique]
+    (ma_cau_hoi, thu_tu) [unique]
+  }
+}
+Table GUI_KHAO_SAT {
+  ma_gui uuid [pk]
+  ma_khao_sat uuid [not null]
+  ma_kh varchar [not null]
+  ngay_gui timestamptz [not null]
+  hoan_thanh_luc timestamptz
+  khoa_gui_bai uuid
+  hash_gui_bai text
+  indexes {
+    (ma_khao_sat, ma_kh) [unique]
+    (ma_gui, ma_khao_sat) [unique]
+  }
+}
+Table TRA_LOI_KHAO_SAT {
+  ma_tra_loi uuid [pk]
+  ma_gui uuid [not null]
+  ma_khao_sat uuid [not null]
+  ma_cau_hoi uuid [not null]
+  ma_lua_chon uuid
+  diem int [note: '1-5; NULL neu khong phai cau diem']
+  noi_dung text [note: 'Van ban hoac phan nhap Khac, toi da 4000 ky tu']
+  indexes {
+    (ma_gui, ma_cau_hoi) [unique]
+    (ma_gui, ma_khao_sat)
+  }
+}
+Table DANH_GIA_SAN_PHAM {
+  ma_danh_gia uuid [pk]
+  ma_kh varchar [not null]
+  ma_sp varchar [not null]
+  ma_donhang varchar [not null]
+  so_sao int [not null, note: '1-5']
+  noi_dung text [not null]
+  trang_thai varchar [not null, note: 'HIEN_THI / AN; hiển thị ngay sau khi gửi']
+  ngay_tao timestamptz [not null]
+  cap_nhat_luc timestamptz [not null]
+  phien_ban uuid [not null]
+  nguoi_duyet varchar
+  ngay_duyet timestamptz
+  duyet_tu_phien_ban uuid
+  indexes {
+    (ma_kh, ma_sp) [unique]
+  }
+}
+Ref: KHAO_SAT.nguoi_tao > TAI_KHOAN.ma_tk
+Ref: CAU_HOI_KHAO_SAT.ma_khao_sat > KHAO_SAT.ma_khao_sat
+Ref: LUA_CHON_KHAO_SAT.ma_cau_hoi > CAU_HOI_KHAO_SAT.ma_cau_hoi
+Ref: GUI_KHAO_SAT.ma_khao_sat > KHAO_SAT.ma_khao_sat
+Ref: GUI_KHAO_SAT.ma_kh > KHACH_HANG.ma_kh
+Ref: TRA_LOI_KHAO_SAT.(ma_gui, ma_khao_sat) > GUI_KHAO_SAT.(ma_gui, ma_khao_sat)
+Ref: TRA_LOI_KHAO_SAT.(ma_cau_hoi, ma_khao_sat) > CAU_HOI_KHAO_SAT.(ma_cau_hoi, ma_khao_sat)
+Ref: TRA_LOI_KHAO_SAT.(ma_lua_chon, ma_cau_hoi) > LUA_CHON_KHAO_SAT.(ma_lua_chon, ma_cau_hoi)
+Ref: DANH_GIA_SAN_PHAM.ma_kh > KHACH_HANG.ma_kh
+Ref: DANH_GIA_SAN_PHAM.ma_sp > SAN_PHAM.ma_sp
+Ref: DANH_GIA_SAN_PHAM.ma_donhang > DON_HANG.ma_donhang
+Ref: DANH_GIA_SAN_PHAM.nguoi_duyet > TAI_KHOAN.ma_tk

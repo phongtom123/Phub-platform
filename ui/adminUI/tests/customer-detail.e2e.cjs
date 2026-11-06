@@ -10,8 +10,8 @@ async function main() {
   const browser = await chromium.launch({ headless: true, executablePath: process.env.PHUB_CHROMIUM_EXECUTABLE || undefined });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-    const errors = [], patches = [], orderPages = [], statusWrites = [];
-    let reads = 0, listReads = 0, failSave = false, failStatus = false, acceptStatus = true;
+    const errors = [], patches = [], orderPages = [], statusWrites = [], archiveWrites = [];
+    let reads = 0, listReads = 0, failSave = false, failStatus = false, failArchive = false, acceptStatus = true;
     const data = {
       profile: { ma_kh: "KH1", ten_kh: "Khách kiểm thử", sdt: "09001", ngay_sinh: null, ngay_tao: null,
         cap_nhat_luc: null, luu_tru_luc: null, dia_chi_chi_tiet_md: null, tinh_thanh_md: null, xa_phuong_md: null },
@@ -26,6 +26,14 @@ async function main() {
       if (url.origin !== new URL(base).origin) return route.abort();
       if (!url.pathname.startsWith("/api/")) return route.continue();
       const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
+      if (url.pathname === "/api/backend/crm/customers/KH1/archive") {
+        assert.equal(request.method(), "POST");
+        archiveWrites.push(request.postDataJSON());
+        if (failArchive) return respond({ detail: "Không thể xóa mềm kiểm thử." }, 503);
+        data.profile.luu_tru_luc = request.postDataJSON().archived ? "2026-11-05T00:00:00Z" : null;
+        if (data.profile.luu_tru_luc) data.account.trang_thai = 0;
+        return respond(data);
+      }
       if (url.pathname === "/api/backend/admin/accounts/CUSTOMER-TK1/status") {
         assert.equal(request.method(), "POST");
         statusWrites.push(request.postDataJSON());
@@ -52,11 +60,15 @@ async function main() {
       if (url.pathname === "/api/backend/admin/accounts/TK1" || url.pathname === "/api/backend/admin/me") return respond(admin);
       if (url.pathname === "/api/backend/admin/accounts") return respond({ data: [admin], total: 1, page: 1, page_size: 20 });
       if (url.pathname === "/api/backend/data/resources") return respond([{ name: "customers", title: "Khách hàng", keys: ["ma_kh"], writable: true,
-        columns: [{ name: "ma_kh", type: "varchar", required: true, generated: true }, { name: "ten_kh", type: "varchar", required: true }] }]);
+        columns: [{ name: "ma_kh", type: "varchar", required: true, generated: true }, { name: "ten_kh", type: "varchar", required: true },
+          { name: "ngay_sinh", type: "date" }, { name: "luu_tru_luc", type: "timestamptz", system: true }] }]);
       if (url.pathname === "/api/backend/data/customers") {
         listReads++;
-        return respond({ data: [{ ma_kh: "KH1", ten_kh: data.profile.ten_kh }, { ma_kh: "KH2", ten_kh: "Khách chưa có tài khoản" }],
-          customer_accounts: { KH1: { ma_tk: data.account.ma_tk, trang_thai: data.account.trang_thai }, KH2: null }, total: 2, page: 1, page_size: 20 });
+        const filters = JSON.parse(url.searchParams.get("filters") || "{}"), mode = filters.luu_tru_luc || "ACTIVE";
+        const rows = [data.profile, { ma_kh: "KH2", ten_kh: "Khách chưa có tài khoản", ngay_sinh: null, luu_tru_luc: null }]
+          .filter(row => mode === "ALL" || Boolean(row.luu_tru_luc) === (mode === "ARCHIVED"));
+        return respond({ data: rows, filters,
+          customer_accounts: { KH1: { ma_tk: data.account.ma_tk, trang_thai: data.account.trang_thai }, KH2: null }, total: rows.length, page: 1, page_size: 20 });
       }
       if (url.pathname.startsWith("/api/backend/data/")) return respond({ data: [], total: 0, page: 1, page_size: 20 });
       throw new Error("Unexpected API: " + url.pathname);
@@ -162,6 +174,40 @@ async function main() {
     assert.equal(await listStatus.isDisabled(), true, "Status is disabled while editing a profile row");
     await page.getByRole("textbox", { name: "Tên khách hàng KH1", exact: true }).press("Escape");
     assert.equal(await listStatus.isEnabled(), true);
+    const archiveButton = page.getByRole("button", { name: "Xóa mềm khách hàng KH1", exact: true });
+    acceptStatus = false;
+    await archiveButton.click();
+    assert.equal(archiveWrites.length, 0);
+    acceptStatus = true; failArchive = true;
+    await archiveButton.click();
+    await page.getByRole("alert").filter({ hasText: "Không thể xóa mềm kiểm thử." }).waitFor();
+    assert.equal(await listStatus.inputValue(), "1");
+    failArchive = false;
+    const beforeArchive = listReads;
+    await archiveButton.click();
+    await page.getByText("Đã xóa mềm khách hàng; đơn hàng và hóa đơn vẫn được giữ.", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "KH1", exact: true }).count(), 0);
+    assert.equal(listReads, beforeArchive, "Archive updates list in place");
+    await page.getByLabel("Lọc hồ sơ khách hàng", { exact: true }).selectOption("ARCHIVED");
+    await page.getByRole("button", { name: "Khôi phục khách hàng KH1", exact: true }).waitFor();
+    assert.equal(await listStatus.inputValue(), "0");
+    assert.equal(await listStatus.isDisabled(), true);
+    await page.getByRole("button", { name: "Khôi phục khách hàng KH1", exact: true }).click();
+    await page.getByText("Đã khôi phục hồ sơ. Tài khoản vẫn bị ẩn cho đến khi Admin bật lại.", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("link", { name: "KH1", exact: true }).count(), 0);
+    await page.getByLabel("Lọc hồ sơ khách hàng", { exact: true }).selectOption("ACTIVE");
+    await page.getByRole("link", { name: "KH1", exact: true }).waitFor();
+    assert.equal(await listStatus.inputValue(), "0", "Restore does not auto-enable the account");
+    assert.equal(await listStatus.isEnabled(), true);
+    await page.getByRole("link", { name: "KH1", exact: true }).click();
+    await page.getByRole("heading", { name: "Thông tin khách hàng" }).waitFor();
+    await page.getByRole("button", { name: "Xóa mềm khách hàng KH1", exact: true }).click();
+    await page.getByRole("button", { name: "Khôi phục khách hàng KH1", exact: true }).waitFor();
+    assert.equal(await status.isDisabled(), true);
+    assert.equal(await page.getByRole("link", { name: "Chỉnh sửa", exact: true }).count(), 0);
+    await page.getByRole("button", { name: "Khôi phục khách hàng KH1", exact: true }).click();
+    await page.getByRole("link", { name: "Chỉnh sửa", exact: true }).waitFor();
+    assert.deepEqual(archiveWrites, [{ archived: true }, { archived: true }, { archived: false }, { archived: true }, { archived: false }]);
     assert.equal(await page.evaluate(() => window.__crmDocumentMarker), "same-document");
     assert.deepEqual(errors, []);
     console.log("PASS: customer status in detail, edit form and list; draft preservation, cancel/error rollback, lazy orders and mobile. Mocked HTTP only.");

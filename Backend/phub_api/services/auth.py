@@ -37,6 +37,8 @@ def identity(account: dict, repository: AuthRepository) -> User:
     rows = repository.customer(customer)
     if not rows:
         raise HTTPException(403, "Không tìm thấy khách hàng.")
+    if rows[0].get("luu_tru_luc") is not None:
+        raise HTTPException(403, "Hồ sơ khách hàng đã được xóa mềm. Vui lòng liên hệ quản trị viên.")
     return User(account["ma_tk"], account["ten_tai_khoan"], "KHACH_HANG", rows[0]["ten_kh"], customer_id=customer)
 
 

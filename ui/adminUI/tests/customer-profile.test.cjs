@@ -4,7 +4,11 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const path = require("node:path");
 const ts = require("typescript");
-const sandbox = { exports: {}, Intl, Date };
+const ageScope = { exports: {}, Intl, Date };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../../shared/customer-age.ts"), "utf8"), {
+  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+}).outputText, ageScope);
+const sandbox = { exports: {}, Intl, Date, require: id => { assert.equal(id, "../../../shared/customer-age"); return ageScope.exports; } };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/lib/customer-profile.ts"), "utf8"), {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText, sandbox);
@@ -19,6 +23,9 @@ test("age uses birthday and Vietnam civil day, not the migration date", () => {
   assert.equal(customerAge("2000-10-23", "2026-10-22"), 25);
   assert.equal(customerAge("2000-10-22", "2026-10-22"), 26);
   assert.equal(customerAge("2999-01-01", "2026-10-22"), null);
+  assert.equal(customerAge("2001-02-29", "2026-10-22"), null);
+  assert.equal(customerAge("2000-02-29", "2025-02-28"), 24);
+  assert.equal(customerAge("2000-02-29", "2025-03-01"), 25);
   assert.equal(vietnamDate(new Date("2026-10-21T18:00:00Z")), "2026-10-22");
 });
 const draft = { ten_kh: "Khách", sdt: "09001", ngay_sinh: "", dia_chi_chi_tiet_md: "", tinh_thanh_md: "", xa_phuong_md: "" };

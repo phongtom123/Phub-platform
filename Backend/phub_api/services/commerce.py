@@ -60,6 +60,8 @@ class CommerceService:
         if not rows or len(rows) != 1 or rows[0]["ma_kh"] != customer.customer_id:
             raise PaymentError(403, "AUTH_CUSTOMER_UNAVAILABLE", "Tài khoản chưa liên kết khách hàng hợp lệ.")
         row = rows[0]
+        if row.get("luu_tru_luc") is not None:
+            raise PaymentError(403, "AUTH_CUSTOMER_UNAVAILABLE", "Hồ sơ khách hàng đã được xóa mềm.")
         account = row.get("account")
         if isinstance(account, list):
             account = account[0] if len(account) == 1 else None
@@ -68,6 +70,7 @@ class CommerceService:
                                address_line=row.get("dia_chi_chi_tiet_md"), province=row.get("tinh_thanh_md"),
                                ward=row.get("xa_phuong_md"),
                                avatar_url=avatar.get("url") if isinstance(avatar, dict) else None,
+                               birthday=row.get("ngay_sinh"),
                                payment_bypass_enabled=PaymentDemoSettings.from_environment().enabled)
 
     def save_profile(self, request, customer):
@@ -75,6 +78,8 @@ class CommerceService:
         values = {"ten_kh": request.name, "sdt": request.phone,
                   "dia_chi_chi_tiet_md": request.address_line,
                   "tinh_thanh_md": request.province, "xa_phuong_md": request.ward}
+        if "birthday" in request.model_fields_set:
+            values["ngay_sinh"] = request.birthday.isoformat() if request.birthday else None
         rows = self.repository.save_profile(customer.customer_id, values)
         if not rows or len(rows) != 1 or rows[0].get("ma_kh") != customer.customer_id:
             raise PaymentError(403, "PROFILE_UPDATE_DENIED", "Không thể lưu thông tin nhận hàng của tài khoản này.")

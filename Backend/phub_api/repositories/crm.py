@@ -19,6 +19,12 @@ class CrmRepository:
             "p_changes": changes,
         }).execute().data
 
+    def archive(self, customer_id, actor_id, archived):
+        return self.db.rpc("admin_archive_customer_v1", {
+            "p_customer_id": customer_id, "p_actor_account_id": actor_id,
+            "p_archived": archived,
+        }).execute().data
+
     def orders(self, customer_id, page, page_size):
         return (self.db.table("DON_HANG").select("ma_donhang,trang_thai,kenh_ban,thoi_gian_dat", count="exact")
                 .eq("ma_kh", customer_id).order("thoi_gian_dat", desc=True).order("ma_donhang")

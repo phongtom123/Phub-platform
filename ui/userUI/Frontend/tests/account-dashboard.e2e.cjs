@@ -29,7 +29,7 @@ const pagination=(page,total=11)=>({page,page_size:10,total,total_pages:Math.cei
    if(path==='/api/backend/customer/me'){
     if(request.method()==='PUT'){
      saves++;const body=request.postDataJSON();
-     assert.deepEqual(Object.keys(body).sort(),['name','phone','address_line','province','ward'].sort());
+     assert.deepEqual(Object.keys(body).sort(),['name','phone','address_line','province','ward','birthday'].sort());
      if(mode==='invalid-save')return fail(422,'Số điện thoại chưa hợp lệ.');
      profile={...profile,...body};return ok(profile);
     }
@@ -62,7 +62,7 @@ const pagination=(page,total=11)=>({page,page_size:10,total,total_pages:Math.cei
   await fits();
   await page.screenshot({path:process.env.PHUB_ACCOUNT_DESKTOP_SCREENSHOT||require('node:path').join(require('node:os').tmpdir(),'phub-profile-desktop.png'),fullPage:true});
   await page.getByRole('button',{name:'Chỉnh sửa thông tin',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'Thông tin nhận hàng'});
+  const dialog=page.getByRole('dialog',{name:'Thông tin cá nhân và nhận hàng'});
   await dialog.getByLabel('Họ và tên').fill('Tên chưa lưu');await dialog.getByRole('button',{name:'Hủy',exact:true}).click();assert.equal(saves,0);
   await page.getByRole('button',{name:'Chỉnh sửa thông tin',exact:true}).click();
   await dialog.getByLabel('Họ và tên').fill('Khách đã cập nhật');mode='invalid-save';

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query
 
 from phub_api.dependencies.crm import read_service, write_service
 from phub_api.schemas.api_contracts import READ_ERRORS, WRITE_ERRORS, error_response
-from phub_api.schemas.crm import CustomerDetail, CustomerOrders, CustomerUpdate, Identifier
+from phub_api.schemas.crm import CustomerArchiveUpdate, CustomerDetail, CustomerOrders, CustomerUpdate, Identifier
 from phub_api.services.crm import CrmService
 
 router = APIRouter(prefix="/api/crm", tags=["Admin · CRM"])
@@ -24,6 +24,13 @@ def customer_detail(customer_id: Identifier, service: Read):
               summary="Lưu hồ sơ khách; không sửa trạng thái tài khoản/lưu trữ")
 def update_customer(customer_id: Identifier, body: CustomerUpdate, service: Write):
     return service.update(customer_id, body)
+
+
+@router.post("/customers/{customer_id}/archive", response_model=CustomerDetail,
+             responses={**WRITE_ERRORS, 404: error_response(404, "Không tìm thấy khách hàng.")},
+             summary="Xóa mềm hoặc khôi phục hồ sơ; không xóa chứng từ, không tự mở lại tài khoản")
+def archive_customer(customer_id: Identifier, body: CustomerArchiveUpdate, service: Write):
+    return service.archive(customer_id, body.archived)
 
 
 @router.get("/customers/{customer_id}/orders", response_model=CustomerOrders, responses=READ_ERRORS,

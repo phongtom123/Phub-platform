@@ -31,13 +31,19 @@ def crm_client(monkeypatch):
     def handle(request):
         state["requests"].append(request)
         table = request.url.path.split("/")[-1]
-        if table == "admin_update_customer_profile_v2":
+        if table in {"admin_update_customer_profile_v2", "admin_archive_customer_v1"}:
             values = json.loads(request.content)
             state["rpc_calls"].append(values)
             if state["rpc_error"]:
                 return httpx.Response(400, json={"code": state["rpc_error"], "message": "private SQL", "details": None, "hint": None})
-            state["profile"].update(values["p_changes"])
-            assert set(values) == {"p_customer_id", "p_actor_account_id", "p_changes"}
+            if table == "admin_archive_customer_v1":
+                assert set(values) == {"p_customer_id", "p_actor_account_id", "p_archived"}
+                state["profile"]["luu_tru_luc"] = "2026-11-05T00:00:00Z" if values["p_archived"] else None
+                if values["p_archived"] and state["account"]:
+                    state["account"]["trang_thai"] = 0
+            else:
+                state["profile"].update(values["p_changes"])
+                assert set(values) == {"p_customer_id", "p_actor_account_id", "p_changes"}
             return httpx.Response(200, json={"profile": state["profile"], "account": state["account"]})
         assert request.method == "GET", "CRM writes must be one RPC, not separate table writes"
         assert table not in {"SO_THICH", "KHACH_HANG_SO_THICH"}
@@ -167,6 +173,52 @@ def test_dbml_dates_and_system_fields():
     model = payload_model("customers", True)
     assert not {"ngay_tao", "cap_nhat_luc", "luu_tru_luc"}.intersection(model.model_fields)
     assert model.model_validate({"ngay_sinh": "2000-01-01"}).model_dump(mode="json")["ngay_sinh"] == "2000-01-01"
+
+
+def test_archive_and_restore_use_one_privileged_rpc(crm_client):
+    client, state = crm_client
+    response = client.post(PATH + "/archive", headers=ORIGIN, json={"archived": True})
+    assert response.status_code == 200
+    assert response.json()["profile"]["luu_tru_luc"]
+    assert response.json()["account"]["trang_thai"] == 0
+    assert state["rpc_calls"] == [{"p_customer_id": "KH1", "p_actor_account_id": "AD1", "p_archived": True}]
+    assert len(state["requests"]) == 1
+    response = client.post(PATH + "/archive", headers=ORIGIN, json={"archived": False})
+    assert response.status_code == 200 and response.json()["profile"]["luu_tru_luc"] is None
+    assert response.json()["account"]["trang_thai"] == 0
+
+
+@pytest.mark.parametrize("body", [{}, {"archived": 1}, {"archived": "true"}, {"archived": None}, {"archived": True, "ma_kh": "OTHER"}])
+def test_archive_rejects_invalid_state_and_customer_override(crm_client, body):
+    client, state = crm_client
+    assert client.post(PATH + "/archive", headers=ORIGIN, json=body).status_code == 422
+    assert state["requests"] == []
+
+
+@pytest.mark.parametrize("code,status", [("PGRST202", 503), ("P0002", 404), ("42501", 403)])
+def test_archive_rpc_errors_do_not_claim_success(crm_client, code, status):
+    client, state = crm_client
+    state["rpc_error"] = code
+    response = client.post(PATH + "/archive", headers=ORIGIN, json={"archived": True})
+    assert response.status_code == status and "private SQL" not in response.text
+
+
+def test_archive_requires_admin_and_same_origin(crm_client):
+    client, state = crm_client
+    assert client.post(PATH + "/archive", headers={"Origin": "https://evil.test"}, json={"archived": True}).status_code == 403
+    state["actor"] = User("TK1", "customer", "KHACH_HANG", "Customer", customer_id="KH1")
+    assert client.post(PATH + "/archive", headers=ORIGIN, json={"archived": True}).status_code == 403
+    assert state["requests"] == []
+
+
+def test_archived_profile_cannot_authenticate_even_if_account_is_active():
+    from types import SimpleNamespace
+    from fastapi import HTTPException
+    from phub_api.services.auth import identity
+    repository = SimpleNamespace(customer=lambda _: [{"ma_kh": "KH1", "ten_kh": "Customer", "luu_tru_luc": "2026-11-05T00:00:00Z"}])
+    with pytest.raises(HTTPException) as error:
+        identity({"ma_tk": "TK1", "ten_tai_khoan": "customer", "trang_thai": 1, "ma_kh": "KH1"}, repository)
+    assert error.value.status_code == 403
 
 
 def test_generic_api_rejects_future_birthday(crm_client):

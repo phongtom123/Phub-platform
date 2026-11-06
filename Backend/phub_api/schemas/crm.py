@@ -2,7 +2,7 @@
 from datetime import date, datetime, timedelta, timezone
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints, field_validator, model_validator
 
 Identifier = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 
@@ -59,6 +59,11 @@ class CustomerAccount(BaseModel):
     ten_tai_khoan: str
     email: str | None = None
     trang_thai: int
+
+
+class CustomerArchiveUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    archived: StrictBool
 
 
 class CustomerDetail(BaseModel):

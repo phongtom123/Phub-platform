@@ -26,7 +26,10 @@ export function AccountOrders() {
         </div>
         <span className={styles.badge} data-status={order.status}>{orderStatus[order.status] ?? "Chưa xác định"}</span>
         <div className={styles.orderValue}><small>Giá trị đơn hàng</small><strong>{formatMoney(order.total, order.currency)}</strong></div>
-        <Link className={styles.orderLink} href={`/main/orders/${encodeURIComponent(order.id)}`}>Xem chi tiết <span aria-hidden="true">→</span></Link>
+        <div className={styles.orderActions}>
+          <Link className={styles.orderLink} href={`/main/orders/${encodeURIComponent(order.id)}`}>Xem chi tiết <span aria-hidden="true">→</span></Link>
+          {order.status === "HOAN_THANH" && <Link className={styles.orderLink} href="/main/reviews">Đánh giá sản phẩm <span aria-hidden="true">→</span></Link>}
+        </div>
         {order.payment_deadline && <div className={styles.orderDeadline}><PaymentDeadline orderId={order.id} deadline={order.payment_deadline} compact /></div>}
       </article>)}</div> : <div className={styles.empty}>
         <span className={styles.emptyIcon}><AccountIcon name="orders" /></span>

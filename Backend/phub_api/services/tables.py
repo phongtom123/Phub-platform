@@ -135,6 +135,11 @@ def table_filters(name: str, raw: str | None):
         columns = {column['name']: column for column in public_columns(name)}
         result = []
         for key, value in values.items():
+            if name == "customers" and key == "luu_tru_luc":
+                if value not in {"ACTIVE", "ARCHIVED", "ALL"}:
+                    raise ValueError
+                result.append((key, "archive", value))
+                continue
             if value in ('', None):
                 continue
             field, _, suffix = key.partition('__')
@@ -213,6 +218,8 @@ class TablesService:
         existing = self.repository.detail(name, self.user, keys)
         if not existing:
             raise HTTPException(404, "Không tìm thấy dữ liệu.")
+        if name == "customers" and existing[0].get("luu_tru_luc") is not None:
+            raise HTTPException(409, "Khôi phục hồ sơ khách hàng trước khi chỉnh sửa.")
         data = read_payload(body, name, True)
         if name == "employees" and keys == [self.user.employee_id]:
             if data.get("loai_nhan_vien", "ADMIN") != "ADMIN" or data.get("trang_thai", 1) != 1 or data.get("ma_kho") is not None:

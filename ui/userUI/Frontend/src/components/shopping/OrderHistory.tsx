@@ -52,6 +52,7 @@ export function OrderHistory() {
                 >
                   Xem thanh toán
                 </Link>
+                {order.status === "HOAN_THANH" && <> · <Link href="/main/reviews">Đánh giá sản phẩm</Link></>}
               </li>
             ))}
           </ul>
