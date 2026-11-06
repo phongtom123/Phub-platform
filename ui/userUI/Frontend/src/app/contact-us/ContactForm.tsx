@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { authPageHref } from "@/lib/auth/redirect";
 import { AUTH_SESSION_EVENT, getSession, type SessionUser } from "../../../../../shared/auth-client";
 import { SupportOrderPicker } from "./SupportOrderPicker";
+import InvoiceClaimRequest from "./InvoiceClaimRequest";
 import styles from "./contact.module.css";
 
 export type TicketStatus = "MOI" | "DANG_XU_LY" | "DA_GIAI_QUYET" | "DA_DONG";
@@ -21,6 +22,9 @@ export type CustomerTicket = {
   ngay_phan_hoi: string | null;
   ngay_tao: string;
   cap_nhat_luc: string;
+  loai_yeu_cau?: string;
+  ma_hoa_don_yeu_cau?: string | null;
+  ket_qua_lien_ket?: "DA_LIEN_KET" | "TU_CHOI" | null;
 };
 
 type TicketPage = {
@@ -93,12 +97,14 @@ function ContactWorkspaceInner({
   initialProductId,
   initialProductName,
   initialOrderId,
+  invoiceLink,
   currentPath,
   sidebar,
 }: {
   initialProductId: string;
   initialProductName: string;
   initialOrderId: string;
+  invoiceLink: boolean;
   currentPath: string;
   sidebar?: ReactNode;
 }) {
@@ -393,6 +399,9 @@ function ContactWorkspaceInner({
         )}
       </div>
 
+      <InvoiceClaimRequest key={account.account_id} initiallyOpen={invoiceLink} onCreated={created => {
+        setPage(1); setTicketsVersion(v => v + 1); setSelectedId(created.ma_phan_hoi); setThreadPage(1); setDetailVersion(v => v + 1);
+      }}/>
       <div className={styles.layout}>
       <form className={styles.form} onSubmit={handleSubmit}>
         <label>
@@ -641,6 +650,10 @@ function ContactWorkspaceInner({
 
                       <div className={styles.messageBlock}>
                         <h4>Nội dung đã gửi</h4>
+                        {selectedTicket.loai_yeu_cau === "LIEN_KET_HOA_DON" && <p>
+                          Hóa đơn: <strong>{selectedTicket.ma_hoa_don_yeu_cau}</strong> · {selectedTicket.ket_qua_lien_ket === "DA_LIEN_KET" ? "Đã liên kết" : selectedTicket.ket_qua_lien_ket === "TU_CHOI" ? "Chưa được chấp nhận" : "Chờ nhân viên xác minh"}
+                          {selectedTicket.ket_qua_lien_ket === "DA_LIEN_KET" && selectedTicket.ma_donhang && <> · <Link href={`/main/orders/${encodeURIComponent(selectedTicket.ma_donhang)}`}>Xem đơn hàng</Link></>}
+                        </p>}
                         <p className={styles.preWrap}>{selectedTicket.noi_dung}</p>
                       </div>
 
@@ -753,6 +766,7 @@ function ContactWorkspace({ sidebar }: { sidebar?: ReactNode }) {
       initialProductId={initialProductId}
       initialProductName={initialProductName}
       initialOrderId={initialOrderId}
+      invoiceLink={searchParams.get("invoice_link") === "1"}
       currentPath={currentPath}
       sidebar={sidebar}
     />

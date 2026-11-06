@@ -32,6 +32,7 @@ export function ReferenceInput({
   searchable = true,
   label = "Chọn",
   filters,
+  activeAccounts = false,
 }: {
   field: string;
   value: string;
@@ -41,6 +42,7 @@ export function ReferenceInput({
   searchable?: boolean;
   label?: string;
   filters?: Record<string, string>;
+  activeAccounts?: boolean;
 }) {
   const ref = references[field];
   const [query, setQuery] = useState(""),
@@ -58,7 +60,7 @@ export function ReferenceInput({
       page_size: "50",
       filters: filterKey,
     });
-    void adminFetch(`/api/backend/data/${ref.resource}?${params}`, {
+    void adminFetch(activeAccounts ? `/api/backend/staff/counter/customers?q=${encodeURIComponent(query)}` : `/api/backend/data/${ref.resource}?${params}`, {
       signal: controller.signal,
     })
       .then(async (response) => {
@@ -69,14 +71,14 @@ export function ReferenceInput({
           throw new Error(body.detail || "Không tải được danh sách chọn.");
         if (!controller.signal.aborted) {
           setRows(body.data);
-          setTotal(body.total);
+          setTotal(body.total ?? body.data.length);
         }
       })
       .catch((e) => {
         if (!controller.signal.aborted) setError(String(e.message));
       });
     return () => controller.abort();
-  }, [ref.resource, query, page, filterKey, searchable]);
+  }, [ref.resource, query, page, filterKey, searchable, activeAccounts]);
   return (
     <span className="reference-input">
       {searchable && <input
@@ -107,7 +109,7 @@ export function ReferenceInput({
         )}
         {rows.map((row) => (
           <option key={String(row[ref.id])} value={String(row[ref.id])}>
-            {String(row[ref.name] ?? row[ref.id])} · {String(row[ref.id])}
+            {String(row[ref.name] ?? row[ref.id])} · {String(row[ref.id])}{activeAccounts && ` · ${String(row.ten_tai_khoan ?? "")} · ${String(row.sdt ?? "")}`}
           </option>
         ))}
       </select>

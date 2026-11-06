@@ -18,6 +18,7 @@ from phub_api.controllers.media import router as media_router
 from phub_api.controllers.media import customer_router as customer_media_router
 from phub_api.controllers.crm import router as crm_router
 from phub_api.controllers.support import router as support_router
+from phub_api.controllers.invoice_claims import router as invoice_claims_router
 from phub_api.controllers.engagement import router as engagement_router
 from phub_api.controllers.warehouse_drafts import router as warehouse_drafts_router
 from phub_api.controllers.warehouse import router as warehouse_router
@@ -68,6 +69,7 @@ app.include_router(media_router)
 app.include_router(customer_media_router)
 app.include_router(crm_router)
 app.include_router(support_router)
+app.include_router(invoice_claims_router)
 app.include_router(engagement_router)
 app.include_router(warehouse_drafts_router)
 app.include_router(warehouse_router)

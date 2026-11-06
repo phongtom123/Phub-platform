@@ -1,5 +1,22 @@
 # Khảo sát, báo cáo CRM và đánh giá sản phẩm — 05/11/2026
 
+## Viết ngay trên trang sản phẩm — 06/11/2026
+
+- Nút “Viết đánh giá” mở form chấm sao/nhận xét ngay trong khối đánh giá, không
+  điều hướng sang trang khác. Đánh giá cũ của khách được tải vào form để sửa.
+- Chỉ kiểm tra phiên và quyền mua khi khách bấm nút. Khách chưa đăng nhập nhận
+  thông báo và liên kết đăng nhập; chưa có đơn hoàn thành cho sản phẩm thì báo
+  chưa đủ điều kiện. Lỗi API được báo riêng, không hiểu nhầm là chưa mua.
+- `GET /api/customer/crm/reviews/eligible?product_id=SP001` lọc đúng một sản phẩm
+  tại database, không duyệt mọi trang lịch sử. Bỏ query vẫn giữ danh sách cũ.
+- Migration `20261106074941_product_review_eligibility_filter.sql` đã áp dụng
+  trên Supabase; chỉ cập nhật hàm đọc, không sửa đánh giá hoặc giao dịch.
+- Gửi/sửa thành công làm mới nhận xét, số lượng và điểm sao tại chỗ; lỗi giữ
+  bản nháp; đổi phiên đóng form để tránh giữ thông tin tài khoản cũ.
+- Kiểm tra có mục tiêu: SQL biệt lập, 18 ca API, browser fixtures khách chưa
+  đăng nhập/chưa mua/lỗi API/gửi và sửa trên desktop/mobile, không điều hướng.
+  Browser ghi bằng fixtures, không tạo thêm nhận xét thật. Mã mới chưa push/deploy.
+
 ## Hiển thị ngay — chính sách mới nhất 06/11/2026
 
 - Bỏ bước chờ duyệt. Đánh giá mới và sửa đánh giá đang hiển thị được công khai ngay;
@@ -127,7 +144,7 @@ Trong menu **Tiếp thị**:
 | Admin | POST `/api/crm/reviews/{id}/moderate` |
 | Khách | GET `/api/customer/crm/surveys` và `/surveys/{id}` |
 | Khách | POST `/api/customer/crm/surveys/{id}/submit` |
-| Khách | GET `/api/customer/crm/reviews/eligible?page=1` |
+| Khách | GET `/api/customer/crm/reviews/eligible?page=1` (thêm `product_id` để kiểm tra một sản phẩm) |
 | Khách | POST `/api/customer/crm/reviews` |
 | Công khai | GET `/api/catalog/products/{product_id}/reviews?page=1` |
 

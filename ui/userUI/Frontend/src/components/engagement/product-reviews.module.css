@@ -1,0 +1,124 @@
+.section {
+  max-width: 1398px;
+  margin: 36px auto;
+  padding: 0 24px;
+  color: #182238;
+  scroll-margin-top: 100px;
+}
+.panel { overflow: hidden; border: 1px solid #e3e8f1; border-radius: 18px; background: #fff; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 28px 32px; border-bottom: 1px solid #edf0f6; }
+.header h2 { margin: 0; font-size: 23px; line-height: 1.4; font-weight: 700; letter-spacing: -.5px; color: #15213a; }
+.header p { margin: 7px 0 0; font-size: 13px; color: #758097; line-height: 1.6; }
+.writeLink { display: inline-flex; justify-content: center; align-items: center; gap: 9px; flex-shrink: 0; min-height: 42px; padding: 10px 19px; border: 1px solid #0156ff; border-radius: 8px; color: #0156ff; font-size: 13px; font-weight: 600; text-decoration: none; transition: background .15s ease; }
+.writeLink:hover { background: #f0f5ff; }
+.writeLink { font-family: inherit; cursor: pointer; }
+.writeLink:disabled { opacity: .55; cursor: default; }
+.writeLink:focus-visible, .secondaryButton:focus-visible { outline: 3px solid #aac6ff; outline-offset: 3px; }
+.summary { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: center; gap: 46px; padding: 28px 32px; }
+.scoreCard { display: grid; justify-items: center; gap: 8px; padding: 20px 16px; border: 1px solid #e9efff; border-radius: 12px; background: #f5f8ff; text-align: center; }
+.scoreNumber { display: flex; align-items: baseline; gap: 6px; color: #0156ff; font-size: 52px; font-weight: 750; letter-spacing: -2px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.scoreNumber > span { color: #8d99b0; font-size: 18px; font-weight: 500; letter-spacing: 0; }
+.scoreInfo { display: grid; justify-items: center; gap: 10px; }
+.scoreInfo p { margin: 0; color: #74819b; font-size: 12px; line-height: 1.5; }
+.stars { position: relative; display: inline-block; width: max-content; color: #dce3ef; font-family: Arial, sans-serif; font-size: 19px; line-height: 1.2; white-space: nowrap; letter-spacing: 2px; vertical-align: middle; }
+.scoreCard .stars { font-size: 24px; letter-spacing: 3px; }
+.starFill { position: absolute; top: 0; left: 0; overflow: hidden; color: #0156ff; }
+.distribution { display: grid; gap: 15px; min-width: 0; }
+.ratingRow { display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(26px, auto); align-items: center; gap: 16px; }
+.ratingLabel { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 500; color: #68748b; }
+.ratingLabel > span { color: #a4b1c8; font-size: 14px; }
+.ratingCount { min-width: 26px; text-align: right; color: #7d889d; font-size: 12px; font-variant-numeric: tabular-nums; }
+.progress { display: block; width: 100%; height: 7px; overflow: hidden; border: 0; border-radius: 8px; background: #edf1f7; color: #0156ff; accent-color: #0156ff; }
+.progress::-webkit-progress-bar { border-radius: 8px; background: #edf1f7; }
+.progress::-webkit-progress-value { border-radius: 8px; background: #0156ff; }
+.progress::-moz-progress-bar { border-radius: 8px; background: #0156ff; }
+.listHeading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 0 32px; padding: 22px 0; border-top: 1px solid #edf0f6; }
+.listHeading h3 { display: flex; align-items: center; gap: 9px; margin: 0; color: #25314a; font-size: 15px; font-weight: 600; line-height: 1.5; }
+.listHeading h3 > span { display: inline-flex; min-width: 23px; justify-content: center; padding: 2px 7px; border-radius: 6px; background: #f0f4fc; color: #6d7f9e; font-size: 11px; font-weight: 500; }
+.orderHint { color: #8792a6; font-size: 12px; white-space: nowrap; }
+.reviewList { padding: 0 32px; }
+.review { display: flex; gap: 14px; padding: 4px 0 28px; }
+.review + .review { padding-top: 24px; border-top: 1px solid #edf0f6; }
+.avatar { display: grid; place-items: center; flex: 0 0 42px; width: 42px; height: 42px; overflow: hidden; border-radius: 50%; background: #edf3ff; color: #4269ad; font-size: 13px; font-weight: 600; }
+.reviewBody { display: grid; flex: 1; min-width: 0; gap: 9px; padding-top: 1px; }
+.reviewHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 18px; }
+.author { display: flex; flex-wrap: wrap; align-items: center; min-width: 0; gap: 8px 12px; }
+.author > strong { color: #26334c; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.verified { display: inline-flex; align-items: center; gap: 4px; color: #4f77b9; font-size: 11px; }
+.verified svg { width: 14px; height: 14px; }
+.reviewHeader time { color: #8c97aa; font-size: 11px; }
+.reviewText { margin: 2px 0 0; color: #46536b; font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 20px; padding: 22px; border-top: 1px solid #edf0f6; color: #77849c; font-size: 12px; }
+.secondaryButton { padding: 8px 14px; border: 1px solid #dce4f1; border-radius: 7px; background: #fff; color: #0156ff; font: inherit; font-size: 12px; cursor: pointer; }
+.secondaryButton:hover:not(:disabled) { background: #f5f8ff; }
+.secondaryButton:disabled { color: #a7b2c5; cursor: default; }
+.loading { display: flex; align-items: center; gap: 10px; min-height: 200px; justify-content: center; color: #7d899f; font-size: 13px; }
+.loadingDot { width: 9px; height: 9px; border-radius: 50%; background: #0156ff; }
+.error { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin: 24px 32px; padding: 16px; border-radius: 10px; background: #f0f5ff; color: #365785; font-size: 13px; }
+.error p { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.empty { display: grid; justify-items: center; gap: 10px; padding: 10px 24px 36px; text-align: center; }
+.emptyIcon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 3px; border-radius: 50%; background: #f0f5ff; color: #6a8dcd; }
+.empty h4 { margin: 0; color: #52617c; font-size: 14px; font-weight: 600; }
+.empty p { margin: 0; color: #8793a9; font-size: 12px; line-height: 1.7; }
+.composer { margin: 24px 32px 0; padding: 24px; border: 1px solid #cbdcff; border-radius: 12px; background: #f8faff; }
+.composerForm { display: grid; gap: 18px; }
+.composerHeading h3 { margin: 0; color: #203454; font-size: 17px; font-weight: 650; }
+.composerHeading p { margin: 5px 0 0; color: #7a89a2; font-size: 12px; overflow-wrap: anywhere; }
+.ratingPicker { min-width: 0; margin: 0; padding: 0; border: 0; }
+.ratingPicker legend, .contentField > label { margin-bottom: 7px; color: #3b4e6e; font-size: 13px; font-weight: 600; }
+.ratingChoices { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+.ratingOption { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 42px; color: #ccd8eb; cursor: pointer; }
+.ratingOption > span { font: 31px/1 Arial, sans-serif; transition: transform .12s ease; pointer-events: none; }
+.ratingOption:hover > span { transform: scale(1.1); }
+.ratingSelected { color: #0156ff; }
+.ratingOption input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.ratingOption input:focus-visible + span { outline: 2px solid #8eb3ff; outline-offset: 3px; border-radius: 4px; }
+.ratingPicker:disabled .ratingOption { opacity: .6; cursor: default; }
+.ratingDescription { margin-left: 12px; color: #5976a6; font-size: 12px; }
+.contentField { display: grid; min-width: 0; gap: 4px; }
+.contentField textarea { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; min-height: 112px; resize: vertical; padding: 13px 15px; border: 1px solid #d4dff0; border-radius: 9px; background: #fff; color: #344662; font: inherit; font-size: 14px; line-height: 1.7; }
+.contentField textarea::placeholder { color: #97a6be; }
+.contentField textarea:focus { outline: 2px solid #b6ceff; outline-offset: 1px; border-color: #83aaff; }
+.characterCount { justify-self: end; color: #8c9ab1; font-size: 11px; }
+.composerNote { margin: 0; color: #7d8da7; font-size: 12px; line-height: 1.7; }
+.composerActions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.submitButton { min-height: 40px; padding: 10px 22px; border: 1px solid #0156ff; border-radius: 8px; background: #0156ff; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.submitButton:hover:not(:disabled) { background: #0047d7; }
+.submitButton:focus-visible { outline: 3px solid #aac6ff; outline-offset: 3px; }
+.submitButton:disabled { opacity: .5; cursor: default; }
+.composerPrompt { display: grid; gap: 16px; }
+.composerPrompt p, .composerMessage { margin: 0; color: #54709b; font-size: 13px; line-height: 1.8; }
+.composerMessage { margin-bottom: 12px; }
+.composerError { margin: 0; padding: 12px 14px; border-radius: 7px; background: #eaf1ff; color: #31598d; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.savedNotice { margin: 24px 32px 0; padding: 14px 18px; border-radius: 9px; background: #eef5ff; color: #366297; font-size: 13px; line-height: 1.7; }
+@media (max-width: 700px) {
+  .section { margin: 24px auto; padding: 0 16px; }
+  .header { align-items: flex-start; flex-direction: column; gap: 18px; padding: 22px 20px; }
+  .header h2 { font-size: 21px; }
+  .header p { font-size: 12px; }
+  .writeLink { width: 100%; }
+  .summary { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 22px 20px 26px; }
+  .scoreCard { grid-template-columns: auto minmax(0, 1fr); gap: 18px; justify-items: start; align-items: center; padding: 20px; }
+  .scoreNumber { font-size: 44px; }
+  .scoreInfo { justify-items: start; gap: 6px; text-align: left; }
+  .scoreCard .stars { font-size: 20px; letter-spacing: 2px; }
+  .scoreInfo p { font-size: 11px; }
+  .ratingRow { gap: 12px; }
+  .listHeading { margin: 0 20px; padding: 20px 0; }
+  .listHeading h3 { font-size: 14px; }
+  .orderHint { display: none; }
+  .reviewList { padding: 0 20px; }
+  .review { gap: 10px; padding-bottom: 24px; }
+  .avatar { flex-basis: 34px; width: 34px; height: 34px; font-size: 11px; }
+  .reviewHeader { gap: 7px; }
+  .reviewText { font-size: 13px; }
+  .author > strong { font-size: 13px; }
+  .error { margin: 20px; }
+  .composer { margin: 20px 20px 0; padding: 18px; }
+  .composerHeading h3 { font-size: 16px; }
+  .ratingOption { width: 32px; }
+  .ratingDescription { width: 100%; margin: 4px 0 0; }
+  .composerActions { gap: 10px; }
+  .composerActions .submitButton { flex: 1; }
+  .savedNotice { margin: 20px 20px 0; }
+}

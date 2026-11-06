@@ -8,11 +8,12 @@ import { useAdminPolling } from "@/src/lib/use-admin-polling";
 import { dataHref } from "@/src/lib/data-navigation";
 import "./support.css";
 import { SupportThread } from "../operations/support-thread";
+import InvoiceClaimReview from "../invoice-claims/InvoiceClaimReview";
 
 const statuses: Record<string, string> = { MOI: "Mới tiếp nhận", DANG_XU_LY: "Đang xử lý", DA_GIAI_QUYET: "Đã giải quyết", DA_DONG: "Đã đóng" };
 const priorities: Record<string, string> = { THAP: "Thấp", BINH_THUONG: "Bình thường", CAO: "Cao", KHAN_CAP: "Khẩn cấp" };
 type Ticket = { ma_phan_hoi: string; ma_kh: string; ten_kh: string | null; tieu_de: string; noi_dung: string;
-  ma_sp: string | null; ma_donhang: string | null; trang_thai: string; muc_do_uu_tien: string; nguoi_xu_ly: string | null;
+  loai_yeu_cau?: string; ma_sp: string | null; ma_donhang: string | null; trang_thai: string; muc_do_uu_tien: string; nguoi_xu_ly: string | null;
   ten_nguoi_xu_ly: string | null; phan_hoi_quan_ly: string | null; ngay_phan_hoi: string | null; ngay_tao: string; cap_nhat_luc: string };
 type TicketPage = { data: Ticket[]; total: number; page: number; page_size: number };
 const ticketCode = (id: string) => `PH-${id.slice(0, 8).toUpperCase()}`;
@@ -145,6 +146,7 @@ export default function SupportView() {
               {ticket.ma_donhang && <div><dt>Đơn hàng</dt><dd><Link href={dataHref("orders", { key: JSON.stringify([ticket.ma_donhang]) })}>{ticket.ma_donhang}</Link></dd></div>}
             </dl>
             <section className="support-content"><h3>Nội dung khách gửi</h3><p>{ticket.noi_dung}</p></section>
+            {ticket.loai_yeu_cau === "LIEN_KET_HOA_DON" && <InvoiceClaimReview key={ticket.ma_phan_hoi} ticketId={ticket.ma_phan_hoi} onUpdated={() => { setVersion(v => v + 1); }}/>}
             <SupportThread key={ticket.ma_phan_hoi} ticketId={ticket.ma_phan_hoi} version={ticket.cap_nhat_luc} />
             <form className="support-response" onSubmit={save}>
               <fieldset disabled={saving}><div className="support-control-grid">

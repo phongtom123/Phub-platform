@@ -51,6 +51,10 @@ class CustomerTicket(BaseModel):
     ngay_phan_hoi: datetime | None = None
     ngay_tao: datetime
     cap_nhat_luc: datetime
+    loai_yeu_cau: Literal['HO_TRO', 'LIEN_KET_HOA_DON'] = 'HO_TRO'
+    ma_hoa_don_yeu_cau: str | None = None
+    ket_qua_lien_ket: Literal['DA_LIEN_KET', 'TU_CHOI'] | None = None
+    xac_minh_luc: datetime | None = None
 
 
 class AdminTicket(CustomerTicket):

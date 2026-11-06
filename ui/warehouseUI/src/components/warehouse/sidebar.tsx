@@ -9,6 +9,7 @@ import type { WarehouseUser } from "@/src/types/warehouse-auth";
 import { getReceipts, getTransfers } from "@/src/lib/warehouse-api";
 
 const workNav: { key: ModuleKey; label: string; icon: typeof Package; countKey?: "receipts" | "transfers" }[] = [
+  { key: "counter", label: "Bán tại quầy", icon: CreditCard }, { key: "invoice-claims", label: "Liên kết hóa đơn", icon: UserRound },
   { key: "inventory", label: "Tồn kho", icon: Boxes }, { key: "receipts", label: "Phiếu nhập", icon: ArrowDownToLine, countKey: "receipts" }, { key: "dispatches", label: "Phiếu xuất", icon: ArrowUpFromLine }, { key: "transfers", label: "Chuyển kho", icon: ArrowLeftRight, countKey: "transfers" }, { key: "invoices", label: "Hóa đơn", icon: CreditCard },
 ];
 const lookupNav: { key: ModuleKey; label: string; icon: typeof Package }[] = [{ key: "products", label: "Sản phẩm", icon: Package }, { key: "suppliers", label: "Nhà cung cấp", icon: Truck }, { key: "history", label: "Lịch sử kho", icon: Clock3 }];
