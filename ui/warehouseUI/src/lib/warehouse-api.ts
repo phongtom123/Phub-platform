@@ -169,11 +169,17 @@ export async function getReceiptDraft(receiptId: number) {
 }
 
 export async function confirmReceipt(receiptId: number) {
-  return request<{ ma_phieu_nhap: number; ma_phieu_code: string; ma_kho: number; trang_thai: string; nguoi_xac_nhan: string }>(`/api/backend/warehouse/receipts/${receiptId}/confirm`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  const current = await warehouseApi<{ version: string }>(`warehouse/receipts/${receiptId}`);
+  const { pricingRequest } = await import("../../../shared/pricing");
+  const quote = await pricingRequest<{ version: string }>(`receipts/${receiptId}`);
+  const body = JSON.stringify({ expected_version: current.version, pricing_version: quote.version });
+  return warehouseApi<{ ma_phieu_nhap: number; ma_phieu_code: string; ma_kho: number; trang_thai: string; nguoi_xac_nhan: string }>(`warehouse/receipts/${receiptId}/confirm`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": operationKey(null, body).key }, body });
 }
 
 export async function cancelReceipt(receiptId: number) {
-  return request<{ ma_phieu_nhap: number; ma_phieu_code: string; trang_thai: string }>(`/api/backend/warehouse/receipts/${receiptId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  const current = await warehouseApi<{ version: string }>(`warehouse/receipts/${receiptId}`);
+  const body = JSON.stringify({ expected_version: current.version });
+  return warehouseApi<{ ma_phieu_nhap: number; ma_phieu_code: string; trang_thai: string }>(`warehouse/receipts/${receiptId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": operationKey(null, body).key }, body });
 }
 
 /** Domain delete for a draft; the backend cancels it to preserve audit history. */
