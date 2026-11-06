@@ -50,11 +50,14 @@ export async function getInventory() {
   const productMap = new Map(products.data.map(product => [product.sku, product]));
   const totals = new Map<string, number>();
   inventory.data.forEach(item => totals.set(item.sku, (totals.get(item.sku) ?? 0) + item.so_luong_ton));
-  return { items: [...totals].map(([sku, quantity]) => ({
-    warehouse_code: "ALL", warehouse_name: "Tất cả kho", sku,
-    product_name: productMap.get(sku)?.ten_sp ?? sku, unit: productMap.get(sku)?.don_vi ?? "cái",
-    quantity, location: null, status: quantity === 0 ? "Hết hàng" : quantity <= 5 ? "Sắp hết hàng" : "Còn hàng",
-  })) };
+  return { items: products.data.map(product => {
+    const quantity = totals.get(product.sku) ?? 0;
+    return {
+      warehouse_code: "ALL", warehouse_name: "Tất cả kho", sku: product.sku,
+      product_name: product.ten_sp, unit: product.don_vi ?? "cái",
+      quantity, location: null, status: quantity === 0 ? "Hết hàng" : quantity <= 5 ? "Sắp hết hàng" : "Còn hàng",
+    };
+  }) };
 }
 
 async function page<T>(resource: string) {
