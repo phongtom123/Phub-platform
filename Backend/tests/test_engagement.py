@@ -93,6 +93,14 @@ def test_public_reviews_do_not_require_customer_and_strip_private_fields(engagem
     assert state["calls"][-1][1]["p_kind"]=="public" and state["calls"][-1][1]["p_actor"] is None
 
 
+def test_review_eligibility_filters_product_at_rpc(engagement_client):
+    client,state=engagement_client;state["actor"]=CUSTOMER
+    state["result"]={"data":[],"total":0,"page":1,"page_size":20}
+    assert client.get("/api/customer/crm/reviews/eligible?product_id=SP1").status_code==200
+    assert state["calls"][-1][1]["p_product"]=="SP1" and state["calls"][-1][1]["p_actor"]=="TK1"
+    assert client.get("/api/customer/crm/reviews/eligible?product_id=").status_code==422
+
+
 def test_review_mutations_use_versions_and_session_actor(engagement_client):
     client,state=engagement_client;state["actor"]=CUSTOMER;state["result"]=REVIEW
     assert client.post("/api/customer/crm/reviews",headers=ORIGIN,json={"product_id":"SP1","order_id":"DH1","stars":5,"content":"Good"}).status_code==200

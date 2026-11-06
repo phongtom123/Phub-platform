@@ -1,6 +1,7 @@
 import type { FormFieldDefinition, ModuleDefinition, ModuleKey } from "@/src/types/warehouse";
 
 export const moduleNames: Record<ModuleKey, string> = {
+  counter: "Bán tại quầy", "invoice-claims": "Liên kết hóa đơn",
   dashboard: "Tổng quan", inventory: "Tồn kho", receipts: "Phiếu nhập", dispatches: "Phiếu xuất", transfers: "Chuyển kho", invoices: "Hóa đơn", products: "Sản phẩm", suppliers: "Nhà cung cấp", history: "Lịch sử kho", pending: "Phiếu chờ xử lý", account: "Tài khoản", settings: "Cài đặt",
 };
 

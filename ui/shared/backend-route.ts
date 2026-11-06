@@ -73,6 +73,7 @@ function validIdentifier(value: string | undefined): boolean {
 
 function validCustomerPath(path: string[], method: string): boolean {
   if (path[0] === "customer") {
+    if (path.length === 3 && path[1] === "crm" && path[2] === "invoice-claims") return method === "POST";
     if (path[1] === "crm" && path[2] === "feedback") {
       if (path.length === 3) return ["GET", "POST"].includes(method);
       if (path.length === 5 && path[4] === "messages" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3])) return ["GET", "POST"].includes(method);
@@ -140,7 +141,13 @@ function validCrmPath(path: string[], method: string): boolean {
 
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {
   const { path } = await context.params;
-  const valid = validAdminPath(path, request.method) || validCustomerPath(path, request.method) || validCrmPath(path, request.method) ||
+  const staffPath = path[0] === "staff" && (
+    (path[1] === "invoice-claims" && ((path.length === 2 && request.method === "GET") ||
+      (/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2] ?? "") &&
+        ((path.length === 3 && request.method === "GET") || (path.length === 4 && path[3] === "decision" && request.method === "POST"))))) ||
+    (path.length === 3 && path[1] === "counter" && ((["customers", "products"].includes(path[2]) && request.method === "GET") ||
+      (path[2] === "orders" && request.method === "POST"))));
+  const valid = staffPath || validAdminPath(path, request.method) || validCustomerPath(path, request.method) || validCrmPath(path, request.method) ||
     (path[0] === "pricing" && ((path.length === 2 && path[1] === "config" && ["GET", "PUT"].includes(request.method)) ||
       (path.length === 2 && ["preview", "taxes"].includes(path[1]) && request.method === "POST") ||
       (path.length === 3 && path[1] === "taxes" && /^[A-Z][A-Z0-9_]{0,29}$/.test(path[2]) && request.method === "PATCH") ||

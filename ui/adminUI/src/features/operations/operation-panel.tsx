@@ -720,6 +720,7 @@ export function OperationPanel({
                   Khách hàng
                   <ReferenceInput
                     field="ma_kh"
+                    activeAccounts
                     value={customer}
                     label="Chọn khách hàng (không bắt buộc)"
                     onChange={(v, r) => {

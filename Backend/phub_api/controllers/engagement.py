@@ -81,8 +81,9 @@ def submit(survey_id: UUID, body: SurveySubmit, service: CustomerWrite):
 
 
 @router.get("/api/customer/crm/reviews/eligible", response_model=EngagementPage, responses=READ_ERRORS, summary="Mỗi sản phẩm đã mua một dòng, kèm đánh giá duy nhất của khách")
-def eligible_reviews(service: CustomerRead, page: Page = 1):
-    return service.reviews("eligible", page=page)
+def eligible_reviews(service: CustomerRead, page: Page = 1,
+                     product_id: str | None = Query(None, min_length=1, max_length=200)):
+    return service.reviews("eligible", product=product_id, page=page)
 
 
 @router.post("/api/customer/crm/reviews", response_model=ReviewRecord, responses=WRITE_ERRORS, summary="Một đánh giá/khách/sản phẩm; đăng và sửa hiển thị ngay, giữ ẩn nếu đã bị ẩn")

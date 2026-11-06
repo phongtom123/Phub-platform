@@ -3,7 +3,7 @@ from uuid import UUID
 
 from phub_api.repositories.admin_accounts import literal_search
 
-PUBLIC_COLUMNS = 'ma_phan_hoi,tieu_de,noi_dung,ma_sp,ma_donhang,trang_thai,phan_hoi_quan_ly,ngay_phan_hoi,ngay_tao,cap_nhat_luc'
+PUBLIC_COLUMNS = 'ma_phan_hoi,tieu_de,noi_dung,ma_sp,ma_donhang,trang_thai,phan_hoi_quan_ly,ngay_phan_hoi,ngay_tao,cap_nhat_luc,loai_yeu_cau,ma_hoa_don_yeu_cau,ket_qua_lien_ket,xac_minh_luc'
 ADMIN_COLUMNS = PUBLIC_COLUMNS + ',ma_kh,muc_do_uu_tien,nguoi_xu_ly,khach:KHACH_HANG(ten_kh),nhan_vien:NHAN_VIEN(ho_ten)'
 
 

@@ -7,6 +7,11 @@ const resources = new Set([
 ]);
 
 function allowed(path: string[], method: string) {
+  if (path[0] === "staff") return (
+    path[1] === "invoice-claims" && ((path.length === 2 && method === "GET") ||
+      (/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2] ?? "") &&
+        ((path.length === 3 && method === "GET") || (path.length === 4 && path[3] === "decision" && method === "POST")))) ||
+    path.length === 3 && path[1] === "counter" && ((["customers", "products"].includes(path[2]) && method === "GET") || (path[2] === "orders" && method === "POST")));
   return path.length === 2 && (
     (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) ||
     (path[0] === "data" && resources.has(path[1])) ||
@@ -31,6 +36,8 @@ async function proxyBackend(request: Request, context: Context): Promise<Respons
     const url = new URL(`${base.pathname.replace(/\/$/, "")}/api/${path.join("/")}`, base.origin);
     url.search = new URL(request.url).search;
     const headers = new Headers({ Accept: "application/json" });
+    const key = request.headers.get("idempotency-key");
+    if (key) headers.set("Idempotency-Key", key);
     const cookie = request.headers.get("cookie")?.split(";").map(item => item.trim()).find(item => item.startsWith("phub_session="));
     if (cookie) headers.set("Cookie", cookie);
     const origin = request.headers.get("origin");
