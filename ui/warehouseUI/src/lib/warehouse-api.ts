@@ -1,26 +1,3 @@
-export class WarehouseApiError extends Error {
-  constructor(message: string, readonly status: number) { super(message); }
-}
-
-export async function warehouseApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`/api/backend/${path}`, { ...options, credentials: "same-origin", cache: "no-store" });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const detail = body?.detail;
-    throw new WarehouseApiError(typeof detail === "string" ? detail : Array.isArray(detail) ? detail.map((issue: { msg: string }) => issue.msg).join("; ") : "Không xử lý được yêu cầu. Vui lòng thử lại.", response.status);
-  }
-  return body as T;
-}
-
-export function displayDate(value?: string | null) {
-  if (!value) return "—";
-  const normalized = /(?:Z|[+-]\d\d:\d\d)$/.test(value) ? value : `${value}Z`;
-  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short", timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(normalized));
-}
-export function cents(value: string): bigint { const [whole, fraction = ""] = value.split("."); return BigInt(whole || "0") * BigInt(100) + BigInt(fraction.padEnd(2, "0").slice(0, 2)); }
-export function displayMoney(value: bigint) { const sign = value < BigInt(0) ? "-" : ""; const positive = value < BigInt(0) ? -value : value; return `${sign}${(positive / BigInt(100)).toLocaleString("vi-VN")}${positive % BigInt(100) ? `,${String(positive % BigInt(100)).padStart(2, "0")}` : ""} ₫`; }
-export function operationKey(previous: { body: string; key: string } | null, body: string) { return previous?.body === body ? previous : { body, key: crypto.randomUUID() }; }
-
 export type InventoryApiItem = { ma_kho: number; sku: string; so_luong_ton: number; cap_nhat_luc?: string | null };
 export type ProductApiItem = { ma_sp: string; sku: string; ten_sp: string; ma_loai_sp?: string | null; thuong_hieu?: string | null; don_vi?: string | null };
 export type CategoryApiItem = { ma_loai_sp: string; ten_loai_sp: string };
@@ -34,13 +11,18 @@ export type TransferLineApiItem = { ma_phieu_chuyen: number; sku: string; so_luo
 type Page<T> = { data: T[]; total: number; page: number; page_size: number };
 export type WarehouseOption = { ma_kho: number; ten_kho: string };
 export type SupplierOption = { ma_ncc: number; ten_ncc: string };
-export type ProductOption = { sku: string; ten_sp: string };
+export type ProductOption = { ma_sp?: string; sku: string; ten_sp: string; don_vi?: string | null; gia_ban_hien_tai?: string | number | null; so_luong_ton?: number };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
   const response = await fetch(path, { ...init, headers, credentials: "include", cache: "no-store" });
-  if (!response.ok) throw new Error((await response.json().catch(() => null))?.detail ?? `API error ${response.status}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { detail?: unknown; message?: unknown } | null;
+    const raw = body?.detail ?? body?.message;
+    const detail = typeof raw === "string" ? raw : raw ? JSON.stringify(raw) : `API error ${response.status}`;
+    throw new WarehouseApiError(detail, response.status);
+  }
   return response.json() as Promise<T>;
 }
 
@@ -62,19 +44,31 @@ export async function changeMyPassword(currentPassword: string, newPassword: str
 
 export async function getInventory() {
   const [inventory, products] = await Promise.all([
-    request<{ data: InventoryApiItem[] }>("/api/backend/data/inventory?page=1&page_size=100"),
-    request<{ data: ProductApiItem[] }>("/api/backend/data/products?page=1&page_size=100"),
+    allRows<InventoryApiItem>("inventory").then(data => ({ data })),
+    allRows<ProductApiItem>("products").then(data => ({ data })),
   ]);
   const productMap = new Map(products.data.map(product => [product.sku, product]));
-  return { items: inventory.data.map(item => ({
-    warehouse_code: String(item.ma_kho), warehouse_name: `Kho #${item.ma_kho}`, sku: item.sku,
-    product_name: productMap.get(item.sku)?.ten_sp ?? item.sku, unit: productMap.get(item.sku)?.don_vi ?? "cái",
-    quantity: item.so_luong_ton, location: null, status: item.so_luong_ton === 0 ? "Hết hàng" : item.so_luong_ton <= 5 ? "Sắp hết hàng" : "Còn hàng",
-  })) };
+  const totals = new Map<string, number>();
+  inventory.data.forEach(item => totals.set(item.sku, (totals.get(item.sku) ?? 0) + item.so_luong_ton));
+  return { items: products.data.map(product => {
+    const quantity = totals.get(product.sku) ?? 0;
+    return {
+      warehouse_code: "ALL", warehouse_name: "Tất cả kho", sku: product.sku,
+      product_name: product.ten_sp, unit: product.don_vi ?? "cái",
+      quantity, location: null, status: quantity === 0 ? "Hết hàng" : quantity <= 5 ? "Sắp hết hàng" : "Còn hàng",
+    };
+  }) };
 }
 
 async function page<T>(resource: string) {
   return request<Page<T>>(`/api/backend/data/${resource}?page=1&page_size=100`);
+}
+
+async function allRows<T>(resource: string) {
+  const first = await page<T>(resource);
+  if (first.total <= first.data.length) return first.data;
+  const pages = await Promise.all(Array.from({ length: Math.ceil(first.total / first.page_size) - 1 }, (_, index) => request<Page<T>>(`/api/backend/data/${resource}?page=${index + 2}&page_size=100`)));
+  return [first, ...pages].flatMap(result => result.data);
 }
 
 export async function getWarehouseOptions() {
@@ -101,24 +95,42 @@ export async function deactivateSupplier(id: number) {
 export async function getDispatches() {
   return request<{ id: string; recordId: string; order: string; warehouse: string; employeeCode?: string; items: string; created: string; status: string; receiver: string }[]>("/api/backend/warehouse/dispatches");
 }
+export type DispatchOrderOption = { order_id: string; receiver: string; status: string; dispatchable?: boolean; sku?: string; unit?: string; unit_price?: string | number; ordered_quantity?: number; line_total?: string | number };
+export async function getDispatchOrderOptions(sku?: string) { const query = sku ? `?sku=${encodeURIComponent(sku)}` : ""; return request<DispatchOrderOption[]>(`/api/backend/warehouse/dispatches/order-options${query}`); }
 
 export type InvoiceOption = { order_id: string; buyer: string; total: number };
 export type InvoiceRow = { id: string; recordId: string; order: string; buyer: string; employeeCode: string; total: string; created: string; status: string };
 export async function getInvoices() { return request<InvoiceRow[]>("/api/backend/warehouse/invoices"); }
+export type InvoiceDetail = { invoice: { ma_hoadon: string; ma_donhang: string; thoi_gian_lap?: string; ten_nguoi_mua?: string; email_nguoi_mua?: string; ma_so_thue?: string; dia_chi_nguoi_mua?: string; tong_tien_giam?: string; tong_tien_truoc_thue?: string; tong_tien_thue?: string; tong_tien_sau_thue?: string; nguoi_lap?: string }; lines: { sku: string; ten_sp_luc_ban?: string; don_vi_luc_ban?: string; so_luong: number; don_gia: string | number; giam_gia?: string | number; giam_gia_voucher?: string | number }[] };
+export async function getInvoiceDetail(invoiceId: string) { return request<InvoiceDetail>(`/api/backend/warehouse/invoices/${encodeURIComponent(invoiceId)}`); }
 export async function getInvoiceOptions() { return request<InvoiceOption[]>("/api/backend/warehouse/invoices/options"); }
+export type CustomerInvoiceSearch = { customers: { ma_kh: string; ten_kh: string; email?: string | null; sdt?: string | null; dia_chi_chi_tiet_md?: string | null }[]; orders: { ma_donhang: string; ma_kh: string; ten_nguoi_nhan?: string | null; trang_thai: string }[] };
+export async function searchInvoiceCustomers(query: string) { return request<CustomerInvoiceSearch>(`/api/backend/warehouse/invoices/customer-search?q=${encodeURIComponent(query)}`); }
+export type InvoiceOrderPreview = { order: { ma_donhang: string; ma_kh?: string | null; trang_thai: string; ten_nguoi_nhan?: string | null; dia_chi_chi_tiet?: string | null }; lines: { sku: string; ten_sp_luc_ban?: string | null; don_vi_luc_ban?: string | null; so_luong: number; don_gia: string | number; giam_gia?: string | number; giam_gia_voucher?: string | number }[]; summary: { subtotal: string; discount: string; before_tax: string; tax: string; total: string } };
+export async function getInvoiceOrderPreview(orderId: string) { return request<InvoiceOrderPreview>(`/api/backend/warehouse/invoices/order-preview?order_id=${encodeURIComponent(orderId)}`); }
 export async function createInvoice(body: { order_id: string; buyer?: string; tax_id?: string; address?: string }) {
   return request<{ data: InvoiceRow }>("/api/backend/warehouse/invoices", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+export type ManualInvoiceLine = { sku: string; quantity: number; unit_price: number; discount: number };
+export async function createManualInvoice(body: { buyer: string; email: string; tax_id?: string; address?: string; lines: ManualInvoiceLine[] }) {
+  return request<{ data: InvoiceRow }>("/api/backend/warehouse/invoices/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 }
 
 export async function dispatchOrder(orderId: string) {
   return request<{ ma_donhang: string; trang_thai: string; nguoi_xuat: string }>(`/api/backend/warehouse/dispatches/${encodeURIComponent(orderId)}/dispatch`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
 }
+export async function createDispatchDraft(body: { order_id: string; warehouse_id?: number; note?: string; lines: { sku: string; warehouse_id?: number; quantity: number }[] }) { return request<{ data: { ma_phieu_xuat: number; ma_phieu_code: string; trang_thai: string } }>("/api/backend/warehouse/dispatches/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); }
+export async function confirmDispatch(dispatchId: number) { return request<{ ma_phieu_xuat: number; ma_phieu_code: string; trang_thai: string }>(`/api/backend/warehouse/dispatches/${dispatchId}/confirm`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }); }
+export async function cancelDispatchDraft(dispatchId: number) { return request<{ ma_phieu_xuat: number; ma_phieu_code: string; trang_thai: string }>(`/api/backend/warehouse/dispatches/${dispatchId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }); }
+export async function updateDispatchDraft(dispatchId: number, body: { order_id: string; warehouse_id?: number; note?: string; lines: { sku: string; warehouse_id?: number; quantity: number }[] }) { return request<{ data: { ma_phieu_xuat: number; trang_thai: string } }>(`/api/backend/warehouse/dispatches/${dispatchId}/draft`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); }
+export async function getDispatchDraft(dispatchId: number) { return request<{ dispatch: { ma_phieu_xuat: number; ma_donhang: string; ma_kho_xuat: number; ghi_chu?: string; trang_thai: string }; lines: { ma_sp?: string; sku: string; ten_sp?: string; don_vi?: string; don_gia?: string | number; ma_kho_xuat: number; so_luong: number }[] }>(`/api/backend/warehouse/dispatches/${dispatchId}/draft`); }
 
-function formatDate(value?: string | null) {
+export function displayDate(value?: string | null) {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("vi-VN").format(date);
 }
+const formatDate = displayDate;
 
 export const receiptStatus: Record<string, string> = { NHAP: "Nháp", DA_NHAP: "Đã nhập", HUY: "Đã hủy" };
 
@@ -153,18 +165,22 @@ export async function getReceipts() {
 }
 
 export async function getReceiptDraft(receiptId: number) {
-  const [receipts, lines] = await Promise.all([page<ReceiptApiItem>("receipts"), page<ReceiptLineApiItem>("receipt-lines")]);
-  const receipt = receipts.data.find(item => item.ma_phieu_nhap === receiptId);
-  if (!receipt) throw new Error("Không tìm thấy phiếu nhập.");
-  return { supplier_id: receipt.ma_ncc, warehouse_id: receipt.ma_kho, note: receipt.ghi_chu ?? "", lines: lines.data.filter(line => line.ma_phieu_nhap === receiptId).map(line => ({ sku: line.sku, quantity: line.so_luong_nhap, unit_price: Number(line.gia_nhap ?? 0) })) };
+  const detail = await warehouseApi<{ receipt: { ma_ncc: number; ma_kho: number; ghi_chu?: string | null }; lines: { sku: string; quantity: number; unit_price: string | number }[] }>(`warehouse/receipts/${receiptId}`);
+  return { supplier_id: detail.receipt.ma_ncc, warehouse_id: detail.receipt.ma_kho, note: detail.receipt.ghi_chu ?? "", lines: detail.lines.map(line => ({ sku: line.sku, quantity: line.quantity, unit_price: Number(line.unit_price ?? 0) })) };
 }
 
 export async function confirmReceipt(receiptId: number) {
-  return request<{ ma_phieu_nhap: number; ma_phieu_code: string; ma_kho: number; trang_thai: string; nguoi_xac_nhan: string }>(`/api/backend/warehouse/receipts/${receiptId}/confirm`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  const current = await warehouseApi<{ version: string }>(`warehouse/receipts/${receiptId}`);
+  const { pricingRequest } = await import("../../../shared/pricing");
+  const quote = await pricingRequest<{ version: string }>(`receipts/${receiptId}`);
+  const body = JSON.stringify({ expected_version: current.version, pricing_version: quote.version });
+  return warehouseApi<{ ma_phieu_nhap: number; ma_phieu_code: string; ma_kho: number; trang_thai: string; nguoi_xac_nhan: string }>(`warehouse/receipts/${receiptId}/confirm`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": operationKey(null, body).key }, body });
 }
 
 export async function cancelReceipt(receiptId: number) {
-  return request<{ ma_phieu_nhap: number; ma_phieu_code: string; trang_thai: string }>(`/api/backend/warehouse/receipts/${receiptId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  const current = await warehouseApi<{ version: string }>(`warehouse/receipts/${receiptId}`);
+  const body = JSON.stringify({ expected_version: current.version });
+  return warehouseApi<{ ma_phieu_nhap: number; ma_phieu_code: string; trang_thai: string }>(`warehouse/receipts/${receiptId}/cancel`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": operationKey(null, body).key }, body });
 }
 
 /** Domain delete for a draft; the backend cancels it to preserve audit history. */
@@ -236,12 +252,12 @@ export async function getPending() {
 }
 
 export async function getHistory() {
-  const movements = await page<{ ma_lich_su: number; sku: string; loai_giao_dich: string; so_luong_thay_doi: number; nguoi_thuc_hien?: string | null; tao_luc: string; ma_tham_chieu?: string | null }>("stock-movements");
-  return movements.data.map(item => ({
-    id: item.ma_tham_chieu ? `${item.loai_giao_dich}-${item.ma_tham_chieu}` : `LS-${item.ma_lich_su}`,
-    type: ({ NHAP_KHO: "Nhập kho", XUAT_CHUYEN_KHO: "Xuất chuyển kho", NHAN_CHUYEN_KHO: "Nhận chuyển kho", XUAT_DON_HANG: "Xuất đơn hàng" } as Record<string, string>)[item.loai_giao_dich] ?? item.loai_giao_dich,
-    product: item.sku, quantity: item.so_luong_thay_doi > 0 ? `+${item.so_luong_thay_doi}` : String(item.so_luong_thay_doi), user: item.nguoi_thuc_hien ?? "—", created: formatDate(item.tao_luc),
-  }));
+  const result = await request<{ data: { id: number; sku: string; product_name?: string | null; before_quantity: number; after_quantity: number; actor_name?: string | null; actor?: string | null; reason: string; reference?: string | null; created_at: string }[] }>("/api/backend/warehouse/history?page=1&page_size=100");
+  const labels: Record<string, string> = { "receipts:confirm": "Nhập kho", "orders:dispatch": "Xuất đơn hàng", "transfers:dispatch": "Xuất chuyển kho", "transfers:receive": "Nhận chuyển kho", "inventory:adjust": "Điều chỉnh tồn" };
+  return result.data.map(item => {
+    const change = item.after_quantity - item.before_quantity;
+    return { id: `LS-${item.id}`, reference: item.reference ?? "—", type: labels[item.reason] ?? item.reason, product: item.product_name ?? item.sku, quantity: change > 0 ? `+${change}` : String(change), user: item.actor_name ?? item.actor ?? "—", created: formatDate(item.created_at) };
+  });
 }
 
 export async function dispatchTransfer(transferId: number) {
@@ -265,3 +281,25 @@ export function hasApiToken() {
   return true;
 }
 
+export class WarehouseApiError extends Error {
+  constructor(message: string, public status: number) { super(message); this.name = "WarehouseApiError"; }
+}
+
+export function warehouseApi<T>(path: string, init?: RequestInit) {
+  return request<T>(`/api/backend/${path.replace(/^\//, "")}`, init);
+}
+
+export function cents(value: string | number | bigint) {
+  const text = String(value).replace(/,/g, "");
+  const [whole, fraction = ""] = text.split(".");
+  return BigInt(whole || "0") * BigInt(100) + BigInt((fraction + "00").slice(0, 2));
+}
+
+export function displayMoney(value: bigint) {
+  return `${(Number(value) / 100).toLocaleString("vi-VN")} ₫`;
+}
+
+export function operationKey(previous: { body: string; key: string } | null, body: string) {
+  if (previous?.body === body) return previous;
+  return { body, key: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}` };
+}

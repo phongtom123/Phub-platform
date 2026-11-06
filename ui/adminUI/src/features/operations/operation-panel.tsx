@@ -796,7 +796,11 @@ export function OperationPanel({
                         label={`Chọn sản phẩm dòng ${index + 1}`}
                         required value={l.sku}
                         disabled={busy || Boolean(pending.current)}
-                        onChange={(sku) => setLine(index, { sku, pricing: undefined })}
+                        onChange={(sku, product) => setLine(index, {
+                          sku,
+                          pricing: undefined,
+                          ...(product ? { unit_price: String(product.gia_nhap ?? product.gia_ban_hien_tai ?? "") } : {}),
+                        })}
                       /> : <ReferenceInput
                         field="sku"
                         label={`Chọn sản phẩm dòng ${index + 1}`}
@@ -853,7 +857,7 @@ export function OperationPanel({
                           type="number"
                           min={0}
                           step="0.01"
-                          readOnly={resource === "orders"}
+                          readOnly={resource === "orders" || resource === "receipts"}
                           value={l.unit_price}
                           onChange={(e) =>
                             setLine(index, { unit_price: e.target.value })

@@ -36,6 +36,10 @@ export {
   type InvoiceRow,
   createInvoice,
   getInvoiceOptions,
+  createDispatchDraft,
+  confirmDispatch,
+  cancelDispatchDraft,
+  updateDispatchDraft,
 } from "@/src/lib/warehouse-api";
 
 export type WarehouseSection = "inventory" | "products" | "receipts" | "transfers" | "dispatches" | "invoices" | "pending" | "history";

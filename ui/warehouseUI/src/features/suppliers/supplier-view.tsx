@@ -1,30 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Ban, Check, Pencil, Plus, Search, Save, X } from "lucide-react";
+import { Ban, Check, Pencil, Search, Save, X } from "lucide-react";
 import { Panel, StatusBadge, EmptyState } from "@/src/components/warehouse/ui";
-import { createSupplier, deactivateSupplier, getSuppliers, updateSupplier, type SupplierRecord } from "@/src/models/warehouse-model";
+import { getSuppliers, createSupplier, updateSupplier, deactivateSupplier, type SupplierRecord } from "@/src/models/warehouse-model";
 
 type FormState = { ten_ncc: string; sdt: string; email: string; dia_chi: string };
 const emptyForm: FormState = { ten_ncc: "", sdt: "", email: "", dia_chi: "" };
 
 export default function SupplierView() {
   const [rows, setRows] = useState<SupplierRecord[]>([]);
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("active");
-  const [form, setForm] = useState<FormState>(emptyForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  async function load() {
-    setLoading(true); setError("");
-    try { const result = await getSuppliers(); setRows(result.data); }
-    catch (err) { setError(err instanceof Error ? err.message : "Không thể tải nhà cung cấp."); }
-    finally { setLoading(false); }
-  }
+  const [query, setQuery] = useState(""); const [status, setStatus] = useState("active");
+  const [loading, setLoading] = useState(true); const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false); const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm); const [saving, setSaving] = useState(false);
+  async function load() { setLoading(true); setError(""); try { const result = await getSuppliers(); setRows(result.data); } catch (err) { setError(err instanceof Error ? err.message : "Không thể tải nhà cung cấp."); } finally { setLoading(false); } }
   useEffect(() => { void load(); }, []);
 
   const filtered = useMemo(() => rows.filter(row => {
@@ -55,8 +45,8 @@ export default function SupplierView() {
     catch (err) { setError(err instanceof Error ? err.message : "Không thể ngừng hoạt động nhà cung cấp."); }
   }
 
-  return <><div className="page-heading"><div><h1>Nhà cung cấp</h1><p>Quản lý đối tác phục vụ quy trình nhập hàng.</p></div><button className="button primary" onClick={startCreate}><Plus size={15}/> Thêm nhà cung cấp</button></div>
-    <Panel title={`Danh sách nhà cung cấp (${filtered.length})`} subtitle="Nhà cung cấp ngừng hoạt động được giữ lại để bảo toàn lịch sử phiếu nhập." action={<div className="module-actions"><button className="button" onClick={() => void load()}>Làm mới</button></div>}>
+  return <><div className="page-heading"><div><h1>Nhà cung cấp</h1><p>Tra cứu đối tác phục vụ quy trình nhập hàng.</p></div></div>
+    <Panel title={`Danh sách nhà cung cấp (${filtered.length})`} subtitle="Nhà cung cấp ngừng hoạt động được giữ lại để bảo toàn lịch sử phiếu nhập." action={<div className="module-actions"><button className="button" onClick={() => void load()}>Làm mới</button><button className="button primary" onClick={startCreate}>Thêm nhà cung cấp</button></div>}>
       <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Tìm tên, email, số điện thoại..." aria-label="Tìm nhà cung cấp"/></label><label className="filter-select-wrap"><select className="filter-select" aria-label="Trạng thái nhà cung cấp" value={status} onChange={event => setStatus(event.target.value)}><option value="active">Đang hoạt động</option><option value="inactive">Ngừng hoạt động</option><option value="all">Tất cả</option></select></label></div>
       {error && <div className="module-note">{error}</div>}{loading ? <div className="module-note">Đang tải nhà cung cấp…</div> : filtered.length === 0 ? <EmptyState text="Không tìm thấy nhà cung cấp phù hợp."/> : <div className="table-wrap"><table><thead><tr><th>MÃ</th><th>TÊN NHÀ CUNG CẤP</th><th>LIÊN HỆ</th><th>ĐỊA CHỈ</th><th>TRẠNG THÁI</th><th/></tr></thead><tbody>{filtered.map(row => <tr key={row.ma_ncc}><td>NCC-{row.ma_ncc}</td><td className="strong-value">{row.ten_ncc}</td><td>{[row.sdt, row.email].filter(Boolean).join(" · ") || "—"}</td><td>{row.dia_chi || "—"}</td><td><StatusBadge value={row.trang_thai === 1 ? "Đang hoạt động" : "Ngừng hoạt động"}/></td><td className="row-actions"><button className="row-link" type="button" onClick={() => startEdit(row)} aria-label={`Sửa ${row.ten_ncc}`} title="Sửa"><Pencil size={15}/></button>{row.trang_thai === 1 && <button className="row-link" type="button" onClick={() => void deactivate(row)} aria-label={`Ngừng hoạt động ${row.ten_ncc}`} title="Ngừng hoạt động"><Ban size={15}/></button>}</td></tr>)}</tbody></table></div>}
     </Panel>

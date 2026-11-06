@@ -85,7 +85,7 @@ class WarehouseReceiptPage(BaseModel):
     total: int
     page: int
     page_size: int
-    warehouse_id: int
+    warehouse_id: int | None = None
 
 
 class StockEvent(BaseModel):
@@ -107,4 +107,4 @@ class WarehouseHistoryPage(BaseModel):
     total: int
     page: int
     page_size: int
-    warehouse_id: int
+    warehouse_id: int | None = None

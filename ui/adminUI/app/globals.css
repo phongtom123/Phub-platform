@@ -14,6 +14,8 @@
   .customer-detail .customer-card { padding: 16px; }
   .customer-detail .live-form { grid-template-columns: minmax(0, 1fr); padding: 16px; }
 }
+
+.invoice-customer-search{display:grid;gap:10px;padding:16px;border:1px solid #dce8d3;border-radius:10px;background:#f8fcf5}.invoice-customer-search>div:first-child{display:grid;gap:3px}.invoice-customer-search small{color:#687865}.invoice-customer-search .live-form-fields{display:flex;gap:8px}.invoice-customer-search input{flex:1}.invoice-customer-result{display:grid;gap:3px;padding:10px 12px;border:1px solid #cde3c5;border-radius:8px;background:#fff}.invoice-customer-result span{color:#687865;font-size:13px}.invoice-customer-orders{display:grid;gap:7px}.invoice-customer-orders a{color:#2b7c24;text-decoration:none}.invoice-customer-orders a:hover{text-decoration:underline}
 .live-data .live-related h3 { font-size: 18px; }
 .live-data .live-related a { display: inline-flex; padding: 10px 16px; border: 1px solid #dce1db; border-radius: 8px; background: white; color: #181818; text-decoration: none; }
 .live-data .live-related a:hover { background: #edf8e9; border-color: #14a800; }

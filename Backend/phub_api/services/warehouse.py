@@ -7,7 +7,7 @@ from phub_api.services.pricing import PRICING_ERRORS
 ERRORS = {
     **PRICING_ERRORS,
     'WAREHOUSE_FORBIDDEN': (403, 'Nhân viên hoặc kho được phân công không còn hoạt động.'),
-    'NOT_FOUND': (404, 'Không tìm thấy phiếu trong kho được phân công.'),
+    'NOT_FOUND': (404, 'Không tìm thấy phiếu nhập.'),
     'STATE_CONFLICT': (409, 'Phiếu không còn ở trạng thái nháp. Hãy tải lại.'),
     'DOCUMENT_CHANGED': (409, 'Phiếu đã được người khác sửa. Hãy tải lại trước khi tiếp tục.'),
     'IDEMPOTENCY_CONFLICT': (409, 'Mã yêu cầu đã được dùng cho nội dung khác.'),

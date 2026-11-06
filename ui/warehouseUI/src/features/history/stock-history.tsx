@@ -8,7 +8,7 @@ type StockEvent = { id: number; sku: string; product_name: string | null; before
   actor: string | null; actor_name: string | null; reason: string; reference: string | null; created_at: string };
 const reasons: Record<string, string> = { "receipts:confirm": "Nhập hàng", "inventory:adjust": "Điều chỉnh tồn", "orders:dispatch": "Xuất theo đơn hàng", "orders:cancel": "Hủy đơn hàng" };
 export default function StockHistory() {
-  const [query, setQuery] = useState(""); const [search, setSearch] = useState(""); const [start, setStart] = useState(""); const [end, setEnd] = useState("");
+  const [query, setQuery] = useState(""); const [search, setSearch] = useState(""); const [range, setRange] = useState("all"); const [start, setStart] = useState(""); const [end, setEnd] = useState("");
   const [page, setPage] = useState(1); const [version, setVersion] = useState(0);
   const [result, setResult] = useState<Page<StockEvent> | null>(null); const [error, setError] = useState(""); const [loading, setLoading] = useState(true);
   useEffect(() => { const q = new URLSearchParams(window.location.search).get("q"); if (q) { setQuery(q); setSearch(q); } }, []);
@@ -22,10 +22,21 @@ export default function StockHistory() {
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [search, start, end, page, version]);
-  return <section className="warehouse-workspace"><div className="page-heading"><div><h1>Lịch sử kho</h1><p>Biến động tồn thực tế tại kho được phân công. Thời gian hiển thị theo giờ Việt Nam.</p></div></div>
+  function changeRange(value: string) {
+    setRange(value); setPage(1);
+    if (value === "all") { setStart(""); setEnd(""); return; }
+    if (value === "custom") return;
+    const today = new Date(); const finish = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const days = value === "today" ? 0 : value === "7d" ? 6 : 29;
+    const begin = new Date(finish); begin.setDate(begin.getDate() - days);
+    const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    setStart(iso(begin)); setEnd(iso(finish));
+  }
+  return <section className="warehouse-workspace"><div className="page-heading"><div><h1>Lịch sử kho</h1><p>Biến động tồn thực tế tại tất cả kho. Thời gian hiển thị theo giờ Việt Nam.</p></div></div>
     <form className="warehouse-toolbar" onSubmit={event => { event.preventDefault(); setSearch(query.trim()); setPage(1); }}>
       <input aria-label="Tìm lịch sử kho" placeholder="Tìm SKU, tên sản phẩm hoặc mã tham chiếu…" value={query} onChange={event => setQuery(event.target.value)} />
-      <label>Từ ngày<input type="date" value={start} max={end || undefined} onChange={event => { setStart(event.target.value); setPage(1); }} /></label><label>Đến ngày<input type="date" value={end} min={start || undefined} onChange={event => { setEnd(event.target.value); setPage(1); }} /></label>
+      <select aria-label="Khoảng thời gian" value={range} onChange={event => changeRange(event.target.value)}><option value="all">Tất cả thời gian</option><option value="today">Hôm nay</option><option value="7d">7 ngày qua</option><option value="30d">30 ngày qua</option><option value="custom">Tùy chỉnh</option></select>
+      {range === "custom" && <><label>Từ ngày<input type="date" value={start} max={end || undefined} onChange={event => { setStart(event.target.value); setPage(1); }} /></label><label>Đến ngày<input type="date" value={end} min={start || undefined} onChange={event => { setEnd(event.target.value); setPage(1); }} /></label></>}
       <button className="button">Tìm kiếm</button><button className="button" type="button" onClick={() => setVersion(v => v + 1)}>Làm mới</button>
     </form>{error && <p className="warehouse-error" role="alert">{error}</p>}
     <div className="warehouse-table" aria-busy={loading}><table><thead><tr><th>Sản phẩm / SKU</th><th>Trước</th><th>Thay đổi</th><th>Sau</th><th>Nghiệp vụ</th><th>Tham chiếu</th><th>Người thực hiện</th><th>Thời gian</th></tr></thead><tbody>

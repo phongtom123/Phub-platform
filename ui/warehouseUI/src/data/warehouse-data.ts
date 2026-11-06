@@ -6,14 +6,14 @@ export const moduleNames: Record<ModuleKey, string> = {
 
 export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   inventory: {
-    title: "Tồn kho", description: "Theo dõi số lượng sản phẩm tại Kho trung tâm.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Tình trạng", "Khu vực"],
-    columns: [{ key: "name", label: "SẢN PHẨM", kind: "product" }, { key: "location", label: "VỊ TRÍ" }, { key: "quantity", label: "TỒN HIỆN TẠI", kind: "strong" }, { key: "status", label: "TÌNH TRẠNG", kind: "status" }],
+    title: "Tồn kho", description: "Theo dõi số lượng sản phẩm tại tất cả kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Tình trạng"],
+    columns: [{ key: "name", label: "SẢN PHẨM", kind: "product" }, { key: "quantity", label: "TỒN HIỆN TẠI", kind: "strong" }, { key: "status", label: "TÌNH TRẠNG", kind: "status" }],
     rows: [
-      { id: "SP-001", name: "NVIDIA GeForce RTX 4070 SUPER", code: "SP-001 · Card đồ họa", location: "A-01-02", quantity: 24, status: "Còn hàng" },
-      { id: "SP-002", name: "AMD Ryzen 7 7800X3D", code: "SP-002 · Bộ vi xử lý", location: "A-02-06", quantity: 18, status: "Còn hàng" },
-      { id: "SP-003", name: "Corsair Vengeance RGB 32GB", code: "SP-003 · RAM DDR5", location: "A-02-14", quantity: 5, status: "Còn hàng" },
-      { id: "SP-005", name: "PHUB Creator Pro X1", code: "SP-005 · PC nguyên bộ", location: "—", quantity: 0, status: "Hết hàng" },
-      { id: "SP-028", name: "Samsung 990 PRO 2TB", code: "SP-028 · SSD NVMe", location: "C-03-02", quantity: 4, status: "Còn hàng" },
+      { id: "SP-001", name: "NVIDIA GeForce RTX 4070 SUPER", code: "SP-001 · Card đồ họa", quantity: 24, status: "Còn hàng" },
+      { id: "SP-002", name: "AMD Ryzen 7 7800X3D", code: "SP-002 · Bộ vi xử lý", quantity: 18, status: "Còn hàng" },
+      { id: "SP-003", name: "Corsair Vengeance RGB 32GB", code: "SP-003 · RAM DDR5", quantity: 5, status: "Còn hàng" },
+      { id: "SP-005", name: "PHUB Creator Pro X1", code: "SP-005 · PC nguyên bộ", quantity: 0, status: "Hết hàng" },
+      { id: "SP-028", name: "Samsung 990 PRO 2TB", code: "SP-028 · SSD NVMe", quantity: 4, status: "Còn hàng" },
     ], note: "Tồn kho thay đổi qua phiếu nhập, xuất đơn hoặc chuyển kho.",
   },
   receipts: {
@@ -35,7 +35,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
     ], note: "Kho xuất phải khác kho nhận. Tồn kho nhận chỉ tăng sau khi xác nhận nhận đủ hàng.",
   },
   dispatches: {
-    title: "Phiếu xuất", description: "Theo dõi và xuất hàng từ các đơn hàng đã được tạo.", searchPlaceholder: "Tìm mã phiếu, đơn hàng hoặc người nhận...", filters: ["Kho xuất", "Trạng thái"],
+    title: "Phiếu xuất", description: "Tạo, chỉnh sửa và xác nhận phiếu xuất theo đơn hàng.", searchPlaceholder: "Tìm mã phiếu, đơn hàng hoặc người nhận...", addLabel: "Tạo phiếu xuất", filters: ["Kho xuất", "Trạng thái"],
     columns: [{ key: "id", label: "MÃ PHIẾU", kind: "link" }, { key: "order", label: "ĐƠN HÀNG", kind: "strong" }, { key: "warehouse", label: "KHO XUẤT" }, { key: "employeeCode", label: "MÃ NHÂN VIÊN" }, { key: "items", label: "SẢN PHẨM" }, { key: "created", label: "NGÀY TẠO" }, { key: "status", label: "TRẠNG THÁI", kind: "status" }],
     rows: [
       { id: "PX-260927-08", order: "PH240931", warehouse: "Kho trung tâm", employeeCode: "NV-KHO-001", items: "4 SKU · 7 SP", created: "27/09/2026", status: "Chờ xác nhận" },
@@ -46,7 +46,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   invoices: {
     title: "Hóa đơn", description: "Lập và tra cứu hóa đơn bán hàng theo đơn đã xuất kho.", searchPlaceholder: "Tìm mã hóa đơn hoặc đơn hàng...", addLabel: "Lập hóa đơn", filters: ["Trạng thái"],
     columns: [{ key: "id", label: "MÃ HÓA ĐƠN", kind: "link" }, { key: "order", label: "ĐƠN HÀNG", kind: "strong" }, { key: "buyer", label: "NGƯỜI MUA" }, { key: "employeeCode", label: "MÃ NHÂN VIÊN" }, { key: "total", label: "TỔNG THANH TOÁN" }, { key: "created", label: "NGÀY LẬP" }, { key: "status", label: "TRẠNG THÁI", kind: "status" }],
-    rows: [{ id: "HD-DEMO-001", order: "DH-DEMO-001", buyer: "Khách hàng demo", employeeCode: "NV-DEMO", total: "5.500.000 ₫", created: "—", status: "Hoàn tất" }], note: "Mã nhân viên được lấy từ tài khoản đang đăng nhập và lưu cùng hóa đơn.",
+    rows: [], note: "Mã nhân viên được lấy từ tài khoản đang đăng nhập và lưu cùng hóa đơn.",
   },
   products: {
     title: "Sản phẩm", description: "Tra cứu mã hàng, danh mục và thông tin sản phẩm trong kho.", searchPlaceholder: "Tìm tên hoặc mã sản phẩm...", filters: ["Danh mục", "Tình trạng tồn"],
@@ -60,7 +60,7 @@ export const modules: Partial<Record<ModuleKey, ModuleDefinition>> = {
   },
   history: {
     title: "Lịch sử kho", description: "Tra cứu các giao dịch làm thay đổi số lượng tồn kho.", searchPlaceholder: "Tìm mã giao dịch hoặc sản phẩm...", filters: ["Loại giao dịch", "Khoảng ngày"],
-    columns: [{ key: "id", label: "MÃ GIAO DỊCH", kind: "link" }, { key: "type", label: "LOẠI" }, { key: "product", label: "SẢN PHẨM", kind: "strong" }, { key: "quantity", label: "SỐ LƯỢNG" }, { key: "user", label: "NGƯỜI THỰC HIỆN" }, { key: "created", label: "THỜI GIAN" }],
+    columns: [{ key: "id", label: "MÃ GIAO DỊCH", kind: "link" }, { key: "type", label: "LOẠI" }, { key: "product", label: "SẢN PHẨM", kind: "strong" }, { key: "quantity", label: "BIẾN ĐỘNG SỐ LƯỢNG" }, { key: "user", label: "NGƯỜI THỰC HIỆN" }, { key: "created", label: "THỜI GIAN" }],
     rows: [
       { id: "PN-260927-03", type: "Nhập kho", product: "ASUS GeForce RTX 4070", quantity: "8", user: "Trần Đức Phong", created: "27/09/2026 09:42" },
       { id: "XK-260927-08", type: "Xuất đơn", product: "AMD Ryzen 7 7800X3D", quantity: "−2", user: "Trần Đức Phong", created: "27/09/2026 08:22" },
@@ -95,7 +95,6 @@ export const formFields: Partial<Record<ModuleKey, FormFieldDefinition[]>> = {
   ],
   dispatches: [
     { name: "order", label: "Mã đơn hàng", placeholder: "Nhập hoặc tìm mã đơn hàng" },
-    { name: "warehouse", label: "Kho xuất", placeholder: "Kho trung tâm" },
     { name: "items", label: "Sản phẩm và số lượng", placeholder: "Thêm sản phẩm, số lượng cần xuất", wide: true },
     { name: "receiver", label: "Người nhận / đơn vị vận chuyển", placeholder: "Nhập tên người nhận" },
     { name: "note", label: "Ghi chú xuất hàng", placeholder: "Ghi chú nếu có", type: "textarea", wide: true },

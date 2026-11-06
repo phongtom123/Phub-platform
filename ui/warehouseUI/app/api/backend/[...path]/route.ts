@@ -7,19 +7,21 @@ const resources = new Set([
 ]);
 
 function allowed(path: string[], method: string) {
-  return path.length === 2 && (
-    (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) ||
-    (path[0] === "data" && resources.has(path[1])) ||
-    (path[0] === "warehouse" && ["options", "dispatches"].includes(path[1]) && method === "GET")
-  ) || (path.length === 3 && path[0] === "auth" && path[1] === "me" && path[2] === "password" && method === "POST")
-  || (path.length === 4 && path[0] === "warehouse" && method === "POST" &&
-    ((path[1] === "receipts" && ["confirm", "cancel"].includes(path[3])) ||
-     (path[1] === "transfers" && ["dispatch", "receive", "cancel"].includes(path[3])) ||
-     (path[1] === "dispatches" && path[3] === "dispatch"))) ||
-    (path.length === 4 && path[0] === "warehouse" && method === "PUT" &&
-      ((path[1] === "receipts" && path[3] === "draft") || (path[1] === "transfers" && path[3] === "draft"))) ||
-    (path.length === 3 && path[0] === "warehouse" && path[2] === "draft" && method === "POST" &&
-      ["receipts", "transfers"].includes(path[1]));
+  const base = path[0] === "warehouse";
+  if (path.length === 2) return (path[0] === "auth" && ["login", "me", "logout"].includes(path[1])) || (path[0] === "data" && resources.has(path[1])) || (path[0] === "pricing" && ["config", "preview", "taxes"].includes(path[1]) && ((path[1] === "config" && ["GET", "PUT"].includes(method)) || (path[1] === "preview" && method === "POST") || (path[1] === "taxes" && method === "POST"))) || (base && ["options", "receipts", "dispatches", "invoices", "history"].includes(path[1]) && ["GET", "POST"].includes(method));
+  if (path.length === 3 && path[0] === "auth" && path[1] === "me" && path[2] === "password") return method === "POST";
+  if (path.length === 3 && base && path[1] === "receipts" && /^\d+$/.test(path[2])) return method === "GET" || method === "PATCH";
+  if (path.length === 3 && base && path[1] === "dispatches" && path[2] === "order-options") return method === "GET";
+  if (path.length === 3 && base && path[1] === "invoices" && path[2] === "customer-search") return method === "GET";
+  if (path.length === 3 && base && path[2] === "draft") return method === "POST" && ["receipts", "transfers", "dispatches"].includes(path[1]);
+  if (path.length === 3 && base && path[1] === "invoices" && path[2] === "manual") return method === "POST";
+  if (path.length === 3 && base && path[1] === "invoices") return method === "GET";
+  if (path.length === 4 && base && path[1] === "dispatches" && path[3] === "draft") return method === "GET" || method === "PUT";
+  if (path.length === 4 && base && path[1] === "receipts" && path[3] === "draft") return method === "PUT";
+  if (path.length === 4 && base && path[1] === "transfers" && path[3] === "draft") return method === "PUT";
+  if (path.length === 4 && base && method === "POST") return (path[1] === "receipts" && ["confirm", "cancel"].includes(path[3])) || (path[1] === "transfers" && ["dispatch", "receive", "cancel"].includes(path[3])) || (path[1] === "dispatches" && ["dispatch", "confirm", "cancel"].includes(path[3]));
+  if (path.length === 3 && path[0] === "pricing" && path[1] === "receipts" && /^\d+$/.test(path[2])) return method === "GET";
+  return false;
 }
 
 async function proxyBackend(request: Request, context: Context): Promise<Response> {
@@ -35,6 +37,8 @@ async function proxyBackend(request: Request, context: Context): Promise<Respons
     if (cookie) headers.set("Cookie", cookie);
     const origin = request.headers.get("origin");
     if (origin) headers.set("Origin", origin);
+    const idempotencyKey = request.headers.get("Idempotency-Key");
+    if (idempotencyKey) headers.set("Idempotency-Key", idempotencyKey);
     const write = request.method !== "GET" && request.method !== "HEAD";
     const body = write ? await request.text() : undefined;
     if (body && new TextEncoder().encode(body).length > 1_048_576) return Response.json({ detail: "Dữ liệu quá lớn." }, { status: 413 });

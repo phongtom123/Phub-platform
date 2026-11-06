@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Ban, CheckCircle2, ChevronLeft, ChevronRight, Download, Pencil, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Panel, StatusBadge, EmptyState } from "@/src/components/warehouse/ui";
 import type { DataRow, ModuleDefinition } from "@/src/types/warehouse";
-import { cancelReceipt, cancelTransfer, confirmReceipt, dispatchOrder, dispatchTransfer, hasApiToken, receiveTransfer } from "@/src/models/warehouse-model";
+import { cancelDispatchDraft, cancelReceipt, cancelTransfer, confirmDispatch, confirmReceipt, dispatchOrder, dispatchTransfer, hasApiToken, receiveTransfer } from "@/src/models/warehouse-model";
 import { deleteDraft, isDataSection, loadSectionRows } from "@/src/controllers/warehouse-controller";
 
 export default function ModuleView({ definition, section, onAdd }: { definition: ModuleDefinition; section: string; onAdd: () => void }) {
@@ -15,20 +15,23 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [reload, setReload] = useState(0);
   const [page, setPage] = useState(1);
   const pageSize = 10;
   useEffect(() => {
     if (!isDataSection(section) || !hasApiToken()) return;
     let cancelled = false;
-    setLoading(true);
+    setLoading(true); setApiError(""); setApiRows(null);
     const load = loadSectionRows(section);
     load.then(result => {
       if (cancelled) return;
       setApiRows(result);
-    }).catch(error => { if (!cancelled) setApiError(error instanceof Error ? error.message : "Không thể tải dữ liệu tồn kho"); })
+    }).catch(error => { if (!cancelled) setApiError(readApiError(error, "Không thể tải dữ liệu tồn kho")); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [section]);
+  }, [section, reload]);
   async function handleConfirm(row: DataRow) {
     const recordId = Number(row.recordId);
     if (!Number.isInteger(recordId)) return;
@@ -39,7 +42,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
       await confirmReceipt(recordId);
       setApiRows(current => current ? (section === "pending" ? current.filter(item => item.id !== row.id) : current.map(item => item.id === row.id ? { ...item, status: "Đã nhập" } : item)) : null);
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : "Không thể xác nhận phiếu nhập");
+      setApiError(readApiError(error, "Không thể xác nhận phiếu nhập"));
     } finally { setConfirming(null); }
   }
   async function handleTransferAction(row: DataRow) {
@@ -53,7 +56,7 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
       if (receiving) await receiveTransfer(recordId); else await dispatchTransfer(recordId);
       setApiRows(current => current ? (section === "pending" && receiving ? current.filter(item => item.id !== row.id) : current.map(item => item.id === row.id ? { ...item, status: receiving ? "Đã nhận" : "Đang chuyển" } : item)) : null);
     } catch (error) {
-      setApiError(error instanceof Error ? error.message : "Không thể cập nhật phiếu chuyển kho");
+      setApiError(readApiError(error, "Không thể cập nhật phiếu chuyển kho"));
     } finally { setConfirming(null); }
   }
   async function handleCancel(row: DataRow) {
@@ -61,36 +64,37 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     if (!Number.isInteger(recordId)) return;
     const receiptAction = section === "receipts" || (section === "pending" && row.source === "receipts");
     const transferAction = section === "transfers" || (section === "pending" && row.source === "transfers");
-    if (!receiptAction && !transferAction) return;
+    const dispatchAction = section === "dispatches" || (section === "pending" && row.source === "dispatches");
+    if (!receiptAction && !transferAction && !dispatchAction) return;
     setConfirming(row.id); setApiError("");
     try {
-      if (receiptAction) await cancelReceipt(recordId); else await cancelTransfer(recordId);
+      if (receiptAction) await cancelReceipt(recordId); else if (transferAction) await cancelTransfer(recordId); else await cancelDispatchDraft(recordId);
       setApiRows(current => current ? (section === "pending" ? current.filter(item => item.id !== row.id) : current.map(item => item.id === row.id ? { ...item, status: "Đã hủy" } : item)) : null);
-    } catch (error) { setApiError(error instanceof Error ? error.message : "Không thể hủy phiếu."); }
+    } catch (error) { setApiError(readApiError(error, "Không thể hủy phiếu.")); }
     finally { setConfirming(null); }
   }
   async function handleDelete(row: DataRow) {
     const recordId = Number(row.recordId);
-    const source = row.source === "receipts" || row.source === "transfers" ? row.source : section;
-    if (!Number.isInteger(recordId) || !["receipts", "transfers"].includes(source)) return;
+    const source = row.source === "receipts" || row.source === "transfers" || row.source === "dispatches" ? row.source : section;
+    if (!Number.isInteger(recordId) || !["receipts", "transfers", "dispatches"].includes(source)) return;
     if (!window.confirm(`Xóa phiếu nháp ${row.id}? Phiếu sẽ được chuyển sang trạng thái Đã hủy.`)) return;
     setConfirming(row.id); setApiError("");
     try {
-      await deleteDraft(source as "receipts" | "transfers", recordId);
+      await deleteDraft(source as "receipts" | "transfers" | "dispatches", recordId);
       setApiRows(current => current?.filter(item => item.id !== row.id) ?? null);
-    } catch (error) { setApiError(error instanceof Error ? error.message : "Không thể xóa phiếu nháp."); }
+    } catch (error) { setApiError(readApiError(error, "Không thể xóa phiếu nháp.")); }
     finally { setConfirming(null); }
   }
   async function handleDispatchOrder(row: DataRow) {
     const orderId = String(row.recordId ?? row.order ?? "");
-    if (!orderId) return;
+    if (!orderId) { setApiError("Phiếu xuất thiếu mã đơn hàng nên chưa thể xác nhận."); return; }
     setConfirming(row.id); setApiError("");
-    try { await dispatchOrder(orderId); setApiRows(current => current?.map(item => item.id === row.id ? { ...item, status: "Đã xuất" } : item) ?? null); }
-    catch (error) { setApiError(error instanceof Error ? error.message : "Không thể xuất kho theo đơn hàng"); }
+    try { if (Number.isInteger(Number(row.recordId))) await confirmDispatch(Number(row.recordId)); else await dispatchOrder(orderId); setApiRows(current => current?.map(item => item.id === row.id ? { ...item, status: "Đã xuất" } : item) ?? null); }
+    catch (error) { setApiError(readApiError(error, "Không thể xuất kho theo đơn hàng")); }
     finally { setConfirming(null); }
   }
-  const sourceRows = apiRows ?? definition.rows;
-  const filteredRows = useMemo(() => sourceRows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))) && Object.entries(filters).every(([filter, value]) => !value || String(row[filter] ?? "").toLocaleLowerCase("vi") === value.toLocaleLowerCase("vi"))), [sourceRows, query, filters]);
+  const sourceRows = apiRows ?? [];
+  const filteredRows = useMemo(() => sourceRows.filter(row => Object.values(row).some(value => String(value).toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))) && Object.entries(filters).every(([filter, value]) => !value || (filter === "created" ? matchesDateRange(String(row.created ?? ""), value, dateFrom, dateTo) : String(row[filter] ?? "").toLocaleLowerCase("vi") === value.toLocaleLowerCase("vi")))), [sourceRows, query, filters, dateFrom, dateTo]);
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const rows = useMemo(() => filteredRows.slice((page - 1) * pageSize, page * pageSize), [filteredRows, page]);
   useEffect(() => { setPage(1); }, [section, query, filters]);
@@ -108,10 +112,10 @@ export default function ModuleView({ definition, section, onAdd }: { definition:
     URL.revokeObjectURL(url);
   }
   return <><Panel title={`${definition.title} (${rows.length})`} subtitle="Dữ liệu được cập nhật từ các giao dịch trong kho." action={<div className="module-actions"><button className="button" onClick={exportCsv}><Download size={14}/> Xuất CSV</button>{definition.addLabel && <button className="button primary" onClick={onAdd}><Plus size={15}/>{definition.addLabel}</button>}</div>}>
-      <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder={definition.searchPlaceholder}/></label>{definition.filters?.map(filter => { const key = filterKey(filter, definition.rows); const options = Array.from(new Set(sourceRows.map(row => row[key]).filter(value => value !== undefined).map(String))); return <label className="filter-select-wrap" key={filter}><SlidersHorizontal size={13}/><select className="filter-select" aria-label={filter} value={filters[key] ?? ""} onChange={event => setFilters(current => ({ ...current, [key]: event.target.value }))}><option value="">{filter}</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>; })}</div>
+      <div className="table-toolbar"><label className="search-box"><Search size={15}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder={definition.searchPlaceholder}/></label>{definition.filters?.map(filter => { const key = filterKey(filter, definition.rows); const options = key === "created" ? ["Hôm nay", "7 ngày qua", "30 ngày qua", "90 ngày qua", "Tùy chỉnh"] : section === "receipts" && key === "status" ? ["Nháp", "Đã nhập", "Đã hủy"] : Array.from(new Set(sourceRows.map(row => row[key]).filter(value => value !== undefined).map(String))); return <label className="filter-select-wrap" key={filter}><SlidersHorizontal size={13}/><select className="filter-select" aria-label={filter} value={filters[key] ?? ""} onChange={event => setFilters(current => ({ ...current, [key]: event.target.value }))}><option value="">{filter === "Trạng thái" ? "Tất cả trạng thái" : filter === "Khoảng ngày" ? "Tất cả thời gian" : filter}</option>{options.map(option => <option key={option} value={option}>{option}</option>)}</select></label>; })}{section === "history" && filters.created === "Tùy chỉnh" && <div className="date-range-picker"><label>Từ ngày<input type="date" value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} /></label><label>Đến ngày<input type="date" value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} /></label></div>}</div>
       {loading && <div className="module-note">Đang tải dữ liệu thật từ backend…</div>}
-      {apiError && <div className="module-note"><span>!</span>Không kết nối được API: {apiError}. Đang hiển thị dữ liệu mẫu.</div>}
-      {!loading && (apiRows || apiError) && (rows.length ? <><div className="table-wrap"><table><thead><tr>{definition.columns.map(column => <th key={column.key}>{column.label}</th>)}<th/></tr></thead><tbody>{rows.map(row => <DataTableRow key={row.id} row={row} definition={definition} section={section} confirming={confirming === row.id} onConfirm={section === "receipts" || section === "pending" ? handleConfirm : undefined} onTransferAction={section === "transfers" || section === "pending" ? handleTransferAction : undefined} onDispatchOrder={section === "dispatches" ? handleDispatchOrder : undefined} onCancel={section === "receipts" || section === "transfers" || section === "pending" ? handleCancel : undefined} onDelete={section === "receipts" || section === "transfers" || section === "pending" ? handleDelete : undefined}/>)}</tbody></table></div>{pageCount > 1 && <div className="form-actions"><button className="button" type="button" disabled={page <= 1} onClick={() => setPage(current => Math.max(1, current - 1))}><ChevronLeft size={14}/> Trang trước</button><span className="module-note">Trang {page}/{pageCount} · {filteredRows.length} bản ghi</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => setPage(current => Math.min(pageCount, current + 1))}>Trang sau <ChevronRight size={14}/></button></div>}</> : <EmptyState text="Không tìm thấy dữ liệu phù hợp."/>) }
+      {apiError && <div className="module-note form-error"><span>!</span><span>{apiError}</span><button className="button" type="button" onClick={() => setReload(value => value + 1)}>Thử lại</button></div>}
+      {!loading && !apiError && apiRows && (rows.length ? <><div className="table-wrap"><table><thead><tr>{definition.columns.map(column => <th key={column.key}>{column.label}</th>)}<th/></tr></thead><tbody>{rows.map(row => <DataTableRow key={row.id} row={row} definition={definition} section={section} confirming={confirming === row.id} onConfirm={section === "receipts" || section === "pending" ? handleConfirm : undefined} onTransferAction={section === "transfers" || section === "pending" ? handleTransferAction : undefined} onDispatchOrder={section === "dispatches" ? handleDispatchOrder : undefined} onCancel={section === "receipts" || section === "transfers" || section === "dispatches" || section === "pending" ? handleCancel : undefined} onDelete={section === "receipts" || section === "transfers" || section === "dispatches" || section === "pending" ? handleDelete : undefined}/>)}</tbody></table></div>{pageCount > 1 && <div className="form-actions"><button className="button" type="button" disabled={page <= 1} onClick={() => setPage(current => Math.max(1, current - 1))}><ChevronLeft size={14}/> Trang trước</button><span className="module-note">Trang {page}/{pageCount} · {filteredRows.length} bản ghi</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => setPage(current => Math.min(pageCount, current + 1))}>Trang sau <ChevronRight size={14}/></button></div>}</> : <EmptyState text="Không tìm thấy dữ liệu phù hợp."/>) }
       {definition.note && <div className="module-note"><span>i</span>{definition.note}</div>}
     </Panel></>;
 }
@@ -120,9 +124,20 @@ function csvCell(value: unknown) {
   return `"${String(value ?? "").replaceAll('"', '""')}"`;
 }
 
+function readApiError(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const detail = (error as { detail?: unknown }).detail;
+    if (typeof detail === "string") return detail;
+    try { return JSON.stringify(error); } catch { return fallback; }
+  }
+  return typeof error === "string" ? error : fallback;
+}
+
 function filterKey(label: string, rows: DataRow[]) {
   const value = label.toLocaleLowerCase("vi");
   if (value.includes("trạng thái") || value.includes("tình trạng")) return "status";
+  if (value.includes("khoảng ngày")) return "created";
   if (value.includes("kho nhập")) return "warehouse";
   if (value.includes("kho nhận")) return "to";
   if (value.includes("kho")) return "warehouse";
@@ -130,15 +145,31 @@ function filterKey(label: string, rows: DataRow[]) {
   if (value.includes("danh mục")) return "category";
   if (value.includes("loại phiếu")) return "type";
   if (value.includes("loại giao dịch")) return "type";
-  if (value.includes("khoảng ngày")) return "created";
   return "status";
 }
 
+function matchesDateRange(value: string, range: string, from = "", to = "") {
+  const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!match) return false;
+  const date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (range === "Tùy chỉnh") {
+    const start = from ? new Date(`${from}T00:00:00`) : new Date(0);
+    const end = to ? new Date(`${to}T23:59:59`) : today;
+    return date >= start && date <= end;
+  }
+  const days = range === "Hôm nay" ? 0 : range === "7 ngày qua" ? 7 : range === "30 ngày qua" ? 30 : 90;
+  const start = new Date(today); start.setDate(today.getDate() - days);
+  return date >= start && date <= today;
+}
+
 function DataTableRow({ row, definition, section, confirming, onConfirm, onTransferAction, onDispatchOrder, onCancel, onDelete }: { row: DataRow; definition: ModuleDefinition; section: string; confirming?: boolean; onConfirm?: (row: DataRow) => void; onTransferAction?: (row: DataRow) => void; onDispatchOrder?: (row: DataRow) => void; onCancel?: (row: DataRow) => void; onDelete?: (row: DataRow) => void }) {
+  const detailId = section === "receipts" || section === "dispatches" ? String(row.recordId ?? row.id) : row.id;
+  const editId = String(row.recordId ?? row.id);
   return <tr>{definition.columns.map(column => { const value = row[column.key] ?? "—";
     if (column.kind === "product") return <td key={column.key}><span className="product-cell"><span className="product-thumb">▤</span><span><strong>{row.name}</strong><small>{row.code}</small></span></span></td>;
     if (column.kind === "status") return <td key={column.key}><StatusBadge value={value}/></td>;
-    if (column.kind === "link") return <td key={column.key}><Link className="record-link" href={`/${section}/${row.id}`}>{String(value)}</Link></td>;
+    if (column.kind === "link") return <td key={column.key}><Link className="record-link" href={`/${section}/${detailId}`}>{String(value)}</Link></td>;
     return <td key={column.key} className={column.kind === "strong" ? "strong-value" : ""}>{value}</td>;
-  })}<td className="row-actions"><Link className="row-link" href={`/${section}/${row.id}`} aria-label={`Xem ${row.id}`}><ArrowRight size={15}/></Link>{onDelete && row.status === "Nháp" && Number.isInteger(Number(row.recordId)) && <Link className="row-link" href={`/${row.source ?? section}/${row.id}/edit`} aria-label={`Sửa ${row.id}`} title="Sửa phiếu nháp"><Pencil size={15}/></Link>}{onConfirm && (section === "receipts" || row.source === "receipts") && row.status !== "Đã nhập" && row.status !== "Đã hủy" && <button className="row-link" type="button" onClick={() => onConfirm(row)} disabled={confirming} aria-label={`Xác nhận ${row.id}`} title={confirming ? "Đang xác nhận" : "Xác nhận nhập"}><CheckCircle2 size={15}/></button>}{onTransferAction && (section === "transfers" || row.source === "transfers") && ["Nháp", "Đang chuyển"].includes(String(row.status)) && Number.isInteger(Number(row.recordId)) && <button className="row-link" type="button" onClick={() => onTransferAction(row)} disabled={confirming} aria-label={`${row.status === "Nháp" ? "Giao" : "Nhận"} ${row.id}`} title={confirming ? "Đang cập nhật" : row.status === "Nháp" ? "Giao hàng" : "Xác nhận nhận hàng"}><CheckCircle2 size={15}/></button>}{onDispatchOrder && ["Chờ xử lý", "Đã xác nhận", "Đang soạn"].includes(String(row.status)) && <button className="row-link" type="button" onClick={() => onDispatchOrder(row)} disabled={confirming} aria-label={`Xuất ${row.id}`} title={confirming ? "Đang xuất" : "Xuất kho theo đơn"}><CheckCircle2 size={15}/></button>}{onCancel && row.status === "Nháp" && Number.isInteger(Number(row.recordId)) && <button className="row-link" type="button" onClick={() => onCancel(row)} disabled={confirming} aria-label={`Hủy ${row.id}`} title={confirming ? "Đang hủy" : "Hủy phiếu nháp"}><Ban size={15}/></button>}{onDelete && row.status === "Nháp" && Number.isInteger(Number(row.recordId)) && <button className="row-link" type="button" onClick={() => onDelete(row)} disabled={confirming} aria-label={`Xóa ${row.id}`} title={confirming ? "Đang xóa" : "Xóa phiếu nháp"}><Trash2 size={15}/></button>}</td></tr>;
+  })}<td className="row-actions"><Link className="row-link" href={`/${section}/${detailId}`} aria-label={`Xem ${row.id}`}><ArrowRight size={15}/></Link>{onDelete && row.status === "Nháp" && Number.isInteger(Number(row.recordId)) && <Link className="row-link" href={`/${row.source ?? section}/${editId}/edit`} aria-label={`Sửa ${row.id}`} title="Sửa phiếu nháp"><Pencil size={15}/></Link>}{onConfirm && (section === "receipts" || row.source === "receipts") && row.status !== "Đã nhập" && row.status !== "Đã hủy" && <button className="row-link" type="button" onClick={() => onConfirm(row)} disabled={confirming} aria-label={`Xác nhận ${row.id}`} title={confirming ? "Đang xác nhận" : "Xác nhận nhập"}><CheckCircle2 size={15}/></button>}{onTransferAction && (section === "transfers" || row.source === "transfers") && ["Nháp", "Đang chuyển"].includes(String(row.status)) && Number.isInteger(Number(row.recordId)) && <button className="row-link" type="button" onClick={() => onTransferAction(row)} disabled={confirming} aria-label={`${row.status === "Nháp" ? "Giao" : "Nhận"} ${row.id}`} title={confirming ? "Đang cập nhật" : row.status === "Nháp" ? "Giao hàng" : "Xác nhận nhận hàng"}><CheckCircle2 size={15}/></button>}{onDispatchOrder && ["Nháp", "Chờ xử lý", "Đã xác nhận", "Đang soạn"].includes(String(row.status)) && <button className="row-link" type="button" onClick={() => onDispatchOrder(row)} disabled={confirming} aria-label={`Xuất ${row.id}`} title={confirming ? "Đang xuất" : "Xuất kho theo đơn"}><CheckCircle2 size={15}/></button>}{onCancel && row.status === "Nháp" && Number.isInteger(Number(row.recordId)) && <button className="row-link" type="button" onClick={() => onCancel(row)} disabled={confirming} aria-label={`Hủy ${row.id}`} title={confirming ? "Đang hủy" : "Hủy phiếu nháp"}><Ban size={15}/></button>}{onDelete && row.status === "Nháp" && Number.isInteger(Number(row.recordId)) && <button className="row-link" type="button" onClick={() => onDelete(row)} disabled={confirming} aria-label={`Xóa ${row.id}`} title={confirming ? "Đang xóa" : "Xóa phiếu nháp"}><Trash2 size={15}/></button>}</td></tr>;
 }

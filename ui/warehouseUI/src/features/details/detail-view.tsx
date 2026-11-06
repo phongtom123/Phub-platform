@@ -3,20 +3,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Package } from "lucide-react";
+import { ArrowLeft, Pencil, Package, Trash2, Truck } from "lucide-react";
 import { modules, moduleNames } from "@/src/data/warehouse-data";
 import type { ModuleKey } from "@/src/types/warehouse";
 import type { DataRow } from "@/src/types/warehouse";
 import { StatusBadge } from "@/src/components/warehouse/ui";
-import { getDispatches, getHistory, getInventory, getPending, getProducts, getReceiptDraft, getReceipts, getTransferDraft, getTransfers, getWarehouseOptions, updateReceiptDraft, updateTransferDraft, type SupplierOption, type WarehouseOption } from "@/src/lib/warehouse-api";
+import InvoiceDetailViewUpdated from "./invoice-detail-view-updated";
+import DispatchDetailView from "./dispatch-detail-view";
+import { getDispatchDraft, getDispatches, getHistory, getInventory, getInvoiceDetail, getPending, getProducts, getReceiptDraft, getReceipts, getTransferDraft, getTransfers, getWarehouseOptions, updateDispatchDraft, updateReceiptDraft, updateTransferDraft, type SupplierOption, type WarehouseOption } from "@/src/lib/warehouse-api";
 
 export default function DetailView({ section, id, edit = false }: { section: string; id: string; edit?: boolean }) {
   const router = useRouter(); const [saved, setSaved] = useState(false); const [apiRow, setApiRow] = useState<DataRow | null>(null); const [loading, setLoading] = useState(false); const [apiError, setApiError] = useState("");
   const definition = modules[section as ModuleKey];
+  if (section === "invoices") return <InvoiceDetailViewUpdated id={id} />;
+  if (section === "dispatches" && edit) return <DispatchDraftEditor id={Number(id)} />;
+  if (section === "dispatches") return <DispatchDetailView id={id} />;
   useEffect(() => {
     if (!definition || !["inventory", "products", "receipts", "transfers", "dispatches", "pending", "history"].includes(section)) return;
     let cancelled = false; setLoading(true); setApiError("");
-    const load = section === "inventory" ? getInventory().then(result => result.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, location: item.location ?? "—", quantity: item.quantity, status: item.status })))
+    const load = section === "inventory" ? getInventory().then(result => result.items.map(item => ({ id: item.sku, name: item.product_name, code: `${item.sku} · ${item.unit}`, quantity: item.quantity, status: item.status })))
       : section === "products" ? getProducts() : section === "receipts" ? getReceipts() : section === "transfers" ? getTransfers() : section === "dispatches" ? getDispatches() : section === "pending" ? getPending() : getHistory();
     load.then(rows => { if (!cancelled) setApiRow(rows.find(row => row.id === id) ?? null); }).catch(error => { if (!cancelled) setApiError(error instanceof Error ? error.message : "Không thể tải chi tiết."); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -29,6 +34,40 @@ export default function DetailView({ section, id, edit = false }: { section: str
   const fields = Object.entries(row).filter(([key]) => key !== "code");
   return <><div className="page-heading"><div><Link className="back-link" href={`/${section}`}><ArrowLeft size={14}/> {moduleNames[section as ModuleKey]}</Link><h1>{edit ? `Chỉnh sửa ${row.id}` : `Chi tiết ${row.id}`}</h1></div><div className="detail-actions"><Link className="button" href={`/${section}`}><ArrowLeft size={14}/> Quay lại</Link>{(!apiRow || canEditDraft) && <Link className="button primary" href={`/${section}/${id}/edit`}><Pencil size={14}/> Chỉnh sửa</Link>}</div></div>
     <section className="form-panel"><div className="form-panel-head"><h2>Thông tin {moduleNames[section as ModuleKey]?.toLocaleLowerCase("vi")}</h2><p>Mã bản ghi <strong>{id}</strong></p></div>{apiError && <div className="module-note">Không tải được dữ liệu live: {apiError}</div>}{edit && apiRow && !canEditDraft && <div className="module-note">Chỉ phiếu nháp mới được chỉnh sửa; phiếu đã xử lý phải đi qua workflow nghiệp vụ để bảo toàn tồn kho.</div>}{edit && !apiRow ? <form onSubmit={event => { event.preventDefault(); setSaved(true); window.setTimeout(() => router.push(`/${section}/${id}`), 900); }}><div className="form-grid">{fields.map(([key, value]) => <label key={key}><span>{definition.columns.find(col => col.key === key)?.label ?? key.toLocaleUpperCase("vi")}</span><input defaultValue={String(value)} readOnly={key === "id"} /></label>)}</div><div className="form-actions"><Link className="button" href={`/${section}/${id}`}>Hủy</Link><button className="button primary" type="submit">{saved ? "Đã lưu" : "Lưu thay đổi"}</button></div></form> : <div className="detail-grid">{fields.map(([key, value]) => <div className="detail-field" key={key}><span>{definition.columns.find(col => col.key === key)?.label ?? key.toLocaleUpperCase("vi")}</span>{key === "status" ? <StatusBadge value={value}/> : <strong>{value}</strong>}</div>)}</div>}</section></>;
+}
+
+function DispatchDraftEditor({ id }: { id: number }) {
+  const router = useRouter(); const [draft, setDraft] = useState<Awaited<ReturnType<typeof getDispatchDraft>> | null>(null); const [lines, setLines] = useState<{ sku: string; quantity: string }[]>([]); const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
+  useEffect(() => { getDispatchDraft(id).then(next => { setDraft(next); setLines(next.lines.map(line => ({ sku: line.sku, quantity: String(line.so_luong) }))); }).catch(err => setError(err instanceof Error ? err.message : "Không tải được phiếu xuất.")); }, [id]);
+  if (error) return <div className="not-found"><h1>Không thể sửa phiếu xuất</h1><p>{error}</p><Link href="/dispatches" className="button">Quay lại</Link></div>;
+  if (!draft) return <div className="auth-loading">Đang tải phiếu xuất…</div>;
+  async function submit(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setSaving(true); setError(""); try { const form = new FormData(event.currentTarget); const validLines = lines.map(line => { const quantity = Number(line.quantity); if (!line.sku || !Number.isInteger(quantity) || quantity <= 0) throw new Error("Số lượng phải là số nguyên dương."); return { sku: line.sku, quantity }; }); if (!validLines.length) throw new Error("Phiếu phải có ít nhất một sản phẩm."); await updateDispatchDraft(id, { order_id: draft!.dispatch.ma_donhang, note: String(form.get("note") ?? "") || undefined, lines: validLines }); router.push(`/dispatches/${id}`); } catch (err) { setError(err instanceof Error ? err.message : "Không thể lưu phiếu xuất."); } finally { setSaving(false); } }
+  const money = (value: unknown) => `${Number(value ?? 0).toLocaleString("vi-VN")} ₫`;
+  return <section className="warehouse-workspace receipt-form-workspace"><nav className="warehouse-breadcrumb"><Link href="/">Tổng quan</Link><span>›</span><Link href="/dispatches">Phiếu xuất</Link><span>›</span><strong>Chỉnh sửa</strong></nav><div className="receipt-form-hero"><div><span className="receipt-eyebrow"><Truck size={14}/> NGHIỆP VỤ KHO</span><h1>Chỉnh sửa phiếu xuất</h1><p>Cập nhật số lượng và ghi chú trước khi xác nhận xuất kho.</p></div><Link className="button" href={`/dispatches/${id}`}><ArrowLeft size={15}/> Quay lại</Link></div><form onSubmit={submit} className="receipt-form-card"><fieldset disabled={saving} className="warehouse-fields"><div className="receipt-section-heading"><span className="receipt-step">01</span><div><h2>Thông tin xuất hàng</h2><p>Đơn hàng được giữ nguyên theo phiếu đã tạo.</p></div></div><p className="warehouse-selection"><span>Mã đơn hàng</span><strong>{draft.dispatch.ma_donhang}</strong></p><label className="warehouse-field"><span>Ghi chú xuất hàng</span><textarea name="note" maxLength={2000} rows={3} defaultValue={draft.dispatch.ghi_chu ?? ""} placeholder="Ghi chú nếu có" /></label><div className="receipt-section-heading product-heading"><span className="receipt-step">02</span><div><h2>Danh sách sản phẩm</h2><p>Điều chỉnh số lượng thực tế cần xuất.</p></div></div><div className="warehouse-table receipt-lines-table"><table><thead><tr><th>SẢN PHẨM / SKU</th><th>ĐƠN VỊ</th><th>ĐƠN GIÁ</th><th>SỐ LƯỢNG</th><th>THÀNH TIỀN</th><th /></tr></thead><tbody>{lines.map((line, index) => { const source = draft.lines.find(item => item.sku === line.sku); const price = Number(source?.don_gia ?? 0); const quantity = Number(line.quantity) || 0; return <tr key={line.sku}><td><strong>{source?.ten_sp ?? "—"}</strong><small>{line.sku}</small></td><td>{source?.don_vi ?? "—"}</td><td>{money(price)}</td><td><input aria-label={`Số lượng ${line.sku}`} type="number" min={1} step={1} value={line.quantity} onChange={event => setLines(current => current.map((item, i) => i === index ? { ...item, quantity: event.target.value } : item))} /></td><td className="receipt-line-total">{money(price * quantity)}</td><td><button className="icon-button receipt-remove" type="button" title="Bỏ sản phẩm" onClick={() => setLines(current => current.filter((_, i) => i !== index))}><Trash2 size={16}/></button></td></tr>; })}</tbody></table>{!lines.length && <div className="warehouse-empty receipt-empty"><Package size={24}/><strong>Chưa có sản phẩm</strong></div>}</div><div className="receipt-form-footer"><div><strong>Phiếu nháp</strong><span>Tồn kho chỉ giảm sau khi xác nhận xuất kho.</span></div><div className="warehouse-toolbar"><Link className="button" href={`/dispatches/${id}`}>Hủy chỉnh sửa</Link><button className="button primary" type="submit">{saving ? "Đang lưu…" : "Lưu phiếu nháp"}</button></div></div></fieldset>{error && <p className="warehouse-error" role="alert">{error}</p>}</form></section>;
+}
+
+function InvoiceDetailView({ id }: { id: string }) {
+  const [data, setData] = useState<Awaited<ReturnType<typeof getInvoiceDetail>> | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => { getInvoiceDetail(id).then(setData).catch(err => setError(err instanceof Error ? err.message : "Không thể tải chi tiết hóa đơn.")); }, [id]);
+  if (error) return <div className="not-found"><h1>Không thể tải hóa đơn</h1><p>{error}</p><Link href="/invoices" className="button">Quay lại</Link></div>;
+  if (!data) return <div className="auth-loading">Đang tải chi tiết hóa đơn…</div>;
+  const money = (value: unknown) => `${Number(value ?? 0).toLocaleString("vi-VN")} ₫`;
+  const invoice = data.invoice;
+  const invoiceLines = groupInvoiceLines(data.lines);
+  data.lines = invoiceLines;
+  return <><div className="page-heading"><div><Link className="back-link" href="/invoices"><ArrowLeft size={14}/> Hóa đơn</Link><h1>Chi tiết {invoice.ma_hoadon}</h1></div></div><section className="form-panel"><div className="form-panel-head"><h2>Thông tin hóa đơn</h2><p>Đơn hàng <strong>{invoice.ma_donhang}</strong> · Người lập {invoice.nguoi_lap ?? "—"}</p></div><div className="detail-grid"><div className="detail-field"><span>Người mua</span><strong>{invoice.ten_nguoi_mua ?? "—"}</strong></div><div className="detail-field"><span>Mã số thuế</span><strong>{invoice.ma_so_thue ?? "—"}</strong></div><div className="detail-field"><span>Địa chỉ</span><strong>{invoice.dia_chi_nguoi_mua ?? "—"}</strong></div></div><div className="table-wrap"><table><thead><tr><th>SẢN PHẨM</th><th>SKU</th><th>ĐƠN VỊ</th><th>SỐ LƯỢNG</th><th>ĐƠN GIÁ</th><th>GIẢM GIÁ</th><th>THÀNH TIỀN</th></tr></thead><tbody>{data.lines.map((line, index) => { const discount = Number(line.giam_gia ?? 0) + Number(line.giam_gia_voucher ?? 0); const amount = Number(line.so_luong) * Number(line.don_gia) - discount; return <tr key={`${line.sku}-${index}`}><td>{line.ten_sp_luc_ban ?? "—"}</td><td>{line.sku}</td><td>{line.don_vi_luc_ban ?? "—"}</td><td>{line.so_luong}</td><td>{money(line.don_gia)}</td><td>{money(discount)}</td><td>{money(amount)}</td></tr>; })}</tbody></table></div><div className="detail-grid"><div className="detail-field"><span>Tổng trước thuế</span><strong>{money(invoice.tong_tien_truoc_thue)}</strong></div><div className="detail-field"><span>Giảm giá</span><strong>{money(invoice.tong_tien_giam)}</strong></div><div className="detail-field"><span>Tiền thuế</span><strong>{money(invoice.tong_tien_thue)}</strong></div><div className="detail-field"><span>Tổng thanh toán</span><strong>{money(invoice.tong_tien_sau_thue)}</strong></div></div></section></>;
+}
+
+function groupInvoiceLines(lines: Awaited<ReturnType<typeof getInvoiceDetail>>["lines"]) {
+  const grouped = new Map<string, (typeof lines)[number]>();
+  for (const line of lines) {
+    const key = `${line.sku}|${line.don_vi_luc_ban ?? ""}|${line.don_gia}`;
+    const existing = grouped.get(key);
+    if (!existing) grouped.set(key, { ...line });
+    else { existing.so_luong += line.so_luong; existing.giam_gia = Number(existing.giam_gia ?? 0) + Number(line.giam_gia ?? 0); existing.giam_gia_voucher = Number(existing.giam_gia_voucher ?? 0) + Number(line.giam_gia_voucher ?? 0); }
+  }
+  return [...grouped.values()];
 }
 
 function DraftEditor({ section, id, onDone }: { section: string; id: number; onDone: () => void }) {
