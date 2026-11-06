@@ -6,7 +6,7 @@ from phub_api.services.pricing import PRICING_ERRORS
 
 ERRORS = {
     **PRICING_ERRORS,
-    'WAREHOUSE_FORBIDDEN': (403, 'Nhân viên hoặc kho được phân công không còn hoạt động.'),
+    'WAREHOUSE_FORBIDDEN': (403, 'Tài khoản nhân viên không còn hoạt động hoặc không hợp lệ.'),
     'NOT_FOUND': (404, 'Không tìm thấy phiếu nhập.'),
     'STATE_CONFLICT': (409, 'Phiếu không còn ở trạng thái nháp. Hãy tải lại.'),
     'DOCUMENT_CHANGED': (409, 'Phiếu đã được người khác sửa. Hãy tải lại trước khi tiếp tục.'),
@@ -20,8 +20,8 @@ class WarehouseService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args):
-        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id or self.user.warehouse_id is None:
-            raise HTTPException(403, 'Chỉ nhân viên đã được phân công kho mới được thực hiện.')
+        if self.user.role not in {'ADMIN', 'NHAN_VIEN'} or not self.user.employee_id:
+            raise HTTPException(403, 'Tài khoản không có quyền xử lý nghiệp vụ kho.')
         try:
             return operation(*args)
         except APIError as exc:

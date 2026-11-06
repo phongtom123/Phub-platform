@@ -41,24 +41,16 @@ class DispatchDraft(BaseModel):
 def _require_employee(user: User):
     if user.role not in {'ADMIN', 'NHAN_VIEN'} or not user.employee_id:
         raise HTTPException(403, 'Tài khoản không có quyền xử lý phiếu kho.')
-    if user.role == 'NHAN_VIEN' and user.warehouse_id is None:
-        raise HTTPException(403, 'Tài khoản nhân viên kho chưa được phân công kho.')
 
 
 def _require_warehouse_scope(user: User, warehouse_id: int):
     _require_employee(user)
-    if user.role == 'NHAN_VIEN' and user.warehouse_id != warehouse_id:
-        raise HTTPException(403, 'Kho không thuộc phạm vi được phân quyền.')
 
 
 def _dispatch_warehouse(user: User, requested: int | None, existing: int | None = None) -> int:
-    if user.role == 'NHAN_VIEN':
-        if user.warehouse_id is None:
-            raise HTTPException(403, 'Tài khoản nhân viên kho chưa được phân công kho.')
-        return user.warehouse_id
     warehouse_id = requested or existing
     if warehouse_id is None:
-        raise HTTPException(422, 'ADMIN phải chỉ định kho xuất.')
+        raise HTTPException(422, 'Hãy chỉ định kho xuất.')
     return warehouse_id
 
 
@@ -69,8 +61,6 @@ def warehouse_options(user: User = Depends(current_user), db=Depends(get_supabas
     suppliers = db.table('NHA_CUNG_CAP').select('ma_ncc,ten_ncc').eq('trang_thai', 1).order('ma_ncc').limit(500).execute().data
     products = db.table('SAN_PHAM').select('ma_sp,sku,ten_sp,don_vi,gia_ban_hien_tai').eq('trang_thai', 1).order('sku').limit(1000).execute().data
     inventory_query = db.table('TON_KHO').select('ma_kho,sku,so_luong_ton')
-    if user.role == 'NHAN_VIEN' and user.warehouse_id is not None:
-        inventory_query = inventory_query.eq('ma_kho', user.warehouse_id)
     inventory = inventory_query.limit(5000).execute().data
     stock = {}
     for row in inventory:
@@ -197,8 +187,6 @@ def update_dispatch_draft(dispatch_id: int, body: DispatchDraft, user: User = De
     existing = db.table('PHIEU_XUAT').select('ma_phieu_xuat,trang_thai,ma_kho_xuat').eq('ma_phieu_xuat', dispatch_id).limit(1).execute().data
     if not existing:
         raise HTTPException(404, 'Không tìm thấy phiếu xuất.')
-    if user.role == 'NHAN_VIEN' and existing[0]['ma_kho_xuat'] != user.warehouse_id:
-        raise HTTPException(403, 'Phiếu xuất ngoài kho được phân quyền.')
     warehouse_id = _dispatch_warehouse(user, body.warehouse_id, existing[0]['ma_kho_xuat'])
     _require_warehouse_scope(user, warehouse_id)
     if existing[0]['trang_thai'] != 'NHAP':
@@ -220,8 +208,6 @@ def get_dispatch_draft(dispatch_id: int, user: User = Depends(current_user), db=
     docs = db.table('PHIEU_XUAT').select('ma_phieu_xuat,ma_donhang,ma_kho_xuat,ghi_chu,trang_thai').eq('ma_phieu_xuat', dispatch_id).limit(1).execute().data
     if not docs:
         raise HTTPException(404, 'Không tìm thấy phiếu xuất.')
-    if user.role == 'NHAN_VIEN' and docs[0]['ma_kho_xuat'] != user.warehouse_id:
-        raise HTTPException(403, 'Phiếu xuất ngoài kho được phân quyền.')
     lines = db.table('CT_PHIEU_XUAT').select('sku,ma_kho_xuat,so_luong').eq('ma_phieu_xuat', dispatch_id).limit(500).execute().data
     products = db.table('SAN_PHAM').select('ma_sp,sku,ten_sp,don_vi').in_('sku', [line['sku'] for line in lines]).limit(500).execute().data if lines else []
     order_lines = db.table('CT_DON_HANG').select('sku,don_gia,don_vi_luc_ban').eq('ma_donhang', docs[0]['ma_donhang']).limit(500).execute().data
@@ -237,7 +223,7 @@ def confirm_dispatch(dispatch_id: int, user: User = Depends(current_user), db=De
     try:
         return db.rpc('confirm_dispatch_document', {
             'p_ma_phieu_xuat': dispatch_id, 'p_nguoi_xac_nhan': user.employee_id,
-            'p_ma_kho_duoc_phep': None if user.role == 'ADMIN' else user.warehouse_id,
+            'p_ma_kho_duoc_phep': None,
         }).execute().data
     except APIError as exc:
         raise HTTPException(409, 'Không thể xác nhận phiếu xuất.') from exc
@@ -249,8 +235,6 @@ def cancel_dispatch(dispatch_id: int, user: User = Depends(current_user), db=Dep
     docs = db.table('PHIEU_XUAT').select('ma_phieu_xuat,ma_phieu_code,ma_kho_xuat,trang_thai').eq('ma_phieu_xuat', dispatch_id).limit(1).execute().data
     if not docs:
         raise HTTPException(404, 'Không tìm thấy phiếu xuất.')
-    if user.role == 'NHAN_VIEN' and docs[0]['ma_kho_xuat'] != user.warehouse_id:
-        raise HTTPException(403, 'Phiếu xuất ngoài kho được phân quyền.')
     if docs[0]['trang_thai'] != 'NHAP':
         raise HTTPException(409, 'Chỉ có thể xóa phiếu xuất nháp.')
     db.table('PHIEU_XUAT').update({'trang_thai': 'HUY'}).eq('ma_phieu_xuat', dispatch_id).execute()
@@ -263,7 +247,7 @@ def dispatch_order(order_id: str, user: User = Depends(current_user), db=Depends
     try:
         return db.rpc('dispatch_order', {
             'p_ma_donhang': order_id, 'p_nguoi_xuat': user.employee_id,
-            'p_ma_kho_duoc_phep': None if user.role == 'ADMIN' else user.warehouse_id,
+            'p_ma_kho_duoc_phep': None,
         }).execute().data
     except APIError as exc:
         detail = getattr(exc, 'message', None) or str(exc)

@@ -50,8 +50,8 @@ def require_admin(user: User = Depends(current_user)) -> User:
 
 
 def require_warehouse(user: User = Depends(current_user)) -> User:
-    if user.role != "NHAN_VIEN" or user.warehouse_id is None:
-        raise HTTPException(403, "Chỉ thủ kho đã được phân kho mới được truy cập chức năng này.")
+    if user.role not in {"ADMIN", "NHAN_VIEN"} or not user.employee_id:
+        raise HTTPException(403, "Tài khoản không có quyền truy cập kho.")
     return user
 
 

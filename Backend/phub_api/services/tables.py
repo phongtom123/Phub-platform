@@ -26,8 +26,6 @@ def can_write(name: str, user: User) -> bool:
 
 
 def access(name: str, user: User, write: bool = False) -> None:
-    if user.role == 'NHAN_VIEN' and user.warehouse_id is None:
-        raise HTTPException(403, 'Nhân viên chưa được phân công kho.')
     readable = user.role == "ADMIN" or (user.role == "NHAN_VIEN" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
     if not readable or (write and not can_write(name, user)):
         raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này.")

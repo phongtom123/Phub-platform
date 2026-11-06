@@ -32,8 +32,6 @@ class PricingService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args, admin=False):
-        if self.user.role == 'NHAN_VIEN' and self.user.warehouse_id is None:
-            raise HTTPException(403, 'Nhân viên chưa được phân công kho.')
         if self.user.role not in {'ADMIN', 'NHAN_VIEN'} or not self.user.employee_id or (admin and self.user.role != 'ADMIN'):
             raise HTTPException(403, PRICING_ERRORS['PRICING_FORBIDDEN'][1])
         try:
