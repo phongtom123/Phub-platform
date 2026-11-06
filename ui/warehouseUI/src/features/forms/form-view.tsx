@@ -6,10 +6,12 @@ import { formFields, moduleNames } from "@/src/data/warehouse-data";
 import type { ModuleKey } from "@/src/types/warehouse";
 import { confirmDispatch, createDispatchDraft, createInvoice, createReceiptDraft, createTransferDraft, dispatchOrder, getDispatchOrderOptions, getInvoiceOrderPreview, getWarehouseOptions, searchInvoiceCustomers, type CustomerInvoiceSearch, type DispatchOrderOption, type InvoiceOrderPreview, type ProductOption, type SupplierOption, type WarehouseOption } from "@/src/lib/warehouse-api";
 import ManualInvoiceForm from "./manual-invoice-form";
+import ReceiptForm from "../receipts/receipt-form";
 import LookupSelect from "../receipts/lookup-select";
 
 export default function FormView({ section }: { section: string }) {
   if (section === "invoices") return <ManualInvoiceForm />;
+  if (section === "receipts") return <ReceiptForm />;
   if (section === "dispatches") return <DispatchForm />;
   return <GenericFormView section={section} />;
 }
