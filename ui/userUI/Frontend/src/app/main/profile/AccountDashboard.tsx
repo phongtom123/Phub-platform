@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/common/Button";
 import { parseProfile } from "@/lib/account/client";
 import { useAccountResource } from "@/lib/account/useAccountResource";
@@ -13,6 +14,7 @@ import { AccountOrders } from "./AccountOrders";
 import { DataState, Panel } from "./AccountPanels";
 import { accountNavigation, type AccountView } from "./accountData";
 import styles from "./profile.module.css";
+import { customerAge } from "../../../../../../shared/customer-age";
 
 export function AccountDashboard({ account, logout, loggingOut, logoutError }: { account: SessionUser; logout: () => void; loggingOut: boolean; logoutError: string }) {
   const [view, setView] = useState<AccountView>("account");
@@ -39,6 +41,7 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
       <nav className={styles.navigation} aria-label="Quản lý tài khoản">
         {accountNavigation.map(item => <button key={item.id} aria-current={view === item.id ? "page" : undefined} onClick={() => navigate(item.id)}><AccountIcon name={item.id} /><span>{item.label}</span><span className={styles.navArrow} aria-hidden="true">›</span></button>)}
       </nav>
+      <div className={styles.sidebarActions}><Link href="/main/surveys">Khảo sát của tôi →</Link><Link href="/main/reviews">Đánh giá sản phẩm đã mua →</Link></div>
       <div className={styles.sidebarActions}><button className={styles.logout} onClick={logout} disabled={loggingOut}>{loggingOut ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
     </aside>
 
@@ -53,6 +56,8 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
             <div><dt>Họ và tên</dt><dd>{person.name}</dd></div>
             <div><dt>Tên đăng nhập</dt><dd>{account.username}</dd></div>
             <div><dt>Số điện thoại</dt><dd>{person.phone || "Chưa cập nhật"}</dd></div>
+            <div><dt>Ngày sinh</dt><dd>{person.birthday ? person.birthday.split("-").reverse().join("/") : "Chưa cập nhật"}</dd></div>
+            <div><dt>Tuổi</dt><dd>{customerAge(person.birthday) === null ? "Chưa có thông tin" : `${customerAge(person.birthday)} tuổi`}</dd></div>
           </dl>}
         </Panel>
         <div className={styles.secondaryGrid}>

@@ -65,6 +65,9 @@ const navigation = [
       ["promotions", "Khuyến mãi", Sparkles],
       ["vouchers", "Voucher", TicketPercent],
       ["support", "Hỗ trợ khách hàng", MessageSquare],
+      ["surveys", "Khảo sát khách hàng", TicketPercent],
+      ["reviews", "Đánh giá sản phẩm", Sparkles],
+      ["crmReport", "Báo cáo CRM", BarChart3],
     ],
   },
 ] as const;

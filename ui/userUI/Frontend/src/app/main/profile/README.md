@@ -1,5 +1,10 @@
 # Tài khoản khách hàng
 
+Cập nhật 05/11/2026: hồ sơ có ngày sinh tùy chọn và tuổi được tính khi hiển thị.
+Sidebar có liên kết `/main/surveys` và `/main/reviews` cho khảo sát được gửi và
+đánh giá sản phẩm đã mua trong đơn hoàn thành. Xem `docs/CRM-SURVEYS-REVIEWS.md`
+tại gốc repository để biết quy trình, API và phân quyền.
+
 Route `/main/profile`, dành cho tài khoản `KHACH_HANG` đã đăng nhập.
 
 Trang chỉ hiển thị ba mục có chức năng hoạt động:

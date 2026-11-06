@@ -1,5 +1,9 @@
 # Tích hợp mua hàng khách hàng — mục tiêu 4
 
+> CRM 05/11/2026: khách nhận/trả lời khảo sát theo đối tượng tuổi và đánh giá sản phẩm
+> trong đơn hoàn thành. Dùng controller/service/repository `engagement.py`, không thay
+> checkout, thanh toán hoặc giữ/xuất tồn. Xem [module khảo sát/đánh giá](../../../docs/CRM-SURVEYS-REVIEWS.md).
+
 > Tài liệu module theo kiến trúc Controller → Service → Repository.
 
 > Cập nhật 02/11/2026: customer checkout gom tồn khả dụng từ các kho hoạt động,

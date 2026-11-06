@@ -21,17 +21,20 @@ import AccountsView from "@/src/features/accounts/accounts-view";
 import type { AccountView } from "@/src/features/accounts/types";
 import SupportView from "@/src/features/support/support-view";
 import { ReportsView } from "@/src/features/reports/reports-view";
+import SurveysView from "@/src/features/engagement/surveys-view";
+import ReviewsView from "@/src/features/engagement/reviews-view";
+import CrmReportView from "@/src/features/engagement/crm-report-view";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
   mode: "create" | "edit" | "settings";
 } | null;
 
-export default function AdminApp({ dataResource, accountsPage, supportPage = false, reportsPage = false }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean; reportsPage?: boolean } = {}) {
+export default function AdminApp({ dataResource, accountsPage, supportPage = false, reportsPage = false, engagementPage }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean; reportsPage?: boolean; engagementPage?: "surveys" | "reviews" | "crmReport" } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
-  const activeModule = accountsPage ? "accounts" : supportPage ? "support" : reportsPage ? "reports" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString());
+  const activeModule = engagementPage ?? (accountsPage ? "accounts" : supportPage ? "support" : reportsPage ? "reports" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString()));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [drawer, setDrawer] = useState<DrawerState>(null);
@@ -92,7 +95,7 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
             <span>{sessionError}</span>
             <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
           </div>}
-          {activeModule === "reports" ? <ReportsView /> : activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
+          {activeModule === "surveys" ? <SurveysView /> : activeModule === "reviews" ? <ReviewsView /> : activeModule === "crmReport" ? <CrmReportView /> : activeModule === "reports" ? <ReportsView /> : activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : moduleResources[activeModule] ? (
             <ModuleView

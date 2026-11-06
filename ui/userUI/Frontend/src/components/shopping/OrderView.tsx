@@ -152,6 +152,11 @@ function Details({ id }: { id: string }) {
               hóa đơn, nếu có, được xác nhận tại bước lập hóa đơn.
             </p>
           </section>
+          {data.status === "HOAN_THANH" && <section className={styles.panel} aria-label="Đánh giá sau mua">
+            <h2>Đánh giá sản phẩm đã mua</h2>
+            <p>Đơn đã hoàn thành. Bạn có thể chấm sao và chia sẻ nhận xét về sản phẩm.</p>
+            <Link href="/main/reviews">Viết hoặc sửa đánh giá →</Link>
+          </section>}
           <InvoicePanel orderId={data.id} onDeadlineChange={receiveDeadline} />
           <PaymentPanel orderId={data.id} orderStatus={data.status}
             paymentDeadline={deadlineSnapshot?.id === id ? deadlineSnapshot.value : data.payment_deadline} />

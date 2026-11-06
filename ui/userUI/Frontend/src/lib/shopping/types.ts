@@ -8,6 +8,7 @@ export interface CustomerProfile {
   province: string | null;
   ward: string | null;
   avatar_url?: string | null;
+  birthday?: string | null;
 }
 export interface CartLine {
   product_id: string;

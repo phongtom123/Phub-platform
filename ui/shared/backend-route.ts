@@ -112,6 +112,22 @@ function validWarehousePath(path: string[], method: string): boolean {
 }
 
 function validCrmPath(path: string[], method: string): boolean {
+  if (path[0] === "crm" && path.length === 2 && path[1] === "report") return method === "GET";
+  if (path[0] === "crm" && path[1] === "surveys") {
+    if (path.length === 2) return ["GET", "POST"].includes(method);
+    if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2] ?? "")) return false;
+    return path.length === 3 ? ["GET", "PUT"].includes(method) : path.length === 4 &&
+      ((["preview", "statistics"].includes(path[3]) && method === "GET") || (["publish", "close"].includes(path[3]) && method === "POST"));
+  }
+  if (path[0] === "crm" && path[1] === "reviews") return path.length === 2 ? method === "GET" :
+    path.length === 4 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2]) && path[3] === "moderate" && method === "POST";
+  if (path[0] === "customer" && path[1] === "crm" && path[2] === "surveys") {
+    if (path.length === 3) return method === "GET";
+    if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3] ?? "")) return false;
+    return path.length === 4 ? method === "GET" : path.length === 5 && path[4] === "submit" && method === "POST";
+  }
+  if (path[0] === "customer" && path[1] === "crm" && path[2] === "reviews") return path.length === 3 ? method === "POST" : path.length === 4 && path[3] === "eligible" && method === "GET";
+  if (path[0] === "catalog" && path[1] === "products" && path.length === 4 && path[3] === "reviews") return validProductId(path[2]) && method === "GET";
   if (path[0] === "crm" && path[1] === "feedback") {
     if (path.length === 2) return method === "GET";
     return path.length === 3 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2]) && ["GET", "PATCH"].includes(method);
@@ -119,7 +135,7 @@ function validCrmPath(path: string[], method: string): boolean {
   if (path[0] !== "crm" || path[1] !== "customers" || !path[2] ||
     !/^[A-Za-z0-9_.-]{1,200}$/.test(path[2]) || [".", ".."].includes(path[2])) return false;
   if (path.length === 3) return ["GET", "PATCH"].includes(method);
-  return path.length === 4 && path[3] === "orders" && method === "GET";
+  return path.length === 4 && ((path[3] === "orders" && method === "GET") || (path[3] === "archive" && method === "POST"));
 }
 
 export async function proxyBackend(request: Request, context: Context): Promise<Response> {

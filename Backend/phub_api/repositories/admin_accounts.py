@@ -23,14 +23,14 @@ class AccountsRepository:
         return self.client.table("TAI_KHOAN").select(ACCOUNT_PROJECTION).eq("ma_tk", identifier).limit(1).execute().data
 
     def customer(self, identifier):
-        return self.client.table("KHACH_HANG").select("ma_kh,ten_kh").eq("ma_kh", identifier).limit(1).execute().data
+        return self.client.table("KHACH_HANG").select("ma_kh,ten_kh,luu_tru_luc").eq("ma_kh", identifier).limit(1).execute().data
 
     def warehouse(self, identifier):
         return self.client.table("KHO").select("ma_kho,trang_thai").eq("ma_kho", identifier).limit(1).execute().data
 
     def page(self, page, page_size, q, status, role):
         employee_join = "!inner" if role in {"ADMIN", "NHAN_VIEN"} else ""
-        projection = ACCOUNT_PROJECTION + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh)"
+        projection = ACCOUNT_PROJECTION + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh,luu_tru_luc)"
         query = self.client.table("TAI_KHOAN").select(projection, count="exact")
         if q.strip():
             query = query.or_(literal_search(q, ("ma_tk", "ten_tai_khoan", "email")))
@@ -50,6 +50,8 @@ class AccountsRepository:
         query = self.client.table(table).select(columns + ",account:TAI_KHOAN(ma_tk)", count="exact")
         if employee:
             query = query.eq("trang_thai", 1)
+        else:
+            query = query.is_("luu_tru_luc", "null")
         if q.strip():
             query = query.or_(literal_search(q, (key, name)))
         return query.order(key).range((page - 1) * page_size, page * page_size - 1).execute()

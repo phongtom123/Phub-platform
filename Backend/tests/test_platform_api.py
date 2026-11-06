@@ -88,6 +88,24 @@ def test_customer_account_status_mapping_is_admin_only(platform_client):
     assert requests[0].url.params["ma_kh"] == "eq.KH3"
 
 
+@pytest.mark.parametrize("state_filter,expected", [(None, "is.null"), ("ACTIVE", "is.null"), ("ARCHIVED", "not.is.null"), ("ALL", None)])
+def test_customer_archive_list_filters(platform_client, state_filter, expected):
+    client, _, requests = platform_client
+    params = {"filters": json.dumps({"luu_tru_luc": state_filter})} if state_filter else {}
+    assert client.get("/api/data/customers", params=params).status_code == 200
+    assert requests[-1].url.params.get("luu_tru_luc") == expected
+
+
+def test_archived_customer_can_be_read_directly_but_not_edited(platform_client):
+    client, state, requests = platform_client
+    state["rows"] = [{"ma_kh": "KH1", "ten_kh": "Customer", "luu_tru_luc": "2026-11-05T00:00:00Z"}]
+    assert client.get('/api/data/customers?key=["KH1"]').status_code == 200
+    assert "luu_tru_luc" not in requests[-1].url.params
+    response = client.patch('/api/data/customers?key=["KH1"]', headers=ORIGIN, json={"ten_kh": "New"})
+    assert response.status_code == 409
+    assert all(request.method == "GET" for request in requests)
+
+
 @pytest.mark.parametrize("query,identifier", [("12", 12), ("0012", 12), ("-5", -5), ("2147483647", 2147483647)])
 def test_supplier_search_matches_numeric_id_and_text_fields(platform_client, query, identifier):
     client, state, requests = platform_client

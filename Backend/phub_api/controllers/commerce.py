@@ -16,13 +16,13 @@ from phub_api.schemas.commerce import (
     CustomerOrderReceipt,
     CustomerOrderRequest,
     CustomerProfile,
+    CustomerProfileUpdate,
     InvoiceOverview,
     OrderDetail,
     OrderPage,
     OrderQuery,
     QuoteRequest,
 )
-from phub_api.schemas.orders import Recipient
 from phub_api.schemas.payments import NoQuery, OrderId
 from phub_api.schemas.responses import documented_error
 from phub_api.services.commerce import CommerceService
@@ -52,7 +52,7 @@ def current_profile(customer: Customer, service: Service, query: Annotated[NoQue
 
 
 @router.put("/me", response_model=CustomerProfile, responses=ERRORS, summary="Lưu thông tin nhận hàng của khách hiện tại")
-def save_current_profile(request: Recipient, customer: Customer, service: Service, query: Annotated[NoQuery, Query()]):
+def save_current_profile(request: CustomerProfileUpdate, customer: Customer, service: Service, query: Annotated[NoQuery, Query()]):
     return service.save_profile(request, customer)
 
 

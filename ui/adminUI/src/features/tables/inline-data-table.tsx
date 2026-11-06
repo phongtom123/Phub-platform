@@ -12,11 +12,12 @@ type Props = { resource: string; rows: DataRow[]; columns: DataColumn[]; keys: s
   editableFields?: readonly string[]; writePath?: string; canEditRow?: (row: DataRow) => boolean;
   externalBusy?: boolean;
   extraColumns?: readonly { key: string; title: string; render: (row: DataRow, disabled: boolean) => ReactNode }[];
+  rowActions?: (row: DataRow, disabled: boolean) => ReactNode;
   label: (name: string) => string; href: (row: DataRow) => string;
   onSaved: (row: DataRow) => void; onEditingChange: (editing: boolean) => void };
 type Editor = { key: string; draft: Record<string, string>; field: string };
 
-export function InlineDataTable({ resource, rows, columns, keys, label, href, onSaved, onEditingChange, quickEditFields, editableFields, writePath, canEditRow, externalBusy = false, extraColumns = [] }: Props) {
+export function InlineDataTable({ resource, rows, columns, keys, label, href, onSaved, onEditingChange, quickEditFields, editableFields, writePath, canEditRow, externalBusy = false, extraColumns = [], rowActions }: Props) {
   const router = useRouter();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [saving, setSaving] = useState(false);
@@ -149,7 +150,9 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
       <tbody>{rows.map(row => {
         const key = dataRowKey(row, keys); const editing = editor?.key === key;
         return <tr key={key} ref={node => { if (node) rowNodes.current.set(key, node); else rowNodes.current.delete(key); }}
-          tabIndex={0} className={editing ? "inline-data-row-editing" : undefined} title={canEditRow?.(row) === false ? "Phiếu đã xử lý chỉ xem thông tin" : "Nhấp đúp hoặc nhấn F2 để chỉnh sửa"}
+          tabIndex={0} className={editing ? "inline-data-row-editing" : undefined} title={canEditRow?.(row) === false
+            ? resource === "customers" ? "Hồ sơ đã xóa mềm; khôi phục trước khi chỉnh sửa" : "Phiếu đã xử lý chỉ xem thông tin"
+            : "Nhấp đúp hoặc nhấn F2 để chỉnh sửa"}
           onDoubleClick={event => doubleClick(event, row)} onKeyDown={event => keyDown(event, row)}>
           {columns.map(column => <td key={column.name} data-field={column.name}>
             {keys.includes(column.name) ? <Link href={href(row)}>{String(row[column.name] ?? "—")}</Link>
@@ -174,6 +177,7 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
           </td>)}
           {extraColumns.map(column => <td key={column.key}>{column.render(row, Boolean(editor) || saving || externalBusy || canEditRow?.(row) === false)}</td>)}
           <td><div className="inline-data-actions"><Link href={href(row)}>Chi tiết</Link>
+            {rowActions?.(row, Boolean(editor) || saving || externalBusy)}
             {quickEditFields && editing && <>
               <button type="button" disabled={saving} onClick={() => void save(true)}>{saving ? "Đang lưu…" : "Lưu"}</button>
               <button type="button" disabled={saving} onClick={cancel}>Hủy</button>

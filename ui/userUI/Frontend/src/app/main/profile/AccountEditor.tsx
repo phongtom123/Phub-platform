@@ -5,10 +5,12 @@ import { TextField } from "@/components/common/TextField";
 import { accountRequest, AccountApiError, parseProfile, type CustomerProfile, type Recipient } from "@/lib/account/client";
 import { AccountAccessContext } from "@/lib/account/useAccountResource";
 import styles from "./profile.module.css";
+import { customerAge, vietnamDate } from "../../../../../../shared/customer-age";
 
 export function AccountEditor({ profile, onSaved, onClose }: { profile: CustomerProfile; onSaved: () => void; onClose: () => void }) {
   const [values, setValues] = useState<Recipient>({ name: profile.name, phone: profile.phone ?? "", address_line: profile.address_line ?? "", province: profile.province ?? "", ward: profile.ward ?? "" });
   const [saving, setSaving] = useState(false);
+  const [birthday, setBirthday] = useState(profile.birthday ?? "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
@@ -25,7 +27,7 @@ export function AccountEditor({ profile, onSaved, onClose }: { profile: Customer
     const controller = new AbortController(); request.current = controller;
     setSaving(true); setError("");
     try {
-      await accountRequest("customer/me", parseProfile, { method: "PUT", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, name: values.name.trim(), phone: values.phone.replace(/[ ()-]/g, ""), address_line: values.address_line.trim(), province: values.province.trim(), ward: values.ward.trim() }) });
+      await accountRequest("customer/me", parseProfile, { method: "PUT", signal: controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, birthday: birthday || null, name: values.name.trim(), phone: values.phone.replace(/[ ()-]/g, ""), address_line: values.address_line.trim(), province: values.province.trim(), ward: values.ward.trim() }) });
       if (avatarFile) {
         const avatarResponse = await fetch("/api/backend/customer/me/avatar", {
           method: "POST", signal: controller.signal, credentials: "same-origin",
@@ -48,7 +50,7 @@ export function AccountEditor({ profile, onSaved, onClose }: { profile: Customer
     } finally { request.current = null; if (!controller.signal.aborted) setSaving(false); }
   }
   return <dialog ref={dialog} className={styles.dialog} aria-labelledby="edit-profile-title" onCancel={event => { event.preventDefault(); if (!saving) onClose(); }}>
-    <div className={styles.dialogHeading}><h2 id="edit-profile-title">Thông tin nhận hàng</h2><button className={styles.closeButton} onClick={onClose} disabled={saving} aria-label="Đóng biểu mẫu">×</button></div>
+    <div className={styles.dialogHeading}><h2 id="edit-profile-title">Thông tin cá nhân và nhận hàng</h2><button className={styles.closeButton} onClick={onClose} disabled={saving} aria-label="Đóng biểu mẫu">×</button></div>
     <p className={styles.note}>Lưu vào hồ sơ khách hàng. Không thay đổi địa chỉ trên các đơn đã đặt.</p>
     <form className={styles.form} onSubmit={save}>
       <fieldset disabled={saving} className={styles.fields}>
@@ -57,6 +59,9 @@ export function AccountEditor({ profile, onSaved, onClose }: { profile: Customer
             onChange={event => setAvatarFile(event.target.files?.[0] ?? null)} />
         </label>
         <TextField label="Họ và tên" required maxLength={100} autoComplete="name" value={values.name} onChange={event => setValues({ ...values, name: event.target.value })} />
+        <TextField label="Ngày sinh" type="date" autoComplete="bday" max={vietnamDate()} value={birthday}
+          hint={customerAge(birthday) === null ? "Không bắt buộc. Tuổi được tính từ ngày sinh." : `${customerAge(birthday)} tuổi`}
+          onChange={event => setBirthday(event.target.value)} />
         <TextField label="Số điện thoại" required type="tel" autoComplete="tel" maxLength={25} hint="8–15 chữ số, có thể có mã quốc gia." value={values.phone} onChange={event => setValues({ ...values, phone: event.target.value })} />
         <TextField label="Địa chỉ chi tiết" required maxLength={255} autoComplete="street-address" value={values.address_line} onChange={event => setValues({ ...values, address_line: event.target.value })} />
         <TextField label="Tỉnh / thành phố" required maxLength={100} autoComplete="address-level1" value={values.province} onChange={event => setValues({ ...values, province: event.target.value })} />

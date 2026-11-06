@@ -2,7 +2,7 @@
 import type { FulfillmentMethod, PaymentDeadline } from "../shopping/types";
 import { validPaymentDeadline } from "../shopping/payment-deadline";
 export type Recipient = { name: string; phone: string; address_line: string; province: string; ward: string };
-export type CustomerProfile = { customer_id: string; name: string; phone: string | null; address_line: string | null; province: string | null; ward: string | null; avatar_url?: string | null };
+export type CustomerProfile = { customer_id: string; name: string; phone: string | null; address_line: string | null; province: string | null; ward: string | null; avatar_url?: string | null; birthday?: string | null };
 export type Pagination = { page: number; page_size: number; total: number; total_pages: number };
 export type OrderSummary = { id: string; status: string; created_at: string; currency: string; total: string; payment_deadline?: PaymentDeadline | null; fulfillment_method?: FulfillmentMethod | null };
 export type OrderPage = { items: OrderSummary[]; pagination: Pagination };
@@ -68,6 +68,7 @@ function transaction(value: unknown) {
 export function parseProfile(value: unknown): CustomerProfile {
   const p = object(value);
   check(text(p.customer_id) && text(p.name) && [p.phone, p.address_line, p.province, p.ward, p.avatar_url ?? null].every(nullableText));
+  check(p.birthday == null || typeof p.birthday === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.birthday) && date(p.birthday));
   return value as CustomerProfile;
 }
 export function parseOrders(value: unknown): OrderPage {

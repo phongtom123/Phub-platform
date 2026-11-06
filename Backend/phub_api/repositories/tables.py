@@ -69,8 +69,16 @@ class TablesRepository:
             query = query.eq("ma_donhang", order_id)
         if keys is not None:
             query = apply_keys(query, name, keys)
+        if name == "customers" and keys is None and not any(operator == "archive" for _, operator, _ in filters or []):
+            query = query.is_("luu_tru_luc", "null")
         for field, operator, value in filters or []:
-            query = getattr(query, operator)(field, value)
+            if operator == "archive":
+                if value == "ACTIVE":
+                    query = query.is_(field, "null")
+                elif value == "ARCHIVED":
+                    query = query.not_.is_(field, "null")
+            else:
+                query = getattr(query, operator)(field, value)
         for field in RESOURCES[name].keys:
             query = query.order(field)
         return query.range((page - 1) * page_size, page * page_size - 1).execute()
@@ -82,7 +90,10 @@ class TablesRepository:
         return self.client.table(RESOURCES[name].table).insert(values).execute().data
 
     def update(self, name, keys, values):
-        return apply_keys(self.client.table(RESOURCES[name].table).update(values), name, keys).execute().data
+        query = apply_keys(self.client.table(RESOURCES[name].table).update(values), name, keys)
+        if name == "customers":
+            query = query.is_("luu_tru_luc", "null")
+        return query.execute().data
 
     def update_draft(self, name, keys, values):
         # The state guard is part of the UPDATE, closing the read/confirm/write race.

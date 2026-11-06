@@ -1,3 +1,6 @@
+import { vietnamDate } from "../../../shared/customer-age";
+export { customerAge, vietnamDate } from "../../../shared/customer-age";
+
 export type Customer = {
   ma_kh: string; ten_kh: string; sdt: string | null; dia_chi_chi_tiet_md: string | null;
   tinh_thanh_md: string | null; xa_phuong_md: string | null; ngay_sinh: string | null;
@@ -21,15 +24,6 @@ export function customerIdFromKey(key: string): string | null {
     const ids: unknown = JSON.parse(key);
     return Array.isArray(ids) && ids.length === 1 && typeof ids[0] === "string" && ids[0].trim().length > 0 && ids[0].length <= 200 ? ids[0] : null;
   } catch { return null; }
-}
-export function vietnamDate(now = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
-  return ["year", "month", "day"].map(type => parts.find(p => p.type === type)?.value).join("-");
-}
-export function customerAge(birthday: string | null, today = vietnamDate()): number | null {
-  if (!birthday || !/^\d{4}-\d{2}-\d{2}$/.test(birthday) || birthday > today) return null;
-  const [year, month, day] = birthday.split("-").map(Number), [y, m, d] = today.split("-").map(Number);
-  return y - year - (m < month || (m === month && d < day) ? 1 : 0);
 }
 export function customerPatch(data: CustomerDetail, draft: Record<CustomerField, string>) {
   const patch: Record<string, string | null> = {};

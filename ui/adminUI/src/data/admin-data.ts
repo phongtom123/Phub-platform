@@ -4,6 +4,9 @@ import type { ModuleKey } from "@/src/types/admin";
 export const moduleNames: Record<ModuleKey, string> = {
   dashboard: "Tổng quan",
   reports: "Báo cáo kinh doanh",
+  surveys: "Khảo sát khách hàng",
+  reviews: "Đánh giá sản phẩm",
+  crmReport: "Báo cáo CRM",
   orders: "Đơn hàng",
   billing: "Hóa đơn & thanh toán",
   customers: "Khách hàng",

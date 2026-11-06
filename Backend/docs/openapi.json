@@ -2105,6 +2105,61 @@
         "title": "CreateOrder",
         "type": "object"
       },
+      "CrmReport": {
+        "properties": {
+          "age_groups": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Age Groups",
+            "type": "array"
+          },
+          "as_of": {
+            "title": "As Of",
+            "type": "string"
+          },
+          "interest_surveys": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Interest Surveys",
+            "type": "array"
+          },
+          "review_stars": {
+            "items": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "title": "Review Stars",
+            "type": "array"
+          },
+          "review_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Review Status",
+            "type": "object"
+          },
+          "total_customers": {
+            "title": "Total Customers",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "as_of",
+          "total_customers",
+          "age_groups",
+          "review_stars",
+          "review_status",
+          "interest_surveys"
+        ],
+        "title": "CrmReport",
+        "type": "object"
+      },
       "CustomerAccount": {
         "properties": {
           "email": {
@@ -2182,6 +2237,20 @@
           "is_default"
         ],
         "title": "CustomerAddress",
+        "type": "object"
+      },
+      "CustomerArchiveUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "archived"
+        ],
+        "title": "CustomerArchiveUpdate",
         "type": "object"
       },
       "CustomerDetail": {
@@ -2487,6 +2556,61 @@
           "page_size"
         ],
         "title": "CustomerOrders",
+        "type": "object"
+      },
+      "CustomerProfileUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "address_line": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Address Line",
+            "type": "string"
+          },
+          "birthday": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "pattern": "^\\+?[0-9]{8,15}$",
+            "title": "Phone",
+            "type": "string"
+          },
+          "province": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Province",
+            "type": "string"
+          },
+          "ward": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Ward",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address_line",
+          "province",
+          "ward"
+        ],
+        "title": "CustomerProfileUpdate",
         "type": "object"
       },
       "CustomerTicket": {
@@ -2949,6 +3073,38 @@
           "order_status"
         ],
         "title": "DemoPaymentContext",
+        "type": "object"
+      },
+      "EngagementPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "EngagementPage",
         "type": "object"
       },
       "ErrorBody": {
@@ -6293,6 +6449,49 @@
         "title": "PickupRecipient",
         "type": "object"
       },
+      "PreviewPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "is_snapshot": {
+            "title": "Is Snapshot",
+            "type": "boolean"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "phien_ban": {
+            "format": "uuid",
+            "title": "Phien Ban",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size",
+          "phien_ban",
+          "is_snapshot"
+        ],
+        "title": "PreviewPage",
+        "type": "object"
+      },
       "PricePreview": {
         "additionalProperties": false,
         "properties": {
@@ -6644,6 +6843,143 @@
           "items"
         ],
         "title": "ProductPurchaseStates",
+        "type": "object"
+      },
+      "PublicReview": {
+        "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "noi_dung": {
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "so_sao": {
+            "title": "So Sao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "so_sao",
+          "noi_dung",
+          "ngay_tao",
+          "author"
+        ],
+        "title": "PublicReview",
+        "type": "object"
+      },
+      "PublicReviewPage": {
+        "properties": {
+          "average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PublicReview"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "stars": {
+            "items": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "title": "Stars",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "average",
+          "stars",
+          "page",
+          "page_size"
+        ],
+        "title": "PublicReviewPage",
+        "type": "object"
+      },
+      "QuestionRead": {
+        "properties": {
+          "bat_buoc": {
+            "title": "Bat Buoc",
+            "type": "boolean"
+          },
+          "loai_cau_hoi": {
+            "title": "Loai Cau Hoi",
+            "type": "string"
+          },
+          "ma_cau_hoi": {
+            "format": "uuid",
+            "title": "Ma Cau Hoi",
+            "type": "string"
+          },
+          "ma_khao_sat": {
+            "format": "uuid",
+            "title": "Ma Khao Sat",
+            "type": "string"
+          },
+          "nhom_noi_dung": {
+            "title": "Nhom Noi Dung",
+            "type": "string"
+          },
+          "noi_dung": {
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "thu_tu": {
+            "title": "Thu Tu",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ma_cau_hoi",
+          "ma_khao_sat",
+          "noi_dung",
+          "loai_cau_hoi",
+          "nhom_noi_dung",
+          "bat_buoc",
+          "thu_tu",
+          "options"
+        ],
+        "title": "QuestionRead",
         "type": "object"
       },
       "QuoteRequest": {
@@ -7442,6 +7778,147 @@
         ],
         "title": "ResourceName",
         "type": "string"
+      },
+      "ReviewModerate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "format": "uuid",
+            "title": "Expected Version",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "HIEN_THI",
+              "AN"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version",
+          "status"
+        ],
+        "title": "ReviewModerate",
+        "type": "object"
+      },
+      "ReviewRecord": {
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "ma_danh_gia": {
+            "format": "uuid",
+            "title": "Ma Danh Gia",
+            "type": "string"
+          },
+          "ma_donhang": {
+            "title": "Ma Donhang",
+            "type": "string"
+          },
+          "ma_kh": {
+            "title": "Ma Kh",
+            "type": "string"
+          },
+          "ma_sp": {
+            "title": "Ma Sp",
+            "type": "string"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "noi_dung": {
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "phien_ban": {
+            "format": "uuid",
+            "title": "Phien Ban",
+            "type": "string"
+          },
+          "so_sao": {
+            "title": "So Sao",
+            "type": "integer"
+          },
+          "trang_thai": {
+            "enum": [
+              "HIEN_THI",
+              "AN"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_danh_gia",
+          "ma_kh",
+          "ma_sp",
+          "ma_donhang",
+          "so_sao",
+          "noi_dung",
+          "trang_thai",
+          "ngay_tao",
+          "cap_nhat_luc",
+          "phien_ban"
+        ],
+        "title": "ReviewRecord",
+        "type": "object"
+      },
+      "ReviewWrite": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version"
+          },
+          "order_id": {
+            "description": "Đơn đã hoàn thành của khách chứa sản phẩm. Sửa đánh giá không thay mã đơn chứng minh mua ban đầu.",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Order Id",
+            "type": "string"
+          },
+          "product_id": {
+            "description": "Mỗi khách chỉ có một đánh giá cho mỗi sản phẩm, kể cả khi mua lại.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Product Id",
+            "type": "string"
+          },
+          "stars": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Stars",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product_id",
+          "order_id",
+          "stars",
+          "content"
+        ],
+        "title": "ReviewWrite",
+        "type": "object"
       },
       "RoleUpdate": {
         "additionalProperties": false,
@@ -8495,6 +8972,634 @@
           "name"
         ],
         "title": "Subcategory",
+        "type": "object"
+      },
+      "SurveyAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "diem": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diem"
+          },
+          "ma_cau_hoi": {
+            "format": "uuid",
+            "title": "Ma Cau Hoi",
+            "type": "string"
+          },
+          "ma_lua_chon": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ma Lua Chon"
+          },
+          "noi_dung": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noi Dung"
+          }
+        },
+        "required": [
+          "ma_cau_hoi"
+        ],
+        "title": "SurveyAnswer",
+        "type": "object"
+      },
+      "SurveyCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "han_tra_loi": {
+            "format": "date-time",
+            "title": "Han Tra Loi",
+            "type": "string"
+          },
+          "loai_doi_tuong": {
+            "enum": [
+              "TAT_CA",
+              "DO_TUOI",
+              "CHUA_NGAY_SINH"
+            ],
+            "title": "Loai Doi Tuong",
+            "type": "string"
+          },
+          "mo_ta": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Mo Ta",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyQuestion"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Questions",
+            "type": "array"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "tieu_de": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Tieu De",
+            "type": "string"
+          },
+          "tuoi_den": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Den"
+          },
+          "tuoi_tu": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Tu"
+          }
+        },
+        "required": [
+          "tieu_de",
+          "loai_doi_tuong",
+          "han_tra_loi",
+          "questions",
+          "request_id"
+        ],
+        "title": "SurveyCreate",
+        "type": "object"
+      },
+      "SurveyDetail": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyAnswer"
+            },
+            "title": "Answers",
+            "type": "array"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionRead"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "recipient": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient"
+          },
+          "survey": {
+            "$ref": "#/components/schemas/SurveyInfo"
+          }
+        },
+        "required": [
+          "survey",
+          "questions",
+          "recipient",
+          "answers"
+        ],
+        "title": "SurveyDetail",
+        "type": "object"
+      },
+      "SurveyInfo": {
+        "properties": {
+          "han_tra_loi": {
+            "format": "date-time",
+            "title": "Han Tra Loi",
+            "type": "string"
+          },
+          "loai_doi_tuong": {
+            "title": "Loai Doi Tuong",
+            "type": "string"
+          },
+          "ma_khao_sat": {
+            "format": "uuid",
+            "title": "Ma Khao Sat",
+            "type": "string"
+          },
+          "mo_ta": {
+            "title": "Mo Ta",
+            "type": "string"
+          },
+          "ngay_chot_doi_tuong": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Chot Doi Tuong"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "phien_ban": {
+            "format": "uuid",
+            "title": "Phien Ban",
+            "type": "string"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "NHAP",
+              "DANG_MO",
+              "DONG"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          },
+          "tuoi_den": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Den"
+          },
+          "tuoi_tu": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Tu"
+          }
+        },
+        "required": [
+          "ma_khao_sat",
+          "tieu_de",
+          "mo_ta",
+          "trang_thai",
+          "loai_doi_tuong",
+          "tuoi_tu",
+          "tuoi_den",
+          "han_tra_loi",
+          "phien_ban",
+          "ngay_tao"
+        ],
+        "title": "SurveyInfo",
+        "type": "object"
+      },
+      "SurveyItem": {
+        "properties": {
+          "da_gui": {
+            "title": "Da Gui",
+            "type": "integer"
+          },
+          "da_tra_loi": {
+            "title": "Da Tra Loi",
+            "type": "integer"
+          },
+          "han_tra_loi": {
+            "format": "date-time",
+            "title": "Han Tra Loi",
+            "type": "string"
+          },
+          "hoan_thanh_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hoan Thanh Luc"
+          },
+          "loai_doi_tuong": {
+            "title": "Loai Doi Tuong",
+            "type": "string"
+          },
+          "ma_khao_sat": {
+            "format": "uuid",
+            "title": "Ma Khao Sat",
+            "type": "string"
+          },
+          "mo_ta": {
+            "title": "Mo Ta",
+            "type": "string"
+          },
+          "ngay_chot_doi_tuong": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Chot Doi Tuong"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "phien_ban": {
+            "format": "uuid",
+            "title": "Phien Ban",
+            "type": "string"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "NHAP",
+              "DANG_MO",
+              "DONG"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          },
+          "tuoi_den": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Den"
+          },
+          "tuoi_tu": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Tu"
+          }
+        },
+        "required": [
+          "ma_khao_sat",
+          "tieu_de",
+          "mo_ta",
+          "trang_thai",
+          "loai_doi_tuong",
+          "tuoi_tu",
+          "tuoi_den",
+          "han_tra_loi",
+          "phien_ban",
+          "ngay_tao",
+          "da_gui",
+          "da_tra_loi",
+          "hoan_thanh_luc"
+        ],
+        "title": "SurveyItem",
+        "type": "object"
+      },
+      "SurveyOption": {
+        "additionalProperties": false,
+        "properties": {
+          "cho_phep_nhap_khac": {
+            "default": false,
+            "title": "Cho Phep Nhap Khac",
+            "type": "boolean"
+          },
+          "noi_dung": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Noi Dung",
+            "type": "string"
+          }
+        },
+        "required": [
+          "noi_dung"
+        ],
+        "title": "SurveyOption",
+        "type": "object"
+      },
+      "SurveyPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "SurveyPage",
+        "type": "object"
+      },
+      "SurveyQuestion": {
+        "additionalProperties": false,
+        "properties": {
+          "bat_buoc": {
+            "default": true,
+            "title": "Bat Buoc",
+            "type": "boolean"
+          },
+          "loai_cau_hoi": {
+            "enum": [
+              "MOT_LUA_CHON",
+              "DIEM_1_5",
+              "VAN_BAN"
+            ],
+            "title": "Loai Cau Hoi",
+            "type": "string"
+          },
+          "nhom_noi_dung": {
+            "default": "CHUNG",
+            "enum": [
+              "CHUNG",
+              "SO_THICH",
+              "HAI_LONG"
+            ],
+            "title": "Nhom Noi Dung",
+            "type": "string"
+          },
+          "noi_dung": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyOption"
+            },
+            "maxItems": 20,
+            "title": "Options",
+            "type": "array"
+          }
+        },
+        "required": [
+          "noi_dung",
+          "loai_cau_hoi"
+        ],
+        "title": "SurveyQuestion",
+        "type": "object"
+      },
+      "SurveyStatistics": {
+        "properties": {
+          "completed": {
+            "title": "Completed",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "questions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Questions",
+            "type": "array"
+          },
+          "sent": {
+            "title": "Sent",
+            "type": "integer"
+          },
+          "survey": {
+            "$ref": "#/components/schemas/SurveyInfo"
+          },
+          "text_page": {
+            "title": "Text Page",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "survey",
+          "sent",
+          "completed",
+          "questions",
+          "text_page",
+          "page_size"
+        ],
+        "title": "SurveyStatistics",
+        "type": "object"
+      },
+      "SurveySubmit": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyAnswer"
+            },
+            "maxItems": 30,
+            "title": "Answers",
+            "type": "array"
+          },
+          "submission_id": {
+            "format": "uuid",
+            "title": "Submission Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "submission_id",
+          "answers"
+        ],
+        "title": "SurveySubmit",
+        "type": "object"
+      },
+      "SurveyUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "format": "uuid",
+            "title": "Expected Version",
+            "type": "string"
+          },
+          "han_tra_loi": {
+            "format": "date-time",
+            "title": "Han Tra Loi",
+            "type": "string"
+          },
+          "loai_doi_tuong": {
+            "enum": [
+              "TAT_CA",
+              "DO_TUOI",
+              "CHUA_NGAY_SINH"
+            ],
+            "title": "Loai Doi Tuong",
+            "type": "string"
+          },
+          "mo_ta": {
+            "default": "",
+            "maxLength": 5000,
+            "title": "Mo Ta",
+            "type": "string"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyQuestion"
+            },
+            "maxItems": 30,
+            "minItems": 1,
+            "title": "Questions",
+            "type": "array"
+          },
+          "tieu_de": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Tieu De",
+            "type": "string"
+          },
+          "tuoi_den": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Den"
+          },
+          "tuoi_tu": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Tu"
+          }
+        },
+        "required": [
+          "tieu_de",
+          "loai_doi_tuong",
+          "han_tra_loi",
+          "questions",
+          "expected_version"
+        ],
+        "title": "SurveyUpdate",
         "type": "object"
       },
       "TAI_KHOANPage": {
@@ -9571,6 +10676,21 @@
         "title": "ValidationIssue",
         "type": "object"
       },
+      "Version": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "format": "uuid",
+            "title": "Expected Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "Version",
+        "type": "object"
+      },
       "WarehouseAllocation": {
         "properties": {
           "quantity": {
@@ -9717,6 +10837,18 @@
               }
             ],
             "title": "Avatar Url"
+          },
+          "birthday": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birthday"
           },
           "customer_id": {
             "title": "Customer Id",
@@ -14846,6 +15978,140 @@
         ]
       }
     },
+    "/api/catalog/products/{product_id}/reviews": {
+      "get": {
+        "operationId": "public_reviews_api_catalog_products__product_id__reviews_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicReviewPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [],
+        "summary": "Nhận xét và điểm sao công khai; loại các đánh giá đã ẩn",
+        "tags": [
+          "Customer · Catalog"
+        ]
+      }
+    },
     "/api/catalog/purchase-states": {
       "get": {
         "operationId": "purchase_states_api_catalog_purchase_states_get",
@@ -15190,6 +16456,145 @@
           }
         ],
         "summary": "Lưu hồ sơ khách; không sửa trạng thái tài khoản/lưu trữ",
+        "tags": [
+          "Admin · CRM"
+        ]
+      }
+    },
+    "/api/crm/customers/{customer_id}/archive": {
+      "post": {
+        "operationId": "archive_customer_api_crm_customers__customer_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customer_id",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Customer Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerArchiveUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy khách hàng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy khách hàng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xóa mềm hoặc khôi phục hồ sơ; không xóa chứng từ, không tự mở lại tài khoản",
         "tags": [
           "Admin · CRM"
         ]
@@ -15741,6 +17146,1549 @@
         "summary": "Nhận xử lý, cập nhật trạng thái/ưu tiên và phản hồi gửi khách",
         "tags": [
           "Admin · Hỗ trợ khách hàng"
+        ]
+      }
+    },
+    "/api/crm/report": {
+      "get": {
+        "operationId": "report_api_crm_report_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrmReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Báo cáo độ tuổi, đánh giá và khảo sát sở thích (ADMIN)",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/reviews": {
+      "get": {
+        "operationId": "reviews_api_crm_reviews_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "HIEN_THI",
+                    "AN"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Danh sách đánh giá để quản trị kiểm duyệt",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/reviews/{review_id}/moderate": {
+      "post": {
+        "operationId": "moderate_api_crm_reviews__review_id__moderate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "review_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Review Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewModerate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Ẩn/hiển thị lại đúng phiên bản nội dung đánh giá",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/surveys": {
+      "get": {
+        "operationId": "surveys_api_crm_surveys_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Danh sách khảo sát (ADMIN)",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      },
+      "post": {
+        "operationId": "create_survey_api_crm_surveys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveyCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Tạo khảo sát nháp, thử lại cùng request_id để tránh trùng",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/surveys/{survey_id}": {
+      "get": {
+        "operationId": "survey_api_crm_surveys__survey_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xem khảo sát và cấu trúc câu hỏi (ADMIN)",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      },
+      "put": {
+        "operationId": "update_survey_api_crm_surveys__survey_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sửa bản nháp với phiên bản đối chiếu",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/surveys/{survey_id}/close": {
+      "post": {
+        "operationId": "close_api_crm_surveys__survey_id__close_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Đóng khảo sát, giữ nguyên kết quả",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/surveys/{survey_id}/preview": {
+      "get": {
+        "operationId": "preview_api_crm_surveys__survey_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xem trước đối tượng hoặc danh sách đã gửi, có phân trang",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/surveys/{survey_id}/publish": {
+      "post": {
+        "operationId": "publish_api_crm_surveys__survey_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Chốt cấu trúc và gửi cho khách đủ điều kiện theo tuổi",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/crm/surveys/{survey_id}/statistics": {
+      "get": {
+        "operationId": "statistics_api_crm_surveys__survey_id__statistics_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyStatistics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Kết quả từng câu; phân trang nội dung văn bản/Khác",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
         ]
       }
     },
@@ -17009,6 +19957,684 @@
         ]
       }
     },
+    "/api/customer/crm/reviews": {
+      "post": {
+        "operationId": "write_review_api_customer_crm_reviews_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Một đánh giá/khách/sản phẩm; đăng và sửa hiển thị ngay, giữ ẩn nếu đã bị ẩn",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/customer/crm/reviews/eligible": {
+      "get": {
+        "operationId": "eligible_reviews_api_customer_crm_reviews_eligible_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EngagementPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Mỗi sản phẩm đã mua một dòng, kèm đánh giá duy nhất của khách",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/customer/crm/surveys": {
+      "get": {
+        "operationId": "customer_surveys_api_customer_crm_surveys_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Khảo sát được gửi cho khách đang đăng nhập",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/customer/crm/surveys/{survey_id}": {
+      "get": {
+        "operationId": "customer_survey_api_customer_crm_surveys__survey_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xem khảo sát/bài đã gửi của chính mình",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
+    "/api/customer/crm/surveys/{survey_id}/submit": {
+      "post": {
+        "operationId": "submit_api_customer_crm_surveys__survey_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveySubmit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Dữ liệu đã thay đổi hoặc bài đã được gửi; cần đối chiếu phiên bản."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Nộp toàn bộ bài trong transaction; thử lại cùng submission_id",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ]
+      }
+    },
     "/api/customer/me": {
       "get": {
         "operationId": "current_profile_api_customer_me_get",
@@ -17162,7 +20788,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Recipient"
+                "$ref": "#/components/schemas/CustomerProfileUpdate"
               }
             }
           },

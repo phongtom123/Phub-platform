@@ -1,4 +1,5 @@
 from decimal import Decimal
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from phub_api.schemas.orders import InputModel, Money, OrderItem, Recipient
 from phub_api.schemas.payments import OrderId
 from phub_api.schemas.payment_deadline import PaymentDeadline
 from phub_api.schemas.fulfillment import FulfillmentMethod, PickupContact, PickupRecipient
+from phub_api.schemas.crm import vietnam_today
 
 
 class CartItem(InputModel):
@@ -144,6 +146,20 @@ class CustomerOrderReceipt(CheckoutQuote):
         return self
 
 
+class CustomerProfileUpdate(Recipient):
+    birthday: date | None = None
+
+    @field_validator("birthday", mode="before")
+    @classmethod
+    def valid_birthday(cls, value):
+        if value is not None:
+            if not isinstance(value, str) or len(value) != 10:
+                raise ValueError("Ngày sinh phải có dạng YYYY-MM-DD hoặc null.")
+            if date.fromisoformat(value) > vietnam_today():
+                raise ValueError("Ngày sinh không được ở tương lai.")
+        return value
+
+
 class CustomerProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
     customer_id: str
@@ -153,6 +169,7 @@ class CustomerProfile(BaseModel):
     province: str | None
     ward: str | None
     avatar_url: str | None = None
+    birthday: date | None = None
     payment_bypass_enabled: bool = False
 
 

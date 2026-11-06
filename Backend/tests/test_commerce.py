@@ -321,6 +321,27 @@ def test_save_recipient_updates_only_verified_customer_and_shipping_fields(comme
     assert state["profile"][0]["mat_khau"] == "PRIVATE-PASSWORD"
 
 
+def test_profile_birthday_round_trip_and_omission_preserves_existing(commerce_client):
+    client, state, requests, body, _ = commerce_client
+    state["profile"][0]["ngay_sinh"] = "2000-02-29"
+    response = client.get("/api/customer/me")
+    assert response.status_code == 200 and response.json()["birthday"] == "2000-02-29"
+    response = client.put("/api/customer/me", json=body["recipient"])
+    assert response.status_code == 200 and response.json()["birthday"] == "2000-02-29"
+    assert "ngay_sinh" not in json.loads(next(request for request in requests if request.method == "PATCH").content)
+    response = client.put("/api/customer/me", json={**body["recipient"], "birthday": "1999-11-05"})
+    assert response.status_code == 200 and response.json()["birthday"] == "1999-11-05"
+    response = client.put("/api/customer/me", json={**body["recipient"], "birthday": None})
+    assert response.status_code == 200 and response.json()["birthday"] is None
+
+
+@pytest.mark.parametrize("birthday", ["2999-01-01", "2001-02-29", 1000, ""])
+def test_invalid_customer_birthday_never_writes(commerce_client, birthday):
+    client, _, requests, body, _ = commerce_client
+    assert client.put("/api/customer/me", json={**body["recipient"], "birthday": birthday}).status_code == 422
+    assert requests == []
+
+
 @pytest.mark.parametrize("field,value", [("name", " "), ("phone", "abc"), ("address_line", ""),
     ("province", "x"*101), ("ward", "Bad\x00"), ("customer_id", "KH-B"), ("email", "other@example.test")])
 def test_save_recipient_invalid_or_account_fields_never_write(commerce_client, field, value):

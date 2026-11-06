@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
 import { adminFetch, sameAdminData } from "@/src/lib/admin-fetch";
@@ -10,6 +10,7 @@ import { dataHref } from "@/src/lib/data-navigation";
 import { customerAge, customerFields, customerIdFromKey, customerPatch, vietnamDate,
   type CustomerDetail as Detail, type CustomerField, type CustomerOrderPage } from "@/src/lib/customer-profile";
 import { CustomerProfileView } from "./customer-profile-view";
+import { CustomerArchiveButton } from "./customer-archive-button";
 import { accountApi, jsonRequest } from "../accounts/api";
 import { statusLabels, type Account, type AccountStatus } from "../accounts/types";
 import { ScrollableTable } from "../tables/scrollable-table";
@@ -47,6 +48,8 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   const [saving, setSaving] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
   const [statusError, setStatusError] = useState("");
+  const [archiving, setArchiving] = useState(false);
+  const archiveSaving = useCallback((value: boolean) => { setArchiving(value); if (value) { setNotice(""); setStatusError(""); } }, []);
   const [version, setVersion] = useState(0);
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [orders, setOrders] = useState<CustomerOrderPage | null>(null);
@@ -91,7 +94,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
     return () => controller.abort();
   }, [id, path, ordersOpen, page, version]);
 
-  const pollError = useAdminPolling(`${path}:${page}:${ordersOpen}`, Boolean(data) && !loading && !error && !editMode && !saving && !statusSaving,
+  const pollError = useAdminPolling(`${path}:${page}:${ordersOpen}`, Boolean(data) && !loading && !error && !editMode && !saving && !statusSaving && !archiving,
     async (signal, canApply) => {
       const fresh = await request<Detail>(path, { signal, cache: "no-cache" });
       if (canApply()) setData(current => sameAdminData(current, fresh) ? current : fresh);
@@ -103,7 +106,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
 
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (!data || saving || saveController.current || statusController.current) return;
+    if (!data || saving || archiving || data.profile.luu_tru_luc || saveController.current || statusController.current) return;
     setSaveError(""); setNotice("");
     let patch;
     try { patch = customerPatch(data, draft); }
@@ -121,7 +124,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   }
 
   async function changeAccountStatus(value: AccountStatus) {
-    if (!data?.account || saving || statusController.current || ![0, 1, 2].includes(value) || value === data.account.trang_thai) return;
+    if (!data?.account || saving || archiving || data.profile.luu_tru_luc || statusController.current || ![0, 1, 2].includes(value) || value === data.account.trang_thai) return;
     const account = data.account, customerId = data.profile.ma_kh;
     if (value !== 1 && !window.confirm(`Chuyển tài khoản của ${data.profile.ten_kh} sang “${statusLabels[value]}”? Khách sẽ không đăng nhập được; đơn hàng và lịch sử vẫn được giữ.`)) return;
     const controller = new AbortController(); statusController.current = controller;
@@ -148,15 +151,22 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
   const age = customerAge(data?.profile.ngay_sinh ?? null);
   return <section className={`live-data customer-detail ${styles.page}`}>
     <div className="live-page-actions">
-      <button type="button" disabled={saving || statusSaving} onClick={() => router.push(dataHref("customers"))}>← Quay lại</button>
-      {data && !editMode && !error && (statusSaving ? <button className="live-primary" disabled>Chỉnh sửa</button>
-        : <Link className="live-primary" href={dataHref("customers", { key: recordKey, edit: true })}>Chỉnh sửa</Link>)}
+      <button type="button" disabled={saving || statusSaving || archiving} onClick={() => router.push(dataHref("customers"))}>← Quay lại</button>
+      {data && !editMode && !error && <div className="live-tools">
+        <CustomerArchiveButton customerId={data.profile.ma_kh} archived={Boolean(data.profile.luu_tru_luc)} disabled={statusSaving || archiving || saving}
+          onSavingChange={archiveSaving} onSaved={saved => { setData(saved); setStatusError(""); setNotice(saved.profile.luu_tru_luc
+            ? "Đã xóa mềm khách hàng; lịch sử đơn hàng và hóa đơn vẫn được giữ." : "Đã khôi phục hồ sơ. Tài khoản vẫn bị ẩn; Admin có thể bật lại."); }} />
+        {!data.profile.luu_tru_luc && (statusSaving || archiving ? <button className="live-primary" disabled>Chỉnh sửa</button>
+          : <Link className="live-primary" href={dataHref("customers", { key: recordKey, edit: true })}>Chỉnh sửa</Link>)}
+      </div>}
     </div>
     {notice && <p className="live-note" role="status">{notice}</p>}
     {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi, đang hiển thị dữ liệu lần trước. {pollError}</p>}
     {error && <p className="live-error" role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button></p>}
     {loading ? <p role="status">Đang tải hồ sơ khách hàng…</p> : data && !error && <>
-      {editMode ? <form className={`live-form ${styles.editForm}`} onSubmit={save}>
+      {data.profile.luu_tru_luc && <p className="live-note">Hồ sơ đã xóa mềm. Khôi phục hồ sơ trước khi chỉnh sửa hoặc bật lại tài khoản.
+        {editMode && <Link href={detailHref}> Xem hồ sơ để khôi phục</Link>}</p>}
+      {editMode && !data.profile.luu_tru_luc ? <form className={`live-form ${styles.editForm}`} onSubmit={save}>
         <fieldset className="live-form-fields" disabled={saving || statusSaving}>
           {fields.map(field => <label key={field}>{customerFields[field]}{field === "ten_kh" && " *"}
             <input aria-label={customerFields[field]} type={field === "ngay_sinh" ? "date" : field === "sdt" ? "tel" : "text"}
@@ -182,7 +192,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
         <div className="live-form-actions"><button className="live-primary" disabled={saving || statusSaving}>{saving ? "Đang lưu…" : "Lưu hồ sơ"}</button>
           {!saving && !statusSaving && <Link href={detailHref}>Hủy</Link>}</div>
       </form> : <CustomerProfileView data={data} age={age} formatDate={displayDate}
-        statusSaving={statusSaving} statusError={statusError} onAccountStatusChange={value => void changeAccountStatus(value)} />}
+        statusSaving={statusSaving || archiving || Boolean(data.profile.luu_tru_luc)} statusError={statusError} onAccountStatusChange={value => void changeAccountStatus(value)} />}
       <section className={`${styles.card} ${styles.history}`}><div className={styles.historyHeading}>
         <div><h2><ShoppingBag size={20} aria-hidden="true" />Lịch sử đơn hàng</h2><p>Tra cứu các đơn hàng của khách hàng này</p></div>
         <button className={styles.historyToggle} type="button" aria-expanded={ordersOpen} aria-controls="customer-order-history" onClick={() => setOrdersOpen(value => !value)}>
