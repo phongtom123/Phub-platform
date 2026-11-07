@@ -110,6 +110,26 @@ def test_review_mutations_use_versions_and_session_actor(engagement_client):
     assert state["calls"][-1][1]["p_version"]==VERSION
 
 
+def test_staff_reviews_filter_product_status_and_page_at_rpc(engagement_client):
+    client,state=engagement_client
+    state["result"]={"data":[],"total":0,"page":2,"page_size":20}
+    response=client.get("/api/crm/reviews",params={"product_id":"SP/CPU & 1","status":"AN","page":2})
+    assert response.status_code==200
+    assert state["calls"]==[("crm_review_read_v1",{
+        "p_actor":"AD1","p_kind":"admin","p_product":"SP/CPU & 1","p_status":"AN","p_page":2,
+    })]
+    state["calls"].clear()
+    assert client.get("/api/crm/reviews?product_id=").status_code==422
+    assert state["calls"]==[]
+
+
+@pytest.mark.parametrize("actor",[ADMIN,CUSTOMER])
+def test_product_review_filter_does_not_bypass_staff_role(engagement_client,actor):
+    client,state=engagement_client;state["actor"]=actor
+    assert client.get("/api/crm/reviews?product_id=SP1").status_code==403
+    assert state["calls"]==[]
+
+
 @pytest.mark.parametrize("code,status",[("42501",403),("P0002",404),("40001",409),("23505",409),("23514",422),("PGRST202",503)])
 def test_engagement_errors_never_report_success_or_expose_sql(engagement_client,code,status):
     client,state=engagement_client;state["error"]=code

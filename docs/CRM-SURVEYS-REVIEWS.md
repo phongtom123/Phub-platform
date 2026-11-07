@@ -1,5 +1,25 @@
 # Khảo sát, báo cáo CRM và đánh giá sản phẩm — 05/11/2026
 
+## Xem đánh giá theo sản phẩm — 07/11/2026
+
+- Giao diện nhân viên: `/reviews` tìm theo tên, mã hoặc SKU, chọn sản phẩm để mở
+  `/reviews?product_id=...`. Danh sách sản phẩm có phân trang, bao gồm sản phẩm
+  tạm ngừng để vẫn tra cứu được đánh giá lịch sử. Chỉ gửi tìm kiếm khi bấm Tìm kiếm.
+- Danh sách đánh giá lọc đúng sản phẩm tại RPC, có trạng thái hiển thị/ẩn,
+  phân trang, làm mới và kiểm duyệt bằng phiên bản hiện tại. Nút quay lại giữ
+  từ khóa và trang danh sách sản phẩm; `/reviews?view=all` giữ cách xem tất cả.
+- Đánh giá trình bày theo thẻ 3/2/1 cột tùy màn hình, điểm là 5 icon sao vàng/xám.
+  Trang đánh giá đã mua của khách cũng dùng icon thay chữ số sao.
+- `GET /api/crm/reviews?product_id=SP1&status=AN&page=1` truyền bộ lọc vào
+  `crm_review_read_v1` hiện có. Không cần migration mới; không đổi luồng viết
+  đánh giá của khách. Theo phân quyền hiện tại, nghiệp vụ này thuộc NHAN_VIEN.
+- Kiểm tra bằng 118 test backend có mục tiêu, TypeScript hai UI và browser
+  fixtures cho tìm kiếm, phạm vi sản phẩm, ẩn/hiện, phân trang, quay lại,
+  danh sách trống và lỗi API. Không ghi đánh giá thật trong quá trình kiểm tra.
+- Lỗi `removeChild` người dùng báo trên `/reviews?view=all` chưa tái hiện trong
+  browser fixtures, gồm mở trực tiếp, refresh và chờ polling. Đã khởi động lại
+  dev server với cache build mới; chưa xác định nguyên nhân nếu lỗi tái diễn.
+
 ## Viết ngay trên trang sản phẩm — 06/11/2026
 
 - Nút “Viết đánh giá” mở form chấm sao/nhận xét ngay trong khối đánh giá, không

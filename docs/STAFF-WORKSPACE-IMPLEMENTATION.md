@@ -82,11 +82,20 @@ Phiếu đã có được cập nhật vào chính kho trên phiếu, không chu
 cho nhân viên; phiếu tạo qua API kho cũ vẫn dùng kho gán, còn API nghiệp vụ
 dùng chung hỗ trợ chọn kho như giao diện admin trước đó.
 
-**Chưa áp hai migration mới lên Supabase thật hoặc deploy Render.**
-Migration email người mua `20261107030114_counter_buyer_email.sql` chạy sau migration
-phân quyền trên. Nhánh được đưa lên GitHub để review trước khi merge vào `main`.
-API local hiện đọc Supabase đang chạy, nên UI đọc/ghi phụ thuộc schema hiện tại.
-Chưa áp migration thì một số RPC vẫn yêu cầu ADMIN và sẽ từ chối NHAN_VIEN.
+**Đã áp migration phân quyền lên Supabase Phub ngày 07/11/2026 theo yêu cầu người dùng.**
+Lịch sử remote ghi tên `staff_operational_workspace`, version `20261107160713`
+do công cụ migration cấp; nội dung từ file `20261106142849_staff_operational_workspace.sql`.
+Không chạy lại migration này chỉ vì timestamp local/remote khác nhau.
+Đã đối chiếu nguồn các hàm trước khi áp và lưu bản sao định nghĩa/quyền cũ ở máy local.
+Kiểm tra bằng service_role và actor nhân viên thật: đọc khảo sát thành công
+(hiện 0 khảo sát); sản phẩm SP001 trả 1 đánh giá, tất cả dòng khớp sản phẩm.
+Nhân viên vẫn bị chặn báo cáo CRM, admin vẫn xem được báo cáo; anon/authenticated
+không được gọi trực tiếp các hàm nội bộ. Kiểm tra chỉ đọc, không tạo khảo sát,
+không sửa đánh giá, đơn, thanh toán hoặc tồn kho.
+
+Migration email người mua `20261107030114_counter_buyer_email.sql` vẫn chưa áp;
+chạy sau migration phân quyền trên khi triển khai chức năng bán tại quầy.
+PR #121 đã merge vào main; trạng thái deploy Render cần kiểm tra riêng.
 
 Triển khai cần có cửa sổ cập nhật phối hợp: lưu phiên bản đang chạy, áp migration
 sau các migration tiền nhiệm trên main, cập nhật backend cùng hai UI của nhánh này,

@@ -91,9 +91,10 @@ def write_review(body: ReviewWrite, service: CustomerWrite):
     return service.write_review(body)
 
 
-@router.get("/api/crm/reviews", response_model=EngagementPage, responses=READ_ERRORS, summary="Danh sách đánh giá để quản trị kiểm duyệt")
-def reviews(service: AdminRead, page: Page = 1, status: Literal["HIEN_THI", "AN"] | None = None):
-    return service.reviews("admin", status=status, page=page)
+@router.get("/api/crm/reviews", response_model=EngagementPage, responses=READ_ERRORS, summary="Nhân viên xem đánh giá theo sản phẩm và trạng thái")
+def reviews(service: AdminRead, page: Page = 1, status: Literal["HIEN_THI", "AN"] | None = None,
+            product_id: str | None = Query(None, min_length=1, max_length=200)):
+    return service.reviews("admin", product=product_id, status=status, page=page)
 
 
 @router.post("/api/crm/reviews/{review_id}/moderate", response_model=ReviewRecord, responses=WRITE_ERRORS, summary="Ẩn/hiển thị lại đúng phiên bản nội dung đánh giá")
