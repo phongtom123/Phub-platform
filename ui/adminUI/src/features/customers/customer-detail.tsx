@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
-import { adminFetch, sameAdminData } from "@/src/lib/admin-fetch";
-import { useAdminPolling } from "@/src/lib/use-admin-polling";
-import { dataHref } from "@/src/lib/data-navigation";
+import { adminFetch, sameAdminData } from "@internal/lib/admin-fetch";
+import { useAdminPolling } from "@internal/lib/use-admin-polling";
+import { dataHref } from "@internal/lib/data-navigation";
 import { customerAge, customerFields, customerIdFromKey, customerPatch, vietnamDate,
-  type CustomerDetail as Detail, type CustomerField, type CustomerOrderPage } from "@/src/lib/customer-profile";
+  type CustomerDetail as Detail, type CustomerField, type CustomerOrderPage } from "@internal/lib/customer-profile";
 import { CustomerProfileView } from "./customer-profile-view";
 import { CustomerArchiveButton } from "./customer-archive-button";
 import { accountApi, jsonRequest } from "../accounts/api";

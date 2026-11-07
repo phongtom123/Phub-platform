@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Building2,
   BarChart3,
   ChevronDown,
   CreditCard,
   FileInput,
+  FileOutput,
   FolderTree,
   LayoutDashboard,
   LogOut,
@@ -23,8 +25,10 @@ import {
   Warehouse,
   X,
 } from "lucide-react";
-import type { ModuleKey } from "@/src/types/admin";
+import type { ModuleKey } from "@internal/types/admin";
 import { Logo } from "./ui";
+import { canOpenModule } from "../../../../shared/internal-access";
+import { useAdminAuth } from "./auth-provider";
 
 const navigation = [
   { label: "TỔNG QUAN", items: [["dashboard", "Tổng quan", LayoutDashboard], ["reports", "Báo cáo kinh doanh", BarChart3]] },
@@ -48,6 +52,7 @@ const navigation = [
     items: [
       ["inventory", "Tồn kho", Warehouse],
       ["receipts", "Phiếu nhập", FileInput],
+      ["dispatches", "Phiếu xuất", FileOutput],
       ["suppliers", "Nhà cung cấp", Truck],
     ],
   },
@@ -91,8 +96,13 @@ export function AdminSidebar({
   onOpenSettings,
   onLogout,
 }: Props) {
+  const { portal } = useAdminAuth();
+  const router = useRouter();
+  const visibleNavigation = navigation.map(group => ({ ...group,
+    items: group.items.filter(([key]) => canOpenModule(portal, key)),
+  })).filter(group => group.items.length);
   const activeGroup =
-    navigation.find((group) => group.items.some(([key]) => key === active))
+    visibleNavigation.find((group) => group.items.some(([key]) => key === active))
       ?.label ?? "TỔNG QUAN";
   const [expandedGroups, setExpandedGroups] = useState<string[]>([activeGroup]);
   useEffect(
@@ -119,13 +129,14 @@ export function AdminSidebar({
         className={`sidebar ${mobileOpen ? "open" : ""} ${collapsed ? "collapsed" : ""}`}
       >
         <div className="side-logo">
-          <Logo onClick={() => navigate("dashboard")} />
+          <Logo label={portal === "admin" ? "admin" : "nhân viên"} onClick={() => navigate(portal === "admin" ? "dashboard" : "orders")} />
           <button onClick={onCloseMobile}>
             <X />
           </button>
         </div>
         <nav>
-          {navigation.map((group) => {
+          {portal === "staff" && <section className="nav-section"><div className="nav-items expanded"><button onClick={() => { router.push("/counter"); onCloseMobile(); }}><CreditCard/><span>Bán tại quầy</span></button><button onClick={() => { router.push("/invoice-claims"); onCloseMobile(); }}><CreditCard/><span>Liên kết hóa đơn</span></button><button onClick={() => { router.push("/history"); onCloseMobile(); }}><Warehouse/><span>Lịch sử kho</span></button></div></section>}
+          {visibleNavigation.map((group) => {
             const expanded = expandedGroups.includes(group.label);
             return (
               <section className="nav-section" key={group.label}>
@@ -145,7 +156,7 @@ export function AdminSidebar({
                       onClick={() => navigate(key)}
                     >
                       <Icon />
-                      <span>{label}</span>
+                      <span>{key === "surveys" && portal === "admin" ? "Kết quả khảo sát" : label}</span>
                     </button>
                   ))}
                 </div>
@@ -154,21 +165,21 @@ export function AdminSidebar({
           })}
         </nav>
         <div className="side-bottom">
-          <button onClick={onOpenSettings}>
+          {portal === "staff" && <button onClick={onOpenSettings}>
             <Settings />
             <span>Cài đặt</span>
-          </button>
+          </button>}
           <button onClick={onLogout}>
             <LogOut />
             <span>Đăng xuất</span>
           </button>
           <div className="branch">
             <b>
-              AD
+              {portal === "admin" ? "AD" : "NV"}
               <i />
             </b>
             <p>
-              <small>PHẠM VI QUẢN TRỊ</small>
+              <small>{portal === "admin" ? "QUẢN TRỊ" : "NGHIỆP VỤ"}</small>
               <strong>Toàn hệ thống</strong>
             </p>
             <ChevronDown />

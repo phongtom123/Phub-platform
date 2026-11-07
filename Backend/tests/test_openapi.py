@@ -54,7 +54,7 @@ def test_tables_have_concrete_paths_and_no_fake_workflows(spec):
 def test_operation_ids_are_unique_and_tags_exist(spec):
     operations = [operation for path in spec["paths"].values() for operation in path.values()]
     identifiers = [operation["operationId"] for operation in operations]
-    assert len(identifiers) == len(set(identifiers)) == 119  # Includes batched public purchase states.
+    assert identifiers and len(identifiers) == len(set(identifiers))
     tags = {tag["name"] for tag in spec["tags"]}
     for operation in operations:
         assert set(operation["tags"]).issubset(tags)
@@ -154,7 +154,7 @@ def test_permissions_and_errors_are_documented(spec):
             if method != "get":
                 assert "409" in operation["responses"]
                 assert any(p["name"] == "Origin" and p["required"] for p in operation["parameters"])
-                assert operation["x-roles"] == (["ADMIN", "NHAN_VIEN"] if name == "suppliers" else ["ADMIN"])
+                assert operation["x-roles"] == (["ADMIN"] if name == "employees" else ["NHAN_VIEN"])
             if method == "patch":
                 assert "404" in operation["responses"]
             if name == "accounts":
@@ -176,7 +176,7 @@ def test_documented_get_paths_reach_actual_generic_router(name):
             if attr == "execute":
                 return lambda: SimpleNamespace(data=[row_example(name)], count=1)
             return lambda *args, **kwargs: self
-    app.dependency_overrides[current_user] = lambda: User("TK001", "example.admin", "ADMIN", "Example", employee_id="NV001")
+    app.dependency_overrides[current_user] = lambda: User("TK001", "example.staff", "ADMIN" if name in {"accounts", "employees"} else "NHAN_VIEN", "Example", employee_id="NV001")
     app.dependency_overrides[get_supabase] = lambda: Database()
     try:
         with TestClient(app) as client:

@@ -13,7 +13,7 @@ from phub_api.models.resources import public_columns, schema
 from phub_api.models.user import User
 from phub_api.schemas.resources import payload_model
 
-ADMIN = User("AD1", "admin", "ADMIN", "Admin", employee_id="NV1")
+ADMIN = User("AD1", "admin", "NHAN_VIEN", "Admin", employee_id="NV1")
 PROFILE = {"ma_kh": "KH1", "ten_kh": "Khách cũ", "sdt": "0901234567",
            "dia_chi_chi_tiet_md": None, "tinh_thanh_md": None, "xa_phuong_md": None,
            "ngay_sinh": None, "ngay_tao": None, "cap_nhat_luc": None, "luu_tru_luc": None}
@@ -84,7 +84,7 @@ def test_profile_old_nulls_and_safe_account(crm_client):
 
 
 @pytest.mark.parametrize("actor", [User("K", "k", "KHACH_HANG", "Khách", customer_id="KH1"),
-                                    User("W", "w", "NHAN_VIEN", "Kho", warehouse_id=1)])
+                                    User("W", "w", "ADMIN", "Kho", warehouse_id=1)])
 @pytest.mark.parametrize("method,suffix,body", [("GET", "", None), ("GET", "/orders", None),
                                                 ("PATCH", "", {"ngay_sinh": "2000-01-01"})])
 def test_non_admin_denied_before_database(crm_client, actor, method, suffix, body):

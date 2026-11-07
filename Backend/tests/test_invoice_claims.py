@@ -54,10 +54,10 @@ def test_staff_approval_and_backend_failure_never_report_success(engagement_clie
 
 def test_staff_counter_order_uses_existing_transaction_and_requires_key(engagement_client):
     client,state=engagement_client;state['actor']=STAFF
-    body={'customer_id':'KH1','recipient':'Customer 1','lines':[{'sku':'SKU1','warehouse_id':1,'unit_price':'100.00','quantity':1}]}
+    body={'customer_id':'KH1','recipient':'Customer 1','buyer_email':'customer@example.com','lines':[{'sku':'SKU1','warehouse_id':1,'unit_price':'100.00','quantity':1}]}
     assert client.post('/api/staff/counter/orders',headers=HEADERS,json=body).status_code==201
     name,args=state['calls'][-1]
-    assert name=='admin_operation_v1' and args['p_actor']=='STAFF' and args['p_action']=='create' and args['p_resource']=='orders'
+    assert name=='staff_counter_order_email_v1' and args['p_actor']=='STAFF'
     assert args['p_body']['lines'][0]['unit_price']=='100.00'
     state['calls'].clear()
     assert client.post('/api/staff/counter/orders',headers=ORIGIN,json=body).status_code==422

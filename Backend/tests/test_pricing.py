@@ -22,14 +22,13 @@ def test_preview_rejects_tampering_and_staff_override():
     repository = SimpleNamespace(context=lambda *args: {'markup_rate': '20', 'taxes': [{'code': 'VAT', 'rate': '10'}], 'catalog': [{'code': 'VAT', 'name': 'VAT', 'active': True, 'rate': '10'}], 'current_price': '100'})
     staff = PricingService(repository, User('W', 'staff', 'NHAN_VIEN', 'Staff', employee_id='NV', warehouse_id=2))
     assert staff.preview(PricePreview(sku='S', unit_cost='100'))['after_tax'] == '132'
-    with pytest.raises(HTTPException) as error: staff.preview(PricePreview(sku='S', unit_cost='100', markup_rate='20'))
-    assert error.value.status_code == 403
-    with pytest.raises(HTTPException): staff.preview(PricePreview(sku='S', unit_cost='100', taxes=[TaxRule(code='VAT', rate='0')]))
+    assert staff.preview(PricePreview(sku='S', unit_cost='100', markup_rate='20'))['after_tax'] == '132'
+    assert staff.preview(PricePreview(sku='S', unit_cost='100', taxes=[TaxRule(code='VAT', rate='0')]))['after_tax'] == '120'
 
 
 def test_receipt_tax_does_not_require_catalog_and_preserves_name():
     repository = SimpleNamespace(context=lambda *args: {'markup_rate': '0', 'taxes': [], 'catalog': [], 'current_price': '100'})
-    admin = PricingService(repository, User('A', 'admin', 'ADMIN', 'Admin', employee_id='AD'))
+    admin = PricingService(repository, User('A', 'staff', 'NHAN_VIEN', 'Staff', employee_id='AD'))
     body = PricePreview(sku='S', unit_cost='100', markup_rate='20', taxes=[TaxRule(code='LOCAL', name='Local tax', rate='10')])
     result = admin.preview(body)
     assert result['after_tax'] == '132'

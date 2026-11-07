@@ -5,6 +5,7 @@ import { InvoicePrint } from "../operations/invoice-print";
 import { ArrowUpRight, CalendarDays, CreditCard, FileText, ReceiptText, ShoppingBag, UserRound, Wallet } from "lucide-react";
 import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
+import { useAdminAuth } from "../../components/admin/auth-provider";
 import styles from "./invoice-detail.module.css";
 
 type Props = { row: DataRow; columns: DataColumn[]; label: (field: string) => string };
@@ -36,6 +37,7 @@ function invoiceDate(value: DataRow[string]) {
 }
 
 export function InvoiceDetail({ row, columns, label }: Props) {
+  const { portal } = useAdminAuth();
   const [itemsReady, setItemsReady] = useState(false);
   const orderId = typeof row.ma_donhang === "string" && row.ma_donhang ? row.ma_donhang : null;
   const orderHref = orderId ? dataHref("orders", { key: JSON.stringify([orderId]) }) : null;
@@ -73,10 +75,10 @@ export function InvoiceDetail({ row, columns, label }: Props) {
           <dl className={styles.fields}>
             <div className={`live-field ${styles.field}`}><dt>Mã đơn hàng</dt><dd>{orderHref ? <Link href={orderHref}>{orderId}</Link> : "—"}</dd></div>
             <div className={`live-field ${styles.field}`}><dt>Người lập</dt><dd>{row.nguoi_lap
-              ? <Link href={dataHref("employees", { key: JSON.stringify([row.nguoi_lap]) })}>{String(row.nguoi_lap)}</Link>
+              ? portal === "admin" ? <Link href={dataHref("employees", { key: JSON.stringify([row.nguoi_lap]) })}>{String(row.nguoi_lap)}</Link> : String(row.nguoi_lap)
               : row.nguon_lap === "TU_DONG" ? "Hệ thống tự động" : "—"}</dd></div>
             {row.ma_tk_lap && <div className={`live-field ${styles.field}`}><dt>Tài khoản khởi tạo</dt><dd>
-              <Link href={`/accounts/${encodeURIComponent(String(row.ma_tk_lap))}`}>{String(row.ma_tk_lap)}</Link>
+              {portal === "admin" ? <Link href={`/accounts/${encodeURIComponent(String(row.ma_tk_lap))}`}>{String(row.ma_tk_lap)}</Link> : String(row.ma_tk_lap)}
             </dd></div>}
           </dl>
         </section>

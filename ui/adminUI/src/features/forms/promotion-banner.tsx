@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { readMediaImage, uploadMediaImage } from "@/src/lib/media-upload";
+import { readMediaImage, uploadMediaImage } from "@internal/lib/media-upload";
 import { ProductImagePreview } from "./product-image-preview";
 import styles from "./promotion-banner.module.css";
 

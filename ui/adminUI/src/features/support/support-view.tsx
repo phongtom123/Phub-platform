@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminFetch, sameAdminData } from "@/src/lib/admin-fetch";
-import { useAdminPolling } from "@/src/lib/use-admin-polling";
-import { dataHref } from "@/src/lib/data-navigation";
+import { adminFetch, sameAdminData } from "@internal/lib/admin-fetch";
+import { useAdminPolling } from "@internal/lib/use-admin-polling";
+import { dataHref } from "@internal/lib/data-navigation";
 import "./support.css";
 import { SupportThread } from "../operations/support-thread";
 import InvoiceClaimReview from "../invoice-claims/InvoiceClaimReview";

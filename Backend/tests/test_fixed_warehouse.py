@@ -19,10 +19,9 @@ def test_all_warehouses_allowed_with_staff_assignment_preserved():
     staff.warehouse_id = 1
     assert require_warehouse(staff) is staff
     staff.warehouse_id = None
-    with pytest.raises(HTTPException):
-        require_warehouse(staff)
-    assert can_write('warehouses', User('A', 'admin', 'ADMIN', 'Admin'))
-    assert not can_write('warehouses', staff)
+    assert require_warehouse(staff) is staff
+    assert not can_write('warehouses', User('A', 'admin', 'ADMIN', 'Admin'))
+    assert can_write('warehouses', staff)
 
 
 def test_checkout_passes_selected_warehouses_to_atomic_rpc():
@@ -55,4 +54,4 @@ def test_stock_and_picker_queries_are_scoped_on_server():
     assert len(requests) == 6
     assert requests[0].url.params['warehouse.trang_thai'] == 'eq.1'
     assert all('ma_kho' not in request.url.params for request in requests[:3])
-    assert all(request.url.params['ma_kho'] == 'eq.3' for request in requests[3:])
+    assert all('ma_kho' not in request.url.params for request in requests[3:])

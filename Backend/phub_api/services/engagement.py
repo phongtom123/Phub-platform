@@ -7,7 +7,8 @@ class EngagementService:
         self.repository, self.actor = repository, actor
 
     def account(self, admin=False):
-        if not self.actor or self.actor.role != ("ADMIN" if admin else "KHACH_HANG"):
+        allowed = {"ADMIN", "NHAN_VIEN"} if admin else {"KHACH_HANG"}
+        if not self.actor or self.actor.role not in allowed:
             raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này.")
         return self.actor.account_id
 
@@ -36,15 +37,24 @@ class EngagementService:
         return result
 
     def survey_read(self, admin, kind, survey_id=None, page=1):
+        if admin:
+            self.account(True)
+            if kind in {"report", "statistics"} and self.actor.role != "ADMIN":
+                raise HTTPException(403, "Chỉ quản trị viên được xem thống kê.")
+            if kind == "preview" and self.actor.role != "NHAN_VIEN":
+                raise HTTPException(403, "Chỉ nhân viên được xử lý đối tượng khảo sát.")
         return self.call(self.repository.survey_read, self.account(admin), admin, kind, str(survey_id) if survey_id else None, page)
 
     def survey_write(self, action, survey_id, payload=None, version=None):
+        self.require_staff()
         return self.call(self.repository.survey_write, self.account(True), str(survey_id), action, payload or {}, str(version) if version else None)
 
     def submit(self, survey_id, body):
         return self.call(self.repository.survey_submit, self.account(), str(survey_id), str(body.submission_id), [answer.model_dump(mode="json") for answer in body.answers])
 
     def reviews(self, kind, product=None, status=None, page=1):
+        if kind == "admin":
+            self.require_staff()
         actor = None if kind == "public" else self.account(kind == "admin")
         return self.call(self.repository.review_read, actor, kind, product, status, page)
 
@@ -52,4 +62,9 @@ class EngagementService:
         return self.call(self.repository.review_write, self.account(), body)
 
     def moderate(self, review_id, body):
+        self.require_staff()
         return self.call(self.repository.moderate, self.account(True), str(review_id), body.status, str(body.expected_version))
+
+    def require_staff(self):
+        if not self.actor or self.actor.role != "NHAN_VIEN" or not self.actor.employee_id:
+            raise HTTPException(403, "Chỉ nhân viên được xử lý nghiệp vụ CRM.")

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, CalendarDays, Clock3, KeyRound, MapPin, UserRound } from "lucide-react";
 import type { CustomerDetail } from "../../lib/customer-profile";
 import { statusLabels, type AccountStatus } from "../accounts/types";
+import { useAdminAuth } from "@internal/components/admin/auth-provider";
 import styles from "./customer-detail.module.css";
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function CustomerProfileView({ data: { profile, account }, age, formatDate, statusSaving, statusError, onAccountStatusChange }: Props) {
+  const manageAccounts = useAdminAuth().portal === "admin";
   return <div className={styles.profile}>
     <header className={styles.header}>
       <span className={styles.avatar}><UserRound size={30} aria-hidden="true" /></span>
@@ -55,7 +57,7 @@ export function CustomerProfileView({ data: { profile, account }, age, formatDat
               <div className={`live-field ${styles.field}`}><dt>Tên đăng nhập</dt><dd>{account.ten_tai_khoan}</dd></div>
               <div className={`live-field ${styles.field} ${styles.wide}`}><dt>Email</dt><dd>{account.email || <span className={styles.missing}>Chưa có thông tin</span>}</dd></div>
             </dl>
-            <div className={styles.accountStatusControl}>
+            {manageAccounts&&<div className={styles.accountStatusControl}>
               <label htmlFor="customer-account-status">Trạng thái tài khoản khách hàng</label>
               <select id="customer-account-status" value={account.trang_thai} disabled={statusSaving}
                 aria-invalid={Boolean(statusError)} aria-describedby="customer-account-status-help customer-account-status-result"
@@ -72,10 +74,11 @@ export function CustomerProfileView({ data: { profile, account }, age, formatDat
                 {statusError && <p className="live-error" role="alert">{statusError}</p>}
               </div>
             </div>
-            <Link className={styles.accountLink} href={`/accounts/${encodeURIComponent(account.ma_tk)}`}>
+            }
+            {manageAccounts ? <Link className={styles.accountLink} href={`/accounts/${encodeURIComponent(account.ma_tk)}`}>
               <div><span>Mã tài khoản</span><strong>{account.ma_tk}</strong></div>
               <span className={styles.accountAction}>Xem tài khoản <ArrowUpRight size={17} aria-hidden="true" /></span>
-            </Link>
+            </Link> : <p>Mã tài khoản: {account.ma_tk}</p>}
           </> : <div className={styles.emptyAccount}><KeyRound size={26} aria-hidden="true" /><p>Khách hàng chưa có tài khoản liên kết.</p></div>}
         </section>
 

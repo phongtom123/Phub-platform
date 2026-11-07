@@ -11,7 +11,7 @@ from phub_api.dependencies.auth import current_user
 from phub_api.main import app
 from phub_api.models.user import User
 
-ADMIN = User("TK1", "admin", "ADMIN", "Admin", employee_id="NV1")
+ADMIN = User("TK1", "admin", "NHAN_VIEN", "Admin", employee_id="NV1")
 ORDER = "ORDER-DETAIL-TEST"
 URL = f"/api/admin/orders/{ORDER}/detail"
 
@@ -156,7 +156,7 @@ def test_invalid_processing_history_is_not_returned(detail_client, patch):
     assert "history" not in response.json()
 
 
-@pytest.mark.parametrize("role", ["KHACH_HANG", "NHAN_VIEN"])
+@pytest.mark.parametrize("role", ["KHACH_HANG", "ADMIN"])
 def test_other_roles_denied_before_data_reads(detail_client, role):
     client, state, requests = detail_client
     state["actor"] = User("OTHER", "other", role, "Other", customer_id="KH1", warehouse_id=1)

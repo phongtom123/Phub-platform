@@ -1,6 +1,6 @@
 "use client";
 import { X } from "lucide-react";
-import type { ModuleKey } from "@/src/types/admin";
+import type { ModuleKey } from "@internal/types/admin";
 import { SettingsForm } from "../operations/settings-form";
 
 type Props = { moduleKey: ModuleKey | "settings"; mode: "create" | "edit" | "settings"; onClose: () => void };

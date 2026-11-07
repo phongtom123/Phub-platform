@@ -2,7 +2,8 @@
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+import re
 from phub_api.schemas.pricing import PricingOverrides
 
 Resource = Literal['orders', 'receipts', 'inventory', 'settings', 'notifications', 'support']
@@ -39,10 +40,19 @@ class Document(StrictModel):
 class PosOrder(StrictModel):
     customer_id: str | None = Field(None, min_length=1, max_length=100)
     recipient: str = Field(min_length=1, max_length=200)
+    buyer_email: str = Field(min_length=3, max_length=254)
     phone: str | None = Field(None, max_length=30)
     note: str | None = Field(None, max_length=2000)
     voucher_code: str | None = Field(None, max_length=100)
     lines: list[Line] = Field(min_length=1, max_length=100)
+
+    @field_validator('buyer_email')
+    @classmethod
+    def valid_email(cls, value):
+        value = value.strip().lower()
+        if not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', value):
+            raise ValueError('Email khách hàng không đúng định dạng.')
+        return value
 
     @model_validator(mode='after')
     def valid_lines(self):

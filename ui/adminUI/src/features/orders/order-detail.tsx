@@ -29,10 +29,11 @@ const relatedInfo = {
 const groupedFields = new Set([
   "ma_donhang", "ma_kh", "ma_nhan_vien", "kenh_ban", "trang_thai", "thoi_gian_dat",
   "thoi_gian_xuat_kho", "thoi_gian_hoan_thanh", "ten_nguoi_nhan", "sdt_nguoi_nhan",
-  "dia_chi_chi_tiet", "tinh_thanh", "xa_phuong", "ghi_chu", "phuong_thuc_nhan",
+  "dia_chi_chi_tiet", "tinh_thanh", "xa_phuong", "ghi_chu", "phuong_thuc_nhan", "email_nguoi_mua",
 ]);
 const fieldLabels: Record<string, string> = {
   ten_nguoi_nhan: "Người nhận", sdt_nguoi_nhan: "Số điện thoại", dia_chi_chi_tiet: "Địa chỉ giao hàng",
+  email_nguoi_mua: "Email khách hàng",
   tinh_thanh: "Tỉnh / thành phố", xa_phuong: "Phường / xã", ghi_chu: "Ghi chú đơn hàng",
   phuong_thuc_nhan: "Phương thức nhận hàng",
 };
@@ -82,6 +83,7 @@ export function OrderDetail({ row, columns, related, label, personName, version,
         <dl className={styles.fields}>
           {row.phuong_thuc_nhan && field("phuong_thuc_nhan", true)}
           {field("ten_nguoi_nhan")}{field("sdt_nguoi_nhan")}
+          {row.email_nguoi_mua && field("email_nguoi_mua", true)}
           {row.phuong_thuc_nhan !== "TAI_CUA_HANG" && <>{field("dia_chi_chi_tiet", true)}{field("tinh_thanh")}{field("xa_phuong")}</>}
         </dl>
         <div className={`live-field ${styles.note}`}>

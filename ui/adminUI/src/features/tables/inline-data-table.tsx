@@ -4,8 +4,8 @@ import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ScrollableTable } from "./scrollable-table";
-import { adminFetch } from "@/src/lib/admin-fetch";
-import { dataRowKey, editableDataColumns, inlinePatch, inlineOptions, inlineChoiceLabel, inlineDraftValue, type DataColumn, type DataRow } from "@/src/lib/inline-table-data";
+import { adminFetch } from "@internal/lib/admin-fetch";
+import { dataRowKey, editableDataColumns, inlinePatch, inlineOptions, inlineChoiceLabel, inlineDraftValue, type DataColumn, type DataRow } from "@internal/lib/inline-table-data";
 
 type Props = { resource: string; rows: DataRow[]; columns: DataColumn[]; keys: string[];
   quickEditFields?: readonly string[];

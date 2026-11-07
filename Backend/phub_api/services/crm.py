@@ -11,8 +11,8 @@ class CrmService:
         self.repository, self.actor = repository, actor
 
     def require_admin(self):
-        if self.actor.role != "ADMIN":
-            raise HTTPException(403, "Chỉ quản trị viên được quản lý hồ sơ CRM.")
+        if self.actor.role != "NHAN_VIEN":
+            raise HTTPException(403, "Chỉ nhân viên được quản lý hồ sơ CRM.")
 
     def detail(self, customer_id):
         self.require_admin()
@@ -56,5 +56,5 @@ class CrmService:
             if str(exc.code) == "P0002":
                 raise HTTPException(404, "Không tìm thấy khách hàng.") from None
             if str(exc.code) == "42501":
-                raise HTTPException(403, "Chỉ quản trị viên đang hoạt động được xóa mềm/khôi phục khách hàng.") from None
+                raise HTTPException(403, "Chỉ nhân viên đang hoạt động được xóa mềm/khôi phục khách hàng.") from None
             raise

@@ -3,7 +3,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { accountHref, type AccountView } from "@/src/features/accounts/types";
+import { accountHref, type AccountView } from "@internal/features/accounts/types";
 
 export function AccountBreadcrumb({ mode, id }: AccountView) {
   const crumbs = [{ label: "Quản trị", href: "/" }, { label: "Tài khoản", href: "/accounts" }];

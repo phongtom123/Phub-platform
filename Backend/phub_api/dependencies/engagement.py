@@ -1,7 +1,7 @@
 from fastapi import Depends, Request, Response
 
 from phub_api.config.database import get_supabase
-from phub_api.dependencies.auth import require_admin, require_customer_user
+from phub_api.dependencies.auth import current_user, require_customer_user
 from phub_api.dependencies.origin import check_origin
 from phub_api.models.user import User
 from phub_api.repositories.engagement import EngagementRepository
@@ -13,7 +13,7 @@ def public_read(response: Response, db=Depends(get_supabase)):
     return EngagementService(EngagementRepository(db))
 
 
-def admin_read(service: EngagementService = Depends(public_read), user: User = Depends(require_admin)):
+def admin_read(service: EngagementService = Depends(public_read), user: User = Depends(current_user)):
     return EngagementService(service.repository, user)
 
 

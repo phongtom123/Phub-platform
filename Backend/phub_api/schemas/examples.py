@@ -3,7 +3,7 @@ from phub_api.models.resources import RESOURCES, public_columns
 
 VALUES = {
     "ma_kho": 1, "ten_kho": "Kho trung tâm", "dia_chi": "Địa chỉ minh họa",
-    "ma_nhan_vien": "NV001", "ho_ten": "Nhân viên minh họa", "loai_nhan_vien": "ADMIN",
+    "ma_nhan_vien": "NV001", "ho_ten": "Nhân viên minh họa", "loai_nhan_vien": "NHAN_VIEN",
     "email": "example@example.com", "sdt": "0900000000", "luong": "15000000.00",
     "ma_tk": "TK001", "ten_tai_khoan": "example.admin", "ma_kh": "KH001", "ten_kh": "Khách hàng minh họa",
     "ma_loai_sp": "CPU", "ten_loai_sp": "Vi xử lý", "ma_loai_sp_con": "CPU_DESKTOP",
@@ -53,7 +53,7 @@ def row_example(name: str) -> dict:
     if name == "accounts":
         row["ma_kh"] = None
     if name == "employees":
-        row["ma_kho"] = None
+        row["ma_kho"] = 1
     if name == "payments":
         row["trang_thai"] = "THANH_CONG"
     return row

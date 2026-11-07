@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { preloadAdminData } from "@/src/lib/admin-preload";
+import { preloadAdminData } from "@internal/lib/admin-preload";
 
 export function AdminDataPreloader({ identity }: { identity: string }) {
   const router = useRouter();

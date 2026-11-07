@@ -11,6 +11,7 @@ export type ModuleKey =
   | "categories"
   | "inventory"
   | "receipts"
+  | "dispatches"
   | "transfers"
   | "suppliers"
   | "branches"

@@ -14,8 +14,8 @@ class SupportService:
             if self.actor.role != 'KHACH_HANG' or not self.actor.customer_id:
                 raise HTTPException(403, 'Chỉ khách hàng được dùng chức năng này.')
             return self.actor.customer_id
-        if self.actor.role != 'ADMIN':
-            raise HTTPException(403, 'Chỉ ADMIN được tiếp nhận ticket.')
+        if self.actor.role != 'NHAN_VIEN':
+            raise HTTPException(403, 'Chỉ nhân viên được tiếp nhận ticket.')
         return None
 
     def call(self, operation, *args):

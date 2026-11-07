@@ -1,4 +1,4 @@
-import AdminApp from "@/src/components/admin/admin-app";
+import AdminApp from "@internal/components/admin/admin-app";
 
 export default function AccountsPage() {
   return <AdminApp accountsPage={{ mode: "list" }} />;

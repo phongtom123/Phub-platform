@@ -14,8 +14,8 @@ class WarehouseDraftService:
     def update(self, resource: str, key: str, body: ReceiptDraftUpdate):
         if resource != "receipts":
             raise HTTPException(410, "Chức năng chuyển kho đã ngừng sử dụng; chỉ tra cứu chứng từ cũ.")
-        if self.user.role != "ADMIN" or not self.user.employee_id:
-            raise HTTPException(403, "Chỉ quản trị viên có hồ sơ nhân viên được sửa phiếu nháp.")
+        if self.user.role != "NHAN_VIEN" or not self.user.employee_id:
+            raise HTTPException(403, "Chỉ nhân viên có hồ sơ nhân viên được sửa phiếu nháp.")
         keys = key_values(resource, key)
         values = body.model_dump(exclude_unset=True)
         if not values:

@@ -6,6 +6,7 @@ from typing import Any
 import re
 
 CUSTOMER_READ = {"customers", "orders", "order-lines", "invoices", "payments", "voucher-uses"}
+EMPLOYEE_LOOKUP_FIELDS = ("ma_nhan_vien", "ho_ten", "trang_thai")
 
 
 @dataclass(frozen=True)
@@ -69,7 +70,7 @@ ENUMS = {
     ("payments", "trang_thai"): ["CHO_XU_LY", "THANH_CONG", "THAT_BAI"],
     ("payments", "phuong_thuc"): ["TIEN_MAT", "CHUYEN_KHOAN", "THE", "VI_DIEN_TU"],
     ("voucher-uses", "trang_thai"): ["DA_AP_DUNG", "DA_HUY"],
-    ("employees", "loai_nhan_vien"): ["ADMIN", "NHAN_VIEN"],
+    ("employees", "loai_nhan_vien"): ["NHAN_VIEN"],
     ("promotions", "trang_thai"): ["NHAP", "HOAT_DONG", "TAM_DUNG", "KET_THUC"],
     ("vouchers", "trang_thai"): ["HOAT_DONG", "TAM_DUNG"],
     ("vouchers", "loai_giam"): ["PHAN_TRAM", "SO_TIEN"],

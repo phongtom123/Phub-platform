@@ -1,4 +1,4 @@
-import type { ModuleKey } from "@/src/types/admin";
+import type { ModuleKey } from "@internal/types/admin";
 
 export const moduleResources: Partial<Record<ModuleKey, string>> = {
   orders: "orders", billing: "invoices", customers: "customers", products: "products",

@@ -25,7 +25,7 @@ def report(service: AdminRead):
     return service.survey_read(True, "report")
 
 
-@router.get("/api/crm/surveys", response_model=SurveyPage, responses=READ_ERRORS, summary="Danh sách khảo sát (ADMIN)")
+@router.get("/api/crm/surveys", response_model=SurveyPage, responses=READ_ERRORS, summary="Danh sách khảo sát cho nhân viên vận hành và admin xem kết quả")
 def surveys(service: AdminRead, page: Page = 1):
     return service.survey_read(True, "list", page=page)
 
@@ -35,7 +35,7 @@ def create_survey(body: SurveyCreate, service: AdminWrite):
     return service.survey_write("create", body.request_id, body.model_dump(mode="json", exclude={"request_id"}))
 
 
-@router.get("/api/crm/surveys/{survey_id}", response_model=SurveyDetail, responses=READ_ERRORS, summary="Xem khảo sát và cấu trúc câu hỏi (ADMIN)")
+@router.get("/api/crm/surveys/{survey_id}", response_model=SurveyDetail, responses=READ_ERRORS, summary="Xem khảo sát và cấu trúc câu hỏi (ADMIN/NHAN_VIEN)")
 def survey(survey_id: UUID, service: AdminRead):
     return service.survey_read(True, "detail", survey_id)
 

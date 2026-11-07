@@ -1,4 +1,4 @@
-import AdminApp from "@/src/components/admin/admin-app";
+import AdminApp from "@internal/components/admin/admin-app";
 
 export default async function AccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

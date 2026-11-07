@@ -125,8 +125,8 @@ class AdminOrderDetailService:
         return rows
 
     def read(self, order_id):
-        if self.user.role != "ADMIN":
-            raise HTTPException(403, "Chỉ quản trị viên được xem tổng hợp chi tiết đơn.")
+        if self.user.role != "NHAN_VIEN":
+            raise HTTPException(403, "Chỉ nhân viên được xem tổng hợp chi tiết đơn.")
         if not order_id.strip():
             raise HTTPException(422, "Mã đơn hàng không được để trống.")
         orders = self.repository.order(order_id, self.user)

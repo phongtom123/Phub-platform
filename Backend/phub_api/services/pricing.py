@@ -4,7 +4,7 @@ from postgrest.exceptions import APIError
 
 PRICING_ERRORS = {
     'PRICING_RECEIPT_ONLY': (410, 'Thuế và tỷ lệ lợi nhuận được nhập trực tiếp trên phiếu nhập. Không còn danh mục thuế hoặc cấu hình giá riêng.'),
-    'PRICING_FORBIDDEN': (403, 'Chỉ ADMIN được sửa tỷ lệ/thuế. Thủ kho chỉ xem và dùng cấu hình được duyệt.'),
+    'PRICING_FORBIDDEN': (403, 'Chỉ nhân viên đang hoạt động được xử lý định giá phiếu nhập.'),
     'PRICING_INVALID': (422, 'Giá nhập, tỷ lệ hoặc danh sách thuế không hợp lệ. Không ghi thay đổi.'),
     'PRICING_CHANGED': (409, 'Giá bán hoặc cấu hình đã thay đổi. Tải lại preview và xác nhận giá mới.'),
     'PRICING_FROZEN': (409, 'Phiếu đã nhập/hủy không được sửa snapshot giá.'),
@@ -32,9 +32,7 @@ class PricingService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args, admin=False):
-        if self.user.role == 'NHAN_VIEN' and self.user.warehouse_id is None:
-            raise HTTPException(403, 'Nhân viên chưa được phân công kho.')
-        if self.user.role not in {'ADMIN', 'NHAN_VIEN'} or not self.user.employee_id or (admin and self.user.role != 'ADMIN'):
+        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id:
             raise HTTPException(403, PRICING_ERRORS['PRICING_FORBIDDEN'][1])
         try:
             return operation(self.user.account_id, *args)
@@ -54,7 +52,7 @@ class PricingService:
         return self.call(self.repository.context, sku)
 
     def preview(self, body):
-        if self.user.role != 'ADMIN' and body.model_fields_set & {'markup_rate', 'taxes'}:
+        if self.user.role != 'NHAN_VIEN' and body.model_fields_set & {'markup_rate', 'taxes'}:
             raise HTTPException(403, PRICING_ERRORS['PRICING_FORBIDDEN'][1])
         context = self.context(body.sku)
         saved = None

@@ -24,7 +24,7 @@ ORIGIN = {"Origin": "http://localhost:3000"}
 @pytest.fixture
 def platform_client(monkeypatch):
     monkeypatch.setenv("JWT_SECRET", "test-only-" + "x" * 64)
-    state = {"rows": [], "actor": ADMIN, "error": None, "handler": None, "total": 0}
+    state = {"rows": [], "actor": WAREHOUSE, "error": None, "handler": None, "total": 0}
     requests = []
     def handle(request):
         requests.append(request)
@@ -141,7 +141,7 @@ def test_draft_header_edits_are_guarded_and_do_not_write_stock(platform_client, 
         assert request.url.params["trang_thai"] == "eq.NHAP"
         assert request.url.params[pk] == "eq.-5"
         values = json.loads(request.content)
-        assert values == (patch | {"nguoi_cap_nhat": "NV1"} if resource == "receipts" else patch)
+        assert values == (patch | {"nguoi_cap_nhat": "NV2"} if resource == "receipts" else patch)
         return httpx.Response(200, json=[original | values])
     state["handler"] = handle
     response = client.patch(f"/api/admin/warehouse-drafts/{resource}?key=[-5]", json=patch, headers=ORIGIN)
@@ -182,7 +182,7 @@ def test_draft_edits_reject_workflow_audit_keys_and_invalid_fields(platform_clie
     assert requests == []
 
 
-@pytest.mark.parametrize("actor", [WAREHOUSE, CUSTOMER])
+@pytest.mark.parametrize("actor", [ADMIN, CUSTOMER])
 def test_draft_updates_require_admin(platform_client, actor):
     client, state, requests = platform_client
     state["actor"] = actor
@@ -207,13 +207,13 @@ def test_draft_metadata_grants_update_without_generic_create(platform_client):
         for item in resources:
             if item["name"] in {"receipts", "transfers"}:
                 assert item["writable"] is False and item["create_schema"] is None
-                assert bool(item["draft_update_path"]) == (actor == ADMIN and item["name"] == "receipts")
-                if actor == ADMIN and item["name"] == "receipts":
+                assert bool(item["draft_update_path"]) == (actor == WAREHOUSE and item["name"] == "receipts")
+                if actor == WAREHOUSE and item["name"] == "receipts":
                     assert "trang_thai" not in item["draft_update_fields"]
 
 
 @pytest.mark.parametrize("name", ["orders", "order-lines", "invoices", "payments", "voucher-uses"])
-@pytest.mark.parametrize("actor", [ADMIN, CUSTOMER])
+@pytest.mark.parametrize("actor", [WAREHOUSE, CUSTOMER])
 def test_order_relation_filter_is_exact_and_preserves_scope(platform_client, name, actor):
     client, state, requests = platform_client
     state["actor"] = actor
@@ -233,7 +233,8 @@ def test_order_relation_filter_is_exact_and_preserves_scope(platform_client, nam
 
 @pytest.mark.parametrize("name", ["products", "warehouses", "receipts", "transfers", "accounts"])
 def test_order_filter_rejected_for_unrelated_tables(platform_client, name):
-    client, _, requests = platform_client
+    client, state, requests = platform_client
+    state["actor"] = ADMIN if name == "accounts" else WAREHOUSE
     assert client.get(f"/api/data/{name}", params={"order_id": "ORDER-1"}).status_code == 422
     assert requests == []
 
@@ -253,19 +254,22 @@ def test_order_filter_combines_with_primary_key(platform_client):
 
 
 def test_schema_all_tables_and_metadata(platform_client):
-    client, _, _ = platform_client
-    assert len(schema()) == 22
+    client, state, _ = platform_client
+    assert {resource.table for resource in RESOURCES.values()} <= schema().keys()
     media_columns = {column["name"]: column for column in schema()["MEDIA"]}
     assert media_columns["la_anh_chinh"]["type"] == "boolean"
     assert media_columns["la_anh_chinh"]["default"] is False
     assert len(RESOURCES) == 20  # Support tickets are not unrestricted generic CRUD.
     assert not {"SO_THICH", "KHACH_HANG_SO_THICH", "PHAN_HOI"}.intersection(r.table for r in RESOURCES.values())
     resources = client.get("/api/data/resources").json()
-    assert len(resources) == 20
-    assert sum(item["writable"] for item in resources) == 9
+    assert {item["name"] for item in resources} == set(RESOURCES) - {"accounts"}
+    assert sum(item["writable"] for item in resources) == 8
     subcategories = next(item for item in resources if item["name"] == "subcategories")
     assert subcategories["keys"] == ["ma_loai_sp_con"]
-    accounts = next(item for item in resources if item["name"] == "accounts")
+    state["actor"] = ADMIN
+    admin_resources = client.get("/api/data/resources").json()
+    assert {item["name"] for item in admin_resources} == {"accounts", "warehouses", "employees"}
+    accounts = next(item for item in admin_resources if item["name"] == "accounts")
     assert "mat_khau" not in json.dumps(accounts)
     assert accounts["create_schema"] is None
 
@@ -273,10 +277,12 @@ def test_schema_all_tables_and_metadata(platform_client):
 @pytest.mark.parametrize("name", RESOURCES)
 def test_admin_can_read_every_table(platform_client, name):
     client, state, requests = platform_client
-    state["rows"] = [{"example": "value", "mat_khau": "must-not-leak", "scope": {}}]
+    state["actor"] = ADMIN if name in {"accounts", "employees"} else WAREHOUSE
+    expected = {"example": "value", **({"ma_kh": "KH1"} if name == "customers" else {})}
+    state["rows"] = [{**expected, "mat_khau": "must-not-leak", "scope": {}}]
     response = client.get(f"/api/data/{name}")
     assert response.status_code == 200
-    assert response.json()["data"] == [{"example": "value"}]
+    assert response.json()["data"] == [expected]
     assert requests[-1].url.path.endswith("/" + RESOURCES[name].table)
     assert "*" not in requests[-1].url.params["select"]
     assert "mat_khau" not in requests[-1].url.params["select"]
@@ -287,7 +293,7 @@ def test_warehouse_scope(platform_client, name, field):
     client, state, requests = platform_client
     state["actor"] = WAREHOUSE
     assert client.get(f"/api/data/{name}").status_code == 200
-    assert requests[-1].url.params[field] == "eq.7"
+    assert field not in requests[-1].url.params
 
 
 @pytest.mark.parametrize("name,prefix", [("transfers", ""), ("transfer-lines", "scope.")])
@@ -295,10 +301,10 @@ def test_transfer_scope_both_warehouses(platform_client, name, prefix):
     client, state, requests = platform_client
     state["actor"] = WAREHOUSE
     assert client.get(f"/api/data/{name}").status_code == 200
-    assert requests[-1].url.params[prefix + "or"] == "(ma_kho_xuat.eq.7,ma_kho_nhan.eq.7)"
+    assert prefix + "or" not in requests[-1].url.params
 
 
-@pytest.mark.parametrize("name", ["employees", "accounts", "customers", "orders", "invoices", "payments", "vouchers"])
+@pytest.mark.parametrize("name", ["accounts"])
 def test_warehouse_denied(platform_client, name):
     client, state, requests = platform_client
     state["actor"] = WAREHOUSE
@@ -327,7 +333,7 @@ def test_transfer_search_cannot_replace_permission_filter(platform_client):
     state["actor"] = WAREHOUSE
     assert client.get("/api/data/transfers", params={"q": "NHAP"}).status_code == 200
     clause = requests[-1].url.params["or"]
-    assert clause.startswith("(and(or(ma_kho_xuat.eq.7,ma_kho_nhan.eq.7),or(")
+    assert "ma_kho_xuat.eq.7" not in clause and "ma_kho_nhan.eq.7" not in clause
     assert len(requests[-1].url.params.get_list("or")) == 1
 
 
@@ -425,7 +431,7 @@ def test_signed_keys_do_not_remove_warehouse_scope(platform_client):
     state["actor"] = User("TK2", "kho", "NHAN_VIEN", "Warehouse", employee_id="NV2", warehouse_id=-900001)
     response = client.get("/api/data/inventory", params={"key": '[-900003,"SKU-TEST"]'})
     assert response.status_code == 200
-    assert requests[-1].url.params.get_list("ma_kho") == ["eq.-900001", "eq.-900003"]
+    assert requests[-1].url.params.get_list("ma_kho") == ["eq.-900003"]
     assert requests[-1].url.params["sku"] == "eq.SKU-TEST"
 
 

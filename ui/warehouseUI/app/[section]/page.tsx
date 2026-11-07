@@ -1,3 +1,30 @@
-import WarehouseApp from "@/src/views/warehouse/warehouse-view";
-
-export default function SectionPage() { return <WarehouseApp/>; }
+import { notFound } from "next/navigation";
+import InternalApp from "@internal/components/admin/admin-app";
+import { getModuleForSection } from "@internal/lib/admin-navigation";
+import { moduleResources } from "@internal/lib/backend-resources";
+import ReceiptList from "@/src/features/receipts/receipt-list";
+import InventoryTotals from "@/src/features/internal/inventory-totals";
+import StaffProfile from "@/src/features/internal/staff-profile";
+import DispatchOrders from "@/src/features/internal/dispatch-orders";
+import { SettingsForm } from "@internal/features/operations/settings-form";
+import StaffCounterOrder from "@/src/features/invoice-claims/StaffCounterOrder";
+import InvoiceClaimsWorkspace from "@/src/features/invoice-claims/InvoiceClaimsWorkspace";
+import { StockHistory } from "@internal/features/operations/stock-history";
+export default async function SectionPage({params}:{params:Promise<{section:string}>}) {
+  const { section } = await params;
+  if (section === "receipts") return <InternalApp moduleHint="receipts"><ReceiptList /></InternalApp>;
+  if (section === "inventory") return <InternalApp moduleHint="inventory"><InventoryTotals /></InternalApp>;
+  if (section === "dispatches") return <InternalApp moduleHint="dispatches" pageTitle="Phiếu xuất" pageHref="/dispatches"><DispatchOrders /></InternalApp>;
+  if (section === "account") return <InternalApp moduleHint="accounts" selfPage pageTitle="Tài khoản cá nhân" pageHref="/account"><StaffProfile /></InternalApp>;
+  if (section === "settings") return <InternalApp moduleHint="orders" pageTitle="Cài đặt" pageHref="/settings"><SettingsForm /></InternalApp>;
+  if (section === "counter") return <InternalApp moduleHint="orders" pageTitle="Bán tại quầy" pageHref="/counter"><StaffCounterOrder /></InternalApp>;
+  if (section === "invoice-claims") return <InternalApp moduleHint="billing" pageTitle="Liên kết hóa đơn" pageHref="/invoice-claims"><InvoiceClaimsWorkspace /></InternalApp>;
+  if (section === "history") return <InternalApp moduleHint="inventory" pageTitle="Lịch sử kho" pageHref="/history"><StockHistory /></InternalApp>;
+  if (section === "surveys") return <InternalApp engagementPage="surveys" />;
+  if (section === "reviews") return <InternalApp engagementPage="reviews" />;
+  if (section === "support") return <InternalApp supportPage />;
+  if (section === "reports" || section === "crm-report" || section === "accounts") return <InternalApp moduleHint={section === "reports" ? "reports" : section === "crm-report" ? "crmReport" : "accounts"} />;
+  const module = getModuleForSection(section);
+  if (!module || !moduleResources[module]) notFound();
+  return <InternalApp dataResource={moduleResources[module]} />;
+}

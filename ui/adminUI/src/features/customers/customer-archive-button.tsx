@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { adminFetch } from "@/src/lib/admin-fetch";
-import type { CustomerDetail } from "@/src/lib/customer-profile";
+import { adminFetch } from "@internal/lib/admin-fetch";
+import type { CustomerDetail } from "@internal/lib/customer-profile";
 
 export function CustomerArchiveButton({ customerId, archived, disabled, onSaved, onSavingChange }: {
   customerId: string; archived: boolean; disabled: boolean;

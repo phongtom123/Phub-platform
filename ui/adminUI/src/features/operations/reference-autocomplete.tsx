@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { adminFetch } from "@/src/lib/admin-fetch";
-import type { DataRow } from "@/src/lib/inline-table-data";
+import { adminFetch } from "@internal/lib/admin-fetch";
+import type { DataRow } from "@internal/lib/inline-table-data";
 import styles from "./product-autocomplete.module.css";
 
 const PAGE_SIZE = 10;

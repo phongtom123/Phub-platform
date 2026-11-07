@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
 from phub_api.config.settings import COOKIE_NAME
-from phub_api.models.resources import CUSTOMER_READ, ENUMS, RESOURCES, SYSTEM_FIELDS, public_columns
+from phub_api.models.resources import CUSTOMER_READ, EMPLOYEE_LOOKUP_FIELDS, ENUMS, RESOURCES, SYSTEM_FIELDS, public_columns
 from phub_api.schemas.api_contracts import ORIGIN_DOCUMENTATION
 from phub_api.schemas.examples import SESSION_EXAMPLE, key_example, payload_example, row_example
 from phub_api.schemas.resources import payload_model
@@ -38,14 +38,14 @@ Mẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển 
 - Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.
 - `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.
 - PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.
-- ADMIN xem tất cả bảng; NHAN_VIEN giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.
+- ADMIN quản lý nhân viên, tài khoản và xem thống kê; NHAN_VIEN xử lý nghiệp vụ trên tất cả kho; KHACH_HANG chỉ xem dữ liệu của mình.
 - Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.
 
 ### Phạm vi hiện tại
 
 Đã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.
 **Chưa xác nhận kết nối live Supabase.** Không có DELETE.
-Các bảng chứng từ/tồn kho/tài chính chỉ có GET qua API bảng. ADMIN thực hiện nghiệp vụ
+Các bảng chứng từ/tồn kho/tài chính chỉ có GET qua API bảng. NHAN_VIEN thực hiện nghiệp vụ
 qua `/api/admin/operations`: đơn tại quầy, nhập/xuất/nhận kho, hóa đơn, ghi nhận thu/hoàn
 và kiểm kê bằng transaction. Cần migration admin_operations; chưa tự deploy database.
 Ghi nhận thu/hoàn thủ công không thay thế tích hợp cổng thanh toán hoặc webhook.
@@ -55,21 +55,21 @@ Các module mua hàng có đặc tả riêng; không coi CRUD bảng là checkou
 """
 
 TAGS = [
-    {"name": "Admin · Định giá nhập hàng", "description": "Markup/thuế, preview Decimal và snapshot phiếu; ADMIN sửa, kho chỉ xem."},
-    {"name": "Kho · Nghiệp vụ", "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trong kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu."},
+    {"name": "Admin · Định giá nhập hàng", "description": "Tên nhóm API giữ tương thích; NHAN_VIEN sửa giá, preview Decimal và snapshot phiếu."},
+    {"name": "Kho · Nghiệp vụ", "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trên tất cả kho. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu."},
     {"name": "Admin · Vận hành", "description": "Đơn hàng, kho, tài chính, thống kê và tiện ích quản trị; ghi qua transaction, yêu cầu Idempotency-Key."},
     {"name": "Admin · Tài khoản", "description": "Quản lý tài khoản và thông tin đăng nhập admin; không xóa dữ liệu."},
     {"name": "Shared · Xác thực", "description": "Login/token/register/me/logout. JWT qua Bearer hoặc cookie HttpOnly, role lấy từ database."},
     {"name": "Shared · Hệ thống", "description": "Health chỉ kiểm tra API đang chạy; không kiểm tra database."},
     {"name": "Shared · Metadata", "description": "Danh mục bảng/trường/model tạo theo quyền của phiên hiện tại."},
     {"name": "Admin · Tổ chức", "description": "Kho, nhân viên, tài khoản. Mật khẩu chỉ có trong request, không có trong response."},
-    {"name": "Admin · Khách hàng", "description": "ADMIN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình."},
+    {"name": "Admin · Khách hàng", "description": "NHAN_VIEN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình."},
     {"name": "Admin · Sản phẩm", "description": "Loại sản phẩm và sản phẩm PC/linh kiện. SKU không đổi sau khi tạo."},
-    {"name": "Admin · Hình ảnh", "description": "ADMIN upload và quản lý gallery tối đa 20 ảnh/sản phẩm. JPG/PNG/WebP tĩnh, 5 MB/ảnh. Lưu ảnh chính/thứ tự bằng transaction và kiểm tra snapshot; gỡ liên kết không xóa file Storage."},
+    {"name": "Admin · Hình ảnh", "description": "NHAN_VIEN upload và quản lý gallery tối đa 20 ảnh/sản phẩm. JPG/PNG/WebP tĩnh, 5 MB/ảnh. Lưu ảnh chính/thứ tự bằng transaction và kiểm tra snapshot; gỡ liên kết không xóa file Storage."},
     {"name": "Admin · Khuyến mãi", "description": "Chương trình, voucher và lịch sử sử dụng. Voucher của đơn tại quầy được chốt qua nghiệp vụ tạo đơn."},
     {"name": "Kho · Tồn kho", "description": "Chỉ đọc tồn thực; không mở CRUD số lượng tồn."},
-    {"name": "Kho · Nhà cung cấp", "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp."},
-    {"name": "Kho · Phiếu nhập", "description": "CRUD bảng chỉ đọc. ADMIN dùng /api/admin/operations/receipts; NHAN_VIEN dùng /api/warehouse/receipts trong kho được phân công."},
+    {"name": "Kho · Nhà cung cấp", "description": "NHAN_VIEN tạo/sửa nhà cung cấp."},
+    {"name": "Kho · Phiếu nhập", "description": "CRUD bảng chỉ đọc. NHAN_VIEN dùng /api/admin/operations/receipts hoặc /api/warehouse/receipts; giữ đường dẫn API cũ để tương thích."},
     {"name": "Kho · Chuyển kho", "description": "Chỉ tra cứu dữ liệu lịch sử. Chức năng tạo, sửa hoặc xử lý chuyển kho đã ngừng sử dụng."},
     {"name": "Bán hàng · Đơn hàng", "description": "Đơn và dòng hàng chỉ đọc; khách chỉ đọc đơn của mình."},
     {"name": "Bán hàng · Tài chính", "description": "Hóa đơn, thanh toán chỉ đọc. Không ghi tiền qua CRUD tổng quát."},
@@ -89,7 +89,7 @@ NOTES = {
     "categories": "Danh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
     "subcategories": "Danh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
     "accounts": "GET bảng này chỉ đọc. Quản lý tài khoản qua /api/admin/accounts và /api/admin/me; không dùng POST/PATCH generic. Không gửi mat_khau.",
-    "employees": "Role ADMIN yêu cầu ma_kho=null; NHAN_VIEN yêu cầu ma_kho của một kho tồn tại.",
+    "employees": "ADMIN quản lý hồ sơ nhân viên. NHAN_VIEN chỉ tra cứu mã, họ tên và trạng thái để hiển thị/phân công trên chứng từ; không xem lương, CCCD hoặc sửa hồ sơ.",
     "products": "Ảnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
     "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
     "vouchers": "ma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
@@ -98,10 +98,10 @@ NOTES = {
 
 def roles_for(name: str, write: bool = False) -> list[str]:
     if write:
-        return ["ADMIN", "NHAN_VIEN"] if name == "suppliers" else ["ADMIN"]
-    roles = ["ADMIN"]
-    if RESOURCES[name].warehouse:
-        roles.append("NHAN_VIEN")
+        return (["ADMIN"] if name == "employees" else ["NHAN_VIEN"]) if RESOURCES[name].writable else []
+    roles = ["ADMIN"] if name == "accounts" else ["NHAN_VIEN"]
+    if name in {"warehouses", "employees"}:
+        roles.insert(0, "ADMIN")  # Minimal lookup for reports and account assignment.
     if name in CUSTOMER_READ:
         roles.append("KHACH_HANG")
     return roles
@@ -132,7 +132,7 @@ def row_schema(name: str) -> dict:
         prop["description"] = description
         properties[field] = prop
     return {"type": "object", "title": f"{RESOURCES[name].table}Read", "properties": properties,
-            "required": list(properties), "additionalProperties": False, "example": row_example(name)}
+            "required": list(EMPLOYEE_LOOKUP_FIELDS) if name == "employees" else list(properties), "additionalProperties": False, "example": row_example(name)}
 
 
 def request_schema(name: str, patch: bool) -> dict:
@@ -196,7 +196,7 @@ def add_table_paths(spec: dict) -> None:
             if method == "get":
                 description += "Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. "
                 if resource.warehouse:
-                    description += "NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. "
+                    description += "NHAN_VIEN đọc dữ liệu trên tất cả kho. "
                 if name in CUSTOMER_READ:
                     description += "KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). "
                 description += "GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. "
@@ -260,7 +260,13 @@ def describe_auth_and_public(spec: dict) -> None:
                     operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
             elif path.startswith("/api/admin/"):
                 operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
-                operation["x-roles"] = ["ADMIN"]
+                operational = path.startswith(("/api/admin/operations/", "/api/admin/media/", "/api/admin/products/", "/api/admin/warehouse-drafts/", "/api/admin/orders/"))
+                operation["x-roles"] = ["NHAN_VIEN"] if operational else ["ADMIN"]
+                if path == "/api/admin/operations/business-report":
+                    operation["x-roles"] = ["ADMIN"]
+                elif path == "/api/admin/operations/read/{kind}":
+                    operation["x-roles"] = ["ADMIN", "NHAN_VIEN"]
+                    operation["description"] = "ADMIN chỉ dùng kind=summary; NHAN_VIEN dùng search, notifications, settings, history và messages."
                 operation["x-implementation-status"] = "implemented-live-unverified"
                 if method != "get":
                     operation.setdefault("parameters", []).append(deepcopy(ORIGIN_DOCUMENTATION))
@@ -271,7 +277,15 @@ def describe_auth_and_public(spec: dict) -> None:
             elif path == "/api/data/resources":
                 operation["tags"] = ["Shared · Metadata"]
                 operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
-                operation["description"] = "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền ghi chung của role. draft_update_path và draft_update_fields chỉ cấp cho ADMIN sửa thông tin phiếu nháp qua API riêng. create_schema là JSON Schema cho body tạo; không có mật khẩu."
+                operation["description"] = "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền ghi chung của role. draft_update_path và draft_update_fields chỉ cấp cho NHAN_VIEN sửa thông tin phiếu nháp qua API riêng. create_schema là JSON Schema cho body tạo; không có mật khẩu."
+            elif path.startswith("/api/crm/"):
+                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
+                report = path == "/api/crm/report" or path.endswith("/statistics")
+                survey_reference = method == "get" and path in {"/api/crm/surveys", "/api/crm/surveys/{survey_id}"}
+                operation["x-roles"] = ["ADMIN"] if report else ["ADMIN", "NHAN_VIEN"] if survey_reference else ["NHAN_VIEN"]
+            elif path.startswith(("/api/pricing/", "/api/staff/")):
+                operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
+                operation["x-roles"] = ["NHAN_VIEN"]
             elif path.startswith("/api/catalog/") or path == "/api/products":
                 operation["tags"] = ["Customer · Catalog"]
                 operation["security"] = []

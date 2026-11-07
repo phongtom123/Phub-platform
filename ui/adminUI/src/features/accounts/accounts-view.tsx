@@ -9,8 +9,8 @@ import { AccountDetail } from "./account-detail";
 import { AccountProfile } from "./account-profile";
 import { AccountTable } from "./account-table";
 import { roleLabels, statusLabels, type Account, type AccountPage, type AccountView } from "./types";
-import { invalidateAdminCache, sameAdminData } from "@/src/lib/admin-fetch";
-import { useAdminPolling } from "@/src/lib/use-admin-polling";
+import { invalidateAdminCache, sameAdminData } from "@internal/lib/admin-fetch";
+import { useAdminPolling } from "@internal/lib/use-admin-polling";
 
 export default function AccountsView({ mode = "list", id }: AccountView) {
   const router = useRouter();

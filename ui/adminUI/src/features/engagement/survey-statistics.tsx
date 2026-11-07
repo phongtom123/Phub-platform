@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { adminFetch } from "@/src/lib/admin-fetch";
+import { adminFetch } from "@internal/lib/admin-fetch";
 import { engagementRequest, type Statistics } from "../../../../shared/engagement";
 import styles from "./engagement.module.css";
 export function SurveyStatistics({ id, version }: { id:string; version:string }) {
