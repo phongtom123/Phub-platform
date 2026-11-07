@@ -28,7 +28,7 @@ def create(body: ClaimCreate, service: CustomerWrite, key: UUID = Depends(reques
     return service.create(key, body)
 
 
-@router.get('/api/staff/invoice-claims', responses=READ_ERRORS, summary='Nhân viên/Admin xem yêu cầu liên kết hóa đơn')
+@router.get('/api/staff/invoice-claims', responses=READ_ERRORS, summary='Nhân viên xem yêu cầu liên kết hóa đơn')
 def claims(service: Read, page: int = Query(1, ge=1, le=100000)):
     return service.read(page=page)
 
@@ -44,8 +44,9 @@ def decide(ticket_id: UUID, body: ClaimDecision, service: Write, key: UUID = Dep
 
 
 @router.get('/api/staff/counter/{kind}', responses=READ_ERRORS, summary='Chọn tài khoản khách active hoặc hàng trong kho khi bán tại quầy')
-def counter_catalog(kind: Literal['customers', 'products'], service: Read, q: str = Query('', max_length=100)):
-    return service.catalog(kind, q.strip())
+def counter_catalog(kind: Literal['customers', 'products'], service: Read, q: str = Query('', max_length=100),
+                    email: str | None = Query(None, min_length=3, max_length=254)):
+    return service.catalog(kind, q.strip(), email)
 
 
 @router.post('/api/staff/counter/orders', status_code=201, responses=WRITE_ERRORS, summary='Tạo đơn tại quầy gắn đúng tài khoản khách; không tự xác nhận thanh toán')

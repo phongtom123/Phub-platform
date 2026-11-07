@@ -1,4 +1,4 @@
-import type { ModuleKey } from "@/src/types/admin";
+import type { ModuleKey } from "@internal/types/admin";
 
 /** Navigation labels only. Table metadata and records come from the backend. */
 export const moduleNames: Record<ModuleKey, string> = {
@@ -14,6 +14,7 @@ export const moduleNames: Record<ModuleKey, string> = {
   categories: "Loại sản phẩm",
   inventory: "Tồn kho",
   receipts: "Phiếu nhập",
+  dispatches: "Phiếu xuất",
   transfers: "Chuyển kho",
   suppliers: "Nhà cung cấp",
   branches: "Kho",

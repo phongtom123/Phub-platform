@@ -380,7 +380,7 @@ def test_employee_role_assignment_and_customer_guard(accounts_client):
 @pytest.mark.parametrize("body", [{"trang_thai": 0}, {"loai_nhan_vien": "NHAN_VIEN", "ma_kho": 7}])
 def test_generic_employee_api_cannot_bypass_self_guard(accounts_client, body):
     client, _, requests, _ = accounts_client
-    assert client.patch('/api/data/employees?key=["NV1"]', json=body, headers=ORIGIN).status_code == 409
+    assert client.patch('/api/data/employees?key=["NV1"]', json=body, headers=ORIGIN).status_code == 403
     assert all(r.method == "GET" for r in requests)
 
 

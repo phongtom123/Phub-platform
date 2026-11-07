@@ -3,50 +3,52 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAdminAuth } from "./auth-provider";
-import type { ModuleKey } from "@/src/types/admin";
-import { moduleNames } from "@/src/data/admin-data";
+import type { ModuleKey } from "@internal/types/admin";
+import { moduleNames } from "@internal/data/admin-data";
 import {
   getModuleFromSearch,
   getModuleHref,
-} from "@/src/lib/admin-navigation";
+} from "@internal/lib/admin-navigation";
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
-import { LoginView } from "@/src/features/auth/login-view";
-import { DashboardView } from "@/src/features/dashboard/dashboard-view";
-import { ModuleView } from "@/src/features/modules/module-view";
-import { EntityDrawer } from "@/src/features/forms/entity-drawer";
-import BackendDataView from "@/src/components/backend-data-view";
-import { resourceModule, moduleResources } from "@/src/lib/backend-resources";
-import AccountsView from "@/src/features/accounts/accounts-view";
-import type { AccountView } from "@/src/features/accounts/types";
-import SupportView from "@/src/features/support/support-view";
-import { ReportsView } from "@/src/features/reports/reports-view";
-import SurveysView from "@/src/features/engagement/surveys-view";
-import ReviewsView from "@/src/features/engagement/reviews-view";
-import CrmReportView from "@/src/features/engagement/crm-report-view";
+import { LoginView } from "@internal/features/auth/login-view";
+import { DashboardView } from "@internal/features/dashboard/dashboard-view";
+import { ModuleView } from "@internal/features/modules/module-view";
+import { EntityDrawer } from "@internal/features/forms/entity-drawer";
+import BackendDataView from "@internal/components/backend-data-view";
+import { resourceModule, moduleResources } from "@internal/lib/backend-resources";
+import AccountsView from "@internal/features/accounts/accounts-view";
+import type { AccountView } from "@internal/features/accounts/types";
+import SupportView from "@internal/features/support/support-view";
+import { ReportsView } from "@internal/features/reports/reports-view";
+import SurveysView from "@internal/features/engagement/surveys-view";
+import ReviewsView from "@internal/features/engagement/reviews-view";
+import CrmReportView from "@internal/features/engagement/crm-report-view";
+import { canOpenModule, portalHome, portalRole } from "../../../../shared/internal-access";
 
 type DrawerState = {
   moduleKey: ModuleKey | "settings";
   mode: "create" | "edit" | "settings";
 } | null;
 
-export default function AdminApp({ dataResource, accountsPage, supportPage = false, reportsPage = false, engagementPage }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean; reportsPage?: boolean; engagementPage?: "surveys" | "reviews" | "crmReport" } = {}) {
+export default function AdminApp({ dataResource, accountsPage, supportPage = false, reportsPage = false, engagementPage, children, moduleHint, selfPage = false, pageTitle, pageHref }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean; reportsPage?: boolean; engagementPage?: "surveys" | "reviews" | "crmReport"; children?: React.ReactNode; moduleHint?: ModuleKey; selfPage?: boolean; pageTitle?: string; pageHref?: string } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
-  const activeModule = engagementPage ?? (accountsPage ? "accounts" : supportPage ? "support" : reportsPage ? "reports" : dataResource ? resourceModule(dataResource) : getModuleFromSearch(searchParams.toString()));
+  const { portal, user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
+  const activeModule = moduleHint ?? engagementPage ?? (accountsPage ? "accounts" : supportPage ? "support" : reportsPage ? "reports" : dataResource ? resourceModule(dataResource) : portal === "staff" && !searchParams.has("module") ? "orders" : getModuleFromSearch(searchParams.toString()));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [drawer, setDrawer] = useState<DrawerState>(null);
 
   const retrySession = () => { void checkSession(); };
   // The root provider owns the only initial verification gate across all pages.
-  if (sessionUser === undefined || (sessionUser && sessionUser.role !== "ADMIN")) return null;
+  if (sessionUser === undefined || (sessionUser && sessionUser.role !== portalRole(portal))) return null;
 
   if (!sessionUser) return <LoginView onLogin={acceptLogin} />;
+  const allowed = selfPage || accountsPage?.mode === "self" || canOpenModule(portal, activeModule);
 
   const navigate = (moduleKey: ModuleKey) => {
-    router.push(getModuleHref(moduleKey));
+    router.push(portal === "staff" && ["receipts", "inventory"].includes(moduleKey) ? `/${moduleKey}` : getModuleHref(moduleKey));
     setMobileSidebarOpen(false);
   };
   const toggleSidebar = () =>
@@ -79,9 +81,10 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
       <div className="main">
         <AdminHeader
           accountsPage={accountsPage}
-          dataResource={accountsPage || activeModule === "accounts" ? undefined : dataResource ?? moduleResources[activeModule]}
+          dataResource={accountsPage || pageTitle || activeModule === "accounts" ? undefined : dataResource ?? moduleResources[activeModule]}
           activeModule={activeModule}
-          title={moduleNames[activeModule]}
+          title={pageTitle ?? moduleNames[activeModule]}
+          pageHref={pageHref}
           onToggleSidebar={toggleSidebar}
           onNavigate={navigate}
           onGoAccounts={() => navigate("accounts")}
@@ -95,13 +98,13 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
             <span>{sessionError}</span>
             <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
           </div>}
-          {activeModule === "surveys" ? <SurveysView /> : activeModule === "reviews" ? <ReviewsView /> : activeModule === "crmReport" ? <CrmReportView /> : activeModule === "reports" ? <ReportsView /> : activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
+          {!allowed ? <section className="live-note" role="alert"><p>Chức năng này không thuộc quyền của tài khoản đang đăng nhập.</p><a href={portalHome(portal)}>Về trang chính</a></section> : children ?? (activeModule === "surveys" ? <SurveysView /> : activeModule === "reviews" ? <ReviewsView /> : activeModule === "crmReport" ? <CrmReportView /> : activeModule === "reports" ? <ReportsView /> : activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : moduleResources[activeModule] ? (
             <ModuleView
               moduleKey={activeModule}
             />
-          ) : null}
+          ) : null)}
         </main>
       </div>
       {drawer && (

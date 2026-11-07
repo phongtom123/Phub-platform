@@ -1,4 +1,4 @@
-import { adminFetch } from "@/src/lib/admin-fetch";
+import { adminFetch } from "@internal/lib/admin-fetch";
 import { vietnamDay } from "../dashboard/dashboard-data";
 export type ProductProfit = { sku: string; name: string; quantity: number; net_revenue: string; cost: string | null; gross_profit: string | null; margin: string | null; unpriced_lines: number };
 export type BusinessReport = {

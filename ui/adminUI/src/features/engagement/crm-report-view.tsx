@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { adminFetch } from "@/src/lib/admin-fetch";
+import { adminFetch } from "@internal/lib/admin-fetch";
 import { engagementRequest, type CrmReport } from "../../../../shared/engagement";
 import styles from "./engagement.module.css";
 export default function CrmReportView(){

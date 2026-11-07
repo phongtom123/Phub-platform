@@ -266,6 +266,7 @@ Table DON_HANG {
 
   ten_nguoi_nhan varchar
   sdt_nguoi_nhan varchar
+  email_nguoi_mua varchar [note: 'Email bat buoc khi tao don tai quay moi; NULL voi don lich su/chua ghi nhan']
   dia_chi_chi_tiet varchar
   tinh_thanh varchar
   xa_phuong varchar

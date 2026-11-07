@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Ticket } from "lucide-react";
-import { adminFetch, sameAdminData } from "@/src/lib/admin-fetch";
-import { dataHref } from "@/src/lib/data-navigation";
-import { inlineChoiceLabel, type DataRow } from "@/src/lib/inline-table-data";
-import { useAdminPolling } from "@/src/lib/use-admin-polling";
+import { adminFetch, sameAdminData } from "@internal/lib/admin-fetch";
+import { dataHref } from "@internal/lib/data-navigation";
+import { inlineChoiceLabel, type DataRow } from "@internal/lib/inline-table-data";
+import { useAdminPolling } from "@internal/lib/use-admin-polling";
 import { ScrollableTable } from "../tables/scrollable-table";
 import styles from "./promotion-vouchers.module.css";
 

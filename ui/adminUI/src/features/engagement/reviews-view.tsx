@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { adminFetch } from "@/src/lib/admin-fetch";
-import { useAdminPolling } from "@/src/lib/use-admin-polling";
+import { adminFetch } from "@internal/lib/admin-fetch";
+import { useAdminPolling } from "@internal/lib/use-admin-polling";
 import { dateTime, engagementRequest, jsonBody, reviewStatus, type Page, type Review } from "../../../../shared/engagement";
 import styles from "./engagement.module.css";
 export default function ReviewsView(){

@@ -32,7 +32,7 @@ def image_bytes(kind="PNG", size=(8, 6)):
 def media_client(monkeypatch):
     monkeypatch.setenv("SUPABASE_MEDIA_BUCKET", "media")
     monkeypatch.setenv("FRONTEND_ORIGINS", "http://localhost:3000")
-    state = {"role": "ADMIN", "public": True, "error": None, "uploads": [], "removed": [], "buckets": [], "media": [], "avatars": {}}
+    state = {"role": "NHAN_VIEN", "public": True, "error": None, "uploads": [], "removed": [], "buckets": [], "media": [], "avatars": {}}
     class Storage:
         def get_bucket(self, name):
             state["buckets"].append(name)
@@ -78,7 +78,8 @@ def media_client(monkeypatch):
     app = FastAPI()
     app.include_router(router); app.include_router(customer_router); register_errors(app)
     app.dependency_overrides[current_user] = lambda: User(
-        "TK1", "test", state["role"], "Test", customer_id="KH1" if state["role"] == "KHACH_HANG" else None)
+        "TK1", "test", state["role"], "Test", customer_id="KH1" if state["role"] == "KHACH_HANG" else None,
+        employee_id="NV1" if state["role"] == "NHAN_VIEN" else None)
     app.dependency_overrides[get_supabase] = Database
     with TestClient(app) as client:
         yield client, state, app
@@ -138,7 +139,7 @@ def test_promotion_banner_payload_and_invalid_purpose(media_client):
     assert response.status_code == 422 and not state["uploads"]
 
 
-@pytest.mark.parametrize("role", ["NHAN_VIEN", "KHACH_HANG"])
+@pytest.mark.parametrize("role", ["ADMIN", "KHACH_HANG"])
 def test_non_admin_cannot_upload(media_client, role):
     client, state, _ = media_client; state["role"] = role
     assert client.post("/api/admin/media/images", content=image_bytes(), headers={**ORIGIN, "Content-Type": "image/png"}).status_code == 403

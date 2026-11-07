@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { adminFetch } from "@/src/lib/admin-fetch";
+import { adminFetch } from "@internal/lib/admin-fetch";
 import { accountApi, errorMessage, jsonRequest } from "./api";
 import { accountHref, roleLabels, statusLabels, type Account, type AccountStatus, type Role } from "./types";
 

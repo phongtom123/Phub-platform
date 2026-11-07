@@ -1,0 +1,11 @@
+.workspace { display: grid; gap: 20px; }
+.description { display: flex; align-items: center; gap: 12px; color: #526056; }
+.description svg { flex: 0 0 auto; color: #148900; }
+.description p { margin: 0; line-height: 1.6; }
+.status { display: inline-block; padding: 5px 10px; border-radius: 6px; background: #edf7eb; color: #267322; white-space: nowrap; }
+.action { white-space: nowrap; font-weight: 600; }
+.pagination { display: flex; align-items: center; gap: 12px; }
+.pagination span { margin-right: auto; }
+.pagination button { border: 1px solid #dce1d9; border-radius: 8px; padding: 10px 16px; background: white; cursor: pointer; }
+.pagination button:disabled { opacity: .45; cursor: default; }
+@media (max-width: 600px) { .pagination { flex-wrap: wrap; } }

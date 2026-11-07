@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { accountApi, jsonRequest } from "../accounts/api";
 import { statusLabels, type Account, type AccountStatus } from "../accounts/types";
+import { useAdminAuth } from "@internal/components/admin/auth-provider";
 
 export type CustomerLinkedAccount = { ma_tk: string; trang_thai: AccountStatus };
 
@@ -11,6 +12,7 @@ export function CustomerStatusCell({ customerId, customerName, account, disabled
   onSaved: (customerId: string, account: CustomerLinkedAccount) => void;
   onSavingChange: (saving: boolean) => void;
 }) {
+  const { portal } = useAdminAuth();
   const controller = useRef<AbortController | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -43,6 +45,7 @@ export function CustomerStatusCell({ customerId, customerName, account, disabled
 
   if (account === undefined) return <span className="live-error">Chưa tải được trạng thái tài khoản. Hãy cập nhật backend và làm mới.</span>;
   if (!account) return <span>Chưa có tài khoản</span>;
+  if (portal === "staff") return <span>{statusLabels[account.trang_thai]}</span>;
   return <div>
     <select className={`inline-data-status status-${account.trang_thai}`} aria-label={`Trạng thái tài khoản ${customerId}`}
       value={account.trang_thai} disabled={disabled || saving} aria-invalid={Boolean(error)}

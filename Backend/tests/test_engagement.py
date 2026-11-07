@@ -28,7 +28,7 @@ REVIEW={"ma_danh_gia":RID,"ma_kh":"KH1","ma_sp":"SP1","ma_donhang":"DH1","so_sao
 @pytest.fixture
 def engagement_client(monkeypatch):
     monkeypatch.setenv("FRONTEND_ORIGINS","http://localhost:3000")
-    state={"actor":ADMIN,"result":{"survey":deepcopy(SURVEY),"questions":[QUESTION],"recipient":None,"answers":[]},"error":None,"calls":[]}
+    state={"actor":User("AD1","staff","NHAN_VIEN","Staff",employee_id="NV1"),"result":{"survey":deepcopy(SURVEY),"questions":[QUESTION],"recipient":None,"answers":[]},"error":None,"calls":[]}
     def handle(request):
         assert request.method=="POST" and "/rpc/" in request.url.path
         state["calls"].append((request.url.path.split("/")[-1],json.loads(request.content)))
@@ -105,7 +105,7 @@ def test_review_mutations_use_versions_and_session_actor(engagement_client):
     client,state=engagement_client;state["actor"]=CUSTOMER;state["result"]=REVIEW
     assert client.post("/api/customer/crm/reviews",headers=ORIGIN,json={"product_id":"SP1","order_id":"DH1","stars":5,"content":"Good"}).status_code==200
     assert state["calls"][-1][1]["p_actor"]=="TK1"
-    state["actor"]=ADMIN;state["result"]={**REVIEW,"trang_thai":"HIEN_THI"}
+    state["actor"]=User("AD1","staff","NHAN_VIEN","Staff",employee_id="NV1");state["result"]={**REVIEW,"trang_thai":"HIEN_THI"}
     assert client.post(f"/api/crm/reviews/{RID}/moderate",headers=ORIGIN,json={"status":"HIEN_THI","expected_version":VERSION}).status_code==200
     assert state["calls"][-1][1]["p_version"]==VERSION
 

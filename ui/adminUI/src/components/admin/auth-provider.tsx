@@ -2,12 +2,14 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { AuthRequestError, getSession, logoutSession, type SessionUser } from "../../../../shared/auth-client";
-import { ADMIN_SESSION_EXPIRED, advanceSessionEpoch, getSessionEpoch } from "@/src/lib/admin-fetch";
+import { ADMIN_SESSION_EXPIRED, advanceSessionEpoch, getSessionEpoch } from "@internal/lib/admin-fetch";
 import { AdminDataPreloader } from "./data-preloader";
 import { enterStaffPortal } from "../../../../shared/staff-portal";
-import { customerPortalUrl } from "@/src/lib/customer-portal-url";
+import { customerPortalUrl } from "@internal/lib/customer-portal-url";
+import { portalRole, type InternalPortal } from "../../../../shared/internal-access";
 
 type AuthState = {
+  portal: InternalPortal;
   user: SessionUser | null | undefined;
   checking: boolean;
   error: string;
@@ -17,7 +19,8 @@ type AuthState = {
 };
 const AuthContext = createContext<AuthState | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children, portal = "admin" }: { children: ReactNode; portal?: InternalPortal }) {
+  const expectedRole = portalRole(portal);
   // undefined: not yet verified; null: signed out. Never persist a trusted role in localStorage.
   const [user, setUser] = useState<SessionUser | null | undefined>(undefined);
   const [checking, setChecking] = useState(true);
@@ -33,27 +36,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const redirectStaff = useCallback(async (nextUser: SessionUser, signal?: AbortSignal) => {
+    if (nextUser.role === expectedRole) return;
     if (nextUser.role === "NHAN_VIEN") {
       await enterStaffPortal(process.env.NEXT_PUBLIC_WAREHOUSE_URL ?? "http://localhost:3002", signal);
+    } else if (nextUser.role === "ADMIN") {
+      await enterStaffPortal(process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3000", signal);
     } else if (nextUser.role === "KHACH_HANG") {
       window.location.replace(customerPortalUrl(
         process.env.NEXT_PUBLIC_CUSTOMER_URL ?? "http://localhost:3001", window.location.href,
       ));
     }
-  }, []);
+  }, [expectedRole]);
 
   // Only called with the validated response from loginSession, never browser storage.
   const acceptLogin = useCallback(async (nextUser: SessionUser) => {
     advanceSessionEpoch();
     controller.current?.abort(); controller.current = null; flight.current = null;
-    userRef.current = nextUser; setUser(nextUser); setError(""); setChecking(nextUser.role !== "ADMIN");
+    userRef.current = nextUser; setUser(nextUser); setError(""); setChecking(nextUser.role !== expectedRole);
     try {
       await redirectStaff(nextUser);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Không chuyển được phiên đăng nhập.");
       setChecking(false);
     }
-  }, [redirectStaff]);
+  }, [redirectStaff, expectedRole]);
 
   const checkSession = useCallback((): Promise<void> => {
     if (flight.current) return flight.current;
@@ -95,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void checkSession();
     // No timer/focus/navigation checks: protected APIs already enforce the session.
     // Refresh the header only after an explicit edit of the signed-in account.
-    const profileUpdated = () => { if (userRef.current?.role === "ADMIN") void checkSession(); };
+    const profileUpdated = () => { if (userRef.current?.role === expectedRole) void checkSession(); };
     const expired = (event: Event) => {
       if ((event as CustomEvent<number>).detail === getSessionEpoch()) invalidate();
     };
@@ -106,15 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("phub-account-updated", profileUpdated);
       window.removeEventListener(ADMIN_SESSION_EXPIRED, expired);
     };
-  }, [checkSession, invalidate]);
+  }, [checkSession, invalidate, expectedRole]);
 
   // Gate outside the page Suspense boundary. A fast /me must not make a still-
   // dehydrated page render a shell against server HTML containing a session gate.
-  const needsVerification = user === undefined || (user !== null && user.role !== "ADMIN");
-  return <AuthContext.Provider value={{ user, checking, error, checkSession, acceptLogin, logout }}>
-    {user?.role === "ADMIN" && <AdminDataPreloader identity={JSON.stringify([user.account_id, user.role, user.warehouse_id])} />}
+  const needsVerification = user === undefined || (user !== null && user.role !== expectedRole);
+  return <AuthContext.Provider value={{ portal, user, checking, error, checkSession, acceptLogin, logout }}>
+    {portal === "staff" && user?.role === expectedRole && <AdminDataPreloader identity={JSON.stringify([user.account_id, user.role, user.warehouse_id])} />}
     {needsVerification ? <main className="session-gate" aria-busy={checking}>
-      <h1>PHUB Admin</h1>
+      <h1>{portal === "admin" ? "PHUB Admin" : "PHUB Nhân viên"}</h1>
       {checking ? <p role="status">Đang kiểm tra phiên đăng nhập…</p> : <>
         <p role="alert">{error}</p>
         <button type="button" className="btn primary" onClick={() => { void checkSession(); }}>Thử kết nối lại</button>

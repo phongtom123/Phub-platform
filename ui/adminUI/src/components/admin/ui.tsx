@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { ChevronDown, Eye, MoreHorizontal, Pencil, Search } from "lucide-react";
-import type { ColumnDefinition, DataRow } from "@/src/types/admin";
+import type { ColumnDefinition, DataRow } from "@internal/types/admin";
 
-export function Logo({ onClick }: { onClick?: () => void }) {
+export function Logo({ onClick, label = "admin" }: { onClick?: () => void; label?: string }) {
   const content = (
     <>
       <b>P</b>
       <strong>PHUB</strong>
-      <em>admin</em>
+      <em>{label}</em>
     </>
   );
   return onClick ? (

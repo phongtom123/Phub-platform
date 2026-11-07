@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ImageIcon, X } from "lucide-react";
-import { logLocalImageFailure } from "@/src/lib/local-diagnostics";
+import { logLocalImageFailure } from "@internal/lib/local-diagnostics";
 
 export function ProductImagePreview({ url, name, variant = "product" }: { url: string; name: string; variant?: "product" | "banner" }) {
   const heading = variant === "banner" ? "Banner khuyến mãi" : "Hình ảnh sản phẩm";

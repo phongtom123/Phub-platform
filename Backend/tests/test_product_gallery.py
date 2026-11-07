@@ -21,7 +21,7 @@ ID = "00000000-0000-0000-0000-000000000001"
 @pytest.fixture
 def gallery_client(monkeypatch):
     monkeypatch.setenv("FRONTEND_ORIGINS", "http://localhost:3000")
-    state = {"role": "ADMIN", "calls": [], "rows": [{"ma_sp": "SP1", "duong_dan_anh": "/images/old.png", "images": [
+    state = {"role": "NHAN_VIEN", "calls": [], "rows": [{"ma_sp": "SP1", "duong_dan_anh": "/images/old.png", "images": [
         {"ma_media": ID, "url": "/images/old.png", "alt_text": None, "thu_tu": 0, "la_anh_chinh": True},
     ]}], "error": None}
 
@@ -37,7 +37,7 @@ def gallery_client(monkeypatch):
     def actor():
         if state["role"] is None:
             raise HTTPException(401, "Login required")
-        return User("A", "admin", state["role"], "Admin")
+        return User("A", "staff", state["role"], "Staff", employee_id="NV1" if state["role"] == "NHAN_VIEN" else None)
 
     app.dependency_overrides[current_user] = actor
     app.dependency_overrides[get_service] = lambda: service
@@ -82,7 +82,7 @@ def test_gallery_preserves_encoded_product_ids(gallery_client, product_id):
     assert state["calls"][-1][0] == product_id
 
 
-@pytest.mark.parametrize("role,status", [(None, 401), ("NHAN_VIEN", 403), ("KHACH_HANG", 403)])
+@pytest.mark.parametrize("role,status", [(None, 401), ("ADMIN", 403), ("KHACH_HANG", 403)])
 def test_gallery_is_admin_only(gallery_client, role, status):
     client, state = gallery_client; state["role"] = role
     assert client.get("/api/admin/media/products/SP1/images").status_code == status

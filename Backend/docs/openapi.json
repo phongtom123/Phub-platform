@@ -3013,6 +3013,7 @@
         "additionalProperties": false,
         "example": {
           "dia_chi_chi_tiet": null,
+          "email_nguoi_mua": null,
           "ghi_chu": null,
           "kenh_ban": "ONLINE",
           "ma_donhang": "DH001",
@@ -3039,6 +3040,17 @@
               }
             ],
             "description": "dia_chi_chi_tiet"
+          },
+          "email_nguoi_mua": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "email_nguoi_mua"
           },
           "ghi_chu": {
             "anyOf": [
@@ -3182,6 +3194,7 @@
           "thoi_gian_hoan_thanh",
           "ten_nguoi_nhan",
           "sdt_nguoi_nhan",
+          "email_nguoi_mua",
           "dia_chi_chi_tiet",
           "tinh_thanh",
           "xa_phuong",
@@ -4783,9 +4796,9 @@
           "cccd": null,
           "email": "example@example.com",
           "ho_ten": "Nhân viên minh họa",
-          "loai_nhan_vien": "ADMIN",
+          "loai_nhan_vien": "NHAN_VIEN",
           "luong": "15000000.00",
-          "ma_kho": null,
+          "ma_kho": 1,
           "ma_nhan_vien": "NV001",
           "sdt": "0900000000",
           "trang_thai": 1
@@ -4831,7 +4844,6 @@
           "loai_nhan_vien": {
             "description": "loai_nhan_vien",
             "enum": [
-              "ADMIN",
               "NHAN_VIEN"
             ],
             "maxLength": 2000,
@@ -4949,9 +4961,9 @@
           "cccd": null,
           "email": "example@example.com",
           "ho_ten": "Nhân viên minh họa",
-          "loai_nhan_vien": "ADMIN",
+          "loai_nhan_vien": "NHAN_VIEN",
           "luong": "15000000.00",
-          "ma_kho": null,
+          "ma_kho": 1,
           "ma_nhan_vien": "NV001",
           "sdt": "0900000000",
           "trang_thai": 1
@@ -5032,13 +5044,7 @@
         },
         "required": [
           "ma_nhan_vien",
-          "ma_kho",
-          "loai_nhan_vien",
           "ho_ten",
-          "cccd",
-          "email",
-          "sdt",
-          "luong",
           "trang_thai"
         ],
         "title": "NHAN_VIENRead",
@@ -5105,7 +5111,6 @@
           "loai_nhan_vien": {
             "description": "loai_nhan_vien",
             "enum": [
-              "ADMIN",
               "NHAN_VIEN"
             ],
             "maxLength": 2000,
@@ -6669,6 +6674,12 @@
       "PosOrder": {
         "additionalProperties": false,
         "properties": {
+          "buyer_email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Buyer Email",
+            "type": "string"
+          },
           "customer_id": {
             "anyOf": [
               {
@@ -6736,6 +6747,7 @@
         },
         "required": [
           "recipient",
+          "buyer_email",
           "lines"
         ],
         "title": "PosOrder",
@@ -11327,7 +11339,7 @@
     }
   },
   "info": {
-    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, gọi `POST /api/auth/token` với username/email và password thật.\n3. Sao chép `access_token`, bấm **Authorize → BearerAuth** và dán riêng token (không thêm `Bearer`).\n4. Thử `GET /api/auth/me`, sau đó các API theo role. Swagger tự gửi `Authorization: Bearer <token>`.\n\nUI vẫn dùng `POST /api/auth/login` để lưu JWT trong cookie HttpOnly `phub_session`; login không trả token JSON.\nCookie có sẵn trên cùng host được trình duyệt gửi tự động; dùng cùng hostname, không trộn localhost với 127.0.0.1.\n**Không nhập Supabase key vào Authorize.** Ô SessionCookie không tự đặt được cookie HttpOnly.\nBearer được ưu tiên khi có Authorization; token sai không chuyển sang cookie. JWT có hạn 8 giờ.\nLogout chỉ xóa cookie; khi thử Bearer hãy xóa token ở Authorize. Chưa có thu hồi từng token phía server.\nCác API ghi đang yêu cầu Origin vẫn kiểm tra Origin kể cả khi dùng Bearer. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN xem tất cả bảng; NHAN_VIEN giới hạn theo kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET qua API bảng. ADMIN thực hiện nghiệp vụ\nqua `/api/admin/operations`: đơn tại quầy, nhập/xuất/nhận kho, hóa đơn, ghi nhận thu/hoàn\nvà kiểm kê bằng transaction. Cần migration admin_operations; chưa tự deploy database.\nGhi nhận thu/hoàn thủ công không thay thế tích hợp cổng thanh toán hoặc webhook.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
+    "description": "\n## Nơi quản lý đặc tả PHUB API\n\nUI Next.js gọi gateway `/api/backend/*`, gateway chuyển đến API Python trên trang này.\nCatalog có prefix `/api/catalog`, các bảng nội bộ có prefix `/api/data`, tài khoản admin ở `/api/admin`.\nTất cả ví dụ là dữ liệu giả minh họa, **không phải tài khoản có sẵn hoặc seed**.\n\n### Đăng nhập và thử API\n\n1. Cấu hình `Backend/.env` và database theo `Backend/README.md`.\n2. Mở **http://localhost:8000/docs**, gọi `POST /api/auth/token` với username/email và password thật.\n3. Sao chép `access_token`, bấm **Authorize → BearerAuth** và dán riêng token (không thêm `Bearer`).\n4. Thử `GET /api/auth/me`, sau đó các API theo role. Swagger tự gửi `Authorization: Bearer <token>`.\n\nUI vẫn dùng `POST /api/auth/login` để lưu JWT trong cookie HttpOnly `phub_session`; login không trả token JSON.\nCookie có sẵn trên cùng host được trình duyệt gửi tự động; dùng cùng hostname, không trộn localhost với 127.0.0.1.\n**Không nhập Supabase key vào Authorize.** Ô SessionCookie không tự đặt được cookie HttpOnly.\nBearer được ưu tiên khi có Authorization; token sai không chuyển sang cookie. JWT có hạn 8 giờ.\nLogout chỉ xóa cookie; khi thử Bearer hãy xóa token ở Authorize. Chưa có thu hồi từng token phía server.\nCác API ghi đang yêu cầu Origin vẫn kiểm tra Origin kể cả khi dùng Bearer. Origin của trang docs phải có trong `FRONTEND_ORIGINS`.\nMẫu cấu hình local đã có localhost:8000 và 127.0.0.1:8000; khi triển khai phải cấu hình origin thực tế.\n\n### Quy ước dữ liệu\n\n- Tiền ở response là **chuỗi decimal**, ví dụ `2500000.00`; không tính tiền bằng float JavaScript.\n- Chi tiết bảng vẫn trả `{data: [...], total, page, page_size}`; không tìm thấy GET trả data rỗng.\n- `key` là **chuỗi JSON của mảng khóa chính**, theo đúng thứ tự và kiểu ghi ở từng endpoint.\n- PATCH chỉ gửi trường thay đổi. Không được sửa PK/SKU/người tạo; null chỉ dùng cho trường nullable.\n- ADMIN quản lý nhân viên, tài khoản và xem thống kê; NHAN_VIEN xử lý nghiệp vụ trên tất cả kho; KHACH_HANG chỉ xem dữ liệu của mình.\n- Lỗi auth/table có `{detail: ...}`; catalog giữ contract `{error: {code, message, details}}`.\n\n### Phạm vi hiện tại\n\nĐã viết API đọc 19 bảng và tạo/sửa 8 bảng dữ liệu nền; tài khoản có 11 thao tác riêng ở `/api/admin`.\n**Chưa xác nhận kết nối live Supabase.** Không có DELETE.\nCác bảng chứng từ/tồn kho/tài chính chỉ có GET qua API bảng. NHAN_VIEN thực hiện nghiệp vụ\nqua `/api/admin/operations`: đơn tại quầy, nhập/xuất/nhận kho, hóa đơn, ghi nhận thu/hoàn\nvà kiểm kê bằng transaction. Cần migration admin_operations; chưa tự deploy database.\nGhi nhận thu/hoàn thủ công không thay thế tích hợp cổng thanh toán hoặc webhook.\nTài khoản admin đã có tạo/sửa/khóa/ẩn/đổi quyền/cấp lại mật khẩu và đổi mật khẩu của mình.\nĐăng ký khách hàng tự phục vụ đã có; quên mật khẩu qua email, xác minh email và refresh token chưa có.\nCác module mua hàng có đặc tả riêng; không coi CRUD bảng là checkout/ghi chứng từ có transaction.\n",
     "title": "Phub Platform API",
     "version": "0.3.0"
   },
@@ -13125,13 +13137,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Tải ảnh sản phẩm hoặc banner khuyến mãi lên Storage (ADMIN)",
+        "summary": "Tải ảnh sản phẩm hoặc banner khuyến mãi lên Storage (NHAN_VIEN)",
         "tags": [
           "Admin · Hình ảnh"
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ]
       }
     },
@@ -13231,13 +13243,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Đọc thông tin ảnh media (ADMIN)",
+        "summary": "Đọc thông tin ảnh media (NHAN_VIEN)",
         "tags": [
           "Admin · Hình ảnh"
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ]
       }
     },
@@ -13338,13 +13350,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Xem toàn bộ ảnh sản phẩm (ADMIN)",
+        "summary": "Xem toàn bộ ảnh sản phẩm (NHAN_VIEN)",
         "tags": [
           "Admin · Hình ảnh"
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ]
       },
       "put": {
@@ -13477,13 +13489,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Lưu gallery; ảnh đầu tiên là ảnh chính (ADMIN)",
+        "summary": "Lưu gallery; ảnh đầu tiên là ảnh chính (NHAN_VIEN)",
         "tags": [
           "Admin · Hình ảnh"
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ]
       }
     },
@@ -13623,6 +13635,7 @@
     },
     "/api/admin/operations/read/{kind}": {
       "get": {
+        "description": "ADMIN chỉ dùng kind=summary; NHAN_VIEN dùng search, notifications, settings, history và messages.",
         "operationId": "read_api_admin_operations_read__kind__get",
         "parameters": [
           {
@@ -13767,7 +13780,8 @@
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "ADMIN",
+          "NHAN_VIEN"
         ]
       }
     },
@@ -13860,7 +13874,7 @@
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ]
       }
     },
@@ -13993,7 +14007,7 @@
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ]
       }
     },
@@ -14145,7 +14159,7 @@
         ],
         "x-implementation-status": "implemented-live-unverified",
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ]
       }
     },
@@ -16613,6 +16627,9 @@
         "summary": "Hồ sơ khách hàng và tài khoản liên kết",
         "tags": [
           "Admin · CRM"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       },
       "patch": {
@@ -16750,6 +16767,9 @@
         "summary": "Lưu hồ sơ khách; không sửa trạng thái tài khoản/lưu trữ",
         "tags": [
           "Admin · CRM"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -16889,6 +16909,9 @@
         "summary": "Xóa mềm hoặc khôi phục hồ sơ; không xóa chứng từ, không tự mở lại tài khoản",
         "tags": [
           "Admin · CRM"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -17015,6 +17038,9 @@
         "summary": "Lịch sử đơn hàng được lọc theo đúng khách hàng",
         "tags": [
           "Admin · CRM"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -17187,6 +17213,9 @@
         "summary": "Danh sách ticket hỗ trợ: tìm kiếm, lọc và phân trang",
         "tags": [
           "Admin · Hỗ trợ khách hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -17302,6 +17331,9 @@
         "summary": "Xem nội dung ticket và kết quả xử lý",
         "tags": [
           "Admin · Hỗ trợ khách hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       },
       "patch": {
@@ -17438,6 +17470,9 @@
         "summary": "Nhận xử lý, cập nhật trạng thái/ưu tiên và phản hồi gửi khách",
         "tags": [
           "Admin · Hỗ trợ khách hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -17554,6 +17589,9 @@
         "summary": "Báo cáo độ tuổi, đánh giá và khảo sát sở thích (ADMIN)",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "ADMIN"
         ]
       }
     },
@@ -17704,6 +17742,9 @@
         "summary": "Danh sách đánh giá để quản trị kiểm duyệt",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -17855,6 +17896,9 @@
         "summary": "Ẩn/hiển thị lại đúng phiên bản nội dung đánh giá",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -17982,9 +18026,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Danh sách khảo sát (ADMIN)",
+        "summary": "Danh sách khảo sát cho nhân viên vận hành và admin xem kết quả",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "ADMIN",
+          "NHAN_VIEN"
         ]
       },
       "post": {
@@ -18122,6 +18170,9 @@
         "summary": "Tạo khảo sát nháp, thử lại cùng request_id để tránh trùng",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -18247,9 +18298,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Xem khảo sát và cấu trúc câu hỏi (ADMIN)",
+        "summary": "Xem khảo sát và cấu trúc câu hỏi (ADMIN/NHAN_VIEN)",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "ADMIN",
+          "NHAN_VIEN"
         ]
       },
       "put": {
@@ -18399,6 +18454,9 @@
         "summary": "Sửa bản nháp với phiên bản đối chiếu",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -18550,6 +18608,9 @@
         "summary": "Đóng khảo sát, giữ nguyên kết quả",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -18690,6 +18751,9 @@
         "summary": "Xem trước đối tượng hoặc danh sách đã gửi, có phân trang",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -18841,6 +18905,9 @@
         "summary": "Chốt cấu trúc và gửi cho khách đủ điều kiện theo tuổi",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -18981,6 +19048,9 @@
         "summary": "Kết quả từng câu; phân trang nội dung văn bản/Khác",
         "tags": [
           "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "ADMIN"
         ]
       }
     },
@@ -22573,7 +22643,7 @@
     },
     "/api/data/categories": {
       "get": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
+        "description": "Bảng `LOAI_SP`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
         "operationId": "get_categories",
         "parameters": [
           {
@@ -22766,13 +22836,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "LOAI_SP"
       },
       "patch": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
+        "description": "Bảng `LOAI_SP`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
         "operationId": "patch_categories",
         "parameters": [
           {
@@ -22956,12 +23025,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "LOAI_SP"
       },
       "post": {
-        "description": "Bảng `LOAI_SP`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
+        "description": "Bảng `LOAI_SP`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp`. Ví dụ query `key=[\"CPU\"]` (URL-encode khi gửi).\n\nDanh mục cha. Catalog trả thêm children là các danh mục con đang hoạt động.",
         "operationId": "post_categories",
         "parameters": [
           {
@@ -23117,14 +23186,14 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "LOAI_SP"
       }
     },
     "/api/data/customers": {
       "get": {
-        "description": "Bảng `KHACH_HANG`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_kh`. Ví dụ query `key=[\"KH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHACH_HANG`. Role: **NHAN_VIEN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_kh`. Ví dụ query `key=[\"KH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_customers",
         "parameters": [
           {
@@ -23324,13 +23393,13 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN",
+          "NHAN_VIEN",
           "KHACH_HANG"
         ],
         "x-table": "KHACH_HANG"
       },
       "patch": {
-        "description": "Bảng `KHACH_HANG`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kh`. Ví dụ query `key=[\"KH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHACH_HANG`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kh`. Ví dụ query `key=[\"KH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "patch_customers",
         "parameters": [
           {
@@ -23521,12 +23590,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "KHACH_HANG"
       },
       "post": {
-        "description": "Bảng `KHACH_HANG`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kh`. Ví dụ query `key=[\"KH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHACH_HANG`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kh`. Ví dụ query `key=[\"KH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "post_customers",
         "parameters": [
           {
@@ -23693,14 +23762,14 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "KHACH_HANG"
       }
     },
     "/api/data/employees": {
       "get": {
-        "description": "Bảng `NHAN_VIEN`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_nhan_vien`. Ví dụ query `key=[\"NV001\"]` (URL-encode khi gửi).\n\nRole ADMIN yêu cầu ma_kho=null; NHAN_VIEN yêu cầu ma_kho của một kho tồn tại.",
+        "description": "Bảng `NHAN_VIEN`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_nhan_vien`. Ví dụ query `key=[\"NV001\"]` (URL-encode khi gửi).\n\nADMIN quản lý hồ sơ nhân viên. NHAN_VIEN chỉ tra cứu mã, họ tên và trạng thái để hiển thị/phân công trên chứng từ; không xem lương, CCCD hoặc sửa hồ sơ.",
         "operationId": "get_employees",
         "parameters": [
           {
@@ -23792,9 +23861,9 @@
                       "cccd": null,
                       "email": "example@example.com",
                       "ho_ten": "Nhân viên minh họa",
-                      "loai_nhan_vien": "ADMIN",
+                      "loai_nhan_vien": "NHAN_VIEN",
                       "luong": "15000000.00",
-                      "ma_kho": null,
+                      "ma_kho": 1,
                       "ma_nhan_vien": "NV001",
                       "sdt": "0900000000",
                       "trang_thai": 1
@@ -23899,12 +23968,13 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "ADMIN",
+          "NHAN_VIEN"
         ],
         "x-table": "NHAN_VIEN"
       },
       "patch": {
-        "description": "Bảng `NHAN_VIEN`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_nhan_vien`. Ví dụ query `key=[\"NV001\"]` (URL-encode khi gửi).\n\nRole ADMIN yêu cầu ma_kho=null; NHAN_VIEN yêu cầu ma_kho của một kho tồn tại.",
+        "description": "Bảng `NHAN_VIEN`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_nhan_vien`. Ví dụ query `key=[\"NV001\"]` (URL-encode khi gửi).\n\nADMIN quản lý hồ sơ nhân viên. NHAN_VIEN chỉ tra cứu mã, họ tên và trạng thái để hiển thị/phân công trên chứng từ; không xem lương, CCCD hoặc sửa hồ sơ.",
         "operationId": "patch_employees",
         "parameters": [
           {
@@ -23964,9 +24034,9 @@
                       "cccd": null,
                       "email": "example@example.com",
                       "ho_ten": "Nhân viên minh họa",
-                      "loai_nhan_vien": "ADMIN",
+                      "loai_nhan_vien": "NHAN_VIEN",
                       "luong": "15000000.00",
-                      "ma_kho": null,
+                      "ma_kho": 1,
                       "ma_nhan_vien": "NV001",
                       "sdt": "0900000000",
                       "trang_thai": 1
@@ -24099,7 +24169,7 @@
         "x-table": "NHAN_VIEN"
       },
       "post": {
-        "description": "Bảng `NHAN_VIEN`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_nhan_vien`. Ví dụ query `key=[\"NV001\"]` (URL-encode khi gửi).\n\nRole ADMIN yêu cầu ma_kho=null; NHAN_VIEN yêu cầu ma_kho của một kho tồn tại.",
+        "description": "Bảng `NHAN_VIEN`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_nhan_vien`. Ví dụ query `key=[\"NV001\"]` (URL-encode khi gửi).\n\nADMIN quản lý hồ sơ nhân viên. NHAN_VIEN chỉ tra cứu mã, họ tên và trạng thái để hiển thị/phân công trên chứng từ; không xem lương, CCCD hoặc sửa hồ sơ.",
         "operationId": "post_employees",
         "parameters": [
           {
@@ -24124,9 +24194,9 @@
                     "cccd": null,
                     "email": "example@example.com",
                     "ho_ten": "Nhân viên minh họa",
-                    "loai_nhan_vien": "ADMIN",
+                    "loai_nhan_vien": "NHAN_VIEN",
                     "luong": "15000000.00",
-                    "ma_kho": null,
+                    "ma_kho": 1,
                     "ma_nhan_vien": "NV001",
                     "sdt": "0900000000",
                     "trang_thai": 1
@@ -24150,9 +24220,9 @@
                       "cccd": null,
                       "email": "example@example.com",
                       "ho_ten": "Nhân viên minh họa",
-                      "loai_nhan_vien": "ADMIN",
+                      "loai_nhan_vien": "NHAN_VIEN",
                       "luong": "15000000.00",
-                      "ma_kho": null,
+                      "ma_kho": 1,
                       "ma_nhan_vien": "NV001",
                       "sdt": "0900000000",
                       "trang_thai": 1
@@ -24274,7 +24344,7 @@
     },
     "/api/data/inventory": {
       "get": {
-        "description": "Bảng `TON_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_kho, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `TON_KHO`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_kho, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_inventory",
         "parameters": [
           {
@@ -24469,7 +24539,6 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "TON_KHO"
@@ -24477,7 +24546,7 @@
     },
     "/api/data/invoices": {
       "get": {
-        "description": "Bảng `HOA_DON`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_hoadon`. Ví dụ query `key=[\"HD001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `HOA_DON`. Role: **NHAN_VIEN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_hoadon`. Ví dụ query `key=[\"HD001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_invoices",
         "parameters": [
           {
@@ -24701,7 +24770,7 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
+          "NHAN_VIEN",
           "KHACH_HANG"
         ],
         "x-table": "HOA_DON"
@@ -24709,7 +24778,7 @@
     },
     "/api/data/order-lines": {
       "get": {
-        "description": "Bảng `CT_DON_HANG`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_ct_donhang`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `CT_DON_HANG`. Role: **NHAN_VIEN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_ct_donhang`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_order_lines",
         "parameters": [
           {
@@ -24931,7 +25000,7 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
+          "NHAN_VIEN",
           "KHACH_HANG"
         ],
         "x-table": "CT_DON_HANG"
@@ -24939,7 +25008,7 @@
     },
     "/api/data/orders": {
       "get": {
-        "description": "Bảng `DON_HANG`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_donhang`. Ví dụ query `key=[\"DH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `DON_HANG`. Role: **NHAN_VIEN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_donhang`. Ví dụ query `key=[\"DH001\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_orders",
         "parameters": [
           {
@@ -25048,6 +25117,7 @@
                   "data": [
                     {
                       "dia_chi_chi_tiet": null,
+                      "email_nguoi_mua": null,
                       "ghi_chu": null,
                       "kenh_ban": "ONLINE",
                       "ma_donhang": "DH001",
@@ -25163,7 +25233,7 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
+          "NHAN_VIEN",
           "KHACH_HANG"
         ],
         "x-table": "DON_HANG"
@@ -25171,7 +25241,7 @@
     },
     "/api/data/payments": {
       "get": {
-        "description": "Bảng `THANH_TOAN`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_thanh_toan`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `THANH_TOAN`. Role: **NHAN_VIEN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_thanh_toan`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_payments",
         "parameters": [
           {
@@ -25390,7 +25460,7 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
+          "NHAN_VIEN",
           "KHACH_HANG"
         ],
         "x-table": "THANH_TOAN"
@@ -25398,7 +25468,7 @@
     },
     "/api/data/products": {
       "get": {
-        "description": "Bảng `SAN_PHAM`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_sp`. Ví dụ query `key=[\"SP001\"]` (URL-encode khi gửi).\n\nẢnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
+        "description": "Bảng `SAN_PHAM`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_sp`. Ví dụ query `key=[\"SP001\"]` (URL-encode khi gửi).\n\nẢnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
         "operationId": "get_products",
         "parameters": [
           {
@@ -25601,13 +25671,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "SAN_PHAM"
       },
       "patch": {
-        "description": "Bảng `SAN_PHAM`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_sp`. Ví dụ query `key=[\"SP001\"]` (URL-encode khi gửi).\n\nẢnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
+        "description": "Bảng `SAN_PHAM`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_sp`. Ví dụ query `key=[\"SP001\"]` (URL-encode khi gửi).\n\nẢnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
         "operationId": "patch_products",
         "parameters": [
           {
@@ -25801,12 +25870,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "SAN_PHAM"
       },
       "post": {
-        "description": "Bảng `SAN_PHAM`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_sp`. Ví dụ query `key=[\"SP001\"]` (URL-encode khi gửi).\n\nẢnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
+        "description": "Bảng `SAN_PHAM`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_sp`. Ví dụ query `key=[\"SP001\"]` (URL-encode khi gửi).\n\nẢnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
         "operationId": "post_products",
         "parameters": [
           {
@@ -25982,14 +26051,14 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "SAN_PHAM"
       }
     },
     "/api/data/promotions": {
       "get": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "get_promotions",
         "parameters": [
           {
@@ -26188,12 +26257,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "CHUONG_TRINH_KHUYEN_MAI"
       },
       "patch": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "patch_promotions",
         "parameters": [
           {
@@ -26383,12 +26452,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "CHUONG_TRINH_KHUYEN_MAI"
       },
       "post": {
-        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
+        "description": "Bảng `CHUONG_TRINH_KHUYEN_MAI`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ctkm`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nNgày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
         "operationId": "post_promotions",
         "parameters": [
           {
@@ -26553,14 +26622,14 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "CHUONG_TRINH_KHUYEN_MAI"
       }
     },
     "/api/data/receipt-lines": {
       "get": {
-        "description": "Bảng `CT_PHIEU_NHAP`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_nhap, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `CT_PHIEU_NHAP`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_nhap, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_receipt_lines",
         "parameters": [
           {
@@ -26756,7 +26825,6 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "CT_PHIEU_NHAP"
@@ -26764,7 +26832,7 @@
     },
     "/api/data/receipts": {
       "get": {
-        "description": "Bảng `PHIEU_NHAP`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/receipts`; không thay đổi trạng thái/tồn kho. \n\nKhóa chính: `ma_phieu_nhap`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `PHIEU_NHAP`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. Chỉnh sửa phiếu nháp dùng `PATCH /api/admin/warehouse-drafts/receipts`; không thay đổi trạng thái/tồn kho. \n\nKhóa chính: `ma_phieu_nhap`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_receipts",
         "parameters": [
           {
@@ -26966,7 +27034,6 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "PHIEU_NHAP"
@@ -26974,7 +27041,7 @@
     },
     "/api/data/resources": {
       "get": {
-        "description": "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền ghi chung của role. draft_update_path và draft_update_fields chỉ cấp cho ADMIN sửa thông tin phiếu nháp qua API riêng. create_schema là JSON Schema cho body tạo; không có mật khẩu.",
+        "description": "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền ghi chung của role. draft_update_path và draft_update_fields chỉ cấp cho NHAN_VIEN sửa thông tin phiếu nháp qua API riêng. create_schema là JSON Schema cho body tạo; không có mật khẩu.",
         "operationId": "resources_api_data_resources_get",
         "responses": {
           "200": {
@@ -27069,7 +27136,7 @@
     },
     "/api/data/subcategories": {
       "get": {
-        "description": "Bảng `LOAI_SP_CON`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp_con`. Ví dụ query `key=[\"CPU_DESKTOP\"]` (URL-encode khi gửi).\n\nDanh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
+        "description": "Bảng `LOAI_SP_CON`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_loai_sp_con`. Ví dụ query `key=[\"CPU_DESKTOP\"]` (URL-encode khi gửi).\n\nDanh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
         "operationId": "get_subcategories",
         "parameters": [
           {
@@ -27263,13 +27330,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "LOAI_SP_CON"
       },
       "patch": {
-        "description": "Bảng `LOAI_SP_CON`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp_con`. Ví dụ query `key=[\"CPU_DESKTOP\"]` (URL-encode khi gửi).\n\nDanh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
+        "description": "Bảng `LOAI_SP_CON`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp_con`. Ví dụ query `key=[\"CPU_DESKTOP\"]` (URL-encode khi gửi).\n\nDanh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
         "operationId": "patch_subcategories",
         "parameters": [
           {
@@ -27454,12 +27520,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "LOAI_SP_CON"
       },
       "post": {
-        "description": "Bảng `LOAI_SP_CON`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp_con`. Ví dụ query `key=[\"CPU_DESKTOP\"]` (URL-encode khi gửi).\n\nDanh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
+        "description": "Bảng `LOAI_SP_CON`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_loai_sp_con`. Ví dụ query `key=[\"CPU_DESKTOP\"]` (URL-encode khi gửi).\n\nDanh mục con. ma_loai_sp xác định danh mục cha; tên danh mục con là duy nhất trong từng danh mục cha.",
         "operationId": "post_subcategories",
         "parameters": [
           {
@@ -27617,14 +27683,14 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "LOAI_SP_CON"
       }
     },
     "/api/data/suppliers": {
       "get": {
-        "description": "Bảng `NHA_CUNG_CAP`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ncc`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `NHA_CUNG_CAP`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_ncc`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_suppliers",
         "parameters": [
           {
@@ -27820,13 +27886,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "NHA_CUNG_CAP"
       },
       "patch": {
-        "description": "Bảng `NHA_CUNG_CAP`. Role: **ADMIN, NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ncc`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `NHA_CUNG_CAP`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ncc`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "patch_suppliers",
         "parameters": [
           {
@@ -28013,13 +28078,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "NHA_CUNG_CAP"
       },
       "post": {
-        "description": "Bảng `NHA_CUNG_CAP`. Role: **ADMIN, NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ncc`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `NHA_CUNG_CAP`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_ncc`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "post_suppliers",
         "parameters": [
           {
@@ -28180,7 +28244,6 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "NHA_CUNG_CAP"
@@ -28188,7 +28251,7 @@
     },
     "/api/data/transfer-lines": {
       "get": {
-        "description": "Bảng `CT_CHUYEN_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `CT_CHUYEN_KHO`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen, sku`. Ví dụ query `key=[1,\"INTEL-I5-14400F\"]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_transfer_lines",
         "parameters": [
           {
@@ -28382,7 +28445,6 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "CT_CHUYEN_KHO"
@@ -28390,7 +28452,7 @@
     },
     "/api/data/transfers": {
       "get": {
-        "description": "Bảng `PHIEU_CHUYEN_KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `PHIEU_CHUYEN_KHO`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_phieu_chuyen`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_transfers",
         "parameters": [
           {
@@ -28591,7 +28653,6 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
           "NHAN_VIEN"
         ],
         "x-table": "PHIEU_CHUYEN_KHO"
@@ -28599,7 +28660,7 @@
     },
     "/api/data/voucher-uses": {
       "get": {
-        "description": "Bảng `SU_DUNG_VOUCHER`. Role: **ADMIN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_su_dung`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `SU_DUNG_VOUCHER`. Role: **NHAN_VIEN, KHACH_HANG**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. KHACH_HANG chỉ xem bản ghi của mình (cả khi truyền key của người khác). GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. **Chỉ đọc; không có API ghi nghiệp vụ cho bảng này.** \n\nKhóa chính: `ma_su_dung`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_voucher_uses",
         "parameters": [
           {
@@ -28815,7 +28876,7 @@
         ],
         "x-read-only": true,
         "x-roles": [
-          "ADMIN",
+          "NHAN_VIEN",
           "KHACH_HANG"
         ],
         "x-table": "SU_DUNG_VOUCHER"
@@ -28823,7 +28884,7 @@
     },
     "/api/data/vouchers": {
       "get": {
-        "description": "Bảng `VOUCHER`. Role: **ADMIN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
+        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
         "operationId": "get_vouchers",
         "parameters": [
           {
@@ -29024,12 +29085,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "VOUCHER"
       },
       "patch": {
-        "description": "Bảng `VOUCHER`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
+        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
         "operationId": "patch_vouchers",
         "parameters": [
           {
@@ -29221,12 +29282,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "VOUCHER"
       },
       "post": {
-        "description": "Bảng `VOUCHER`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
+        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
         "operationId": "post_vouchers",
         "parameters": [
           {
@@ -29396,14 +29457,14 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "VOUCHER"
       }
     },
     "/api/data/warehouses": {
       "get": {
-        "description": "Bảng `KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN chỉ xem kho/phiếu liên quan kho được gán; loại/sản phẩm/nhà cung cấp xem toàn bộ. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHO`. Role: **ADMIN, NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. NHAN_VIEN đọc dữ liệu trên tất cả kho. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "get_warehouses",
         "parameters": [
           {
@@ -29603,7 +29664,7 @@
         "x-table": "KHO"
       },
       "patch": {
-        "description": "Bảng `KHO`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHO`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "patch_warehouses",
         "parameters": [
           {
@@ -29788,12 +29849,12 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "KHO"
       },
       "post": {
-        "description": "Bảng `KHO`. Role: **ADMIN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
+        "description": "Bảng `KHO`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_kho`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nKhóa ngoại phải tham chiếu dữ liệu tồn tại; kiểm tra constraint tại database.",
         "operationId": "post_warehouses",
         "parameters": [
           {
@@ -29950,7 +30011,7 @@
         ],
         "x-read-only": false,
         "x-roles": [
-          "ADMIN"
+          "NHAN_VIEN"
         ],
         "x-table": "KHO"
       }
@@ -30711,9 +30772,12 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Ngữ cảnh định giá theo phiếu; không dùng danh mục thuế (ADMIN/KHO)",
+        "summary": "Ngữ cảnh định giá theo phiếu; không dùng danh mục thuế (NHAN_VIEN)",
         "tags": [
           "Admin · Định giá nhập hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       },
       "put": {
@@ -30780,6 +30844,9 @@
         "summary": "Đã bỏ: nhập tỷ lệ lợi nhuận và thuế trên phiếu nhập",
         "tags": [
           "Admin · Định giá nhập hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -30827,6 +30894,9 @@
         "summary": "Tính giá bằng Decimal tại backend; UI không gửi số tiền đã tính",
         "tags": [
           "Admin · Định giá nhập hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -30875,6 +30945,9 @@
         "summary": "Preview giá trước xác nhận; version chống xác nhận giá cũ",
         "tags": [
           "Admin · Định giá nhập hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -30923,6 +30996,9 @@
         "summary": "Đã bỏ danh mục thuế; trả 410 sau migration",
         "tags": [
           "Admin · Định giá nhập hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -30983,6 +31059,9 @@
         "summary": "Đã bỏ danh mục thuế; trả 410 sau migration",
         "tags": [
           "Admin · Định giá nhập hàng"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -31127,6 +31206,9 @@
         "summary": "Tạo đơn tại quầy gắn đúng tài khoản khách; không tự xác nhận thanh toán",
         "tags": [
           "Staff · Liên kết hóa đơn"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -31156,6 +31238,24 @@
               "maxLength": 100,
               "title": "Q",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "email",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 254,
+                  "minLength": 3,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Email"
             }
           }
         ],
@@ -31241,6 +31341,9 @@
         "summary": "Chọn tài khoản khách active hoặc hàng trong kho khi bán tại quầy",
         "tags": [
           "Staff · Liên kết hóa đơn"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -31340,9 +31443,12 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Nhân viên/Admin xem yêu cầu liên kết hóa đơn",
+        "summary": "Nhân viên xem yêu cầu liên kết hóa đơn",
         "tags": [
           "Staff · Liên kết hóa đơn"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -31443,6 +31549,9 @@
         "summary": "Đối chiếu khách yêu cầu và hóa đơn tại quầy",
         "tags": [
           "Staff · Liên kết hóa đơn"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -31576,6 +31685,9 @@
         "summary": "Xác minh và chấp nhận/từ chối; không chuyển đơn của khách khác",
         "tags": [
           "Staff · Liên kết hóa đơn"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -32679,11 +32791,11 @@
   ],
   "tags": [
     {
-      "description": "Markup/thuế, preview Decimal và snapshot phiếu; ADMIN sửa, kho chỉ xem.",
+      "description": "Tên nhóm API giữ tương thích; NHAN_VIEN sửa giá, preview Decimal và snapshot phiếu.",
       "name": "Admin · Định giá nhập hàng"
     },
     {
-      "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trong kho được phân công. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu.",
+      "description": "NHAN_VIEN xử lý phiếu nhập và tra cứu lịch sử trên tất cả kho. Ghi dữ liệu nguyên tử, chống lặp và kiểm tra phiên bản phiếu.",
       "name": "Kho · Nghiệp vụ"
     },
     {
@@ -32711,7 +32823,7 @@
       "name": "Admin · Tổ chức"
     },
     {
-      "description": "ADMIN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình.",
+      "description": "NHAN_VIEN tạo/sửa; khách hàng chỉ đọc hồ sơ của mình.",
       "name": "Admin · Khách hàng"
     },
     {
@@ -32719,7 +32831,7 @@
       "name": "Admin · Sản phẩm"
     },
     {
-      "description": "ADMIN upload và quản lý gallery tối đa 20 ảnh/sản phẩm. JPG/PNG/WebP tĩnh, 5 MB/ảnh. Lưu ảnh chính/thứ tự bằng transaction và kiểm tra snapshot; gỡ liên kết không xóa file Storage.",
+      "description": "NHAN_VIEN upload và quản lý gallery tối đa 20 ảnh/sản phẩm. JPG/PNG/WebP tĩnh, 5 MB/ảnh. Lưu ảnh chính/thứ tự bằng transaction và kiểm tra snapshot; gỡ liên kết không xóa file Storage.",
       "name": "Admin · Hình ảnh"
     },
     {
@@ -32731,11 +32843,11 @@
       "name": "Kho · Tồn kho"
     },
     {
-      "description": "ADMIN và NHAN_VIEN tạo/sửa nhà cung cấp.",
+      "description": "NHAN_VIEN tạo/sửa nhà cung cấp.",
       "name": "Kho · Nhà cung cấp"
     },
     {
-      "description": "CRUD bảng chỉ đọc. ADMIN dùng /api/admin/operations/receipts; NHAN_VIEN dùng /api/warehouse/receipts trong kho được phân công.",
+      "description": "CRUD bảng chỉ đọc. NHAN_VIEN dùng /api/admin/operations/receipts hoặc /api/warehouse/receipts; giữ đường dẫn API cũ để tương thích.",
       "name": "Kho · Phiếu nhập"
     },
     {
@@ -32753,6 +32865,14 @@
     {
       "description": "API công khai, không cần đăng nhập. Chỉ trả sản phẩm/loại đang hoạt động.",
       "name": "Customer · Catalog"
+    },
+    {
+      "description": "Nhân viên xác minh hóa đơn tại quầy và liên kết đúng khách hàng.",
+      "name": "Staff · Liên kết hóa đơn"
+    },
+    {
+      "description": "Nhân viên vận hành khảo sát/đánh giá; ADMIN xem thống kê; khách chỉ dùng dữ liệu của mình.",
+      "name": "CRM · Khảo sát và đánh giá"
     },
     {
       "description": "Hồ sơ khách và đơn hàng liên quan; chỉ ADMIN.",

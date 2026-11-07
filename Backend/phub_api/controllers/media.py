@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, Response
 from starlette.concurrency import run_in_threadpool
 
-from phub_api.dependencies.auth import require_admin, require_customer_user
+from phub_api.dependencies.auth import require_staff, require_customer_user
 from phub_api.dependencies.media import get_service
 from phub_api.dependencies.origin import check_origin
 from phub_api.schemas.api_contracts import READ_ERRORS, error_response
@@ -21,39 +21,39 @@ ProductId = Annotated[str, Path(min_length=1, max_length=200)]
 
 
 @router.get("/images/{media_id}", response_model=StoredImage,
-            summary="Đọc thông tin ảnh media (ADMIN)", responses=READ_ERRORS)
-def read_image(media_id: UUID, response: Response, user=Depends(require_admin),
+            summary="Đọc thông tin ảnh media (NHAN_VIEN)", responses=READ_ERRORS)
+def read_image(media_id: UUID, response: Response, user=Depends(require_staff),
                service: media.MediaService = Depends(get_service)):
     response.headers["Cache-Control"] = "no-store"
     return service.image(str(media_id))
 
 
 @router.get("/products/{product_id}/images", response_model=ProductGallery,
-            summary="Xem toàn bộ ảnh sản phẩm (ADMIN)", responses=READ_ERRORS)
-def product_gallery(product_id: ProductId, response: Response, user=Depends(require_admin),
+            summary="Xem toàn bộ ảnh sản phẩm (NHAN_VIEN)", responses=READ_ERRORS)
+def product_gallery(product_id: ProductId, response: Response, user=Depends(require_staff),
                     service: media.MediaService = Depends(get_service)):
     response.headers["Cache-Control"] = "no-store"
     return service.gallery(product_id)
 
 
 @router.put("/products/{product_id}/images", response_model=ProductGallery,
-            summary="Lưu gallery; ảnh đầu tiên là ảnh chính (ADMIN)",
+            summary="Lưu gallery; ảnh đầu tiên là ảnh chính (NHAN_VIEN)",
             responses={**READ_ERRORS, 409: error_response(409, "Gallery đã được sửa bởi yêu cầu khác; tải lại trước khi lưu.")})
 def save_product_gallery(product_id: ProductId, body: GalleryUpdate, request: Request, response: Response,
-                         user=Depends(require_admin), service: media.MediaService = Depends(get_service)):
+                         user=Depends(require_staff), service: media.MediaService = Depends(get_service)):
     check_origin(request)
     response.headers["Cache-Control"] = "no-store"
     return service.save_gallery(product_id, body)
 
 @router.post("/images", status_code=201, response_model=UploadedImage,
-             summary="Tải ảnh sản phẩm hoặc banner khuyến mãi lên Storage (ADMIN)",
+             summary="Tải ảnh sản phẩm hoặc banner khuyến mãi lên Storage (NHAN_VIEN)",
              responses={**READ_ERRORS, 413: error_response(413, "Ảnh vượt quá 5 MB."),
                         415: error_response(415, "Chỉ hỗ trợ JPG, PNG hoặc WebP.")},
              openapi_extra={"requestBody": {
                  "required": True, "description": "Nội dung file nhị phân, không phải JSON/multipart. Tối đa 5 MB, 4096 × 4096 pixel; ảnh tĩnh được chuẩn hóa WebP.",
                  "content": {mime: {"schema": {"type": "string", "format": "binary"}} for mime in MIME_FORMATS},
              }})
-async def upload_image(request: Request, response: Response, user=Depends(require_admin), service: media.MediaService = Depends(get_service),
+async def upload_image(request: Request, response: Response, user=Depends(require_staff), service: media.MediaService = Depends(get_service),
                        purpose: Literal["product", "promotion_banner"] = Query(default="product")):
     check_origin(request)
     response.headers["Cache-Control"] = "no-store"

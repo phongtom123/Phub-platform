@@ -20,7 +20,7 @@ class WarehouseService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args):
-        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id or self.user.warehouse_id is None:
+        if self.user.role != 'NHAN_VIEN' or not self.user.employee_id:
             raise HTTPException(403, 'Chỉ nhân viên đã được phân công kho mới được thực hiện.')
         try:
             return operation(*args)

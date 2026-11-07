@@ -1,9 +1,9 @@
 "use client";
 
-import BackendDataView from "@/src/components/backend-data-view";
-import type { ModuleKey } from "@/src/types/admin";
-import { moduleResources } from "@/src/lib/backend-resources";
-import AccountsView from "@/src/features/accounts/accounts-view";
+import BackendDataView from "@internal/components/backend-data-view";
+import type { ModuleKey } from "@internal/types/admin";
+import { moduleResources } from "@internal/lib/backend-resources";
+import AccountsView from "@internal/features/accounts/accounts-view";
 
 export function ModuleView({ moduleKey }: {
   moduleKey: ModuleKey;

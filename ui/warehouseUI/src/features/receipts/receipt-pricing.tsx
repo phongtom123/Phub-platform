@@ -4,7 +4,7 @@ import { pricingRequest, pricingMoney, type Price, type PricePreview } from "../
 
 export function PriceBreakdown({ price, sku }: { price: Price | null; sku: string }) {
   return <section className="receiving-card" aria-label={`Giá bán dự kiến ${sku}`}><h3>Định giá {sku}</h3>{!price ? <p>Phiếu cũ chưa có snapshot giá. Không tự suy đoán giá theo cấu hình mới.</p> : <>
-    <p>Markup: <strong>{price.markup_rate}%</strong> (chỉ ADMIN được sửa)</p>
+    <p>Tỷ lệ lợi nhuận trên giá nhập: <strong>{price.markup_rate}%</strong></p>
     <dl className="warehouse-details"><div><dt>Tiền lợi nhuận</dt><dd>{pricingMoney(price.profit)}</dd></div><div><dt>Giá bán trước thuế</dt><dd>{pricingMoney(price.pre_tax)}</dd></div>
       {price.taxes.map(tax => <div key={tax.code}><dt>{tax.name} ({tax.rate}%)</dt><dd>{pricingMoney(tax.amount)}</dd></div>)}<div><dt>Giá bán sau thuế</dt><dd><strong>{pricingMoney(price.after_tax)}</strong></dd></div></dl>
     {price.changed_by && <p>Người sửa: {price.changed_by} · {price.changed_at ? new Date(price.changed_at).toLocaleString("vi-VN") : ""}</p>}

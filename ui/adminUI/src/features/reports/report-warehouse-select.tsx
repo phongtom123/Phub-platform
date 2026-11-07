@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { adminFetch } from "@/src/lib/admin-fetch";
+import { adminFetch } from "@internal/lib/admin-fetch";
 
 type Warehouse = { ma_kho: number; ten_kho: string };
 

@@ -5,7 +5,7 @@ from phub_api.schemas.pricing import PricePreview, PricingConfig, TaxDefinition,
 
 router = APIRouter(prefix='/api/pricing', tags=['Admin · Định giá nhập hàng'])
 
-@router.get('/config', summary='Ngữ cảnh định giá theo phiếu; không dùng danh mục thuế (ADMIN/KHO)')
+@router.get('/config', summary='Ngữ cảnh định giá theo phiếu; không dùng danh mục thuế (NHAN_VIEN)')
 def config(response: Response, sku: str | None = Query(None, min_length=1, max_length=100), service=Depends(get_service)):
     response.headers['Cache-Control'] = 'no-store'
     return service.context(sku)

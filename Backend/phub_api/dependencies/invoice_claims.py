@@ -9,7 +9,7 @@ from phub_api.services.invoice_claims import InvoiceClaimsService
 
 
 def staff_read(response: Response, actor: User = Depends(current_user), db=Depends(get_supabase)):
-    if actor.role not in {'ADMIN', 'NHAN_VIEN'} or not actor.employee_id:
+    if actor.role != 'NHAN_VIEN' or not actor.employee_id:
         raise HTTPException(403, 'Chỉ nhân viên hoặc quản trị viên được truy cập.')
     response.headers['Cache-Control'] = 'no-store'
     return InvoiceClaimsService(InvoiceClaimsRepository(db), actor)

@@ -1,4 +1,4 @@
-import WarehouseFrame from "@/src/components/warehouse/warehouse-frame";
+import InternalApp from "@internal/components/admin/admin-app";
 import ReceiptForm from "@/src/features/receipts/receipt-form";
 
-export default function NewReceiptPage() { return <WarehouseFrame><ReceiptForm /></WarehouseFrame>; }
+export default function NewReceiptPage() { return <InternalApp moduleHint="receipts"><ReceiptForm /></InternalApp>; }

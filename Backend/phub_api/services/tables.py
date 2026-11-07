@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from phub_api.models.resources import (
     CUSTOMER_CHILDREN,
     CUSTOMER_READ,
+    EMPLOYEE_LOOKUP_FIELDS,
     ENUMS,
     RESOURCES,
     SYSTEM_FIELDS,
@@ -22,13 +23,14 @@ from phub_api.services.warehouse_scope import require_warehouse_id
 
 
 def can_write(name: str, user: User) -> bool:
-    return RESOURCES[name].writable and (user.role == "ADMIN" or (user.role == "NHAN_VIEN" and name == "suppliers"))
+    required_role = "ADMIN" if name == "employees" else "NHAN_VIEN"
+    return RESOURCES[name].writable and user.role == required_role and bool(user.employee_id)
 
 
 def access(name: str, user: User, write: bool = False) -> None:
-    if user.role == 'NHAN_VIEN' and user.warehouse_id is None:
-        raise HTTPException(403, 'Nhân viên chưa được phân công kho.')
-    readable = user.role == "ADMIN" or (user.role == "NHAN_VIEN" and RESOURCES[name].warehouse) or (user.role == "KHACH_HANG" and name in CUSTOMER_READ)
+    readable = ((user.role == "ADMIN" and name in {"accounts", "warehouses", "employees"})
+                or (user.role == "NHAN_VIEN" and bool(user.employee_id) and name != "accounts")
+                or (user.role == "KHACH_HANG" and name in CUSTOMER_READ))
     if not readable or (write and not can_write(name, user)):
         raise HTTPException(403, "Bạn không có quyền thực hiện thao tác này.")
 
@@ -81,6 +83,8 @@ def validate_combined(name: str, data: dict, user: User) -> None:
     if name == "accounts" and bool(data.get("ma_kh")) == bool(data.get("ma_nhan_vien")):
         raise HTTPException(422, "Tài khoản phải thuộc đúng một khách hàng hoặc một nhân viên.")
     if name == "employees":
+        if user.role == "NHAN_VIEN" and data["loai_nhan_vien"] != "NHAN_VIEN":
+            raise HTTPException(403, "Nhân viên không được cấp hoặc thay đổi quyền quản trị viên.")
         if (data["loai_nhan_vien"] == "ADMIN") != (data.get("ma_kho") is None):
             raise HTTPException(422, "ADMIN không gán kho; NHAN_VIEN phải gán một kho.")
         if data['loai_nhan_vien'] == 'NHAN_VIEN':
@@ -114,13 +118,16 @@ def resource_metadata(user: User):
             access(name, user)
         except HTTPException:
             continue
+        columns = public_columns(name)
+        if name == "employees" and user.role == "NHAN_VIEN":
+            columns = [column for column in columns if column["name"] in EMPLOYEE_LOOKUP_FIELDS]
         result.append({"name": name, "table": resource.table, "title": resource.title, "keys": resource.keys,
                        "columns": [{**column, "choices": ENUMS.get((name, column["name"])),
-                                    "immutable": column["name"] in resource.keys or (name == "products" and column["name"] == "sku")}
-                                   | {"system": column["name"] in SYSTEM_FIELDS.get(name, set())} for column in public_columns(name)],
+                                    "immutable": column["name"] in resource.keys or (name == "products" and column["name"] == "sku") or (name == "employees" and column["name"] == "loai_nhan_vien")}
+                                   | {"system": column["name"] in SYSTEM_FIELDS.get(name, set())} for column in columns],
                        "writable": can_write(name, user),
-                       "draft_update_path": f"/api/admin/warehouse-drafts/{name}" if name in DRAFT_FIELDS and user.role == "ADMIN" and user.employee_id else None,
-                       "draft_update_fields": DRAFT_FIELDS[name] if name in DRAFT_FIELDS and user.role == "ADMIN" and user.employee_id else None,
+                       "draft_update_path": f"/api/admin/warehouse-drafts/{name}" if name in DRAFT_FIELDS and user.role == "NHAN_VIEN" and user.employee_id else None,
+                       "draft_update_fields": DRAFT_FIELDS[name] if name in DRAFT_FIELDS and user.role == "NHAN_VIEN" and user.employee_id else None,
                        "create_schema": payload_model(name, False).model_json_schema() if can_write(name, user) else None})
     return result
 
@@ -179,9 +186,13 @@ class TablesService:
             raise HTTPException(422, "order_id chỉ dùng để lọc đơn hàng và các bảng liên quan đến đơn hàng.")
         keys = key_values(name, key) if key is not None else None
         selection = table_filters(name, filters)
+        if name == "employees" and self.user.role == "NHAN_VIEN" and any(field not in {*EMPLOYEE_LOOKUP_FIELDS, "loai_nhan_vien"} for field, _, _ in selection):
+            raise HTTPException(403, "Nhân viên chỉ được tra cứu tên người phụ trách chứng từ.")
         result = self.repository.page(name, self.user, page, page_size, q, keys, order_id, selection) if selection else self.repository.page(name, self.user, page, page_size, q, keys, order_id)
         body = {"data": clean(result.data), "total": result.count or 0, "page": page, "page_size": page_size}
-        if name == "customers" and self.user.role == "ADMIN":
+        if name == "employees" and self.user.role == "NHAN_VIEN":
+            body["data"] = [{field: row[field] for field in EMPLOYEE_LOOKUP_FIELDS if field in row} for row in body["data"]]
+        if name == "customers" and self.user.role == "NHAN_VIEN":
             accounts = {}
             for row in body["data"]:
                 linked = row.pop("linked_account", None)
@@ -218,11 +229,13 @@ class TablesService:
         existing = self.repository.detail(name, self.user, keys)
         if not existing:
             raise HTTPException(404, "Không tìm thấy dữ liệu.")
+        if name == "employees" and existing[0].get("loai_nhan_vien") != "NHAN_VIEN":
+            raise HTTPException(403, "Nhân viên không được thay đổi hồ sơ quản trị viên.")
         if name == "customers" and existing[0].get("luu_tru_luc") is not None:
             raise HTTPException(409, "Khôi phục hồ sơ khách hàng trước khi chỉnh sửa.")
         data = read_payload(body, name, True)
         if name == "employees" and keys == [self.user.employee_id]:
-            if data.get("loai_nhan_vien", "ADMIN") != "ADMIN" or data.get("trang_thai", 1) != 1 or data.get("ma_kho") is not None:
+            if data.get("loai_nhan_vien", self.user.role) != self.user.role or data.get("trang_thai", 1) != 1:
                 raise HTTPException(409, "Không được vô hiệu hóa hoặc hạ quyền nhân viên đang đăng nhập.")
         if name == "promotions" and any(field in data for field in ["nguoi_tao", "ngay_tao"]):
             raise HTTPException(422, "Không được sửa người tạo hoặc ngày tạo.")

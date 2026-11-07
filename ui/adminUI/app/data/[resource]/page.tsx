@@ -1,6 +1,6 @@
-import AdminApp from "@/src/components/admin/admin-app";
+import AdminApp from "@internal/components/admin/admin-app";
 import { redirect } from "next/navigation";
-import { accountHref } from "@/src/features/accounts/types";
+import { accountHref } from "@internal/features/accounts/types";
 
 export default async function DataPage({ params, searchParams }: { params: Promise<{ resource: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { resource } = await params;

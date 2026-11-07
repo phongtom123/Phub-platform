@@ -3,32 +3,32 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminFetch, invalidateAdminCache, sameAdminData } from "@/src/lib/admin-fetch";
-import { useAdminPolling } from "@/src/lib/use-admin-polling";
-import { dataHref, orderChildren } from "@/src/lib/data-navigation";
-import { ProductGalleryEditor, type GalleryEditorHandle } from "@/src/features/forms/product-gallery-editor";
-import { ProductGalleryPreview } from "@/src/features/forms/product-gallery-preview";
-import { PromotionBannerEditor, PromotionBannerPreview, type BannerEditorHandle } from "@/src/features/forms/promotion-banner";
-import { PromotionVouchers } from "@/src/features/promotions/promotion-vouchers";
-import { InlineDataTable } from "@/src/features/tables/inline-data-table";
-import { ScrollableTable } from "@/src/features/tables/scrollable-table";
-import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@/src/lib/inline-table-data";
-import { listDataColumns } from "@/src/lib/table-presentation";
-import { CustomerDetail } from "@/src/features/customers/customer-detail";
-import { CustomerStatusCell, type CustomerLinkedAccount } from "@/src/features/customers/customer-status-cell";
-import { CustomerArchiveButton } from "@/src/features/customers/customer-archive-button";
-import { customerAge, type CustomerDetail as CustomerDetailData } from "@/src/lib/customer-profile";
-import { OrderData } from "@/src/features/orders/order-data";
-import type { AdminOrderDetailData } from "@/src/features/orders/order-detail-data";
-import { InvoiceDetail } from "@/src/features/billing/invoice-detail";
-import { ProductStock } from "@/src/features/products/product-stock";
-import { ProductSuppliers } from "@/src/features/products/product-suppliers";
-import { CategoryDetail } from "@/src/features/categories/category-detail";
-import { OperationPanel } from "@/src/features/operations/operation-panel";
-import { ListFilters } from "@/src/features/operations/list-filters";
-import { ReferenceInput, references } from "@/src/features/operations/reference-input";
-import { StockHistory } from "@/src/features/operations/stock-history";
-import "@/src/features/operations/operations.css";
+import { adminFetch, invalidateAdminCache, sameAdminData } from "@internal/lib/admin-fetch";
+import { useAdminPolling } from "@internal/lib/use-admin-polling";
+import { dataHref, orderChildren } from "@internal/lib/data-navigation";
+import { ProductGalleryEditor, type GalleryEditorHandle } from "@internal/features/forms/product-gallery-editor";
+import { ProductGalleryPreview } from "@internal/features/forms/product-gallery-preview";
+import { PromotionBannerEditor, PromotionBannerPreview, type BannerEditorHandle } from "@internal/features/forms/promotion-banner";
+import { PromotionVouchers } from "@internal/features/promotions/promotion-vouchers";
+import { InlineDataTable } from "@internal/features/tables/inline-data-table";
+import { ScrollableTable } from "@internal/features/tables/scrollable-table";
+import { dataRowKey, inlineStatusLabels, inlineChoiceLabel, type DataRow, type DataColumn } from "@internal/lib/inline-table-data";
+import { listDataColumns } from "@internal/lib/table-presentation";
+import { CustomerDetail } from "@internal/features/customers/customer-detail";
+import { CustomerStatusCell, type CustomerLinkedAccount } from "@internal/features/customers/customer-status-cell";
+import { CustomerArchiveButton } from "@internal/features/customers/customer-archive-button";
+import { customerAge, type CustomerDetail as CustomerDetailData } from "@internal/lib/customer-profile";
+import { OrderData } from "@internal/features/orders/order-data";
+import type { AdminOrderDetailData } from "@internal/features/orders/order-detail-data";
+import { InvoiceDetail } from "@internal/features/billing/invoice-detail";
+import { ProductStock } from "@internal/features/products/product-stock";
+import { ProductSuppliers } from "@internal/features/products/product-suppliers";
+import { CategoryDetail } from "@internal/features/categories/category-detail";
+import { OperationPanel } from "@internal/features/operations/operation-panel";
+import { ListFilters } from "@internal/features/operations/list-filters";
+import { ReferenceInput, references } from "@internal/features/operations/reference-input";
+import { StockHistory } from "@internal/features/operations/stock-history";
+import "@internal/features/operations/operations.css";
 
 type Row = DataRow;
 type Column = DataColumn;
@@ -56,6 +56,7 @@ const labels: Record<string, string> = {
   ngay_sinh: "Ngày sinh", ngay_tao: "Ngày tạo", cap_nhat_luc: "Cập nhật lần cuối", luu_tru_luc: "Thời điểm lưu trữ",
   thoi_gian_dat: "Thời gian đặt", thoi_gian_xuat_kho: "Thời gian xuất kho", thoi_gian_hoan_thanh: "Thời gian hoàn thành",
   ten_nguoi_nhan: "Tên người nhận", sdt_nguoi_nhan: "Số điện thoại người nhận", dia_chi_giao_hang: "Địa chỉ giao hàng",
+  email_nguoi_mua: "Email khách hàng",
   phuong_thuc_nhan: "Phương thức nhận hàng",
   ma_hoadon: "Mã hóa đơn", nguoi_lap: "Người lập", thoi_gian_lap: "Thời gian lập",
   nguon_lap: "Nguồn lập", ma_tk_lap: "Tài khoản khởi tạo", la_bypass: "Thanh toán bypass", ma_tk_ghi_nhan: "Tài khoản ghi nhận",
@@ -142,7 +143,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     setResult(current => current && ({ ...current, customer_accounts: { ...current.customer_accounts, [customerId]: account } }));
   }, []);
   const draftPath = resource === "receipts" && meta?.draft_update_path === `/api/admin/warehouse-drafts/${resource}` ? meta.draft_update_path : null;
-  const canEditRow = (row: Row) => (!draftPath || row.trang_thai === "NHAP") && (resource !== "customers" || !row.luu_tru_luc);
+  const canEditRow = (row: Row) => (!draftPath || row.trang_thai === "NHAP") && (resource !== "customers" || !row.luu_tru_luc) && (resource !== "employees" || row.loai_nhan_vien === "NHAN_VIEN");
   const canUpdate = Boolean(meta?.writable || draftPath);
   const inlineEnabled = ["customers", "warehouses", "products", "categories", "suppliers", "employees", "promotions", "vouchers", "receipts"].includes(resource) && canUpdate;
   const savedInline = useCallback((row: Row) => {

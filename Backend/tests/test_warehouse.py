@@ -71,7 +71,7 @@ def test_create_edit_confirm_cancel_are_atomic_rpc_commands(warehouse_client):
     assert all('warehouse_id' not in body['p_body'] for _, body in state['calls'])
 
 
-@pytest.mark.parametrize('role,warehouse,employee', [('ADMIN', None, 'AD1'), ('KHACH_HANG', None, None), ('NHAN_VIEN', None, 'NV1'), ('NHAN_VIEN', 2, None)])
+@pytest.mark.parametrize('role,warehouse,employee', [('ADMIN', None, 'AD1'), ('KHACH_HANG', None, None), ('NHAN_VIEN', 2, None)])
 def test_wrong_roles_or_missing_assignments_never_access_operations(warehouse_client, role, warehouse, employee):
     client, state = warehouse_client; state.update(role=role, warehouse=warehouse, employee=employee)
     assert client.get('/api/warehouse/history').status_code == 403

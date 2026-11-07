@@ -12,12 +12,13 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import type { ModuleKey } from "@/src/types/admin";
-import { getModuleHref } from "@/src/lib/admin-navigation";
+import type { ModuleKey } from "@internal/types/admin";
+import { getModuleHref } from "@internal/lib/admin-navigation";
 import { DataBreadcrumb } from "./data-breadcrumb";
 import { AccountBreadcrumb } from "./account-breadcrumb";
-import type { AccountView } from "@/src/features/accounts/types";
-import { NotificationFeed } from "@/src/features/operations/header-tools";
+import type { AccountView } from "@internal/features/accounts/types";
+import { NotificationFeed } from "@internal/features/operations/header-tools";
+import { useAdminAuth } from "./auth-provider";
 
 type Props = {
   accountsPage?: AccountView;
@@ -26,6 +27,7 @@ type Props = {
   onGoProfile: () => void;
   activeModule: ModuleKey;
   title: string;
+  pageHref?: string;
   onToggleSidebar: () => void;
   onNavigate: (moduleKey: ModuleKey) => void;
   onGoAccounts: () => void;
@@ -40,12 +42,14 @@ export function AdminHeader({
   onGoProfile,
   activeModule,
   title,
+  pageHref,
   onToggleSidebar,
   onNavigate,
   onGoAccounts,
   onOpenSettings,
   onLogout,
 }: Props) {
+  const { portal } = useAdminAuth();
   const initials = user?.name.split(/\s+/).filter(Boolean).slice(-2).map(word => word[0]).join("").toUpperCase() || "AD";
   const [panel, setPanel] = useState<"notifications" | "account" | null>(null);
   const followModuleLink = (
@@ -73,23 +77,23 @@ export function AdminHeader({
       </button>
       {accountsPage ? <AccountBreadcrumb {...accountsPage} /> : dataResource ? <DataBreadcrumb resource={dataResource} /> : <nav className="crumb" aria-label="Breadcrumb">
         <Link
-          href={getModuleHref("dashboard")}
-          onClick={(event) => followModuleLink(event, "dashboard")}
+          href={getModuleHref(portal === "admin" ? "dashboard" : "orders")}
+          onClick={(event) => followModuleLink(event, portal === "admin" ? "dashboard" : "orders")}
         >
-          Quản trị
+          {portal === "admin" ? "Quản trị" : "Nhân viên"}
         </Link>
         <ChevronRight />
         <Link
           className="current"
           aria-current="page"
-          href={getModuleHref(activeModule)}
-          onClick={(event) => followModuleLink(event, activeModule)}
+          href={pageHref ?? getModuleHref(activeModule)}
+          onClick={pageHref ? undefined : (event) => followModuleLink(event, activeModule)}
         >
           {title}
         </Link>
       </nav>}
       <div className="top-actions">
-        <div className="header-popup-wrap">
+        {portal === "staff" && <div className="header-popup-wrap">
           <button
             className={`bell ${panel === "notifications" ? "pressed" : ""}`}
             onClick={() =>
@@ -104,7 +108,7 @@ export function AdminHeader({
               onGoAccounts={onGoAccounts}
             />
           )}
-        </div>
+        </div>}
         <div className="header-popup-wrap">
           <button
             className={`user ${panel === "account" ? "pressed" : ""}`}
@@ -113,7 +117,7 @@ export function AdminHeader({
             <b>{initials}</b>
             <span className="user-copy">
               <strong>{user?.name ?? "Quản trị viên"}</strong>
-              <small>Quản trị viên</small>
+              <small>{portal === "admin" ? "Quản trị viên" : "Nhân viên"}</small>
             </span>
             <ChevronDown />
           </button>
@@ -158,6 +162,7 @@ function AccountPanel({
   onOpenSettings: () => void;
   onLogout: () => void;
 }) {
+  const { portal } = useAdminAuth();
   const run = (action: () => void) => {
     onClose();
     action();
@@ -169,17 +174,17 @@ function AccountPanel({
         <p>
           <strong>{user?.name ?? "Quản trị viên"}</strong>
           <small>{user?.username}</small>
-          <span>ADMIN · Toàn hệ thống</span>
+          <span>{portal === "admin" ? "ADMIN" : "NHAN_VIEN"} · Toàn hệ thống</span>
         </p>
       </div>
       <nav>
         <button onClick={() => run(onGoProfile)}><UserRound /> Tài khoản của tôi</button>
-        <button onClick={() => run(onGoAccounts)}>
+        {portal === "admin" && <button onClick={() => run(onGoAccounts)}>
           <UserRound /> Quản lý tài khoản
-        </button>
-        <button onClick={() => run(onOpenSettings)}>
+        </button>}
+        {portal === "staff" && <button onClick={() => run(onOpenSettings)}>
           <Settings /> Cài đặt hệ thống
-        </button>
+        </button>}
         <button className="logout-item" onClick={() => run(onLogout)}>
           <LogOut /> Đăng xuất
         </button>

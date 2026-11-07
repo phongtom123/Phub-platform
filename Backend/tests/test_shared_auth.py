@@ -56,11 +56,11 @@ def test_shared_role_guards_allow_only_the_matching_portal():
     assert customer.get("/customer").json() == {"customer_id": "KH3"}
 
 
-def test_warehouse_guard_requires_an_assigned_warehouse():
+def test_staff_read_guard_does_not_require_an_assigned_warehouse():
     client = build_client(User(
         "TK2", "warehouse", "NHAN_VIEN", "Warehouse", employee_id="NV2",
     ))
-    assert client.get("/warehouse").status_code == 403
+    assert client.get("/warehouse").status_code == 200
 
 
 @pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer forged"}, {"Authorization": "Basic invalid"}])

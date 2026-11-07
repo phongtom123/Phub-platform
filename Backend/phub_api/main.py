@@ -41,6 +41,8 @@ app = FastAPI(
     version="0.3.0",
     description=DESCRIPTION,
     openapi_tags=TAGS + [
+        {"name": "Staff · Liên kết hóa đơn", "description": "Nhân viên xác minh hóa đơn tại quầy và liên kết đúng khách hàng."},
+        {"name": "CRM · Khảo sát và đánh giá", "description": "Nhân viên vận hành khảo sát/đánh giá; ADMIN xem thống kê; khách chỉ dùng dữ liệu của mình."},
         {"name": "Admin · CRM", "description": "Hồ sơ khách và đơn hàng liên quan; chỉ ADMIN."},
         {"name": "Admin · Hỗ trợ khách hàng", "description": "Tiếp nhận và xử lý ticket phản hồi của khách."},
         {"name": "Customer · Hỗ trợ", "description": "Khách gửi và xem ticket thuộc chính mình."},

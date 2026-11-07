@@ -14,9 +14,9 @@ from phub_api.main import app
 from phub_api.models.user import User
 from phub_api.repositories.support import ticket_id_filter
 
-ADMIN = User('AD1', 'admin', 'ADMIN', 'Admin', employee_id='NV1')
+ADMIN = User('AD1', 'admin', 'NHAN_VIEN', 'Admin', employee_id='NV1')
 CUSTOMER = User('TK1', 'customer', 'KHACH_HANG', 'Khách', customer_id='KH1')
-WAREHOUSE = User('WK1', 'warehouse', 'NHAN_VIEN', 'Kho', warehouse_id=1)
+WAREHOUSE = User('WK1', 'warehouse', 'ADMIN', 'Kho', warehouse_id=1)
 TICKET = 'a1111111-1111-4111-8111-111111111111'
 OTHER = 'b2222222-2222-4222-8222-222222222222'
 MISSING = 'c3333333-3333-4333-8333-333333333333'

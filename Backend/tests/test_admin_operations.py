@@ -16,7 +16,7 @@ from phub_api.services.tables import table_filters
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setenv('FRONTEND_ORIGINS', 'http://localhost:3000')
-    state = {'role': 'ADMIN', 'employee': 'NV1', 'error': None, 'calls': []}
+    state = {'role': 'NHAN_VIEN', 'employee': 'NV1', 'error': None, 'calls': []}
     def handle(request):
         state['calls'].append((request.url.path, json.loads(request.content)))
         if state['error']:
@@ -53,13 +53,13 @@ def test_transfers_are_disabled_before_any_database_call(client, action):
     assert state['calls'] == []
 
 
-@pytest.mark.parametrize('role', ['NHAN_VIEN', 'KHACH_HANG'])
+@pytest.mark.parametrize('role', ['ADMIN', 'KHACH_HANG'])
 def test_non_admin_has_no_operations_access(client, role):
     http, state = client
     state['role'] = role
     assert post(http).status_code == 403
-    assert http.get('/api/admin/operations/read/summary').status_code == 403
     assert state['calls'] == []
+    assert http.get('/api/admin/operations/read/summary').status_code == (200 if role == 'ADMIN' else 403)
 
 
 def test_missing_employee_and_bad_origin_are_rejected(client):

@@ -49,10 +49,14 @@ def require_admin(user: User = Depends(current_user)) -> User:
     return user
 
 
-def require_warehouse(user: User = Depends(current_user)) -> User:
-    if user.role != "NHAN_VIEN" or user.warehouse_id is None:
-        raise HTTPException(403, "Chỉ thủ kho đã được phân kho mới được truy cập chức năng này.")
+def require_staff(user: User = Depends(current_user)) -> User:
+    if user.role != "NHAN_VIEN" or not user.employee_id:
+        raise HTTPException(403, "Chỉ nhân viên được thực hiện nghiệp vụ cửa hàng.")
     return user
+
+
+def require_warehouse(user: User = Depends(current_user)) -> User:
+    return require_staff(user)
 
 
 def require_customer_user(user: User = Depends(current_user)) -> User:

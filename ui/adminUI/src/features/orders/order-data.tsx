@@ -5,6 +5,7 @@ import Link from "next/link";
 import { adminFetch } from "../../lib/admin-fetch";
 import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
+import { useAdminAuth } from "../../components/admin/auth-provider";
 import { orderListColumns, orderValue } from "./order-presentation";
 import { OrderDetail } from "./order-detail";
 import type { AdminOrderDetailData } from "./order-detail-data";
@@ -70,6 +71,7 @@ type Props = {
 };
 
 export function OrderData({ rows, columns, keys, detail = false, version, label, href, related = [], detailData, onRefresh }: Props) {
+  const { portal } = useAdminAuth();
   const { names, retry } = useOrderPeople(detailData ? [] : rows, version);
   const visibleColumns = detail ? columns : orderListColumns(columns);
   const nameLabel = (field: string) => field === "ma_kh" ? "Khách hàng" : field === "ma_nhan_vien" ? "Nhân viên phụ trách" : label(field);
@@ -82,6 +84,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
       : names[personKey({ resource, id: String(id) })];
     if (name === undefined) return <span role="status">Đang tải tên…</span>;
     if (name === null) return "Chưa có thông tin tên";
+    if (resource === "employees" && portal === "staff") return name;
     return <Link href={dataHref(resource, { key: JSON.stringify([id]) })}>{name}</Link>;
   };
   const cell = (row: DataRow, column: DataColumn) => {

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Sparkles } from "lucide-react";
-import { Logo } from "@/src/components/admin/ui";
+import { Logo } from "@internal/components/admin/ui";
+import { useAdminAuth } from "@internal/components/admin/auth-provider";
 import { loginSession, type SessionUser, type UserRole } from "../../../../shared/auth-client";
 
 export type StaffRole = Extract<UserRole, "ADMIN" | "NHAN_VIEN">;
@@ -12,6 +13,7 @@ export function LoginView({
 }: {
   onLogin: (result: SessionUser) => void | Promise<void>;
 }) {
+  const { portal } = useAdminAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,7 +44,7 @@ export function LoginView({
   return (
     <main className="login">
       <header>
-        <Logo />
+        <Logo label={portal === "admin" ? "admin" : "nhân viên"} />
         <span>Cổng đăng nhập nội bộ</span>
       </header>
       <div className="login-grid">
@@ -65,7 +67,7 @@ export function LoginView({
             <b>P</b>
             <p>
               <strong>Chào mừng trở lại</strong>
-              <small>Đăng nhập vào trang quản trị PHUB</small>
+              <small>Đăng nhập vào cổng nội bộ PHUB</small>
             </p>
           </div>
           {passwordChanged && <p role="status">Đã đổi mật khẩu. Vui lòng đăng nhập lại bằng mật khẩu mới.</p>}

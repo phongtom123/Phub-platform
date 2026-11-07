@@ -1,4 +1,4 @@
-import { adminFetch } from "@/src/lib/admin-fetch";
+import { adminFetch } from "@internal/lib/admin-fetch";
 
 export class AccountApiError extends Error {
   constructor(message: string, public status: number) { super(message); }

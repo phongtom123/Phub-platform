@@ -47,6 +47,7 @@ export default function ReceiptDetail({ id }: { id: number }) {
     <nav className="warehouse-breadcrumb"><Link href="/">Tổng quan</Link><span>›</span><Link href="/receipts">Phiếu nhập</Link><span>›</span><strong>{record?.receipt.ma_phieu_code ?? id}</strong></nav>
     <div className="warehouse-toolbar"><Link className="button" href="/receipts">← Danh sách phiếu</Link><button className="button" disabled={busy || loading} onClick={() => setRefresh(v => v + 1)}>Làm mới</button>
       {record?.receipt.trang_thai === "NHAP" && !loading && <><Link className={`button${busy ? " disabled" : ""}`} aria-disabled={busy} href={`/receipts/${id}/edit`}>Chỉnh sửa</Link><button className="button primary" disabled={busy || conflict} onClick={() => void act("confirm")}>{busy ? "Đang xử lý…" : "Xác nhận nhập"}</button><button className="button danger" disabled={busy || conflict} onClick={() => void act("cancel")}>Hủy phiếu</button></>}
+      {record?.receipt.trang_thai === "NHAP" && !loading && <Link className="button" href={`/data/receipts?key=${encodeURIComponent(JSON.stringify([id]))}`}>Định giá sản phẩm</Link>}
     </div>
     {loading && <p role="status">Đang tải phiếu…</p>}{error && <p className="warehouse-error" role="alert">{error}</p>}{message && <p className="warehouse-success" role="status">{message}</p>}
     {record && !loading && <>

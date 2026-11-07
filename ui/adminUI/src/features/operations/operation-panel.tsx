@@ -21,6 +21,7 @@ import { useAdminAuth } from "../../components/admin/auth-provider";
 import { ReceiptPricing, ReceiptPricingSummary } from "../pricing/pricing-editor";
 import { pricingRequest, confirmationMessage, type PriceInputs, type ReceiptPriceQuote } from "../../../../shared/pricing";
 import { InvoiceCreator } from "./invoice-creator";
+import { CounterBuyerFields, counterBuyerReady, emptyCounterBuyer, normalizedBuyerEmail } from "./counter-buyer-fields";
 import type { AdminOrderDetailData } from "../orders/order-detail-data";
 
 const actions: Record<
@@ -90,9 +91,7 @@ export function OperationPanel({
   const [lines, setLines] = useState<Line[]>([blankLine()]);
   const [warehouse, setWarehouse] = useState(""),
     [supplier, setSupplier] = useState("");
-  const [customer, setCustomer] = useState(""),
-    [recipient, setRecipient] = useState(""),
-    [phone, setPhone] = useState("");
+  const [buyer, setBuyer] = useState(emptyCounterBuyer);
   const [note, setNote] = useState(""),
     [voucher, setVoucher] = useState(""),
     [employee, setEmployee] = useState("");
@@ -339,6 +338,9 @@ export function OperationPanel({
       });
       return;
     }
+    if (mode === "create" && resource === "orders" && !counterBuyerReady(buyer)) {
+      setError("Nhập email, tên người mua và tra cứu tài khoản nếu chọn khách có tài khoản."); return;
+    }
     const values = lines.map((l) => ({
       sku: l.sku,
       quantity: Number(l.quantity),
@@ -356,9 +358,9 @@ export function OperationPanel({
       "create",
       resource === "orders"
         ? {
-            recipient,
-            ...(customer ? { customer_id: customer } : {}),
-            ...(phone ? { phone } : {}),
+            recipient: buyer.name.trim(), buyer_email: normalizedBuyerEmail(buyer.email),
+            ...(buyer.mode === "account" && buyer.customerId ? { customer_id: buyer.customerId } : {}),
+            ...(buyer.phone.trim() ? { phone: buyer.phone.trim() } : {}),
             note,
             ...(voucher ? { voucher_code: voucher } : {}),
             lines: values,
@@ -387,6 +389,7 @@ export function OperationPanel({
                 <span className="operation-condition-hint condition-ready">
                   Xem kết quả chi tiết và lịch sử xử lý bên dưới.
                 </span>
+                {Number(orderDetail?.financial.paid ?? 0) > 0 && <button type="button" className="operation-primary-btn" disabled={busy || Boolean(pending.current)} onClick={() => { setAmount(""); setMethod("TIEN_MAT"); setReference(""); setMode("refund"); }}>Ghi nhận hoàn tiền</button>}
               </div>
             ) : status === "HUY" ? (
               <div className="operation-terminal-note">
@@ -716,44 +719,12 @@ export function OperationPanel({
           >
             {mode === "create" && resource === "orders" && (
               <>
-                <label>
-                  Khách hàng
-                  <ReferenceInput
-                    field="ma_kh"
-                    activeAccounts
-                    value={customer}
-                    label="Chọn khách hàng (không bắt buộc)"
-                    onChange={(v, r) => {
-                      setCustomer(v);
-                      if (r) {
-                        setRecipient(String(r.ten_kh));
-                        setPhone(String(r.sdt ?? ""));
-                      }
-                    }}
-                  />
-                </label>
-                <label>
-                  Tên người mua *
-                  <input
-                    required
-                    maxLength={200}
-                    value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
-                  />
-                </label>
-                <label>
-                  Số điện thoại
-                  <input
-                    value={phone}
-                    maxLength={30}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
-                </label>
+                <CounterBuyerFields value={buyer} onChange={setBuyer} disabled={busy || Boolean(pending.current)} />
                 <label>
                   Voucher
                   <input
                     value={voucher}
-                    disabled={!customer}
+                    disabled={buyer.mode !== "account" || !buyer.customerId}
                     onChange={(e) => setVoucher(e.target.value)}
                   />
                   <small>Chọn khách hàng để áp dụng giới hạn lượt dùng.</small>

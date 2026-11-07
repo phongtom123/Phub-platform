@@ -8,11 +8,15 @@ from phub_api.services.pricing import PRICING_ERRORS
 from phub_api.services.warehouse_scope import require_warehouse_id
 
 ERRORS = {
+    'BUYER_EMAIL_INVALID': (422, 'Nhập email khách hàng hợp lệ để tạo đơn tại quầy.'),
+    'BUYER_EMAIL_MISMATCH': (409, 'Email không khớp tài khoản khách đã chọn hoặc tài khoản không còn hoạt động. Hãy tra cứu lại.'),
+    'BUYER_EMAIL_AMBIGUOUS': (409, 'Có nhiều tài khoản trùng email. Cần admin đối chiếu trước khi chọn khách.'),
+    'BUYER_EMAIL_NOT_SAVED': (503, 'Database chưa xác nhận email đã được lưu. Không tạo đơn; cần cập nhật migration counter_buyer_email.'),
     'PAYMENT_DEADLINE_EXPIRED': (409, 'Đơn đã hết hạn thanh toán 24 giờ. Không thể thu tiền hoặc tiếp tục xử lý đơn này.'),
     **PRICING_ERRORS,
     'REPORT_TOO_LARGE': (422, 'Lịch sử vượt 20.000 dòng nhập/xuất. Cần tối ưu hoặc chốt kỳ trước khi tính, không trả báo cáo bị cắt thiếu.'),
     'TRANSFER_DISABLED': (410, 'Chức năng chuyển kho đã ngừng sử dụng; chỉ tra cứu chứng từ cũ.'),
-    'ADMIN_FORBIDDEN': (403, 'Chỉ quản trị viên đang hoạt động được thực hiện.'),
+    'ADMIN_FORBIDDEN': (403, 'Tài khoản không có quyền thực hiện thao tác này.'),
     'NOT_FOUND': (404, 'Không tìm thấy bản ghi.'),
     'STATE_CONFLICT': (409, 'Trạng thái đã thay đổi hoặc không cho phép thao tác. Hãy làm mới.'),
     'IDEMPOTENCY_CONFLICT': (409, 'Mã yêu cầu đã dùng cho nội dung khác.'),
@@ -33,7 +37,7 @@ class AdminOperationsService:
         self.repository, self.user = repository, user
 
     def call(self, operation, *args):
-        if self.user.role != 'ADMIN' or not self.user.employee_id:
+        if self.user.role not in {'ADMIN', 'NHAN_VIEN'} or not self.user.employee_id:
             raise HTTPException(403, ERRORS['ADMIN_FORBIDDEN'][1])
         try:
             return operation(*args)
@@ -43,7 +47,7 @@ class AdminOperationsService:
                 if message == code:
                     raise HTTPException(status, detail) from None
             if exc.code in {'42883', 'PGRST202', '42P01', '42703'}:
-                raise HTTPException(503, 'Database thiếu cấu trúc nghiệp vụ. Cần áp dụng migration admin_operations và receipt_sale_pricing; không có thao tác nào được ghi.') from None
+                raise HTTPException(503, 'Database thiếu cấu trúc nghiệp vụ. Cần áp dụng migration admin_operations, receipt_sale_pricing và counter_buyer_email; không có thao tác nào được ghi.') from None
             if exc.code == '23505':
                 raise HTTPException(409, 'Mã phiếu hoặc mã đối soát đã tồn tại.') from None
             if exc.code in {'23503', '23514', '22003', '22P02'}:
@@ -51,6 +55,8 @@ class AdminOperationsService:
             raise
 
     def command(self, resource, command, key):
+        if self.user.role != 'NHAN_VIEN':
+            raise HTTPException(403, 'Chỉ nhân viên được thực hiện nghiệp vụ cửa hàng.')
         schema = COMMANDS.get((resource, command.action))
         if not schema:
             raise HTTPException(422, 'Thao tác không được hỗ trợ.')
@@ -82,6 +88,9 @@ class AdminOperationsService:
         return self.call(self.repository.command, self.user.account_id, resource, command.action, key, command.record_id, data)
 
     def read(self, kind, query):
+        required_role = 'ADMIN' if kind == 'summary' else 'NHAN_VIEN'
+        if self.user.role != required_role:
+            raise HTTPException(403, 'Bạn không có quyền truy cập chức năng này.')
         if kind == 'messages':
             try:
                 UUID(query.get('record_id') or '')
@@ -90,6 +99,8 @@ class AdminOperationsService:
         return self.call(self.repository.read, self.user.account_id, kind, query)
 
     def business_report(self, start, end, warehouse_id=None):
+        if self.user.role != 'ADMIN':
+            raise HTTPException(403, 'Chỉ quản trị viên được xem báo cáo.')
         if start > end or (end - start).days >= 366 or end.isoformat() == '9999-12-31':
             raise HTTPException(422, 'Chọn kỳ báo cáo hợp lệ, tối đa 366 ngày.')
         try:

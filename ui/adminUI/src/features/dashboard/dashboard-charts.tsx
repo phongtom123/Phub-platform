@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { BarChart3, RefreshCw, ArrowUpRight } from "lucide-react";
-import type { ModuleKey } from "@/src/types/admin";
+import type { ModuleKey } from "@internal/types/admin";
 import {
   orderStatuses,
   orderTrend,
