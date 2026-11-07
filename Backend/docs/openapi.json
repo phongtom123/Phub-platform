@@ -17630,6 +17630,24 @@
               ],
               "title": "Status"
             }
+          },
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
           }
         ],
         "responses": {
@@ -17739,7 +17757,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Danh sách đánh giá để quản trị kiểm duyệt",
+        "summary": "Nhân viên xem đánh giá theo sản phẩm và trạng thái",
         "tags": [
           "CRM · Khảo sát và đánh giá"
         ],
