@@ -55,6 +55,34 @@ Build Filters (Included Paths, tính từ gốc repository):
 - API: `Backend/**`.
 - Website: `ui/userUI/Frontend/**`, `ui/shared/**`.
 
+## Giao diện nhân viên dùng chung mã admin
+
+Service `phub-warehouse` dùng Root Directory trống hoặc `.` để có cả
+`ui/warehouseUI`, `ui/adminUI` và `ui/shared`.
+
+Build Command:
+
+```sh
+npm --prefix ui/warehouseUI ci && npm --prefix ui/warehouseUI run build
+```
+
+Start Command:
+
+```sh
+npm --prefix ui/warehouseUI run start -- --hostname 0.0.0.0 --port $PORT
+```
+
+Script `prebuild` của warehouse tự cài dependency admin từ lockfile. Không thay
+`npm ... run build` bằng `next build` trực tiếp, vì sẽ bỏ qua bước này.
+Included Paths cần có `ui/warehouseUI/**`, `ui/adminUI/**`, `ui/shared/**`.
+`PHUB_API_BASE_URL` vẫn trỏ tới API đã triển khai; các URL portal cần đặt trước build.
+
+Nếu log báo `Failed to compile` sau cảnh báo cache CSS, đọc tiếp phần lỗi bên
+dưới. Môi trường chỉ cài dependency warehouse từng tái hiện lỗi
+`../adminUI/... Module not found: Can't resolve 'lucide-react'`; máy local đã
+cài cả hai UI có thể không gặp lỗi này. Kiểm tra bản sửa trong thư mục sạch,
+không dùng `node_modules` sẵn có của admin để kết luận build đã ổn.
+
 ## Environment
 
 Website: `NODE_VERSION=22`, `PHUB_API_BASE_URL=https://phub-api.onrender.com`.
