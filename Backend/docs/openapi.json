@@ -8354,7 +8354,7 @@
           "overall_score": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -8365,7 +8365,7 @@
           "product_score": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -8376,7 +8376,7 @@
           "service_score": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -10223,7 +10223,14 @@
             ],
             "title": "Avg Service Score"
           },
+          "rated_responses": {
+            "default": 0,
+            "description": "Số bài có câu chấm điểm HAI_LONG đã trả lời",
+            "title": "Rated Responses",
+            "type": "integer"
+          },
           "rating_breakdown": {
+            "description": "Phân bố điểm từng câu HAI_LONG, không làm tròn trung bình bài thành sao",
             "items": {
               "$ref": "#/components/schemas/RatingBreakdownItem"
             },
@@ -10236,6 +10243,12 @@
             },
             "title": "Recent Feedbacks",
             "type": "array"
+          },
+          "total_ratings": {
+            "default": 0,
+            "description": "Số câu chấm điểm HAI_LONG đã trả lời; mẫu số phân bố sao",
+            "title": "Total Ratings",
+            "type": "integer"
           },
           "total_responses": {
             "title": "Total Responses",

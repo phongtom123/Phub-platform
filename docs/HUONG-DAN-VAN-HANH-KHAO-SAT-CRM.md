@@ -6,6 +6,37 @@
 
 ---
 
+## Cập nhật tính điểm báo cáo CRM — 08/11/2026
+
+- Tải/làm mới báo cáo dùng chung một vòng đời request. Đổi scope/kỳ hoặc tải lại
+  làm mất hiệu lực snapshot cũ; chỉ kết quả đúng scope/kỳ đang chọn mới được hiển thị/xuất.
+- CSV bị khóa khi tải, lỗi hoặc chưa có snapshot đã xác nhận. Tệp ghi scope/kỳ,
+  dùng “giá trị đơn có hiệu lực” cho ACTIVE và “doanh thu đơn hoàn thành” cho COMPLETED.
+- Biểu đồ ngành hàng vẽ và tính phần trăm theo số lượng của các ngành hàng đang hiển thị;
+  tỷ trọng doanh thu trên bảng là chỉ số riêng, được ghi rõ nhãn.
+- Kiểm thử frontend bổ sung: 8 unit tests, browser fixtures phản hồi chậm/đổi bộ lọc,
+  API 503, API trả sai scope, thử lại và tải CSV; không ghi dữ liệu thật.
+- Chỉ câu `DIEM_1_5` thuộc nhóm `HAI_LONG` mới tham gia CSAT. Câu `SO_THICH`,
+  `CHUNG` hoặc bài chỉ có văn bản không tạo điểm hài lòng.
+- Điểm chung của báo cáo là trung bình các câu hài lòng thực sự được trả lời;
+  chỉ làm tròn một chữ số thập phân lúc xuất kết quả. Điểm 5 và 4 cho kết quả 4,5.
+- `total_responses` đếm bài đã nộp, `rated_responses` đếm bài có điểm hài lòng,
+  `total_ratings` đếm câu chấm điểm đã trả lời. Phân bố sao dùng `total_ratings`
+  làm mẫu số, không chuyển trung bình bài 4,5 thành một lượt 4 hay 5 sao.
+- Chưa có phân loại cấu trúc riêng cho hài lòng sản phẩm/dịch vụ trong schema
+  hiện tại. Các chỉ số này trả `null`/“Chưa có”, không đoán từ chữ trong câu hỏi
+  và không sao chép điểm chung sang hai chỉ số thành phần.
+- Repository chỉ đọc câu trả lời và metadata câu hỏi; service
+  `Backend/phub_api/services/crm_survey_metrics.py` xử lý tính điểm.
+- Timeline ACTIVE dùng ngày đặt, COMPLETED dùng ngày hoàn thành, đều chuyển
+  về UTC+7 trước khi chia tháng/quý/năm. Timestamp cũ không có timezone được
+  hiểu là giờ Việt Nam; bộ lọc đến ngày bao gồm hết phần microsecond cuối ngày.
+- Các truy vấn CRM có thứ tự theo khóa duy nhất trước khi phân trang.
+  Thứ tự ổn định không thay thế một snapshot transaction khi dữ liệu thay đổi đồng thời.
+- Đã kiểm tra local: 1.407 test backend, 4 test frontend, TypeScript admin/staff,
+  OpenAPI. Truy vấn đọc Supabase thật chạy được; không có migration hoặc thao tác ghi.
+  Cần deploy API/UI mới để Render dùng thay đổi này; chưa push trong lượt sửa local.
+
 ## 1. Tổng quan phân hệ & Ma trận phân quyền (Role Matrix)
 
 Phân hệ CRM phục vụ 2 nghiệp vụ cốt lõi:

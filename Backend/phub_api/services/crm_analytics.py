@@ -5,10 +5,13 @@ from fastapi import HTTPException
 
 from phub_api.models.user import User
 from phub_api.repositories.crm_analytics import CrmAnalyticsRepository
+from phub_api.services.crm_survey_metrics import survey_insights as build_survey_insights
+
+VIETNAM_TIMEZONE = timezone(timedelta(hours=7))
 
 
 def vietnam_today() -> date:
-    return datetime.now(timezone(timedelta(hours=7))).date()
+    return datetime.now(VIETNAM_TIMEZONE).date()
 
 
 def format_money(val: Decimal | int | float) -> str:
@@ -206,6 +209,10 @@ class CrmAnalyticsService:
 
             try:
                 dt = datetime.fromisoformat(dt_raw.replace("Z", "+00:00"))
+                # Legacy timestamp-without-timezone columns store Vietnamese local time.
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=VIETNAM_TIMEZONE)
+                dt = dt.astimezone(VIETNAM_TIMEZONE)
             except Exception:
                 continue
 
@@ -776,69 +783,13 @@ class CrmAnalyticsService:
             })
 
         # 6. Surveys & Feedback Insights
-        get_surveys = getattr(self.repository, "surveys", lambda: [])
-        get_responses = getattr(self.repository, "survey_responses", lambda: [])
-        surveys = get_surveys() or []
-        responses = get_responses() or []
-        resp_count = len(responses)
-
-        # Only responses that contain numeric ratings should be included in CSAT score averages
-        rated_responses = [r for r in responses if r.get("diem_tong_the") is not None]
-        rated_count = len(rated_responses)
-
-        if rated_count > 0:
-            avg_overall = round(sum(r["diem_tong_the"] for r in rated_responses) / rated_count, 1)
-            prod_scores = [r["diem_san_pham"] for r in rated_responses if r.get("diem_san_pham") is not None]
-            serv_scores = [r["diem_dich_vu"] for r in rated_responses if r.get("diem_dich_vu") is not None]
-            avg_prod = round(sum(prod_scores) / len(prod_scores), 1) if prod_scores else avg_overall
-            avg_serv = round(sum(serv_scores) / len(serv_scores), 1) if serv_scores else avg_overall
-
-            star_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-            for r in rated_responses:
-                score = r["diem_tong_the"]
-                if score in star_counts:
-                    star_counts[score] += 1
-
-            rating_breakdown = [
-                {"stars": s, "count": star_counts[s], "percentage": round((star_counts[s] / rated_count * 100), 1)}
-                for s in (5, 4, 3, 2, 1)
-            ]
-        else:
-            avg_overall = None
-            avg_prod = None
-            avg_serv = None
-            rating_breakdown = [
-                {"stars": s, "count": 0, "percentage": 0.0}
-                for s in (5, 4, 3, 2, 1)
-            ]
-
-        recent_feedbacks = [
-            {
-                "customer_name": r.get("ten_nguoi_gui") or "Khách hàng",
-                "overall_score": r.get("diem_tong_the"),
-                "product_score": r.get("diem_san_pham"),
-                "service_score": r.get("diem_dich_vu"),
-                "comment": r.get("y_kien_dong_gop"),
-                "created_at": str(r.get("ngay_gui") or "")[:10],
-            }
-            for r in responses[:6]
-        ]
-
-        survey_insights = {
-            "total_surveys": len(surveys),
-            "total_responses": resp_count,
-            "avg_overall_score": avg_overall,
-            "avg_product_score": avg_prod,
-            "avg_service_score": avg_serv,
-            "rating_breakdown": rating_breakdown,
-            "recent_feedbacks": recent_feedbacks,
-        }
-
-        if rated_count > 0 and avg_overall is not None and avg_overall >= 4.5:
+        survey_insights = build_survey_insights(self.repository.surveys(), self.repository.survey_responses())
+        avg_overall = survey_insights["avg_overall_score"]
+        if avg_overall is not None and avg_overall >= 4.5:
             recommendations.append({
                 "type": "CSAT_EXCELLENCE",
                 "title": f"Chỉ số hài lòng khách hàng đạt mức xuất sắc ({avg_overall}/5 sao)",
-                "content": f"Điểm đánh giá chung đạt {avg_overall}/5 sao (Sản phẩm: {avg_prod}/5, Dịch vụ: {avg_serv}/5). Nên tiếp tục phát huy quy trình CSKH và sử dụng các phản hồi tích cực để quảng bá hình ảnh doanh nghiệp.",
+                "content": f"Điểm hài lòng chung đạt {avg_overall}/5 từ {survey_insights['total_ratings']} câu chấm điểm hài lòng thực tế. Chưa phân loại điểm riêng cho sản phẩm và dịch vụ.",
             })
 
         if not recommendations:

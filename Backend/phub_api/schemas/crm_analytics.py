@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CustomerInsightsSummary(BaseModel):
@@ -135,9 +135,9 @@ class RatingBreakdownItem(BaseModel):
 
 class RecentFeedbackItem(BaseModel):
     customer_name: str
-    overall_score: int | None = None
-    product_score: int | None = None
-    service_score: int | None = None
+    overall_score: float | None = None
+    product_score: float | None = None
+    service_score: float | None = None
     comment: str | None = None
     created_at: str
 
@@ -145,10 +145,12 @@ class RecentFeedbackItem(BaseModel):
 class SurveyInsightsData(BaseModel):
     total_surveys: int
     total_responses: int
+    rated_responses: int = Field(default=0, description="Số bài có câu chấm điểm HAI_LONG đã trả lời")
+    total_ratings: int = Field(default=0, description="Số câu chấm điểm HAI_LONG đã trả lời; mẫu số phân bố sao")
     avg_overall_score: float | None = None
     avg_product_score: float | None = None
     avg_service_score: float | None = None
-    rating_breakdown: list[RatingBreakdownItem]
+    rating_breakdown: list[RatingBreakdownItem] = Field(description="Phân bố điểm từng câu HAI_LONG, không làm tròn trung bình bài thành sao")
     recent_feedbacks: list[RecentFeedbackItem]
 
 

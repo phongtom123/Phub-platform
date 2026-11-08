@@ -1,5 +1,7 @@
 import { adminFetch } from "@internal/lib/admin-fetch";
 
+export type InsightsScope = "ACTIVE" | "COMPLETED";
+
 export type CustomerInsightsSummary = {
   total_customers: number;
   active_buyers: number;
@@ -7,7 +9,7 @@ export type CustomerInsightsSummary = {
   total_revenue: string;
   aov: string;
   arpu: string;
-  status_scope?: string;
+  status_scope: InsightsScope;
 };
 
 export type GenderItem = {
@@ -135,6 +137,8 @@ export type RecentFeedbackItem = {
 export type SurveyInsightsData = {
   total_surveys: number;
   total_responses: number;
+  rated_responses: number;
+  total_ratings: number;
   avg_overall_score: number | null;
   avg_product_score: number | null;
   avg_service_score: number | null;
@@ -185,7 +189,7 @@ export async function fetchCustomerInsights(
   signal?: AbortSignal,
   start?: string,
   end?: string,
-  statusScope: "ACTIVE" | "COMPLETED" = "ACTIVE"
+  statusScope: InsightsScope = "ACTIVE"
 ): Promise<CustomerInsightsReport> {
   const params = new URLSearchParams({ period, status_scope: statusScope });
   if (start) params.set("start", start);
@@ -203,13 +207,26 @@ export async function fetchCustomerInsights(
     throw new Error(detail);
   }
 
-  return response.json();
+  const report: CustomerInsightsReport = await response.json();
+  if (report?.summary?.status_scope !== statusScope || report?.spending_trends?.period_type !== period) {
+    throw new Error("API trả về báo cáo không khớp phạm vi hoặc kỳ thống kê. Vui lòng thử lại.");
+  }
+  return report;
 }
 
 export function exportInsightsCSV(report: CustomerInsightsReport): void {
+  const scope = report.summary.status_scope;
+  if (scope !== "ACTIVE" && scope !== "COMPLETED") throw new Error("Chưa xác nhận phạm vi báo cáo để xuất CSV.");
+  const completed = scope === "COMPLETED";
+  const scopeLabel = completed ? "Chỉ đơn hoàn thành" : "Đơn có hiệu lực (trừ đơn hủy)";
+  const orderLabel = completed ? "Số đơn hoàn thành" : "Số đơn có hiệu lực";
+  const amountLabel = completed ? "Doanh thu đơn hoàn thành" : "Giá trị đơn có hiệu lực";
+  const quantityLabel = completed ? "Số lượng bán" : "Số lượng đặt";
   const lines: string[] = [];
   lines.push("BÁO CÁO PHÂN TÍCH TỆP KHÁCH HÀNG & THỊ HIẾU SẢN PHẨM");
   lines.push(`Thời gian xuất,${new Date().toLocaleString("vi-VN")}`);
+  lines.push(`Phạm vi,${scopeLabel}`);
+  lines.push(`Kỳ tổng hợp,${{ month: "Theo tháng", quarter: "Theo quý", year: "Theo năm" }[report.spending_trends.period_type]}`);
   lines.push("");
 
   // 1. Tóm tắt
@@ -217,8 +234,8 @@ export function exportInsightsCSV(report: CustomerInsightsReport): void {
   lines.push("Chỉ số,Giá trị");
   lines.push(`Tổng số khách hàng,${report.summary.total_customers}`);
   lines.push(`Khách hàng phát sinh mua hàng,${report.summary.active_buyers}`);
-  lines.push(`Tổng số đơn hàng hoàn thành,${report.summary.total_orders}`);
-  lines.push(`Tổng doanh thu,${report.summary.total_revenue}`);
+  lines.push(`${orderLabel},${report.summary.total_orders}`);
+  lines.push(`${amountLabel} (chưa thuế),${report.summary.total_revenue}`);
   lines.push(`Giá trị đơn trung bình (AOV),${report.summary.aov}`);
   lines.push(`Chi tiêu trung bình / khách hàng (ARPU),${report.summary.arpu}`);
   lines.push("");
@@ -241,15 +258,15 @@ export function exportInsightsCSV(report: CustomerInsightsReport): void {
 
   // 4. Chi tiêu theo kỳ
   lines.push(`4. XU HƯỚNG CHI TIÊU (${report.spending_trends.period_type.toUpperCase()})`);
-  lines.push("Kỳ,Số đơn hoàn thành,Tổng doanh thu,Chi tiêu trung bình/đơn");
+  lines.push(`Kỳ,${orderLabel},${amountLabel},Giá trị trung bình/đơn`);
   for (const p of report.spending_trends.timeline) {
     lines.push(`"${p.label}",${p.order_count},${p.revenue},${p.avg_spending}`);
   }
   lines.push("");
 
   // 5. Top sản phẩm
-  lines.push("5. TOP SẢN PHẨM BÁN CHẠY");
-  lines.push("SKU,Tên sản phẩm,Danh mục,Số lượng bán,Doanh thu");
+  lines.push(completed ? "5. TOP SẢN PHẨM BÁN CHẠY" : "5. TOP SẢN PHẨM THEO NHU CẦU ĐẶT HÀNG");
+  lines.push(`SKU,Tên sản phẩm,Danh mục,${quantityLabel},${amountLabel}`);
   for (const p of report.product_insights.top_products) {
     lines.push(`"${p.sku}","${p.name.replace(/"/g, '""')}","${p.category_name}",${p.quantity_sold},${p.revenue}`);
   }
@@ -258,7 +275,7 @@ export function exportInsightsCSV(report: CustomerInsightsReport): void {
   // Ma trận Giới tính x Ngành hàng
   if (report.demographics.gender_category_matrix && report.demographics.gender_category_matrix.length > 0) {
     lines.push("MA TRẬN TƯƠNG QUAN: THỊ HIẾU NGÀNH HÀNG THEO GIỚI TÍNH");
-    lines.push("Ngành hàng,Khách Nam (SL),Khách Nam (DT),Khách Nữ (SL),Khách Nữ (DT),Khác (SL),Khác (DT),Chưa xác định (SL),Chưa xác định (DT),Tổng SL,Tổng DT");
+    lines.push(`Ngành hàng,Khách Nam (SL),Khách Nam (giá trị đơn),Khách Nữ (SL),Khách Nữ (giá trị đơn),Khác (SL),Khác (giá trị đơn),Chưa xác định (SL),Chưa xác định (giá trị đơn),Tổng SL,${amountLabel}`);
     for (const m of report.demographics.gender_category_matrix) {
       lines.push(`"${m.category_name}",${m.nam_quantity},${m.nam_revenue},${m.nu_quantity},${m.nu_revenue},${m.khac_quantity},${m.khac_revenue},${m.chua_xac_dinh_quantity},${m.chua_xac_dinh_revenue},${m.total_quantity},${m.total_revenue}`);
     }
@@ -270,11 +287,13 @@ export function exportInsightsCSV(report: CustomerInsightsReport): void {
     lines.push("6. KẾT QUẢ KHẢO SÁT & ĐÁNH GIÁ (CSAT)");
     lines.push(`Tổng bài khảo sát,${report.survey_insights.total_surveys}`);
     lines.push(`Tổng lượt đánh giá,${report.survey_insights.total_responses}`);
+    lines.push(`Số bài có điểm hài lòng,${report.survey_insights.rated_responses}`);
+    lines.push(`Số câu chấm điểm hài lòng,${report.survey_insights.total_ratings}`);
     lines.push(`Điểm đánh giá chung TB (/5),${report.survey_insights.avg_overall_score !== null ? report.survey_insights.avg_overall_score : "Chưa có"}`);
     lines.push(`Điểm sản phẩm TB (/5),${report.survey_insights.avg_product_score !== null ? report.survey_insights.avg_product_score : "Chưa có"}`);
     lines.push(`Điểm dịch vụ TB (/5),${report.survey_insights.avg_service_score !== null ? report.survey_insights.avg_service_score : "Chưa có"}`);
     lines.push("");
-    lines.push("Mức sao,Số lượng,Tỷ lệ (%)");
+    lines.push("Điểm câu hỏi hài lòng,Số câu trả lời,Tỷ lệ (%)");
     for (const rb of report.survey_insights.rating_breakdown) {
       lines.push(`${rb.stars} sao,${rb.count},${rb.percentage}%`);
     }
@@ -283,8 +302,8 @@ export function exportInsightsCSV(report: CustomerInsightsReport): void {
   // 7. Khu vực mua hàng
   if (report.city_distribution && report.city_distribution.length > 0) {
     lines.push("");
-    lines.push("7. PHÂN BỐ KHU VỰC MUA HÀNG (ĐỊA CHỈ GIAO HÀNG)");
-    lines.push("Khu vực (Thành phố/Tỉnh),Số đơn,Số khách,Doanh thu,Tỷ trọng DT (%)");
+    lines.push("7. PHÂN BỐ KHU VỰC ĐẶT HÀNG (ĐỊA CHỈ GIAO HÀNG)");
+    lines.push(`Khu vực (Thành phố/Tỉnh),Số đơn,Số khách,${amountLabel},Tỷ trọng giá trị (%)`);
     for (const c of report.city_distribution) {
       lines.push(`"${c.city}",${c.order_count},${c.customer_count},${c.revenue},${c.percentage}%`);
     }

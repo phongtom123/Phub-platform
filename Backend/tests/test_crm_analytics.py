@@ -44,8 +44,8 @@ class FakeRepository:
             {"ma_khao_sat": "surv-1", "tieu_de": "Khảo sát dịch vụ", "trang_thai": "DANG_MO"}
         ]
         self._survey_responses = responses if responses is not None else [
-            {"ma_bai_nop": "resp-1", "ma_khao_sat": "surv-1", "ten_nguoi_gui": "Nguyễn Văn A", "diem_san_pham": 5, "diem_dich_vu": 4, "diem_tong_the": 5, "y_kien_dong_gop": "Rất hài lòng", "ngay_gui": "2026-05-12T10:00:00Z"},
-            {"ma_bai_nop": "resp-2", "ma_khao_sat": "surv-1", "ten_nguoi_gui": "Trần Thị B", "diem_san_pham": 4, "diem_dich_vu": 4, "diem_tong_the": 4, "y_kien_dong_gop": "Hàng đẹp", "ngay_gui": "2026-05-16T14:00:00Z"},
+            {"ma_bai_nop": "resp-1", "ma_khao_sat": "surv-1", "ten_nguoi_gui": "Nguyễn Văn A", "answers": [{"loai_cau_hoi": "DIEM_1_5", "nhom_noi_dung": "HAI_LONG", "diem": 5, "noi_dung": "Rất hài lòng"}], "ngay_gui": "2026-05-12T10:00:00Z"},
+            {"ma_bai_nop": "resp-2", "ma_khao_sat": "surv-1", "ten_nguoi_gui": "Trần Thị B", "answers": [{"loai_cau_hoi": "DIEM_1_5", "nhom_noi_dung": "HAI_LONG", "diem": 4, "noi_dung": "Hàng đẹp"}], "ngay_gui": "2026-05-16T14:00:00Z"},
         ]
 
     def customers(self):
@@ -212,6 +212,7 @@ def test_survey_text_only_does_not_get_assigned_five_stars(make_client):
                 "diem_dich_vu": None,
                 "diem_tong_the": None,
                 "y_kien_dong_gop": "Chất lượng cần cải thiện",
+                "answers": [{"loai_cau_hoi": "VAN_BAN", "nhom_noi_dung": "CHUNG", "noi_dung": "Chất lượng cần cải thiện"}],
                 "ngay_gui": "2026-05-18T10:00:00Z",
             }
         ],
@@ -300,8 +301,8 @@ def test_repository_surveys_raises_on_connection_error():
         repo.surveys()
 
 
-def test_repository_survey_responses_parsing_and_score_averaging():
-    """Verify survey_responses computes average score across multiple questions and handles text-only answers."""
+def test_repository_returns_submitted_answers_without_inferred_scores():
+    """Repository joins actual answers; the service owns CSAT calculations."""
     from types import SimpleNamespace
     from phub_api.repositories.crm_analytics import CrmAnalyticsRepository
 
@@ -313,6 +314,9 @@ def test_repository_survey_responses_parsing_and_score_averaging():
             return self
 
         def range(self, *args, **kwargs):
+            return self
+
+        def order(self, *args, **kwargs):
             return self
 
         def execute(self):
@@ -340,9 +344,9 @@ def test_repository_survey_responses_parsing_and_score_averaging():
                 ])
             elif name == "CAU_HOI_KHAO_SAT":
                 return MockQueryBuilder([
-                    {"ma_cau_hoi": "q-prod", "noi_dung": "Chất lượng sản phẩm", "nhom_noi_dung": "HAI_LONG"},
-                    {"ma_cau_hoi": "q-serv", "noi_dung": "Dịch vụ giao hàng", "nhom_noi_dung": "HAI_LONG"},
-                    {"ma_cau_hoi": "q-text", "noi_dung": "Ý kiến đóng góp", "nhom_noi_dung": "CHUNG"},
+                    {"ma_cau_hoi": "q-prod", "loai_cau_hoi": "DIEM_1_5", "nhom_noi_dung": "HAI_LONG"},
+                    {"ma_cau_hoi": "q-serv", "loai_cau_hoi": "DIEM_1_5", "nhom_noi_dung": "HAI_LONG"},
+                    {"ma_cau_hoi": "q-text", "loai_cau_hoi": "VAN_BAN", "nhom_noi_dung": "CHUNG"},
                 ])
             return MockQueryBuilder([])
 
@@ -350,18 +354,15 @@ def test_repository_survey_responses_parsing_and_score_averaging():
     subs = repo.survey_responses()
     assert len(subs) == 2
 
-    # Sub 1 has scores 5 and 3 -> overall average is 4
     sub1 = next(s for s in subs if s["ma_bai_nop"] == "g-1")
-    assert sub1["diem_tong_the"] == 4
-    assert sub1["diem_san_pham"] == 5
-    assert sub1["diem_dich_vu"] == 3
+    assert [a["diem"] for a in sub1["answers"]] == [5, 3]
+    assert all(a["nhom_noi_dung"] == "HAI_LONG" for a in sub1["answers"])
+    assert "diem_dich_vu" not in sub1
 
     # Sub 2 has text only -> no scores
     sub2 = next(s for s in subs if s["ma_bai_nop"] == "g-2")
-    assert sub2["diem_tong_the"] is None
-    assert sub2["diem_san_pham"] is None
-    assert sub2["diem_dich_vu"] is None
-    assert sub2["y_kien_dong_gop"] == "Góp ý"
+    assert sub2["answers"][0]["diem"] is None
+    assert sub2["answers"][0]["noi_dung"] == "Góp ý"
 
 
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   Users,
   Download,
@@ -18,12 +18,11 @@ import {
   Info,
 } from "lucide-react";
 import {
-  fetchCustomerInsights,
   exportInsightsCSV,
   formatVND,
   formatNumber,
-  type CustomerInsightsReport,
 } from "./customer-insights-data";
+import { useCustomerInsights } from "./use-customer-insights";
 import { PieChartSVG } from "./pie-chart-svg";
 import styles from "./customer-insights.module.css";
 
@@ -80,34 +79,8 @@ export function CustomerInsightsView() {
   const [selectedGender, setSelectedGender] = useState<string>("Tất cả");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [cityMetric, setCityMetric] = useState<"revenue" | "orders">("revenue");
-  const [report, setReport] = useState<CustomerInsightsReport | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  const loadData = () => {
-    setLoading(true);
-    setError(null);
-    const controller = new AbortController();
-
-    fetchCustomerInsights(period, controller.signal, undefined, undefined, statusScope)
-      .then((data) => {
-        setReport(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError(err.message || "Lỗi khi tải dữ liệu phân tích.");
-          setLoading(false);
-        }
-      });
-
-    return () => controller.abort();
-  };
-
-  useEffect(() => {
-    return loadData();
-  }, [period, statusScope]);
+  const { report, loading, error, refresh } = useCustomerInsights(period, statusScope);
+  const [, startTransition] = useTransition();
 
   const handlePeriodChange = (newPeriod: "month" | "quarter" | "year") => {
     startTransition(() => {
@@ -137,7 +110,7 @@ export function CustomerInsightsView() {
           <button
             type="button"
             className={styles.btn}
-            onClick={loadData}
+            onClick={refresh}
             disabled={loading}
           >
             <RefreshCw size={16} /> Làm mới
@@ -145,8 +118,8 @@ export function CustomerInsightsView() {
           <button
             type="button"
             className={`${styles.btn} ${styles.btnPrimary}`}
-            onClick={() => report && exportInsightsCSV(report)}
-            disabled={!report || loading}
+            onClick={() => report && !loading && !error && exportInsightsCSV(report)}
+            disabled={!report || loading || Boolean(error)}
           >
             <Download size={16} /> Xuất CSV
           </button>
@@ -416,18 +389,15 @@ export function CustomerInsightsView() {
                 ? currentGenderDetail.top_categories || []
                 : currentDetail.top_categories || [];
 
+            const categoryTotalSold = activeCategories.reduce((acc, cat) => acc + cat.quantity_sold, 0);
             const categorySlices = activeCategories.map((cat, idx) => ({
               label: cat.category_name,
               value: cat.quantity_sold,
-              percentage: cat.percentage,
+              percentage: categoryTotalSold > 0 ? Math.round(cat.quantity_sold / categoryTotalSold * 1000) / 10 : 0,
               color: CATEGORY_COLORS[idx % CATEGORY_COLORS.length],
               subtext: formatVND(cat.revenue),
             }));
 
-            const categoryTotalSold = activeCategories.reduce(
-              (acc, c) => acc + c.quantity_sold,
-              0
-            );
             const categoryTitle =
               selectedAgeGroup !== "Tất cả" && selectedGender !== "Tất cả"
                 ? `3. Thị hiếu Ngành hàng (${selectedAgeGroup} • Khách ${selectedGender})`
@@ -635,7 +605,7 @@ export function CustomerInsightsView() {
                       valueUnit="sản phẩm"
                       selectedLabel={selectedCategory}
                       onSliceClick={handleCategoryClick}
-                      interactiveHint="Nhấp để lọc giới tính"
+                      interactiveHint="Tỷ trọng số lượng hiển thị · Nhấp để lọc giới tính"
                     />
                   </div>
                 ) : (
@@ -754,7 +724,7 @@ export function CustomerInsightsView() {
                                 <th>Ngành hàng</th>
                                 <th>Số lượng</th>
                                 <th>Doanh thu</th>
-                                <th>Tỷ trọng</th>
+                                <th>Tỷ trọng doanh thu</th>
                               </tr>
                             </thead>
                             <tbody>
