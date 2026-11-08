@@ -287,25 +287,44 @@ export function CustomerInsightsView() {
           {/* KHUNG TỔNG HỢP: ĐỘ TUỔI, GIỚI TÍNH & SẢN PHẨM TRÊN 1 KHUNG    */}
           {/* ============================================================ */}
           {(() => {
+            const isAllAges = selectedAgeGroup === "Tất cả";
             const ageDetails = report.demographics.by_age_group || [];
             const currentDetail =
               ageDetails.find((d) => d.group === selectedAgeGroup) ||
-              ageDetails.find((d) => d.group === "Tất cả") || {
-                group: selectedAgeGroup,
-                customer_count: report.summary.total_customers,
-                customer_percentage: 100,
-                active_buyers: report.summary.active_buyers,
-                total_orders: report.summary.total_orders,
-                revenue: report.summary.total_revenue,
-                gender: report.demographics.gender,
-                top_categories: report.product_insights.top_categories,
-                top_products: report.product_insights.top_products,
-              };
+              (isAllAges
+                ? ageDetails.find((d) => d.group === "Tất cả") || {
+                    group: "Tất cả",
+                    customer_count: report.summary.total_customers,
+                    customer_percentage: 100,
+                    active_buyers: report.summary.active_buyers,
+                    total_orders: report.summary.total_orders,
+                    revenue: report.summary.total_revenue,
+                    gender: report.demographics.gender,
+                    top_categories: report.product_insights.top_categories,
+                    top_products: report.product_insights.top_products,
+                    by_gender: report.demographics.by_gender || [],
+                    gender_category_matrix: report.demographics.gender_category_matrix || [],
+                  }
+                : {
+                    group: selectedAgeGroup,
+                    customer_count: 0,
+                    customer_percentage: 0,
+                    active_buyers: 0,
+                    total_orders: 0,
+                    revenue: "0",
+                    gender: [],
+                    top_categories: [],
+                    top_products: [],
+                    by_gender: [],
+                    gender_category_matrix: [],
+                  });
 
             const genderDetails =
               currentDetail.by_gender && currentDetail.by_gender.length > 0
                 ? currentDetail.by_gender
-                : report.demographics.by_gender || [];
+                : isAllAges
+                ? report.demographics.by_gender || []
+                : [];
             const currentGenderDetail =
               genderDetails.find((g) => g.label === selectedGender) ||
               genderDetails.find((g) => g.label === "Tất cả");
@@ -313,7 +332,9 @@ export function CustomerInsightsView() {
             const matrix =
               currentDetail.gender_category_matrix && currentDetail.gender_category_matrix.length > 0
                 ? currentDetail.gender_category_matrix
-                : report.demographics.gender_category_matrix || [];
+                : isAllAges
+                ? report.demographics.gender_category_matrix || []
+                : [];
 
             // 1. Slices for Age Groups
             const ageSlices = report.demographics.age_groups.map((ag) => ({
@@ -392,8 +413,8 @@ export function CustomerInsightsView() {
             // 3. Slices for Categories (interactive with Gender if selected)
             const activeCategories =
               selectedGender !== "Tất cả" && currentGenderDetail
-                ? currentGenderDetail.top_categories
-                : currentDetail.top_categories;
+                ? currentGenderDetail.top_categories || []
+                : currentDetail.top_categories || [];
 
             const categorySlices = activeCategories.map((cat, idx) => ({
               label: cat.category_name,
@@ -801,46 +822,54 @@ export function CustomerInsightsView() {
                               </tr>
                             </thead>
                             <tbody>
-                              {matrix.map((row) => {
-                                const isRowSelected = selectedCategory === row.category_name;
-                                return (
-                                  <tr
-                                    key={row.category_id}
-                                    style={{
-                                      cursor: "pointer",
-                                      background: isRowSelected ? "#e8f5e9" : undefined,
-                                    }}
-                                    onClick={() => handleCategoryClick(row.category_name)}
-                                    title="Nhấp để lọc biểu đồ giới tính theo ngành hàng này"
-                                  >
-                                    <td>
-                                      <strong>{row.category_name}</strong>
-                                    </td>
-                                    <td>
-                                      <span>{formatNumber(row.nam_quantity)} sp</span>
-                                      <span className={styles.matrixSub}>{formatVND(row.nam_revenue)}</span>
-                                    </td>
-                                    <td>
-                                      <span>{formatNumber(row.nu_quantity)} sp</span>
-                                      <span className={styles.matrixSub}>{formatVND(row.nu_revenue)}</span>
-                                    </td>
-                                    <td>
-                                      <span>{formatNumber(row.khac_quantity)} sp</span>
-                                      <span className={styles.matrixSub}>{formatVND(row.khac_revenue)}</span>
-                                    </td>
-                                    <td>
-                                      <span>{formatNumber(row.chua_xac_dinh_quantity)} sp</span>
-                                      <span className={styles.matrixSub}>{formatVND(row.chua_xac_dinh_revenue)}</span>
-                                    </td>
-                                    <td>
-                                      <strong style={{ color: "#14a800" }}>{formatNumber(row.total_quantity)} sp</strong>
-                                      <span className={styles.matrixSub} style={{ fontWeight: 600, color: "#14a800" }}>
-                                        {formatVND(row.total_revenue)}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
+                              {matrix.length === 0 ? (
+                                <tr>
+                                  <td colSpan={6} style={{ textAlign: "center", padding: "2.5rem 1rem", color: "#64748b" }}>
+                                    Không có dữ liệu đơn hàng nào cho nhóm {selectedAgeGroup !== "Tất cả" ? `tuổi "${selectedAgeGroup}"` : "khách hàng này"} trong kỳ đã chọn.
+                                  </td>
+                                </tr>
+                              ) : (
+                                matrix.map((row) => {
+                                  const isRowSelected = selectedCategory === row.category_name;
+                                  return (
+                                    <tr
+                                      key={row.category_id}
+                                      style={{
+                                        cursor: "pointer",
+                                        background: isRowSelected ? "#e8f5e9" : undefined,
+                                      }}
+                                      onClick={() => handleCategoryClick(row.category_name)}
+                                      title="Nhấp để lọc biểu đồ giới tính theo ngành hàng này"
+                                    >
+                                      <td>
+                                        <strong>{row.category_name}</strong>
+                                      </td>
+                                      <td>
+                                        <span>{formatNumber(row.nam_quantity)} sp</span>
+                                        <span className={styles.matrixSub}>{formatVND(row.nam_revenue)}</span>
+                                      </td>
+                                      <td>
+                                        <span>{formatNumber(row.nu_quantity)} sp</span>
+                                        <span className={styles.matrixSub}>{formatVND(row.nu_revenue)}</span>
+                                      </td>
+                                      <td>
+                                        <span>{formatNumber(row.khac_quantity)} sp</span>
+                                        <span className={styles.matrixSub}>{formatVND(row.khac_revenue)}</span>
+                                      </td>
+                                      <td>
+                                        <span>{formatNumber(row.chua_xac_dinh_quantity)} sp</span>
+                                        <span className={styles.matrixSub}>{formatVND(row.chua_xac_dinh_revenue)}</span>
+                                      </td>
+                                      <td>
+                                        <strong style={{ color: "#14a800" }}>{formatNumber(row.total_quantity)} sp</strong>
+                                        <span className={styles.matrixSub} style={{ fontWeight: 600, color: "#14a800" }}>
+                                          {formatVND(row.total_revenue)}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
                             </tbody>
                             <tfoot>
                               <tr className={styles.matrixTableTotalRow}>

@@ -125,9 +125,9 @@ export type RatingBreakdownItem = {
 
 export type RecentFeedbackItem = {
   customer_name: string;
-  overall_score: number;
-  product_score: number;
-  service_score: number;
+  overall_score: number | null;
+  product_score: number | null;
+  service_score: number | null;
   comment: string | null;
   created_at: string;
 };
@@ -135,9 +135,9 @@ export type RecentFeedbackItem = {
 export type SurveyInsightsData = {
   total_surveys: number;
   total_responses: number;
-  avg_overall_score: number;
-  avg_product_score: number;
-  avg_service_score: number;
+  avg_overall_score: number | null;
+  avg_product_score: number | null;
+  avg_service_score: number | null;
   rating_breakdown: RatingBreakdownItem[];
   recent_feedbacks: RecentFeedbackItem[];
 };
@@ -270,9 +270,9 @@ export function exportInsightsCSV(report: CustomerInsightsReport): void {
     lines.push("6. KẾT QUẢ KHẢO SÁT & ĐÁNH GIÁ (CSAT)");
     lines.push(`Tổng bài khảo sát,${report.survey_insights.total_surveys}`);
     lines.push(`Tổng lượt đánh giá,${report.survey_insights.total_responses}`);
-    lines.push(`Điểm đánh giá chung TB (/5),${report.survey_insights.avg_overall_score}`);
-    lines.push(`Điểm sản phẩm TB (/5),${report.survey_insights.avg_product_score}`);
-    lines.push(`Điểm dịch vụ TB (/5),${report.survey_insights.avg_service_score}`);
+    lines.push(`Điểm đánh giá chung TB (/5),${report.survey_insights.avg_overall_score !== null ? report.survey_insights.avg_overall_score : "Chưa có"}`);
+    lines.push(`Điểm sản phẩm TB (/5),${report.survey_insights.avg_product_score !== null ? report.survey_insights.avg_product_score : "Chưa có"}`);
+    lines.push(`Điểm dịch vụ TB (/5),${report.survey_insights.avg_service_score !== null ? report.survey_insights.avg_service_score : "Chưa có"}`);
     lines.push("");
     lines.push("Mức sao,Số lượng,Tỷ lệ (%)");
     for (const rb of report.survey_insights.rating_breakdown) {
