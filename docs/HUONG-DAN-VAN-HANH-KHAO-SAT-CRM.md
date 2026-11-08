@@ -333,3 +333,13 @@ cd ../../adminUI ; npx tsc --noEmit
 1. **Bảo toàn DDL Database:** Không tạo thêm bảng ngoài 6 bảng vật lý đã chuẩn hóa trên Supabase. Mọi nghiệp vụ phải đi qua các hàm RPC đã kiểm thử.
 2. **Phân quyền bất di bất dịch:** Nhân viên phụ trách vận hành nghiệp vụ (tạo/gửi khảo sát, duyệt đánh giá); Admin phụ trách giám sát dữ liệu và phân tích báo cáo thống kê.
 3. **Trải nghiệm khách hàng:** Giữ tính minh bạch, hiển thị thông báo rõ ràng khi có xung đột dữ liệu hoặc thiếu sót thông tin, không ngầm xóa hoặc ghi đè dữ liệu của khách hàng.
+
+---
+
+## 8. Chuẩn hóa & Khắc phục 6 vấn đề chất lượng báo cáo CRM (Cập nhật 08/11/2026)
+1. **Phân trang toàn diện dữ liệu lớn (Supabase 1000-row limit):** Sử dụng query factory kết hợp generator phân trang `rows(...)` (`phub_api.repositories.pagination`) cho tất cả các bảng `KHACH_HANG`, `DON_HANG`, `CT_DON_HANG`, `SAN_PHAM`, `LOAI_SP`, `KHAO_SAT`, `TRA_LOI_KHAO_SAT`, `GUI_KHAO_SAT`, `CAU_HOI_KHAO_SAT`, triệt để xóa bỏ tình trạng cắt cụt dữ liệu khi số bản ghi vượt 1.000 dòng.
+2. **Tính toán chính xác điểm khảo sát (CSAT):** Phân tách rạch ròi giữa phản hồi chấm điểm sao số học (`DIEM_1_5`) và phản hồi thuần văn bản/tự luận. Phản hồi tự luận không bị ép điểm 5/5 sao ảo (`diem_tong_the` giữ nguyên `None`), đồng thời chỉ các phản hồi có điểm số thực mới được đưa vào tính trung bình sao CSAT và tỷ lệ phân bố số sao.
+3. **Minh bạch lỗi kết nối (Không che giấu lỗi):** Loại bỏ hoàn toàn khối `try...except Exception: return []` nuốt lỗi ngầm trong `CrmAnalyticsRepository`. Khi Supabase hoặc mạng gặp sự cố, ngoại lệ được kích hoạt để API báo lỗi thực chất thay vì trả về `0` gây hiểu lầm là dữ liệu trống.
+4. **Cô lập dữ liệu tương tác khi lọc nhóm tuổi:** Khi người dùng chọn một nhóm tuổi cụ thể chưa phát sinh đơn hàng, ma trận ngành hàng (`gender_category_matrix`) và cơ cấu giới tính (`by_gender`) trả về danh sách rỗng `[]` và hiển thị thông báo "Không có dữ liệu đơn hàng cho nhóm tuổi này", tuyệt đối không fallback hiển thị số liệu gộp của tất cả khách hàng.
+5. **Đồng nhất kỳ thời gian thống kê:** Trong phân tích biểu đồ timeline doanh thu (`timeline_groups`), mốc thời gian nhóm được đồng nhất chặt chẽ với điều kiện lọc: sử dụng ngày đặt hàng `thoi_gian_dat` khi xem đơn hiện hữu (`status_scope="ACTIVE"`), và sử dụng ngày hoàn thành `thoi_gian_hoan_thanh` khi xem đơn hoàn tất (`status_scope="COMPLETED"`).
+6. **Đồng bộ định danh lát cắt trên biểu đồ tròn (Pie Chart SVG):** Sử dụng `hoveredLabel` định danh theo nhãn lát cắt (`slice.label`) thay cho chỉ số mảng `hoveredIdx`, loại bỏ hoàn toàn hiện tượng lệch lát cắt khi có nhóm mang giá trị bằng 0 (`value = 0`).

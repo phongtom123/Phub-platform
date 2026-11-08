@@ -1,4 +1,5 @@
 from decimal import Decimal
+from phub_api.repositories.pagination import rows
 
 
 class CrmAnalyticsRepository:
@@ -8,29 +9,36 @@ class CrmAnalyticsRepository:
 
     def customers(self):
         try:
-            return self.db.table("KHACH_HANG").select(
-                "ma_kh, ten_kh, sdt, dia_chi_chi_tiet_md, tinh_thanh_md, xa_phuong_md, ngay_sinh, ngay_tao, gioi_tinh"
-            ).execute().data or []
+            def qf():
+                return self.db.table("KHACH_HANG").select(
+                    "ma_kh, ten_kh, sdt, dia_chi_chi_tiet_md, tinh_thanh_md, xa_phuong_md, ngay_sinh, ngay_tao, gioi_tinh"
+                )
+            return list(rows(qf))
         except Exception:
-            return self.db.table("KHACH_HANG").select(
-                "ma_kh, ten_kh, sdt, dia_chi_chi_tiet_md, tinh_thanh_md, xa_phuong_md, ngay_sinh, ngay_tao"
-            ).execute().data or []
+            def qf_fallback():
+                return self.db.table("KHACH_HANG").select(
+                    "ma_kh, ten_kh, sdt, dia_chi_chi_tiet_md, tinh_thanh_md, xa_phuong_md, ngay_sinh, ngay_tao"
+                )
+            return list(rows(qf_fallback))
 
     def completed_orders(self, start=None, end=None, status_scope="ACTIVE"):
-        query = self.db.table("DON_HANG").select(
-            "ma_donhang, ma_kh, thoi_gian_dat, thoi_gian_hoan_thanh, trang_thai, tinh_thanh, dia_chi_chi_tiet, xa_phuong"
-        )
-        if status_scope == "COMPLETED":
-            query = query.eq("trang_thai", "HOAN_THANH")
-        else:
-            query = query.neq("trang_thai", "HUY")
+        def qf():
+            query = self.db.table("DON_HANG").select(
+                "ma_donhang, ma_kh, thoi_gian_dat, thoi_gian_hoan_thanh, trang_thai, tinh_thanh, dia_chi_chi_tiet, xa_phuong"
+            )
+            if status_scope == "COMPLETED":
+                query = query.eq("trang_thai", "HOAN_THANH")
+            else:
+                query = query.neq("trang_thai", "HUY")
 
-        time_col = "thoi_gian_hoan_thanh" if status_scope == "COMPLETED" else "thoi_gian_dat"
-        if start:
-            query = query.gte(time_col, f"{start}T00:00:00+07:00")
-        if end:
-            query = query.lte(time_col, f"{end}T23:59:59+07:00")
-        orders = query.execute().data or []
+            time_col = "thoi_gian_hoan_thanh" if status_scope == "COMPLETED" else "thoi_gian_dat"
+            if start:
+                query = query.gte(time_col, f"{start}T00:00:00+07:00")
+            if end:
+                query = query.lte(time_col, f"{end}T23:59:59+07:00")
+            return query
+
+        orders = list(rows(qf))
         if not orders:
             return []
 
@@ -68,91 +76,92 @@ class CrmAnalyticsRepository:
             all_lines = []
             for i in range(0, len(order_ids), CHUNK_SIZE):
                 chunk = order_ids[i:i + CHUNK_SIZE]
-                chunk_data = self.db.table("CT_DON_HANG").select(
-                    "ma_donhang, sku, so_luong, don_gia, giam_gia, giam_gia_voucher, thanh_tien"
-                ).in_("ma_donhang", chunk).execute().data or []
-                all_lines.extend(chunk_data)
+                def chunk_qf(c=chunk):
+                    return self.db.table("CT_DON_HANG").select(
+                        "ma_donhang, sku, so_luong, don_gia, giam_gia, giam_gia_voucher, thanh_tien"
+                    ).in_("ma_donhang", c)
+                all_lines.extend(list(rows(chunk_qf)))
             if cache_key is not None:
                 self._order_lines_cache[cache_key] = all_lines
             return all_lines
 
-        query = self.db.table("CT_DON_HANG").select(
-            "ma_donhang, sku, so_luong, don_gia, giam_gia, giam_gia_voucher, thanh_tien"
-        )
-        if order_ids is not None:
-            query = query.in_("ma_donhang", order_ids)
-        result = query.execute().data or []
+        def qf():
+            query = self.db.table("CT_DON_HANG").select(
+                "ma_donhang, sku, so_luong, don_gia, giam_gia, giam_gia_voucher, thanh_tien"
+            )
+            if order_ids is not None:
+                query = query.in_("ma_donhang", order_ids)
+            return query
+
+        result = list(rows(qf))
         if cache_key is not None:
             self._order_lines_cache[cache_key] = result
         return result
 
     def products(self):
-        return self.db.table("SAN_PHAM").select(
-            "sku, ten_sp, ma_loai_sp"
-        ).execute().data
+        return list(rows(lambda: self.db.table("SAN_PHAM").select("sku, ten_sp, ma_loai_sp")))
 
     def categories(self):
-        return self.db.table("LOAI_SP").select(
-            "ma_loai_sp, ten_loai_sp"
-        ).execute().data
+        return list(rows(lambda: self.db.table("LOAI_SP").select("ma_loai_sp, ten_loai_sp")))
 
     def surveys(self):
-        try:
-            return self.db.table("KHAO_SAT").select("*").execute().data or []
-        except Exception:
-            return []
+        return list(rows(lambda: self.db.table("KHAO_SAT").select("*")))
 
     def survey_responses(self):
-        try:
-            answers = self.db.table("TRA_LOI_KHAO_SAT").select("*").execute().data or []
-            if not answers:
-                return []
-            guis = {g["ma_gui"]: g for g in (self.db.table("GUI_KHAO_SAT").select("*").execute().data or [])}
-            khs = {k["ma_kh"]: k for k in (self.db.table("KHACH_HANG").select("ma_kh, ten_kh").execute().data or [])}
-            qs = {q["ma_cau_hoi"]: q for q in (self.db.table("CAU_HOI_KHAO_SAT").select("*").execute().data or [])}
-
-            submissions = {}
-            for a in answers:
-                mg = a.get("ma_gui")
-                if not mg:
-                    continue
-                gui = guis.get(mg, {})
-                kh_id = gui.get("ma_kh")
-                kh_name = khs.get(kh_id, {}).get("ten_kh", "Khách hàng")
-                if mg not in submissions:
-                    submissions[mg] = {
-                        "ma_bai_nop": mg,
-                        "ma_khao_sat": a.get("ma_khao_sat"),
-                        "ma_kh": kh_id,
-                        "ten_nguoi_gui": kh_name,
-                        "diem_san_pham": None,
-                        "diem_dich_vu": None,
-                        "diem_tong_the": None,
-                        "y_kien_dong_gop": None,
-                        "ngay_gui": gui.get("hoan_thanh_luc") or gui.get("ngay_gui"),
-                    }
-                q = qs.get(a.get("ma_cau_hoi"), {})
-                if a.get("diem") is not None:
-                    score = int(a["diem"])
-                    submissions[mg]["diem_tong_the"] = score
-                    nhom = q.get("nhom_noi_dung")
-                    if nhom == "SAN_PHAM":
-                        submissions[mg]["diem_san_pham"] = score
-                    elif nhom == "DICH_VU":
-                        submissions[mg]["diem_dich_vu"] = score
-                    else:
-                        submissions[mg]["diem_san_pham"] = submissions[mg]["diem_san_pham"] or score
-                        submissions[mg]["diem_dich_vu"] = submissions[mg]["diem_dich_vu"] or score
-                if a.get("noi_dung"):
-                    submissions[mg]["y_kien_dong_gop"] = a["noi_dung"]
-
-            for sub in submissions.values():
-                d_tong = sub["diem_tong_the"] or 5
-                sub["diem_tong_the"] = d_tong
-                sub["diem_san_pham"] = sub["diem_san_pham"] or d_tong
-                sub["diem_dich_vu"] = sub["diem_dich_vu"] or d_tong
-
-            return list(submissions.values())
-        except Exception:
+        answers = list(rows(lambda: self.db.table("TRA_LOI_KHAO_SAT").select("*")))
+        if not answers:
             return []
+        guis = {g["ma_gui"]: g for g in rows(lambda: self.db.table("GUI_KHAO_SAT").select("*"))}
+        khs = {k["ma_kh"]: k for k in rows(lambda: self.db.table("KHACH_HANG").select("ma_kh, ten_kh"))}
+        qs = {q["ma_cau_hoi"]: q for q in rows(lambda: self.db.table("CAU_HOI_KHAO_SAT").select("*"))}
+
+        submissions = {}
+        for a in answers:
+            mg = a.get("ma_gui")
+            if not mg:
+                continue
+            gui = guis.get(mg, {})
+            kh_id = gui.get("ma_kh")
+            kh_name = khs.get(kh_id, {}).get("ten_kh", "Khách hàng")
+            if mg not in submissions:
+                submissions[mg] = {
+                    "ma_bai_nop": mg,
+                    "ma_khao_sat": a.get("ma_khao_sat"),
+                    "ma_kh": kh_id,
+                    "ten_nguoi_gui": kh_name,
+                    "diem_san_pham": None,
+                    "diem_dich_vu": None,
+                    "diem_tong_the": None,
+                    "y_kien_dong_gop": None,
+                    "ngay_gui": gui.get("hoan_thanh_luc") or gui.get("ngay_gui"),
+                }
+            q = qs.get(a.get("ma_cau_hoi"), {})
+            if a.get("diem") is not None:
+                score = int(a["diem"])
+                submissions[mg].setdefault("_scores", []).append(score)
+                q_text = str(q.get("noi_dung") or "").lower()
+                nhom = q.get("nhom_noi_dung")
+                if nhom == "SAN_PHAM" or "sản phẩm" in q_text or "san pham" in q_text:
+                    submissions[mg]["diem_san_pham"] = score
+                elif nhom == "DICH_VU" or "dịch vụ" in q_text or "dich vu" in q_text or "giao hàng" in q_text or "cskh" in q_text:
+                    submissions[mg]["diem_dich_vu"] = score
+                else:
+                    if submissions[mg]["diem_san_pham"] is None:
+                        submissions[mg]["diem_san_pham"] = score
+                    if submissions[mg]["diem_dich_vu"] is None:
+                        submissions[mg]["diem_dich_vu"] = score
+            if a.get("noi_dung"):
+                submissions[mg]["y_kien_dong_gop"] = a["noi_dung"]
+
+        for sub in submissions.values():
+            scores = sub.pop("_scores", [])
+            d_tong = round(sum(scores) / len(scores)) if scores else None
+            sub["diem_tong_the"] = d_tong
+            if d_tong is not None:
+                if sub["diem_san_pham"] is None:
+                    sub["diem_san_pham"] = d_tong
+                if sub["diem_dich_vu"] is None:
+                    sub["diem_dich_vu"] = d_tong
+
+        return list(submissions.values())
 

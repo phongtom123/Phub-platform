@@ -198,3 +198,170 @@ def test_customer_insights_empty_dataset(make_client):
     assert len(data["survey_insights"]["recent_feedbacks"]) == 0
     assert len(data["strategic_recommendations"]) > 0
 
+
+def test_survey_text_only_does_not_get_assigned_five_stars(make_client):
+    """Bug fix verification: open-ended text answers must not be defaulted to 5/5 stars."""
+    text_only_repo = FakeRepository(
+        surveys=[{"ma_khao_sat": "surv-text", "tieu_de": "Khảo sát ý kiến"}],
+        responses=[
+            {
+                "ma_bai_nop": "resp-txt-1",
+                "ma_khao_sat": "surv-text",
+                "ten_nguoi_gui": "Khách ẩn danh",
+                "diem_san_pham": None,
+                "diem_dich_vu": None,
+                "diem_tong_the": None,
+                "y_kien_dong_gop": "Chất lượng cần cải thiện",
+                "ngay_gui": "2026-05-18T10:00:00Z",
+            }
+        ],
+    )
+    client = make_client(user=ADMIN, repo=text_only_repo)
+    response = client.get("/api/crm/analytics/customer-insights")
+    assert response.status_code == 200
+    data = response.json()
+    si = data["survey_insights"]
+    assert si["total_responses"] == 1
+    assert si["avg_overall_score"] is None
+    assert si["avg_product_score"] is None
+    assert si["avg_service_score"] is None
+    # All star count buckets should be 0 because there were no rated responses
+    assert all(b["count"] == 0 for b in si["rating_breakdown"])
+    # Recent feedbacks show overall_score as None
+    assert si["recent_feedbacks"][0]["overall_score"] is None
+    assert si["recent_feedbacks"][0]["comment"] == "Chất lượng cần cải thiện"
+
+
+def test_timeline_groups_use_order_date_for_active_and_completion_date_for_completed(make_client):
+    """Bug fix verification: timeline grouping aligns with the query filter."""
+    orders = [
+        {
+            "ma_donhang": "DH-CROSS-MONTH",
+            "ma_kh": "KH1",
+            "thoi_gian_dat": "2026-05-30T10:00:00+07:00",
+            "thoi_gian_hoan_thanh": "2026-06-02T10:00:00+07:00",
+            "trang_thai": "HOAN_THANH",
+            "tong_tien": "5000000.00",
+            "tinh_thanh": "TP. Hồ Chí Minh",
+        }
+    ]
+    lines = [
+        {"ma_donhang": "DH-CROSS-MONTH", "sku": "SKU-CPU-I7", "so_luong": 1, "don_gia": "5000000.00", "giam_gia": "0.00", "giam_gia_voucher": "0.00"}
+    ]
+    repo = FakeRepository(orders=orders, lines=lines)
+    client = make_client(user=ADMIN, repo=repo)
+
+    # ACTIVE scope uses order date (May 2026)
+    res_active = client.get("/api/crm/analytics/customer-insights?status_scope=ACTIVE")
+    assert res_active.status_code == 200
+    timeline_active = res_active.json()["spending_trends"]["timeline"]
+    assert len(timeline_active) == 1
+    assert timeline_active[0]["period"] == "2026-05"
+
+    # COMPLETED scope uses completion date (June 2026)
+    res_completed = client.get("/api/crm/analytics/customer-insights?status_scope=COMPLETED")
+    assert res_completed.status_code == 200
+    timeline_completed = res_completed.json()["spending_trends"]["timeline"]
+    assert len(timeline_completed) == 1
+    assert timeline_completed[0]["period"] == "2026-06"
+
+
+def test_age_group_with_no_orders_produces_empty_sub_metrics(make_client):
+    """Bug fix verification: age group with 0 orders must not inherit global data."""
+    # KH-YOUNG is born in 2012 (age 14 in 2026 -> Dưới 18), but has no orders
+    customers = [
+        {"ma_kh": "KH-YOUNG", "ten_kh": "Trẻ tuổi", "gioi_tinh": "NAM", "ngay_sinh": "2012-01-01", "so_thich": None},
+    ]
+    repo = FakeRepository(customers=customers, orders=[], lines=[])
+    client = make_client(user=ADMIN, repo=repo)
+    response = client.get("/api/crm/analytics/customer-insights")
+    assert response.status_code == 200
+    data = response.json()
+    by_age = data["demographics"]["by_age_group"]
+    group_u18 = next(ag for ag in by_age if ag["group"] == "Dưới 18")
+    assert group_u18["customer_count"] == 1
+    assert group_u18["total_orders"] == 0
+    assert group_u18["revenue"] == "0.00"
+    assert group_u18["top_categories"] == []
+    assert group_u18["top_products"] == []
+    assert group_u18["gender_category_matrix"] == []
+
+
+def test_repository_surveys_raises_on_connection_error():
+    """Bug fix verification: connection errors are not swallowed as fake empty data."""
+    from phub_api.repositories.crm_analytics import CrmAnalyticsRepository
+
+    class FailingDb:
+        def table(self, name):
+            raise ConnectionError("Không thể kết nối Supabase")
+
+    repo = CrmAnalyticsRepository(FailingDb())
+    with pytest.raises(ConnectionError):
+        repo.surveys()
+
+
+def test_repository_survey_responses_parsing_and_score_averaging():
+    """Verify survey_responses computes average score across multiple questions and handles text-only answers."""
+    from types import SimpleNamespace
+    from phub_api.repositories.crm_analytics import CrmAnalyticsRepository
+
+    class MockQueryBuilder:
+        def __init__(self, data):
+            self._data = data
+
+        def select(self, *args, **kwargs):
+            return self
+
+        def range(self, *args, **kwargs):
+            return self
+
+        def execute(self):
+            return SimpleNamespace(data=self._data)
+
+    class MockDb:
+        def table(self, name):
+            if name == "TRA_LOI_KHAO_SAT":
+                return MockQueryBuilder([
+                    # Sub 1: 2 questions with scores 5 and 3
+                    {"ma_gui": "g-1", "ma_khao_sat": "s-1", "ma_cau_hoi": "q-prod", "diem": 5, "noi_dung": None},
+                    {"ma_gui": "g-1", "ma_khao_sat": "s-1", "ma_cau_hoi": "q-serv", "diem": 3, "noi_dung": None},
+                    # Sub 2: text only
+                    {"ma_gui": "g-2", "ma_khao_sat": "s-1", "ma_cau_hoi": "q-text", "diem": None, "noi_dung": "Góp ý"},
+                ])
+            elif name == "GUI_KHAO_SAT":
+                return MockQueryBuilder([
+                    {"ma_gui": "g-1", "ma_kh": "KH1", "hoan_thanh_luc": "2026-05-10T00:00:00Z"},
+                    {"ma_gui": "g-2", "ma_kh": "KH2", "hoan_thanh_luc": "2026-05-11T00:00:00Z"},
+                ])
+            elif name == "KHACH_HANG":
+                return MockQueryBuilder([
+                    {"ma_kh": "KH1", "ten_kh": "Nguyễn A"},
+                    {"ma_kh": "KH2", "ten_kh": "Trần B"},
+                ])
+            elif name == "CAU_HOI_KHAO_SAT":
+                return MockQueryBuilder([
+                    {"ma_cau_hoi": "q-prod", "noi_dung": "Chất lượng sản phẩm", "nhom_noi_dung": "HAI_LONG"},
+                    {"ma_cau_hoi": "q-serv", "noi_dung": "Dịch vụ giao hàng", "nhom_noi_dung": "HAI_LONG"},
+                    {"ma_cau_hoi": "q-text", "noi_dung": "Ý kiến đóng góp", "nhom_noi_dung": "CHUNG"},
+                ])
+            return MockQueryBuilder([])
+
+    repo = CrmAnalyticsRepository(MockDb())
+    subs = repo.survey_responses()
+    assert len(subs) == 2
+
+    # Sub 1 has scores 5 and 3 -> overall average is 4
+    sub1 = next(s for s in subs if s["ma_bai_nop"] == "g-1")
+    assert sub1["diem_tong_the"] == 4
+    assert sub1["diem_san_pham"] == 5
+    assert sub1["diem_dich_vu"] == 3
+
+    # Sub 2 has text only -> no scores
+    sub2 = next(s for s in subs if s["ma_bai_nop"] == "g-2")
+    assert sub2["diem_tong_the"] is None
+    assert sub2["diem_san_pham"] is None
+    assert sub2["diem_dich_vu"] is None
+    assert sub2["y_kien_dong_gop"] == "Góp ý"
+
+
+

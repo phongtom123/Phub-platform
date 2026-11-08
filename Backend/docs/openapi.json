@@ -8352,23 +8352,41 @@
             "type": "string"
           },
           "overall_score": {
-            "title": "Overall Score",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Score"
           },
           "product_score": {
-            "title": "Product Score",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Score"
           },
           "service_score": {
-            "title": "Service Score",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Score"
           }
         },
         "required": [
           "customer_name",
-          "overall_score",
-          "product_score",
-          "service_score",
           "created_at"
         ],
         "title": "RecentFeedbackItem",

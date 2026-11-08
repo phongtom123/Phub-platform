@@ -135,9 +135,9 @@ class RatingBreakdownItem(BaseModel):
 
 class RecentFeedbackItem(BaseModel):
     customer_name: str
-    overall_score: int
-    product_score: int
-    service_score: int
+    overall_score: int | None = None
+    product_score: int | None = None
+    service_score: int | None = None
     comment: str | None = None
     created_at: str
 

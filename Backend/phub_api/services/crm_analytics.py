@@ -194,10 +194,12 @@ class CrmAnalyticsService:
             interest_list = []
 
         # 3. Timeline / Spending by month, quarter, year
+        # Use date field matching status_scope: thoi_gian_hoan_thanh for COMPLETED, thoi_gian_dat for ACTIVE
+        time_field = "thoi_gian_hoan_thanh" if status_scope == "COMPLETED" else "thoi_gian_dat"
         timeline_groups: dict[str, dict] = {}
         for o in orders:
             oid = o["ma_donhang"]
-            dt_raw = str(o.get("thoi_gian_hoan_thanh") or o.get("thoi_gian_dat") or "")
+            dt_raw = str(o.get(time_field) or o.get("thoi_gian_dat") or o.get("thoi_gian_hoan_thanh") or "")
             if not dt_raw:
                 continue
             rev = order_revenue_map.get(oid, Decimal(str(o.get("tong_tien") or 0)))
@@ -780,41 +782,47 @@ class CrmAnalyticsService:
         responses = get_responses() or []
         resp_count = len(responses)
 
-        if resp_count > 0:
-            avg_overall = round(sum(r["diem_tong_the"] for r in responses) / resp_count, 1)
-            avg_prod = round(sum(r["diem_san_pham"] for r in responses) / resp_count, 1)
-            avg_serv = round(sum(r["diem_dich_vu"] for r in responses) / resp_count, 1)
+        # Only responses that contain numeric ratings should be included in CSAT score averages
+        rated_responses = [r for r in responses if r.get("diem_tong_the") is not None]
+        rated_count = len(rated_responses)
+
+        if rated_count > 0:
+            avg_overall = round(sum(r["diem_tong_the"] for r in rated_responses) / rated_count, 1)
+            prod_scores = [r["diem_san_pham"] for r in rated_responses if r.get("diem_san_pham") is not None]
+            serv_scores = [r["diem_dich_vu"] for r in rated_responses if r.get("diem_dich_vu") is not None]
+            avg_prod = round(sum(prod_scores) / len(prod_scores), 1) if prod_scores else avg_overall
+            avg_serv = round(sum(serv_scores) / len(serv_scores), 1) if serv_scores else avg_overall
 
             star_counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-            for r in responses:
-                score = r.get("diem_tong_the") or 5
-                star_counts[score] = star_counts.get(score, 0) + 1
+            for r in rated_responses:
+                score = r["diem_tong_the"]
+                if score in star_counts:
+                    star_counts[score] += 1
 
             rating_breakdown = [
-                {"stars": s, "count": star_counts[s], "percentage": round((star_counts[s] / resp_count * 100), 1)}
+                {"stars": s, "count": star_counts[s], "percentage": round((star_counts[s] / rated_count * 100), 1)}
                 for s in (5, 4, 3, 2, 1)
             ]
-
-            recent_feedbacks = [
-                {
-                    "customer_name": r.get("ten_nguoi_gui") or "Khách hàng",
-                    "overall_score": r.get("diem_tong_the") or 5,
-                    "product_score": r.get("diem_san_pham") or 5,
-                    "service_score": r.get("diem_dich_vu") or 5,
-                    "comment": r.get("y_kien_dong_gop"),
-                    "created_at": str(r.get("ngay_gui") or "")[:10],
-                }
-                for r in responses[:6]
-            ]
         else:
-            avg_overall = 0.0
-            avg_prod = 0.0
-            avg_serv = 0.0
+            avg_overall = None
+            avg_prod = None
+            avg_serv = None
             rating_breakdown = [
                 {"stars": s, "count": 0, "percentage": 0.0}
                 for s in (5, 4, 3, 2, 1)
             ]
-            recent_feedbacks = []
+
+        recent_feedbacks = [
+            {
+                "customer_name": r.get("ten_nguoi_gui") or "Khách hàng",
+                "overall_score": r.get("diem_tong_the"),
+                "product_score": r.get("diem_san_pham"),
+                "service_score": r.get("diem_dich_vu"),
+                "comment": r.get("y_kien_dong_gop"),
+                "created_at": str(r.get("ngay_gui") or "")[:10],
+            }
+            for r in responses[:6]
+        ]
 
         survey_insights = {
             "total_surveys": len(surveys),
@@ -826,7 +834,7 @@ class CrmAnalyticsService:
             "recent_feedbacks": recent_feedbacks,
         }
 
-        if resp_count > 0 and avg_overall >= 4.5:
+        if rated_count > 0 and avg_overall is not None and avg_overall >= 4.5:
             recommendations.append({
                 "type": "CSAT_EXCELLENCE",
                 "title": f"Chỉ số hài lòng khách hàng đạt mức xuất sắc ({avg_overall}/5 sao)",
