@@ -1,6 +1,7 @@
 export type ModuleKey =
   | "dashboard"
   | "reports"
+  | "customer-insights"
   | "surveys"
   | "reviews"
   | "crmReport"

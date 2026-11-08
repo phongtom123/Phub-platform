@@ -331,9 +331,14 @@ export function DashboardCharts({
           </h2>
           <p>Dữ liệu thật từ API · ngày theo giờ Việt Nam</p>
         </div>
-        <button className="dashboard-refresh" onClick={data.refresh}>
-          <RefreshCw size={17} /> Làm mới thống kê
-        </button>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <button className="dashboard-refresh" type="button" onClick={() => onNavigate("crmReport")}>
+            <BarChart3 size={17} /> Khảo sát & Báo cáo CRM
+          </button>
+          <button className="dashboard-refresh" type="button" onClick={data.refresh}>
+            <RefreshCw size={17} /> Làm mới thống kê
+          </button>
+        </div>
       </div>
       <div className="dashboard-chart-grid">
         <ChartCard

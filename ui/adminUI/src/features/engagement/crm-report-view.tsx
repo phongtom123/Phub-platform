@@ -13,8 +13,18 @@ export default function CrmReportView(){
       <div className={styles.grid}><section className={styles.card}><h2>Phân bố độ tuổi</h2><p className={styles.muted}>Tính từ ngày sinh theo ngày Việt Nam, bao gồm nhóm chưa có thông tin.</p>
         {data.age_groups.map(g=><div key={g.label} className={styles.bar}><span>{g.label}</span><progress max={Math.max(1,data.total_customers)} value={g.count}/><span>{g.count} ({data.total_customers?Math.round(g.count/data.total_customers*100):0}%)</span></div>)}</section>
         <section className={styles.card}><h2>Đánh giá sản phẩm đang hiển thị</h2>{data.review_stars.map(g=><div key={g.stars} className={styles.bar}><span>{g.stars} sao</span><progress max={Math.max(1,data.review_status.visible)} value={g.count}/><span>{g.count}</span></div>)}<p>Đang hiển thị: {data.review_status.visible} · Đã ẩn: {data.review_status.hidden}</p><Link href="/reviews">Quản lý đánh giá →</Link></section></div>
-      <section className={styles.card}><h2>Nhu cầu / sở thích và mức hài lòng</h2><p>Chọn khảo sát để xem kết quả từng câu, tỷ lệ hoàn thành và điểm hài lòng.</p><p className={styles.muted}>Sở thích là câu trả lời khách tự khai báo; đánh dấu câu hỏi “Nhu cầu / sở thích” khi soạn khảo sát.</p>
-        {data.interest_surveys.length?data.interest_surveys.map(s=><Link key={s.ma_khao_sat} href={`/surveys?id=${encodeURIComponent(s.ma_khao_sat)}`}>{s.tieu_de} →</Link>):<p>Chưa có khảo sát nhu cầu / sở thích được phát hành.</p>}<Link href="/surveys">Tất cả khảo sát →</Link>
+      <section className={styles.card}>
+        <h2>Nhu cầu / sở thích và mức hài lòng</h2>
+        <p>Chọn khảo sát để xem kết quả từng câu, tỷ lệ hoàn thành và điểm hài lòng.</p>
+        <p className={styles.muted}>Sở thích là câu trả lời khách tự khai báo; đánh dấu câu hỏi “Nhu cầu / sở thích” khi soạn khảo sát.</p>
+        <div>
+          <Link href="/surveys" className={styles.surveyLinkBtn}>
+            <span>Tất cả khảo sát</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </Link>
+        </div>
       </section>
     </>}
   </section>;

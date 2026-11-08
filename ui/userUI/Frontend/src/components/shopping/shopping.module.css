@@ -77,6 +77,20 @@
   color: #0156ff;
   cursor: pointer;
 }
+.reviewButton {
+  display: inline-block;
+  padding: 9px 18px;
+  background: #0156ff;
+  color: #fff !important;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  margin-top: 8px;
+  transition: background 0.15s ease;
+}
+.reviewButton:hover {
+  background: #0044cc;
+}
 .orders {
   display: grid;
   gap: 12px;

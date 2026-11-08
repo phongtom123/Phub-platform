@@ -643,6 +643,107 @@
         "title": "AdminTicketPage",
         "type": "object"
       },
+      "AgeGroupDetail": {
+        "properties": {
+          "active_buyers": {
+            "title": "Active Buyers",
+            "type": "integer"
+          },
+          "by_gender": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GenderDetail"
+            },
+            "title": "By Gender",
+            "type": "array"
+          },
+          "customer_count": {
+            "title": "Customer Count",
+            "type": "integer"
+          },
+          "customer_percentage": {
+            "title": "Customer Percentage",
+            "type": "number"
+          },
+          "gender": {
+            "items": {
+              "$ref": "#/components/schemas/GenderItem"
+            },
+            "title": "Gender",
+            "type": "array"
+          },
+          "gender_category_matrix": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GenderCategoryMatrixItem"
+            },
+            "title": "Gender Category Matrix",
+            "type": "array"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          },
+          "top_categories": {
+            "items": {
+              "$ref": "#/components/schemas/TopCategoryItem"
+            },
+            "title": "Top Categories",
+            "type": "array"
+          },
+          "top_products": {
+            "items": {
+              "$ref": "#/components/schemas/TopProductItem"
+            },
+            "title": "Top Products",
+            "type": "array"
+          },
+          "total_orders": {
+            "title": "Total Orders",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "group",
+          "customer_count",
+          "customer_percentage",
+          "active_buyers",
+          "total_orders",
+          "revenue",
+          "gender",
+          "top_categories",
+          "top_products"
+        ],
+        "title": "AgeGroupDetail",
+        "type": "object"
+      },
+      "AgeGroupItem": {
+        "properties": {
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "group",
+          "value",
+          "percentage"
+        ],
+        "title": "AgeGroupItem",
+        "type": "object"
+      },
       "ApiErrorResponse": {
         "properties": {
           "detail": {
@@ -1995,6 +2096,44 @@
         "title": "CheckoutQuote",
         "type": "object"
       },
+      "CityDistributionItem": {
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "customer_count": {
+            "title": "Customer Count",
+            "type": "integer"
+          },
+          "order_count": {
+            "title": "Order Count",
+            "type": "integer"
+          },
+          "order_percentage": {
+            "title": "Order Percentage",
+            "type": "number"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "city",
+          "order_count",
+          "customer_count",
+          "revenue",
+          "percentage",
+          "order_percentage"
+        ],
+        "title": "CityDistributionItem",
+        "type": "object"
+      },
       "ClaimCreate": {
         "additionalProperties": false,
         "properties": {
@@ -2394,6 +2533,93 @@
         "title": "CustomerDetail",
         "type": "object"
       },
+      "CustomerInsightsReport": {
+        "properties": {
+          "city_distribution": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CityDistributionItem"
+            },
+            "title": "City Distribution",
+            "type": "array"
+          },
+          "demographics": {
+            "$ref": "#/components/schemas/DemographicsData"
+          },
+          "product_insights": {
+            "$ref": "#/components/schemas/ProductInsightsData"
+          },
+          "spending_trends": {
+            "$ref": "#/components/schemas/SpendingTrendsData"
+          },
+          "strategic_recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/StrategicRecommendation"
+            },
+            "title": "Strategic Recommendations",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/CustomerInsightsSummary"
+          },
+          "survey_insights": {
+            "$ref": "#/components/schemas/SurveyInsightsData"
+          }
+        },
+        "required": [
+          "summary",
+          "demographics",
+          "spending_trends",
+          "product_insights",
+          "survey_insights",
+          "strategic_recommendations"
+        ],
+        "title": "CustomerInsightsReport",
+        "type": "object"
+      },
+      "CustomerInsightsSummary": {
+        "properties": {
+          "active_buyers": {
+            "title": "Active Buyers",
+            "type": "integer"
+          },
+          "aov": {
+            "title": "Aov",
+            "type": "string"
+          },
+          "arpu": {
+            "title": "Arpu",
+            "type": "string"
+          },
+          "status_scope": {
+            "default": "ACTIVE",
+            "title": "Status Scope",
+            "type": "string"
+          },
+          "total_customers": {
+            "title": "Total Customers",
+            "type": "integer"
+          },
+          "total_orders": {
+            "title": "Total Orders",
+            "type": "integer"
+          },
+          "total_revenue": {
+            "title": "Total Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "total_customers",
+          "active_buyers",
+          "total_orders",
+          "total_revenue",
+          "aov",
+          "arpu"
+        ],
+        "title": "CustomerInsightsSummary",
+        "type": "object"
+      },
       "CustomerOrder": {
         "properties": {
           "kenh_ban": {
@@ -2729,6 +2955,34 @@
           "ward"
         ],
         "title": "CustomerProfileUpdate",
+        "type": "object"
+      },
+      "CustomerSegment": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          },
+          "segment": {
+            "title": "Segment",
+            "type": "string"
+          }
+        },
+        "required": [
+          "segment",
+          "count",
+          "percentage",
+          "revenue"
+        ],
+        "title": "CustomerSegment",
         "type": "object"
       },
       "CustomerTicket": {
@@ -3253,6 +3507,62 @@
         "title": "DemoPaymentContext",
         "type": "object"
       },
+      "DemographicsData": {
+        "properties": {
+          "age_groups": {
+            "items": {
+              "$ref": "#/components/schemas/AgeGroupItem"
+            },
+            "title": "Age Groups",
+            "type": "array"
+          },
+          "by_age_group": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AgeGroupDetail"
+            },
+            "title": "By Age Group",
+            "type": "array"
+          },
+          "by_gender": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GenderDetail"
+            },
+            "title": "By Gender",
+            "type": "array"
+          },
+          "gender": {
+            "items": {
+              "$ref": "#/components/schemas/GenderItem"
+            },
+            "title": "Gender",
+            "type": "array"
+          },
+          "gender_category_matrix": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GenderCategoryMatrixItem"
+            },
+            "title": "Gender Category Matrix",
+            "type": "array"
+          },
+          "interests": {
+            "items": {
+              "$ref": "#/components/schemas/InterestItem"
+            },
+            "title": "Interests",
+            "type": "array"
+          }
+        },
+        "required": [
+          "gender",
+          "age_groups",
+          "interests"
+        ],
+        "title": "DemographicsData",
+        "type": "object"
+      },
       "EngagementPage": {
         "properties": {
           "data": {
@@ -3475,6 +3785,156 @@
           "expected_legacy_url"
         ],
         "title": "GalleryUpdate",
+        "type": "object"
+      },
+      "GenderCategoryMatrixItem": {
+        "properties": {
+          "category_id": {
+            "title": "Category Id",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "chua_xac_dinh_quantity": {
+            "title": "Chua Xac Dinh Quantity",
+            "type": "integer"
+          },
+          "chua_xac_dinh_revenue": {
+            "title": "Chua Xac Dinh Revenue",
+            "type": "string"
+          },
+          "khac_quantity": {
+            "title": "Khac Quantity",
+            "type": "integer"
+          },
+          "khac_revenue": {
+            "title": "Khac Revenue",
+            "type": "string"
+          },
+          "nam_quantity": {
+            "title": "Nam Quantity",
+            "type": "integer"
+          },
+          "nam_revenue": {
+            "title": "Nam Revenue",
+            "type": "string"
+          },
+          "nu_quantity": {
+            "title": "Nu Quantity",
+            "type": "integer"
+          },
+          "nu_revenue": {
+            "title": "Nu Revenue",
+            "type": "string"
+          },
+          "total_quantity": {
+            "title": "Total Quantity",
+            "type": "integer"
+          },
+          "total_revenue": {
+            "title": "Total Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category_id",
+          "category_name",
+          "total_quantity",
+          "total_revenue",
+          "nam_quantity",
+          "nam_revenue",
+          "nu_quantity",
+          "nu_revenue",
+          "khac_quantity",
+          "khac_revenue",
+          "chua_xac_dinh_quantity",
+          "chua_xac_dinh_revenue"
+        ],
+        "title": "GenderCategoryMatrixItem",
+        "type": "object"
+      },
+      "GenderDetail": {
+        "properties": {
+          "active_buyers": {
+            "title": "Active Buyers",
+            "type": "integer"
+          },
+          "customer_count": {
+            "title": "Customer Count",
+            "type": "integer"
+          },
+          "customer_percentage": {
+            "title": "Customer Percentage",
+            "type": "number"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          },
+          "top_categories": {
+            "items": {
+              "$ref": "#/components/schemas/TopCategoryItem"
+            },
+            "title": "Top Categories",
+            "type": "array"
+          },
+          "top_products": {
+            "items": {
+              "$ref": "#/components/schemas/TopProductItem"
+            },
+            "title": "Top Products",
+            "type": "array"
+          },
+          "total_orders": {
+            "title": "Total Orders",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "key",
+          "customer_count",
+          "customer_percentage",
+          "active_buyers",
+          "total_orders",
+          "revenue",
+          "top_categories",
+          "top_products"
+        ],
+        "title": "GenderDetail",
+        "type": "object"
+      },
+      "GenderItem": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "value",
+          "percentage"
+        ],
+        "title": "GenderItem",
         "type": "object"
       },
       "HOA_DONPage": {
@@ -3759,6 +4219,29 @@
           "status"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "InterestItem": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "category",
+          "count",
+          "percentage"
+        ],
+        "title": "InterestItem",
         "type": "object"
       },
       "InvoiceOverview": {
@@ -7003,6 +7486,30 @@
         "title": "ProductImage",
         "type": "object"
       },
+      "ProductInsightsData": {
+        "properties": {
+          "top_categories": {
+            "items": {
+              "$ref": "#/components/schemas/TopCategoryItem"
+            },
+            "title": "Top Categories",
+            "type": "array"
+          },
+          "top_products": {
+            "items": {
+              "$ref": "#/components/schemas/TopProductItem"
+            },
+            "title": "Top Products",
+            "type": "array"
+          }
+        },
+        "required": [
+          "top_categories",
+          "top_products"
+        ],
+        "title": "ProductInsightsData",
+        "type": "object"
+      },
       "ProductPage": {
         "examples": [
           {
@@ -7315,6 +7822,29 @@
           "items"
         ],
         "title": "QuoteRequest",
+        "type": "object"
+      },
+      "RatingBreakdownItem": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          },
+          "stars": {
+            "title": "Stars",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "stars",
+          "count",
+          "percentage"
+        ],
+        "title": "RatingBreakdownItem",
         "type": "object"
       },
       "ReceiptConfirmVersion": {
@@ -7798,6 +8328,50 @@
           "expected_version"
         ],
         "title": "ReceiptVersion",
+        "type": "object"
+      },
+      "RecentFeedbackItem": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "customer_name": {
+            "title": "Customer Name",
+            "type": "string"
+          },
+          "overall_score": {
+            "title": "Overall Score",
+            "type": "integer"
+          },
+          "product_score": {
+            "title": "Product Score",
+            "type": "integer"
+          },
+          "service_score": {
+            "title": "Service Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "customer_name",
+          "overall_score",
+          "product_score",
+          "service_score",
+          "created_at"
+        ],
+        "title": "RecentFeedbackItem",
         "type": "object"
       },
       "Recipient": {
@@ -8950,6 +9524,35 @@
         "title": "Specification",
         "type": "object"
       },
+      "SpendingTrendsData": {
+        "properties": {
+          "customer_segments": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerSegment"
+            },
+            "title": "Customer Segments",
+            "type": "array"
+          },
+          "period_type": {
+            "title": "Period Type",
+            "type": "string"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/TimelinePoint"
+            },
+            "title": "Timeline",
+            "type": "array"
+          }
+        },
+        "required": [
+          "period_type",
+          "timeline",
+          "customer_segments"
+        ],
+        "title": "SpendingTrendsData",
+        "type": "object"
+      },
       "StatusUpdate": {
         "additionalProperties": false,
         "properties": {
@@ -9260,6 +9863,29 @@
         "title": "StoredRecipient",
         "type": "object"
       },
+      "StrategicRecommendation": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "content"
+        ],
+        "title": "StrategicRecommendation",
+        "type": "object"
+      },
       "Subcategory": {
         "properties": {
           "id": {
@@ -9542,6 +10168,73 @@
           "ngay_tao"
         ],
         "title": "SurveyInfo",
+        "type": "object"
+      },
+      "SurveyInsightsData": {
+        "properties": {
+          "avg_overall_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Overall Score"
+          },
+          "avg_product_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Product Score"
+          },
+          "avg_service_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Service Score"
+          },
+          "rating_breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/RatingBreakdownItem"
+            },
+            "title": "Rating Breakdown",
+            "type": "array"
+          },
+          "recent_feedbacks": {
+            "items": {
+              "$ref": "#/components/schemas/RecentFeedbackItem"
+            },
+            "title": "Recent Feedbacks",
+            "type": "array"
+          },
+          "total_responses": {
+            "title": "Total Responses",
+            "type": "integer"
+          },
+          "total_surveys": {
+            "title": "Total Surveys",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_surveys",
+          "total_responses",
+          "rating_breakdown",
+          "recent_feedbacks"
+        ],
+        "title": "SurveyInsightsData",
         "type": "object"
       },
       "SurveyItem": {
@@ -10419,6 +11112,39 @@
         "title": "TicketUpdate",
         "type": "object"
       },
+      "TimelinePoint": {
+        "properties": {
+          "avg_spending": {
+            "title": "Avg Spending",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "order_count": {
+            "title": "Order Count",
+            "type": "integer"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "period",
+          "label",
+          "order_count",
+          "revenue",
+          "avg_spending"
+        ],
+        "title": "TimelinePoint",
+        "type": "object"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -10441,6 +11167,72 @@
           "access_token"
         ],
         "title": "TokenResponse",
+        "type": "object"
+      },
+      "TopCategoryItem": {
+        "properties": {
+          "category_id": {
+            "title": "Category Id",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          },
+          "quantity_sold": {
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category_id",
+          "category_name",
+          "quantity_sold",
+          "revenue",
+          "percentage"
+        ],
+        "title": "TopCategoryItem",
+        "type": "object"
+      },
+      "TopProductItem": {
+        "properties": {
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity_sold": {
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "name",
+          "category_name",
+          "quantity_sold",
+          "revenue"
+        ],
+        "title": "TopProductItem",
         "type": "object"
       },
       "TransactionPage": {
@@ -16511,6 +17303,172 @@
         "summary": "Kiểm tra gộp trạng thái bán và tồn khả dụng của tối đa 100 SKU, không giữ hàng",
         "tags": [
           "Customer · Catalog"
+        ]
+      }
+    },
+    "/api/crm/analytics/customer-insights": {
+      "get": {
+        "operationId": "customer_insights_api_crm_analytics_customer_insights_get",
+        "parameters": [
+          {
+            "description": "Chu kỳ thống kê: tháng, quý hoặc năm",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "month",
+              "description": "Chu kỳ thống kê: tháng, quý hoặc năm",
+              "enum": [
+                "month",
+                "quarter",
+                "year"
+              ],
+              "title": "Period",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Ngày bắt đầu (tùy chọn)",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày bắt đầu (tùy chọn)",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Ngày kết thúc (tùy chọn)",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày kết thúc (tùy chọn)",
+              "title": "End"
+            }
+          },
+          {
+            "description": "Phạm vi đơn: ACTIVE (Tất cả đơn có hiệu lực trừ đơn hủy) hoặc COMPLETED (Chỉ đơn hoàn thành)",
+            "in": "query",
+            "name": "status_scope",
+            "required": false,
+            "schema": {
+              "default": "ACTIVE",
+              "description": "Phạm vi đơn: ACTIVE (Tất cả đơn có hiệu lực trừ đơn hủy) hoặc COMPLETED (Chỉ đơn hoàn thành)",
+              "enum": [
+                "ACTIVE",
+                "COMPLETED"
+              ],
+              "title": "Status Scope",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerInsightsReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Thống kê tệp khách hàng: nhân khẩu học, mức chi tiêu trung bình, sản phẩm mua nhiều và định hướng phát triển (ADMIN)",
+        "tags": [
+          "Admin · CRM Analytics"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
         ]
       }
     },
@@ -32895,6 +33853,10 @@
     {
       "description": "Hồ sơ khách và đơn hàng liên quan; chỉ ADMIN.",
       "name": "Admin · CRM"
+    },
+    {
+      "description": "Thống kê phân tích tệp khách hàng và thị hiếu; chỉ ADMIN.",
+      "name": "Admin · CRM Analytics"
     },
     {
       "description": "Tiếp nhận và xử lý ticket phản hồi của khách.",

@@ -10,3 +10,11 @@
 .page table { border-collapse:collapse; width:100%; }.page th,.page td { padding:12px 10px; border-bottom:1px solid #e4eadf; text-align:left; vertical-align:top; overflow-wrap:anywhere; }.scroll { overflow:auto; }.text { white-space:pre-wrap; overflow-wrap:anywhere; }.bar { display:grid; grid-template-columns:minmax(100px,1fr) minmax(60px,2fr) auto; align-items:center; gap:12px; }.bar progress { width:100%; accent-color:#14a800; }.metric { font-size:25px; font-weight:700; }.selected { border-color:#14a800!important; }
 @media(max-width:700px) { .grid { grid-template-columns:1fr; }.card { padding:15px; }.option { grid-template-columns:1fr; }.bar { grid-template-columns:1fr auto; }.bar progress { grid-column:1/-1; grid-row:2; } }
 .bar progress { height:8px; border:0; border-radius:8px; overflow:hidden; }.bar progress::-webkit-progress-bar { background:#e6eddf; }.bar progress::-webkit-progress-value { background:#14a800; }
+
+.surveyLinkBtn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 22px; background: #14a800; color: #fff !important; font-weight: 600; font-size: 14px; border-radius: 8px; text-decoration: none !important; box-shadow: 0 1px 3px rgba(20, 168, 0, 0.25); transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; width: fit-content; margin-top: 6px; }
+.surveyLinkBtn:hover { background: #118f00; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(20, 168, 0, 0.3); }
+.surveyLinkBtn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(20, 168, 0, 0.2); }
+.surveyLinkBtn svg { width: 16px; height: 16px; transition: transform 0.15s ease; }
+.surveyLinkBtn:hover svg { transform: translateX(3px); }
+
+

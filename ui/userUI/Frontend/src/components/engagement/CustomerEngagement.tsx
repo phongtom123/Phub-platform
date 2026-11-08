@@ -5,7 +5,7 @@ import { AUTH_SESSION_EVENT, getSession, type SessionUser } from "../../../../..
 import { dateTime, engagementRequest as api, jsonBody, reviewStatus, surveyCanAnswer, surveyStatus,
   type Answer, type EligibleReview, type Page, type Review, type SurveyDetail, type SurveyItem } from "../../../../../shared/engagement";
 import styles from "./engagement.module.css";
-import { ReviewStars } from "./ReviewStars";
+import { ReviewStars, StarRatingInput } from "./ReviewStars";
 
 function SurveyForm({id,onBack}:{id:string;onBack:()=>void}){
   const [detail,setDetail]=useState<SurveyDetail|null>(null),[answers,setAnswers]=useState<Record<string,Answer>>({}),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState(""),[version,setVersion]=useState(0),[dirty,setDirty]=useState(false);
@@ -39,10 +39,21 @@ function SurveyForm({id,onBack}:{id:string;onBack:()=>void}){
         {detail.questions.map((q,index)=>{const a=answers[q.ma_cau_hoi];return <section className={styles.card} key={q.ma_cau_hoi}><h2>{index+1}. {q.noi_dung}{q.bat_buoc?" *":" (tùy chọn)"}</h2>
           {q.loai_cau_hoi==="MOT_LUA_CHON"?q.options.map(o=><div key={o.ma_lua_chon}><label className={styles.choice}><input type="radio" name={q.ma_cau_hoi} checked={a?.ma_lua_chon===o.ma_lua_chon} onChange={()=>change(q.ma_cau_hoi,{ma_cau_hoi:q.ma_cau_hoi,ma_lua_chon:o.ma_lua_chon,noi_dung:""})}/>{o.noi_dung}</label>
             {o.cho_phep_nhap_khac&&a?.ma_lua_chon===o.ma_lua_chon&&<label>Nội dung khác<textarea aria-label={`Nội dung khác câu ${index+1}`} required maxLength={4000} value={a.noi_dung??""} onChange={e=>change(q.ma_cau_hoi,{...a,noi_dung:e.target.value})}/></label>}</div>)
-          :q.loai_cau_hoi==="DIEM_1_5"?<label>Điểm đánh giá<select aria-label={`Điểm câu ${index+1}`} required={q.bat_buoc} value={a?.diem??""} onChange={e=>change(q.ma_cau_hoi,{ma_cau_hoi:q.ma_cau_hoi,diem:e.target.value?Number(e.target.value):null})}><option value="">Chọn điểm</option>{[1,2,3,4,5].map(point=><option key={point} value={point}>{point} / 5</option>)}</select></label>
+          :q.loai_cau_hoi==="DIEM_1_5"?(
+            <div className={styles.starQuestionContainer}>
+              <span className={styles.fieldLabel}>Điểm đánh giá{q.bat_buoc?" *":""}</span>
+              <StarRatingInput
+                value={a?.diem??null}
+                onChange={point=>change(q.ma_cau_hoi,{ma_cau_hoi:q.ma_cau_hoi,diem:point})}
+                disabled={busy||!available}
+                ariaLabel={`Điểm câu ${index+1}`}
+                required={q.bat_buoc}
+              />
+            </div>
+          )
           :<label>Câu trả lời<textarea aria-label={`Trả lời câu ${index+1}`} required={q.bat_buoc} maxLength={4000} value={a?.noi_dung??""} onChange={e=>change(q.ma_cau_hoi,{ma_cau_hoi:q.ma_cau_hoi,noi_dung:e.target.value})}/></label>}
         </section>;})}
-      </fieldset>{available&&<button className={styles.primary} disabled={busy}>{busy?"Đang gửi…":"Gửi bài khảo sát"}</button>}</form>
+      </fieldset>{error&&<p role="alert" className={styles.error} style={{marginTop:12}}>{error}</p>}{available&&<button className={styles.primary} disabled={busy}>{busy?"Đang gửi…":"Gửi bài khảo sát"}</button>}</form>
     </>}
   </div>;
 }
@@ -56,7 +67,19 @@ function ReviewEditor({item,onSaved,onCancel}:{item:EligibleReview;onSaved:(revi
     }catch(e){if(!c.signal.aborted)setError(e instanceof Error?e.message:"Chưa lưu được nhận xét.");}finally{if(request.current===c){request.current=null;setBusy(false);}}
   }
   return <form className={styles.card} onSubmit={e=>{e.preventDefault();void save();}}><h2>{item.ten_sp}</h2><p className={styles.muted}>Đơn xác minh đã mua: {item.ma_donhang}</p><p>Mỗi sản phẩm có một đánh giá của bạn, có thể sửa kể cả khi mua lại. Tên và nhận xét hiển thị ngay khi gửi. Đánh giá đã bị quản trị viên ẩn vẫn giữ ẩn khi sửa.</p>
-    <fieldset disabled={busy} style={{border:0,padding:0,minWidth:0,display:"grid",gap:15}}><label>Số sao<select aria-label="Số sao đánh giá" value={stars} onChange={e=>setStars(Number(e.target.value))}>{[5,4,3,2,1].map(point=><option key={point} value={point}>{point} sao</option>)}</select></label><label>Nhận xét<textarea aria-label="Nội dung đánh giá" required maxLength={4000} value={content} onChange={e=>setContent(e.target.value)}/></label></fieldset>
+    <fieldset disabled={busy} style={{border:0,padding:0,minWidth:0,display:"grid",gap:15}}>
+      <div className={styles.starQuestionContainer}>
+        <span className={styles.fieldLabel}>Số sao</span>
+        <StarRatingInput
+          value={stars}
+          onChange={point=>setStars(point)}
+          disabled={busy}
+          ariaLabel="Số sao đánh giá"
+          required
+        />
+      </div>
+      <label>Nhận xét<textarea aria-label="Nội dung đánh giá" required maxLength={4000} value={content} onChange={e=>setContent(e.target.value)}/></label>
+    </fieldset>
     {error&&<p className={styles.error} role="alert">{error}</p>}<div className={styles.actions}><button disabled={busy||!content.trim()} className={styles.primary}>{busy?"Đang gửi…":"Gửi đánh giá"}</button><button type="button" disabled={busy} onClick={onCancel}>Hủy</button></div>
   </form>;
 }
