@@ -154,8 +154,8 @@ function Details({ id }: { id: string }) {
           </section>
           {data.status === "HOAN_THANH" && <section className={styles.panel} aria-label="Đánh giá sau mua">
             <h2>Đánh giá sản phẩm đã mua</h2>
-            <p>Đơn đã hoàn thành. Bạn có thể chấm sao và chia sẻ nhận xét về sản phẩm.</p>
-            <Link href="/main/reviews">Viết hoặc sửa đánh giá →</Link>
+            <p>Đơn hàng đã hoàn thành. Bạn có thể chấm điểm 1–5 sao và chia sẻ nhận xét thực tế về sản phẩm.</p>
+            <Link className={styles.reviewButton} href="/main/reviews">Viết hoặc sửa đánh giá sản phẩm →</Link>
           </section>}
           <InvoicePanel orderId={data.id} onDeadlineChange={receiveDeadline} />
           <PaymentPanel orderId={data.id} orderStatus={data.status}

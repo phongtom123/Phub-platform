@@ -114,6 +114,7 @@ function validWarehousePath(path: string[], method: string): boolean {
 
 function validCrmPath(path: string[], method: string): boolean {
   if (path[0] === "crm" && path.length === 2 && path[1] === "report") return method === "GET";
+  if (path[0] === "crm" && path.length === 3 && path[1] === "analytics" && path[2] === "customer-insights") return method === "GET";
   if (path[0] === "crm" && path[1] === "surveys") {
     if (path.length === 2) return ["GET", "POST"].includes(method);
     if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2] ?? "")) return false;

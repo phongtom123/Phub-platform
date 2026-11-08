@@ -17,6 +17,7 @@ from phub_api.controllers.admin_accounts import router as admin_accounts_router
 from phub_api.controllers.media import router as media_router
 from phub_api.controllers.media import customer_router as customer_media_router
 from phub_api.controllers.crm import router as crm_router
+from phub_api.controllers.crm_analytics import router as crm_analytics_router
 from phub_api.controllers.support import router as support_router
 from phub_api.controllers.invoice_claims import router as invoice_claims_router
 from phub_api.controllers.engagement import router as engagement_router
@@ -44,6 +45,7 @@ app = FastAPI(
         {"name": "Staff · Liên kết hóa đơn", "description": "Nhân viên xác minh hóa đơn tại quầy và liên kết đúng khách hàng."},
         {"name": "CRM · Khảo sát và đánh giá", "description": "Nhân viên vận hành khảo sát/đánh giá; ADMIN xem thống kê; khách chỉ dùng dữ liệu của mình."},
         {"name": "Admin · CRM", "description": "Hồ sơ khách và đơn hàng liên quan; chỉ ADMIN."},
+        {"name": "Admin · CRM Analytics", "description": "Thống kê phân tích tệp khách hàng và thị hiếu; chỉ ADMIN."},
         {"name": "Admin · Hỗ trợ khách hàng", "description": "Tiếp nhận và xử lý ticket phản hồi của khách."},
         {"name": "Customer · Hỗ trợ", "description": "Khách gửi và xem ticket thuộc chính mình."},
         {"name": "Customer Orders", "description": "Customer order creation and idempotent retries."},
@@ -70,6 +72,7 @@ app.include_router(admin_accounts_router)
 app.include_router(media_router)
 app.include_router(customer_media_router)
 app.include_router(crm_router)
+app.include_router(crm_analytics_router)
 app.include_router(support_router)
 app.include_router(invoice_claims_router)
 app.include_router(engagement_router)

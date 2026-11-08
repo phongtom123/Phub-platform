@@ -13,7 +13,7 @@ function load(name, dependencies = {}) {
   vm.runInNewContext(code, scope);
   return scope.exports;
 }
-const { validateQuote } = load("client", { "./money": load("money") });
+const { validateQuote } = load("client", { "./money": load("money"), "./payment-deadline": load("payment-deadline") });
 function quote() {
   return { currency: "VND", tax_application: "invoice", shipping_status: "not_quoted", voucher_code: null,
     items: [{ sku: "POOL", name: "Pooled product", unit: "unit", warehouse_id: 1, quantity: 165,
