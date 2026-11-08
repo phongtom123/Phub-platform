@@ -73,6 +73,12 @@ Khi build/deploy nhân viên, cần checkout cả `ui/adminUI/src`, CSS admin v�
 `npm run build` vẫn chạy ở thư mục UI tương ứng. Build filter Render phải tính
 cả thay đổi trong các đường dẫn dùng chung này.
 
+`warehouseUI` có bước `prebuild` chạy `npm ci` cho `adminUI` theo lockfile trước
+khi biên dịch. Các file dùng chung import `lucide-react`, React và Next từ cây
+dependency của admin; chỉ cài `warehouseUI/node_modules` trên môi trường sạch
+sẽ báo `Module not found: Can't resolve 'lucide-react'`. Lệnh `npm run build`
+tự chạy bước này; không gọi `next build` trực tiếp trên Render.
+
 ## Database và triển khai
 
 Migration mới: `Backend/migrations/20261106142849_staff_operational_workspace.sql`.
