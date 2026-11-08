@@ -1,4 +1,5 @@
 from decimal import Decimal
+from postgrest.exceptions import APIError
 from phub_api.repositories.pagination import rows
 
 
@@ -12,13 +13,15 @@ class CrmAnalyticsRepository:
             def qf():
                 return self.db.table("KHACH_HANG").select(
                     "ma_kh, ten_kh, sdt, dia_chi_chi_tiet_md, tinh_thanh_md, xa_phuong_md, ngay_sinh, ngay_tao, gioi_tinh"
-                )
+                ).order("ma_kh")
             return list(rows(qf))
-        except Exception:
+        except APIError as exc:
+            if exc.code != "42703" or "gioi_tinh" not in str(exc.message):
+                raise
             def qf_fallback():
                 return self.db.table("KHACH_HANG").select(
                     "ma_kh, ten_kh, sdt, dia_chi_chi_tiet_md, tinh_thanh_md, xa_phuong_md, ngay_sinh, ngay_tao"
-                )
+                ).order("ma_kh")
             return list(rows(qf_fallback))
 
     def completed_orders(self, start=None, end=None, status_scope="ACTIVE"):
@@ -35,8 +38,8 @@ class CrmAnalyticsRepository:
             if start:
                 query = query.gte(time_col, f"{start}T00:00:00+07:00")
             if end:
-                query = query.lte(time_col, f"{end}T23:59:59+07:00")
-            return query
+                query = query.lte(time_col, f"{end}T23:59:59.999999+07:00")
+            return query.order("ma_donhang")
 
         orders = list(rows(qf))
         if not orders:
@@ -79,7 +82,7 @@ class CrmAnalyticsRepository:
                 def chunk_qf(c=chunk):
                     return self.db.table("CT_DON_HANG").select(
                         "ma_donhang, sku, so_luong, don_gia, giam_gia, giam_gia_voucher, thanh_tien"
-                    ).in_("ma_donhang", c)
+                    ).in_("ma_donhang", c).order("ma_ct_donhang")
                 all_lines.extend(list(rows(chunk_qf)))
             if cache_key is not None:
                 self._order_lines_cache[cache_key] = all_lines
@@ -91,7 +94,7 @@ class CrmAnalyticsRepository:
             )
             if order_ids is not None:
                 query = query.in_("ma_donhang", order_ids)
-            return query
+            return query.order("ma_ct_donhang")
 
         result = list(rows(qf))
         if cache_key is not None:
@@ -99,69 +102,45 @@ class CrmAnalyticsRepository:
         return result
 
     def products(self):
-        return list(rows(lambda: self.db.table("SAN_PHAM").select("sku, ten_sp, ma_loai_sp")))
+        return list(rows(lambda: self.db.table("SAN_PHAM").select("sku, ten_sp, ma_loai_sp").order("sku")))
 
     def categories(self):
-        return list(rows(lambda: self.db.table("LOAI_SP").select("ma_loai_sp, ten_loai_sp")))
+        return list(rows(lambda: self.db.table("LOAI_SP").select("ma_loai_sp, ten_loai_sp").order("ma_loai_sp")))
 
     def surveys(self):
-        return list(rows(lambda: self.db.table("KHAO_SAT").select("*")))
+        return list(rows(lambda: self.db.table("KHAO_SAT").select("*").order("ma_khao_sat")))
 
     def survey_responses(self):
-        answers = list(rows(lambda: self.db.table("TRA_LOI_KHAO_SAT").select("*")))
-        if not answers:
+        # Return submitted answers and their question metadata; scoring belongs to the service.
+        guis = list(rows(lambda: self.db.table("GUI_KHAO_SAT").select(
+            "ma_gui,ma_khao_sat,ma_kh,hoan_thanh_luc,ngay_gui"
+        ).order("ma_gui")))
+        submitted = [g for g in guis if g.get("hoan_thanh_luc")]
+        if not submitted:
             return []
-        guis = {g["ma_gui"]: g for g in rows(lambda: self.db.table("GUI_KHAO_SAT").select("*"))}
-        khs = {k["ma_kh"]: k for k in rows(lambda: self.db.table("KHACH_HANG").select("ma_kh, ten_kh"))}
-        qs = {q["ma_cau_hoi"]: q for q in rows(lambda: self.db.table("CAU_HOI_KHAO_SAT").select("*"))}
-
-        submissions = {}
+        answers = list(rows(lambda: self.db.table("TRA_LOI_KHAO_SAT").select(
+            "ma_tra_loi,ma_gui,ma_cau_hoi,diem,noi_dung"
+        ).order("ma_tra_loi")))
+        khs = {k["ma_kh"]: k for k in rows(lambda: self.db.table("KHACH_HANG")
+               .select("ma_kh,ten_kh").order("ma_kh"))}
+        qs = {q["ma_cau_hoi"]: q for q in rows(lambda: self.db.table("CAU_HOI_KHAO_SAT")
+              .select("ma_cau_hoi,loai_cau_hoi,nhom_noi_dung").order("ma_cau_hoi"))}
+        submissions = {
+            g["ma_gui"]: {
+                "ma_bai_nop": g["ma_gui"], "ma_khao_sat": g.get("ma_khao_sat"),
+                "ma_kh": g["ma_kh"], "ten_nguoi_gui": khs.get(g["ma_kh"], {}).get("ten_kh"),
+                "ngay_gui": g["hoan_thanh_luc"], "answers": [],
+            }
+            for g in submitted
+        }
         for a in answers:
-            mg = a.get("ma_gui")
-            if not mg:
+            submission = submissions.get(a.get("ma_gui"))
+            if submission is None:
                 continue
-            gui = guis.get(mg, {})
-            kh_id = gui.get("ma_kh")
-            kh_name = khs.get(kh_id, {}).get("ten_kh", "Khách hàng")
-            if mg not in submissions:
-                submissions[mg] = {
-                    "ma_bai_nop": mg,
-                    "ma_khao_sat": a.get("ma_khao_sat"),
-                    "ma_kh": kh_id,
-                    "ten_nguoi_gui": kh_name,
-                    "diem_san_pham": None,
-                    "diem_dich_vu": None,
-                    "diem_tong_the": None,
-                    "y_kien_dong_gop": None,
-                    "ngay_gui": gui.get("hoan_thanh_luc") or gui.get("ngay_gui"),
-                }
             q = qs.get(a.get("ma_cau_hoi"), {})
-            if a.get("diem") is not None:
-                score = int(a["diem"])
-                submissions[mg].setdefault("_scores", []).append(score)
-                q_text = str(q.get("noi_dung") or "").lower()
-                nhom = q.get("nhom_noi_dung")
-                if nhom == "SAN_PHAM" or "sản phẩm" in q_text or "san pham" in q_text:
-                    submissions[mg]["diem_san_pham"] = score
-                elif nhom == "DICH_VU" or "dịch vụ" in q_text or "dich vu" in q_text or "giao hàng" in q_text or "cskh" in q_text:
-                    submissions[mg]["diem_dich_vu"] = score
-                else:
-                    if submissions[mg]["diem_san_pham"] is None:
-                        submissions[mg]["diem_san_pham"] = score
-                    if submissions[mg]["diem_dich_vu"] is None:
-                        submissions[mg]["diem_dich_vu"] = score
-            if a.get("noi_dung"):
-                submissions[mg]["y_kien_dong_gop"] = a["noi_dung"]
-
-        for sub in submissions.values():
-            scores = sub.pop("_scores", [])
-            d_tong = round(sum(scores) / len(scores)) if scores else None
-            sub["diem_tong_the"] = d_tong
-            if d_tong is not None:
-                if sub["diem_san_pham"] is None:
-                    sub["diem_san_pham"] = d_tong
-                if sub["diem_dich_vu"] is None:
-                    sub["diem_dich_vu"] = d_tong
-
+            submission["answers"].append({
+                "diem": a.get("diem"), "noi_dung": a.get("noi_dung"),
+                "loai_cau_hoi": q.get("loai_cau_hoi"), "nhom_noi_dung": q.get("nhom_noi_dung"),
+            })
         return list(submissions.values())
 
