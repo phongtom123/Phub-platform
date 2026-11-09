@@ -3,7 +3,7 @@ export type InternalPortal = "admin" | "staff";
 export const adminModules = new Set(["dashboard", "reports", "customer-insights", "crmReport", "surveys", "accounts", "employees"]);
 export const staffModules = new Set([
   "orders", "billing", "customers", "products", "categories", "inventory", "receipts", "dispatches",
-  "suppliers", "branches", "promotions", "vouchers", "support", "surveys", "reviews",
+  "suppliers", "branches", "promotions", "vouchers", "support", "surveys", "reviews", "interests",
   "counter", "invoiceClaims", "history",
 ]);
 export function canOpenModule(portal: InternalPortal, module: string) {

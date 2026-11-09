@@ -24,6 +24,7 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
   const [detailEditing, setDetailEditing] = useState(false);
   const [role, setRole] = useState("");
   const [status, setStatus] = useState("");
+  const [archive, setArchive] = useState("ACTIVE");
   const [page, setPage] = useState(1);
   const [version, setVersion] = useState(0);
   const refresh = () => { invalidateAdminCache(); setVersion(value => value + 1); };
@@ -40,7 +41,7 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
     if (mode === "create") { setLoading(false); return; }
     const controller = new AbortController();
     setLoading(true); setError(""); setAccount(null); setResult(null);
-    const params = new URLSearchParams({ q: effectiveSearch, page: String(page) });
+    const params = new URLSearchParams({ q: effectiveSearch, page: String(page), archive });
     if (role) params.set("role", role);
     if (status) params.set("status", status);
     (async () => {
@@ -54,13 +55,13 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
     })().catch(error => { if (!controller.signal.aborted) setError(errorMessage(error)); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [mode, id, effectiveSearch, role, status, page, version]);
+  }, [mode, id, effectiveSearch, role, status, archive, page, version]);
 
-  const pollError = useAdminPolling(JSON.stringify([mode, id, effectiveSearch, role, status, page, version]),
+  const pollError = useAdminPolling(JSON.stringify([mode, id, effectiveSearch, role, status, archive, page, version]),
     !loading && !error && !inlineEditing && !detailEditing && (mode === "list" || mode === "detail"),
     async (signal, canApply) => {
       if (mode === "list") {
-        const params = new URLSearchParams({ q: effectiveSearch, page: String(page) });
+        const params = new URLSearchParams({ q: effectiveSearch, page: String(page), archive });
         if (role) params.set("role", role);
         if (status) params.set("status", status);
         const data = await accountApi<AccountPage>(`accounts?${params}`, { signal, cache: "no-cache" });
@@ -92,10 +93,11 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
         <input className="live-search" aria-label="Tìm tài khoản" placeholder="Tìm mã tài khoản, tên đăng nhập hoặc email…" value={query} onChange={e => setQuery(e.target.value)} />
         <select aria-label="Vai trò" value={role} onChange={e => { setRole(e.target.value); setPage(1); }}><option value="">Tất cả vai trò</option>{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <select aria-label="Trạng thái" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}><option value="">Tất cả trạng thái</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        <select aria-label="Xóa mềm" value={archive} onChange={e => { setArchive(e.target.value); setPage(1); }}><option value="ACTIVE">Chưa xóa</option><option value="ARCHIVED">Đã xóa mềm</option><option value="ALL">Tất cả tài khoản</option></select>
         <button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button>
         </fieldset><Link className="live-primary" href="/accounts/new">+ Thêm tài khoản</Link>
       </form>
-      <AccountTable rows={result.data} requestedEdit={requestedEdit} onRequestedEditHandled={handledRequestedEdit} onEditingChange={setInlineEditing}
+      <AccountTable rows={result.data} onArchiveChange={refresh} requestedEdit={requestedEdit} onRequestedEditHandled={handledRequestedEdit} onEditingChange={setInlineEditing}
         onSaved={saved => setResult(current => current && ({ ...current, data: current.data.map(row => row.ma_tk === saved.ma_tk ? saved : row) }))} />
       <div className="live-tools"><span>{result.total} tài khoản · Trang {page}</span><button disabled={inlineEditing || page === 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={inlineEditing || page * result.page_size >= result.total} onClick={() => setPage(p => p + 1)}>Sau</button></div>
     </> : account && (mode === "self" ? <AccountProfile account={account} onChange={setAccount} /> : <AccountDetail key={account.ma_tk} account={account} onChange={setAccount} onBack={back} onEditingChange={setDetailEditing} />)}

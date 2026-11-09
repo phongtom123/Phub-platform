@@ -51,7 +51,8 @@ Phân hệ CRM phục vụ 2 nghiệp vụ cốt lõi:
 | **Xem trước danh sách khách nhận (`preview`)** | ✅ Có quyền | ❌ Không có quyền | ❌ Không có quyền | Staff Portal: `/surveys` |
 | **Phát hành & Gửi bài khảo sát (`publish`)** | ✅ Có quyền | ❌ Không có quyền | ❌ Không có quyền | Staff Portal: `/surveys` |
 | **Đóng đợt khảo sát (`close`)** | ✅ Có quyền | ❌ Không có quyền | ❌ Không có quyền | Staff Portal: `/surveys` |
-| **Xem thống kê chi tiết kết quả khảo sát** | ❌ Chế độ tác nghiệp | ✅ Toàn quyền xem | ❌ Không có quyền | Admin Portal: `/surveys` |
+| **Xem thống kê chi tiết kết quả khảo sát** | ✅ Có quyền xem | ✅ Toàn quyền xem | ❌ Không có quyền | Staff/Admin Portal: `/surveys` |
+| **Sở thích khách hàng từ bài đã trả lời** | ✅ Có quyền xem | ✅ API đọc nội bộ | ❌ Không có quyền | Staff Portal: `/interests` |
 | **Xem Báo cáo phân tích tệp khách hàng** | ❌ Không xem | ✅ Toàn quyền xem | ❌ Không có quyền | Admin Portal: `/crm-report` |
 | **Kiểm duyệt đánh giá sản phẩm (Ẩn/Hiện)** | ✅ Có quyền kiểm duyệt | ❌ Không can thiệp | ❌ Không có quyền | Staff/Admin: `/reviews` |
 | **Nhận và làm bài khảo sát** | ❌ Không | ❌ Không | ✅ Toàn quyền | User UI: `/main/surveys` |

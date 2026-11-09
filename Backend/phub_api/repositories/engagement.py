@@ -15,6 +15,28 @@ class EngagementRepository:
             "p_payload": payload, "p_version": version,
         }).execute().data
 
+    def survey_audience(self, actor, config, scope, query, page):
+        return self.client.rpc("crm_survey_audience_preview_v1", {
+            "p_actor": actor, "p_config": config, "p_scope": scope, "p_query": query, "p_page": page,
+        }).execute().data
+
+    def customer_interests(self, actor, survey_id, query, page):
+        return self.client.rpc("crm_customer_interests_v1", {
+            "p_actor": actor, "p_survey_id": survey_id, "p_query": query, "p_page": page,
+        }).execute().data
+
+    def survey_results(self, actor, survey_id, query, page, text_page):
+        return self.client.rpc("crm_survey_results_v1", {
+            "p_actor": actor, "p_id": survey_id, "p_query": query, "p_page": page, "p_text_page": text_page,
+        }).execute().data
+
+    def review_insights(self, actor, query, date_from, date_to, min_reviews, sort, page, product, review_page, low_only):
+        return self.client.rpc("crm_review_insights_v1", {
+            "p_actor": actor, "p_query": query, "p_from": date_from.isoformat() if date_from else None,
+            "p_to": date_to.isoformat() if date_to else None, "p_min_reviews": min_reviews,
+            "p_sort": sort, "p_page": page, "p_product": product, "p_review_page": review_page, "p_low_only": low_only,
+        }).execute().data
+
     def survey_submit(self, actor, survey_id, key, answers):
         return self.client.rpc("crm_survey_submit_v1", {
             "p_actor": actor, "p_id": survey_id, "p_key": key, "p_answers": answers,

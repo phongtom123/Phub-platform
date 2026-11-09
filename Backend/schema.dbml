@@ -34,6 +34,8 @@ Table TAI_KHOAN {
   email varchar [unique]
   mat_khau varchar [not null]
   phien_ban_mat_khau uuid [not null, default: `gen_random_uuid()`]
+  luu_tru_luc timestamptz [note: 'Xoa mem tai khoan; khoi phuc van giu trang thai an']
+  luu_tru_boi varchar [note: 'Tai khoan ADMIN thuc hien xoa mem']
   ma_media_anh_dai_dien uuid [note: 'Anh dai dien; NULL voi tai khoan cu hoac chua tai anh']
 
   ma_kh varchar [unique]
@@ -450,6 +452,7 @@ Ref: NHAN_VIEN.ma_kho > KHO.ma_kho
 Ref: KHACH_HANG.ma_kh - TAI_KHOAN.ma_kh
 Ref: NHAN_VIEN.ma_nhan_vien - TAI_KHOAN.ma_nhan_vien
 Ref: TAI_KHOAN.ma_media_anh_dai_dien > MEDIA.ma_media
+Ref: TAI_KHOAN.luu_tru_boi > TAI_KHOAN.ma_tk
 
 // San pham - Loai san pham - Ton kho
 
@@ -509,6 +512,8 @@ Ref: DON_HANG.ma_donhang - SU_DUNG_VOUCHER.ma_donhang
 
 // CRM: khuyen nghi 05/11/2026. Tuoi tinh tu ngay sinh; khong luu tuoi co dinh.
 Table KHAO_SAT {
+  khach_them text[] [not null, note: 'Khach them thu cong vao nguoi nhan cua ban nhap']
+  khach_loai text[] [not null, note: 'Khach loai khoi danh sach; khong xoa ho so khach']
   ma_khao_sat uuid [pk]
   tieu_de varchar [not null]
   mo_ta text [not null]

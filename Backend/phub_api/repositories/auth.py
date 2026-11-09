@@ -1,5 +1,5 @@
 """Persisted identity lookups; authentication decisions belong to AuthService."""
-ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau,phien_ban_mat_khau"
+ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,ma_kh,ma_nhan_vien,trang_thai,mat_khau,phien_ban_mat_khau,luu_tru_luc"
 
 
 class AuthRepository:

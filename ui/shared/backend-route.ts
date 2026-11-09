@@ -62,7 +62,7 @@ function validAdminPath(path: string[], method: string): boolean {
   if (path[1] !== "accounts" || !id || !/^[A-Za-z0-9_.-]{1,100}$/.test(id) || [".", ".."].includes(id)) return false;
   if (path.length === 3) return ["GET", "PATCH"].includes(method);
   return path.length === 4 && (
-    (["status", "password"].includes(path[3]) && method === "POST") ||
+    (["status", "password", "archive"].includes(path[3]) && method === "POST") ||
     (path[3] === "role" && method === "PUT")
   );
 }
@@ -113,13 +113,15 @@ function validWarehousePath(path: string[], method: string): boolean {
 }
 
 function validCrmPath(path: string[], method: string): boolean {
-  if (path[0] === "crm" && path.length === 2 && path[1] === "report") return method === "GET";
+  if (path[0] === "crm" && path.length === 2 && path[1] === "survey-audience") return method === "POST";
+  if (path[0] === "crm" && path.length === 2 && path[1] === "interests") return method === "GET";
+  if (path[0] === "crm" && path.length === 2 && ["report", "review-insights"].includes(path[1])) return method === "GET";
   if (path[0] === "crm" && path.length === 3 && path[1] === "analytics" && path[2] === "customer-insights") return method === "GET";
   if (path[0] === "crm" && path[1] === "surveys") {
     if (path.length === 2) return ["GET", "POST"].includes(method);
     if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2] ?? "")) return false;
     return path.length === 3 ? ["GET", "PUT"].includes(method) : path.length === 4 &&
-      ((["preview", "statistics"].includes(path[3]) && method === "GET") || (["publish", "close"].includes(path[3]) && method === "POST"));
+      ((["preview", "statistics", "results"].includes(path[3]) && method === "GET") || (["publish", "close"].includes(path[3]) && method === "POST"));
   }
   if (path[0] === "crm" && path[1] === "reviews") return path.length === 2 ? method === "GET" :
     path.length === 4 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2]) && path[3] === "moderate" && method === "POST";

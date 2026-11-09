@@ -21,6 +21,7 @@ export default async function SectionPage({params}:{params:Promise<{section:stri
   if (section === "invoice-claims") return <InternalApp moduleHint="billing" pageTitle="Liên kết hóa đơn" pageHref="/invoice-claims"><InvoiceClaimsWorkspace /></InternalApp>;
   if (section === "history") return <InternalApp moduleHint="inventory" pageTitle="Lịch sử kho" pageHref="/history"><StockHistory /></InternalApp>;
   if (section === "surveys") return <InternalApp engagementPage="surveys" />;
+  if (section === "interests") return <InternalApp engagementPage="interests" />;
   if (section === "reviews") return <InternalApp engagementPage="reviews" />;
   if (section === "support") return <InternalApp supportPage />;
   if (section === "reports" || section === "crm-report" || section === "accounts") return <InternalApp moduleHint={section === "reports" ? "reports" : section === "crm-report" ? "crmReport" : "accounts"} />;

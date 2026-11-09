@@ -6,6 +6,7 @@ export const moduleNames: Record<ModuleKey, string> = {
   reports: "Báo cáo kinh doanh",
   "customer-insights": "Tổng quan khách hàng",
   surveys: "Khảo sát khách hàng",
+  interests: "Sở thích khách hàng",
   reviews: "Đánh giá sản phẩm",
   crmReport: "Báo cáo CRM",
   orders: "Đơn hàng",

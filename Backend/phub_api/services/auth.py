@@ -20,7 +20,7 @@ attempt_lock = Lock()
 
 
 def identity(account: dict, repository: AuthRepository) -> User:
-    if account.get("trang_thai") != 1:
+    if account.get("trang_thai") != 1 or account.get("luu_tru_luc") is not None:
         raise HTTPException(401, "Tài khoản không hoạt động.")
     employee, customer = account.get("ma_nhan_vien"), account.get("ma_kh")
     if bool(employee) == bool(customer):

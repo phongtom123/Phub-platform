@@ -16,5 +16,23 @@
 .surveyLinkBtn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(20, 168, 0, 0.2); }
 .surveyLinkBtn svg { width: 16px; height: 16px; transition: transform 0.15s ease; }
 .surveyLinkBtn:hover svg { transform: translateX(3px); }
+.interestFilters { grid-template-columns:minmax(200px,2fr) minmax(180px,1fr) auto; align-items:end; }
+.interestMetrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.resultMetadata { margin:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; }
+.resultMetadata div { min-width:0; }.resultMetadata dt { color:#6c7966; font-size:13px; }.resultMetadata dd { margin:6px 0 0; overflow-wrap:anywhere; }
+.resultBadge { padding:6px 12px; border-radius:20px; background:#edf8e8; color:#267215; font-size:13px; }
+.resultTabs { display:flex; flex-wrap:wrap; gap:10px; }.respondentSearch { display:flex; align-items:center; gap:10px; }.respondentSearch input { max-width:480px; }
+.reviewFilters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; align-items:end; }.reviewSearch { grid-column:span 2; }
+.reviewReport { grid-template-columns:minmax(0,1fr); }.reviewReport > * { min-width:0; max-width:100%; }.reviewReport .heading > div { min-width:0; overflow-wrap:anywhere; }.reviewReport .heading > button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.reviewMetrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }.reviewMetric { display:grid; gap:8px; padding:16px; border-radius:10px; background:#f5f9f1; }.reviewMetric strong { font-size:22px; }
+.reviewAttention { background:#fffaf0; }.reviewComment { border-top:1px solid #e4eadf; padding:16px 0; }
+.audienceEditor { background:#f9fcf7; grid-template-columns:minmax(0,1fr); }.audienceEditor > * { min-width:0; }.audienceCandidates { border-top:1px solid #dce7d5; padding-top:14px; }.audienceCandidates summary { cursor:pointer; font-weight:600; color:#168000; margin-bottom:14px; }.audienceCandidates label { margin-bottom:14px; }
+@media(max-width:1000px) { .reviewFilters,.reviewMetrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:550px) { .reviewFilters,.reviewMetrics { grid-template-columns:1fr; }.reviewSearch { grid-column:auto; } }
+.respondentAnswers { min-width:240px; max-width:620px; }.respondentAnswers summary { cursor:pointer; color:#168000; font-weight:600; }.respondentAnswers ol { display:grid; gap:15px; margin:16px 0; padding-left:22px; }.respondentAnswers li { padding-left:4px; }
+@media(max-width:800px) { .resultMetadata { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:450px) { .resultMetadata { grid-template-columns:1fr; }.respondentSearch { flex-wrap:wrap; } }
+@media(max-width:900px) { .interestFilters { grid-template-columns:1fr; } }
+@media(max-width:600px) { .interestMetrics { grid-template-columns:1fr; } }
 
 

@@ -12,6 +12,8 @@ export type Account = {
   ma_kho: number | null;
   owner_active: boolean;
   is_self: boolean;
+  luu_tru_luc?: string | null;
+  luu_tru_boi?: string | null;
 };
 export type AccountPage = { data: Account[]; total: number; page: number; page_size: number };
 export type Owner = { id: string; name: string; role: Role; ma_kho: number | null; has_account: boolean };

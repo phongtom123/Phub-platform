@@ -1,11 +1,12 @@
 from typing import Annotated, Literal
+from datetime import date
 from uuid import UUID
 from fastapi import APIRouter, Depends, Path, Query
 
 from phub_api.dependencies.engagement import admin_read, admin_write, customer_read, customer_write, public_read
 from phub_api.schemas.api_contracts import READ_ERRORS as COMMON_READ_ERRORS, WRITE_ERRORS as COMMON_WRITE_ERRORS, error_response
-from phub_api.schemas.engagement import (CrmReport, EngagementPage, PreviewPage, PublicReviewPage, ReviewModerate, ReviewRecord, ReviewWrite,
-    SurveyCreate, SurveyDetail, SurveyPage, SurveyStatistics, SurveySubmit, SurveyUpdate, Version)
+from phub_api.schemas.engagement import (CrmReport, CustomerInterestsPage, EngagementPage, PreviewPage, PublicReviewPage, ReviewModerate, ReviewRecord, ReviewWrite,
+    AudiencePreviewPage, ReviewInsightsPage, SurveyAudience, SurveyCreate, SurveyDetail, SurveyPage, SurveyStatistics, SurveyResults, SurveySubmit, SurveyUpdate, Version)
 from phub_api.services.engagement import EngagementService
 
 router = APIRouter(tags=["CRM · Khảo sát và đánh giá"])
@@ -25,6 +26,23 @@ def report(service: AdminRead):
     return service.survey_read(True, "report")
 
 
+@router.get("/api/crm/review-insights", response_model=ReviewInsightsPage, responses=READ_ERRORS,
+            summary="ADMIN phân tích đánh giá theo sản phẩm, thời gian và số phản hồi; chỉ đọc")
+def review_insights(service: AdminRead, q: str = Query("", max_length=100), date_from: date | None = None,
+                    date_to: date | None = None, min_reviews: int = Query(1, ge=1, le=100000),
+                    sort: Literal["LOW_RATING", "LOWEST_SCORE", "MOST_REVIEWS", "NEWEST"] = "LOW_RATING",
+                    page: Page = 1, product_id: str | None = Query(None, min_length=1, max_length=200),
+                    review_page: Page = 1, low_only: bool = False):
+    return service.review_insights(q, date_from, date_to, min_reviews, sort, page, product_id, review_page, low_only)
+
+
+@router.get("/api/crm/interests", response_model=CustomerInterestsPage, responses=READ_ERRORS,
+            summary="Sở thích khách tự khai báo qua khảo sát đã hoàn thành (ADMIN/NHAN_VIEN)")
+def customer_interests(service: AdminRead, survey_id: UUID | None = None,
+                       q: str = Query("", max_length=100), page: Page = 1):
+    return service.customer_interests(survey_id, q, page)
+
+
 @router.get("/api/crm/surveys", response_model=SurveyPage, responses=READ_ERRORS, summary="Danh sách khảo sát cho nhân viên vận hành và admin xem kết quả")
 def surveys(service: AdminRead, page: Page = 1):
     return service.survey_read(True, "list", page=page)
@@ -32,7 +50,14 @@ def surveys(service: AdminRead, page: Page = 1):
 
 @router.post("/api/crm/surveys", response_model=SurveyDetail, responses=WRITE_ERRORS, summary="Tạo khảo sát nháp, thử lại cùng request_id để tránh trùng")
 def create_survey(body: SurveyCreate, service: AdminWrite):
-    return service.survey_write("create", body.request_id, body.model_dump(mode="json", exclude={"request_id"}))
+    return service.survey_write("create", body.request_id, body.rpc_payload())
+
+
+@router.post("/api/crm/survey-audience", response_model=AudiencePreviewPage, responses=READ_ERRORS,
+             summary="NHAN_VIEN xem trước/chọn khách nhận từ bộ lọc và các lựa chọn thêm/bỏ; không lưu dữ liệu")
+def survey_audience(body: SurveyAudience, service: AdminWrite, scope: Literal["selected", "candidates"] = "selected",
+                     q: str = Query("", max_length=100), page: Page = 1):
+    return service.survey_audience(body.model_dump(mode="json"), scope, q, page)
 
 
 @router.get("/api/crm/surveys/{survey_id}", response_model=SurveyDetail, responses=READ_ERRORS, summary="Xem khảo sát và cấu trúc câu hỏi (ADMIN/NHAN_VIEN)")
@@ -42,7 +67,7 @@ def survey(survey_id: UUID, service: AdminRead):
 
 @router.put("/api/crm/surveys/{survey_id}", response_model=SurveyDetail, responses=WRITE_ERRORS, summary="Sửa bản nháp với phiên bản đối chiếu")
 def update_survey(survey_id: UUID, body: SurveyUpdate, service: AdminWrite):
-    return service.survey_write("update", survey_id, body.model_dump(mode="json", exclude={"expected_version"}), body.expected_version)
+    return service.survey_write("update", survey_id, body.rpc_payload(), body.expected_version)
 
 
 @router.get("/api/crm/surveys/{survey_id}/preview", response_model=PreviewPage, responses=READ_ERRORS, summary="Xem trước đối tượng hoặc danh sách đã gửi, có phân trang")
@@ -60,9 +85,16 @@ def close(survey_id: UUID, body: Version, service: AdminWrite):
     return service.survey_write("close", survey_id, version=body.expected_version)
 
 
-@router.get("/api/crm/surveys/{survey_id}/statistics", response_model=SurveyStatistics, responses=READ_ERRORS, summary="Kết quả từng câu; phân trang nội dung văn bản/Khác")
+@router.get("/api/crm/surveys/{survey_id}/statistics", response_model=SurveyStatistics, responses=READ_ERRORS, summary="ADMIN/NHAN_VIEN xem kết quả từng câu; phân trang văn bản/Khác")
 def statistics(survey_id: UUID, service: AdminRead, page: Page = 1):
     return service.survey_read(True, "statistics", survey_id, page)
+
+
+@router.get("/api/crm/surveys/{survey_id}/results", response_model=SurveyResults, responses=READ_ERRORS,
+            summary="ADMIN/NHAN_VIEN xem kết quả và người trả lời: họ tên, tuổi, bài đã gửi")
+def survey_results(survey_id: UUID, service: AdminRead, q: str = Query("", max_length=100),
+                   page: Page = 1, text_page: Page = 1):
+    return service.survey_results(survey_id, q, page, text_page)
 
 
 @router.get("/api/customer/crm/surveys", response_model=SurveyPage, responses=READ_ERRORS, summary="Khảo sát được gửi cho khách đang đăng nhập")

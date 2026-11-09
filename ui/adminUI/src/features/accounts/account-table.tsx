@@ -14,9 +14,10 @@ type Props = {
   onSaved: (account: Account) => void;
   onEditingChange: (editing: boolean) => void;
   onRequestedEditHandled: () => void;
+  onArchiveChange: () => void;
 };
 
-export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, onRequestedEditHandled }: Props) {
+export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, onRequestedEditHandled, onArchiveChange }: Props) {
   const router = useRouter();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [saving, setSaving] = useState(false);
@@ -48,13 +49,13 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
   useEffect(() => {
     if (!requestedEdit || editor || statusController.current) return;
     const row = rows.find(item => item.ma_tk === requestedEdit);
-    if (!row) return;
+    if (!row || row.luu_tru_luc) return;
     setEditor({ id: row.ma_tk, username: row.ten_tai_khoan, email: row.email ?? "", focus: "username" });
     setError(""); setNotice(""); onRequestedEditHandled();
   }, [requestedEdit, rows, editor, statusSaving, onRequestedEditHandled]);
 
   function edit(row: Account, focus: Editor["focus"] = "username") {
-    if (saving || statusController.current || (editor && editor.id !== row.ma_tk)) return;
+    if (row.luu_tru_luc || saving || statusController.current || (editor && editor.id !== row.ma_tk)) return;
     if (editor) { (focus === "email" ? emailInput : usernameInput).current?.focus(); return; }
     setEditor({ id: row.ma_tk, username: row.ten_tai_khoan, email: row.email ?? "", focus });
     outsideAttempt.current = null; setError(""); setNotice("");
@@ -80,7 +81,7 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
     setEditor(current => current && ({ ...current, [field]: value })); setError("");
   }
   async function changeStatus(row: Account, value: number) {
-    if (row.is_self || editor || controller.current || statusController.current || ![0, 1, 2].includes(value) || value === row.trang_thai) return;
+    if (row.luu_tru_luc || row.is_self || editor || controller.current || statusController.current || ![0, 1, 2].includes(value) || value === row.trang_thai) return;
     const status = value as AccountStatus;
     if (status !== 1 && !window.confirm(`Chuyển tài khoản ${row.ten_tai_khoan} sang "${statusLabels[status]}"?`)) return;
     const request = new AbortController();
@@ -90,6 +91,22 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
       if (request.signal.aborted) return;
       if (saved.ma_tk !== row.ma_tk || ![0, 1, 2].includes(saved.trang_thai)) throw new Error("API chưa trả về đúng trạng thái tài khoản đã lưu.");
       onSaved(saved); setNotice(`Đã cập nhật trạng thái tài khoản ${saved.ma_tk}: ${statusLabels[saved.trang_thai]}.`);
+    } catch (error) { if (!request.signal.aborted) setStatusError({ id: row.ma_tk, message: errorMessage(error) }); }
+    finally { if (!request.signal.aborted) { statusController.current = null; setStatusSaving(null); } }
+  }
+  async function changeArchive(row: Account) {
+    if (row.is_self || editor || statusController.current || controller.current) return;
+    const archived = !row.luu_tru_luc;
+    if (!window.confirm(archived
+      ? `Xóa mềm tài khoản ${row.ten_tai_khoan}? Tài khoản sẽ ngừng đăng nhập và các phiên cũ bị vô hiệu. Dữ liệu, lịch sử vẫn được giữ lại.`
+      : `Khôi phục tài khoản ${row.ten_tai_khoan}? Tài khoản vẫn ở trạng thái ẩn; bạn có thể bật lại sau khi kiểm tra hồ sơ.`)) return;
+    const request = new AbortController();
+    statusController.current = request; setStatusSaving(row.ma_tk); setStatusError(null); setNotice("");
+    try {
+      const saved = await accountApi<Account>(`accounts/${encodeURIComponent(row.ma_tk)}/archive`, { ...jsonRequest("POST", { archived }), signal: request.signal });
+      if (request.signal.aborted) return;
+      if (saved.ma_tk !== row.ma_tk || Boolean(saved.luu_tru_luc) !== archived) throw new Error("API chưa xác nhận xóa mềm/khôi phục tài khoản.");
+      onSaved(saved); onArchiveChange();
     } catch (error) { if (!request.signal.aborted) setStatusError({ id: row.ma_tk, message: errorMessage(error) }); }
     finally { if (!request.signal.aborted) { statusController.current = null; setStatusSaving(null); } }
   }
@@ -171,23 +188,24 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
       <tbody>{rows.map(row => {
         const editing = editor?.id === row.ma_tk;
         return <tr key={row.ma_tk} ref={node => { if (node) rowNodes.current.set(row.ma_tk, node); else rowNodes.current.delete(row.ma_tk); }} data-account-id={row.ma_tk} className={editing ? "account-row-editing" : undefined} tabIndex={0}
-          onDoubleClick={event => doubleClick(event, row)} onKeyDown={event => keyDown(event, row)} title="Nhấp đúp hoặc nhấn F2 để sửa tên đăng nhập và email">
+          onDoubleClick={event => doubleClick(event, row)} onKeyDown={event => keyDown(event, row)} title={row.luu_tru_luc ? "Tài khoản đã xóa mềm; khôi phục trước khi chỉnh sửa." : "Nhấp đúp hoặc nhấn F2 để sửa tên đăng nhập và email"}>
           <td><Link href={accountHref(row.ma_tk)}>{row.ma_tk}</Link></td>
           <td className="account-editable-cell" data-field="username">{editing ? <input ref={usernameInput} aria-label={`Tên đăng nhập ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} required minLength={3} maxLength={80} pattern="[A-Za-z0-9_.-]+" autoComplete="off" disabled={saving} value={editor.username} onChange={event => change("username", event.target.value)} /> : <>{row.ten_tai_khoan}{row.is_self && " (Bạn)"}</>}</td>
           <td>{row.ho_ten}{!row.owner_active && <small className="account-inactive">Hồ sơ ngừng hoạt động</small>}</td>
           <td className="account-editable-cell" data-field="email">{editing ? <input ref={emailInput} type="email" aria-label={`Email ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} maxLength={254} disabled={saving} value={editor.email} onChange={event => change("email", event.target.value)} /> : row.email ?? "—"}</td>
           <td>{roleLabels[row.role]}{row.ma_kho !== null && <small className="account-inactive">Kho {row.ma_kho}</small>}</td>
           <td><select className={`account-status-select status-${row.trang_thai}`} aria-label={`Trạng thái tài khoản ${row.ma_tk}`}
-            disabled={row.is_self || editor !== null || statusSaving !== null}
+            disabled={Boolean(row.luu_tru_luc) || row.is_self || editor !== null || statusSaving !== null}
             title={row.is_self ? "Không thể khóa hoặc ẩn tài khoản đang đăng nhập." : undefined}
             aria-invalid={statusError?.id === row.ma_tk} aria-describedby={statusError?.id === row.ma_tk ? `${formId}-status-${row.ma_tk}` : undefined}
             value={row.trang_thai} onChange={event => { const value = Number(event.currentTarget.value); event.currentTarget.value = String(row.trang_thai); void changeStatus(row, value); }}>
             {([1, 2, 0] as AccountStatus[]).map(status => <option key={status} value={status}>{statusLabels[status]}</option>)}
           </select>
+            {row.luu_tru_luc && <small className="account-inactive">Đã xóa mềm · {new Date(row.luu_tru_luc).toLocaleString("vi-VN")}</small>}
             {statusSaving === row.ma_tk && <small className="account-status-message" role="status">Đang lưu trạng thái…</small>}
             {statusError?.id === row.ma_tk && <small className="account-status-message account-status-error" id={`${formId}-status-${row.ma_tk}`} role="alert">{statusError.message}</small>}
           </td>
-          <td><div className="account-row-actions"><Link href={accountHref(row.ma_tk)}>Chi tiết</Link>{editing && saving && <span role="status">Đang lưu…</span>}</div></td>
+          <td><div className="account-row-actions"><Link href={accountHref(row.ma_tk)}>Chi tiết</Link><button type="button" disabled={row.is_self || editor !== null || statusSaving !== null} onClick={() => void changeArchive(row)}>{row.luu_tru_luc ? "Khôi phục" : "Xóa mềm"}</button>{editing && saving && <span role="status">Đang lưu…</span>}</div></td>
         </tr>;
       })}</tbody>
     </table>{!rows.length && <p className="live-note">Không có tài khoản phù hợp.</p>}</ScrollableTable>

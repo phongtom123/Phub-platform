@@ -1,4 +1,5 @@
 from typing import Annotated, Literal
+from datetime import datetime
 import re
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -106,6 +107,10 @@ class StatusUpdate(Input):
         return value
 
 
+class AccountArchiveUpdate(Input):
+    archived: Annotated[bool, Field(strict=True)]
+
+
 class PasswordReset(BaseModel):
     model_config = ConfigDict(extra="forbid")
     password: Password
@@ -139,6 +144,8 @@ class AccountRead(BaseModel):
     owner_active: bool
     is_self: bool
     avatar_url: str | None = None
+    luu_tru_luc: datetime | None = None
+    luu_tru_boi: str | None = None
 
 
 class AccountPage(BaseModel):
