@@ -1,18 +1,19 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { adminFetch } from "@internal/lib/admin-fetch";
 import { useAdminPolling } from "@internal/lib/use-admin-polling";
-import { dateTime, engagementRequest, jsonBody, surveyStatus, type DraftQuestion, type Page, type Preview, type SurveyDetail, type SurveyDraft, type SurveyItem } from "../../../../shared/engagement";
+import { dateTime, engagementRequest, jsonBody, surveyResultsHref, surveyStatus, type DraftQuestion, type Page, type Preview, type SurveyDetail, type SurveyDraft, type SurveyItem } from "../../../../shared/engagement";
 import { useAdminAuth } from "@internal/components/admin/auth-provider";
-import { SurveyStatistics } from "./survey-statistics";
+import { SurveyAudienceEditor } from "./survey-audience-editor";
 import styles from "./engagement.module.css";
 const api=<T,>(path:string,options?:RequestInit)=>engagementRequest<T>(path,options,adminFetch);
 const question=():DraftQuestion=>({noi_dung:"",loai_cau_hoi:"MOT_LUA_CHON",nhom_noi_dung:"CHUNG",bat_buoc:true,options:[{noi_dung:"",cho_phep_nhap_khac:false},{noi_dung:"",cho_phep_nhap_khac:false}]});
-const initial=():SurveyDraft=>({tieu_de:"",mo_ta:"",loai_doi_tuong:"TAT_CA",tuoi_tu:null,tuoi_den:null,han_tra_loi:new Date(Date.now()+7*86400000).toISOString(),questions:[question()]});
+const initial=():SurveyDraft=>({tieu_de:"",mo_ta:"",loai_doi_tuong:"TAT_CA",tuoi_tu:null,tuoi_den:null,khach_them:[],khach_loai:[],han_tra_loi:new Date(Date.now()+7*86400000).toISOString(),questions:[question()]});
 function draft(detail:SurveyDetail):SurveyDraft {
   const s=detail.survey;
-  return {tieu_de:s.tieu_de,mo_ta:s.mo_ta,loai_doi_tuong:s.loai_doi_tuong,tuoi_tu:s.tuoi_tu,tuoi_den:s.tuoi_den,han_tra_loi:s.han_tra_loi,
+  return {tieu_de:s.tieu_de,mo_ta:s.mo_ta,loai_doi_tuong:s.loai_doi_tuong,tuoi_tu:s.tuoi_tu,tuoi_den:s.tuoi_den,han_tra_loi:s.han_tra_loi,khach_them:s.khach_them??[],khach_loai:s.khach_loai??[],
     questions:detail.questions.map(q=>({noi_dung:q.noi_dung,loai_cau_hoi:q.loai_cau_hoi,nhom_noi_dung:q.nhom_noi_dung,bat_buoc:q.bat_buoc,options:q.options.map(o=>({noi_dung:o.noi_dung,cho_phep_nhap_khac:o.cho_phep_nhap_khac}))}))};
 }
 function localDate(value:string){const date=new Date(value);return Number.isFinite(date.getTime())?new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16):"";}
@@ -71,6 +72,7 @@ function SurveyEditor({id,onClose}:{id:string|null;onClose:()=>void}) {
         {form.loai_doi_tuong==="DO_TUOI"&&<><label>Từ tuổi<input aria-label="Từ tuổi" type="number" required min={0} max={130} value={form.tuoi_tu??""} onChange={e=>change({...form,tuoi_tu:e.target.value===""?null:Number(e.target.value)})}/></label>
           <label>Đến tuổi<input aria-label="Đến tuổi" type="number" required min={form.tuoi_tu??0} max={130} value={form.tuoi_den??""} onChange={e=>change({...form,tuoi_den:e.target.value===""?null:Number(e.target.value)})}/></label></>}
       </fieldset>
+      {isDraft&&<SurveyAudienceEditor audience={form} disabled={busy} onChange={audience=>change({...form,...audience})}/>}
       <label>Mô tả<textarea disabled={busy||!isDraft} maxLength={5000} value={form.mo_ta} onChange={e=>change({...form,mo_ta:e.target.value})}/></label>
       {form.questions.map((q,index)=><fieldset disabled={busy||!isDraft} className={`${styles.card} ${styles.question}`} key={index}><legend>Câu {index+1}</legend>
         <label>Nội dung câu hỏi<input aria-label={`Nội dung câu ${index+1}`} required maxLength={1000} value={q.noi_dung} onChange={e=>changeQuestion(index,{...q,noi_dung:e.target.value})}/></label>
@@ -91,7 +93,7 @@ function SurveyEditor({id,onClose}:{id:string|null;onClose:()=>void}) {
       {preview&&<><p><strong>{preview.total}</strong> khách {preview.is_snapshot?"đã nhận":"phù hợp"}</p><div className={styles.scroll}><table><thead><tr><th>Mã khách</th><th>Khách hàng</th><th>Tuổi hiện tại</th></tr></thead><tbody>{preview.data.map(c=><tr key={c.ma_kh}><td>{c.ma_kh}</td><td>{c.ten_kh}</td><td>{c.tuoi??"Chưa có thông tin"}</td></tr>)}</tbody></table></div>
         <div className={styles.actions}><button disabled={busy||previewPage===1} onClick={()=>void action("preview",previewPage-1)}>Khách trước</button><span>Trang {previewPage}</span><button disabled={busy||previewPage*20>=preview.total} onClick={()=>void action("preview",previewPage+1)}>Khách sau</button></div></>}
     </section>}
-    {readOnly&&detail&&detail.survey.trang_thai!=="NHAP"&&<SurveyStatistics id={detail.survey.ma_khao_sat} version={detail.survey.phien_ban}/>}
+    {detail&&detail.survey.trang_thai!=="NHAP"&&<Link className={styles.surveyLinkBtn} href={surveyResultsHref(detail.survey.ma_khao_sat)}>Xem kết quả khảo sát →</Link>}
   </div>;
 }
 
@@ -102,13 +104,19 @@ function Workspace({initialId}:{initialId:string|null}) {
   useEffect(()=>{if(editing)return;const controller=new AbortController();setLoading(true);setError("");
     api<Page<SurveyItem>>(`crm/surveys?page=${page}`,{signal:controller.signal,cache:version?"reload":"no-store"}).then(value=>{if(!controller.signal.aborted)setData(value);}).catch(e=>{if(!controller.signal.aborted)setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[editing,page,version]);
   const pollError=useAdminPolling(`surveys:${page}`,!editing&&!loading&&!error,async(signal,canApply)=>{const next=await api<Page<SurveyItem>>(`crm/surveys?page=${page}`,{signal,cache:"no-cache"});if(canApply())setData(next);});
-  return <section className={styles.page}><header className={styles.heading}><div><h1>{readOnly ? "Kết quả khảo sát" : "Khảo sát khách hàng"}</h1><p className={styles.muted}>Soạn câu hỏi, chọn khách theo tuổi và theo dõi phản hồi.</p></div>{!editing&&!readOnly&&<button className={styles.primary} onClick={()=>setCreating(true)}>+ Tạo khảo sát</button>}</header>
+  return <section className={styles.page}><header className={styles.heading}><div><h1>{readOnly ? "Kết quả khảo sát" : "Khảo sát khách hàng"}</h1><p className={styles.muted}>{readOnly?"Theo dõi kết quả và phản hồi của từng khảo sát.":"Soạn câu hỏi, chọn khách theo tuổi và xem kết quả phản hồi."}</p></div>{!editing&&!readOnly&&<div className={styles.actions}><Link href="/interests">Sở thích khách hàng →</Link><button className={styles.primary} onClick={()=>{setCreating(true);}}>+ Tạo khảo sát</button></div>}</header>
     {editing?<SurveyEditor key={selected??"new"} id={selected} onClose={()=>{setSelected(null);setCreating(false);setVersion(x=>x+1);}}/>:<>
       {error&&<p role="alert" className={styles.error}>{error}</p>}{pollError&&<p role="alert" className={styles.error}>{pollError}</p>}{loading?<p role="status">Đang tải khảo sát…</p>:data&&!error&&<section className={styles.card}>
-        {data.data.length===0?<p>Chưa có khảo sát. Tạo bản nháp đầu tiên để bắt đầu.</p>:data.data.map(s=><article className={styles.card} key={s.ma_khao_sat}><div className={styles.actions}><h2>{s.tieu_de}</h2><span>{surveyStatus[s.trang_thai]}</span></div><p>{s.mo_ta}</p><p className={styles.muted}>Hạn: {dateTime(s.han_tra_loi)} · Đã gửi {s.da_gui}{readOnly&&<> · Đã trả lời {s.da_tra_loi}</>}</p><button onClick={()=>setSelected(s.ma_khao_sat)}>{readOnly ? "Xem kết quả" : "Mở khảo sát"}</button></article>)}
+        {data.data.length===0?<p>{readOnly?"Chưa có khảo sát để xem kết quả.":"Chưa có khảo sát. Tạo bản nháp đầu tiên để bắt đầu."}</p>:data.data.map(s=><article className={styles.card} key={s.ma_khao_sat}><div className={styles.actions}><h2>{s.tieu_de}</h2><span>{surveyStatus[s.trang_thai]}</span></div><p>{s.mo_ta}</p><p className={styles.muted}>Hạn: {dateTime(s.han_tra_loi)} · Đã gửi {s.da_gui} · Đã trả lời {s.da_tra_loi}</p><div className={styles.actions}>{!readOnly&&<button onClick={()=>{setSelected(s.ma_khao_sat);}}>Mở khảo sát</button>}{s.trang_thai!=="NHAP"?<Link className={styles.surveyLinkBtn} href={surveyResultsHref(s.ma_khao_sat)}>Xem kết quả</Link>:readOnly&&<button onClick={()=>{setSelected(s.ma_khao_sat);}}>Xem bản nháp</button>}</div></article>)}
         <div className={styles.actions}><button disabled={page===1} onClick={()=>setPage(x=>x-1)}>Trước</button><span>{data.total} khảo sát · Trang {page}</span><button disabled={page*20>=data.total} onClick={()=>setPage(x=>x+1)}>Sau</button><button onClick={()=>setVersion(x=>x+1)}>Làm mới</button></div>
       </section>}
     </>}
   </section>;
 }
-export default function SurveysView(){const params=useSearchParams();return <Workspace key={params.get("id")??"main"} initialId={params.get("id")}/>;}
+export default function SurveysView(){
+  const params=useSearchParams(),router=useRouter();
+  const id=params.get("id"),redirect=Boolean(id);
+  useEffect(()=>{if(redirect&&id)router.replace(surveyResultsHref(id));},[redirect,id,router]);
+  if(redirect)return <p role="status">Đang mở trang kết quả khảo sát...</p>;
+  return <Workspace key={id??"main"} initialId={id}/>;
+}

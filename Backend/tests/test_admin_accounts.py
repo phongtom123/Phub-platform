@@ -22,6 +22,7 @@ OPERATIONS = [
     ("POST", "/accounts", {"ma_tk": "TK4", "ten_tai_khoan": "new.account", "ma_kh": "KH2", "password": PASSWORD}),
     ("GET", "/accounts/TK2", None), ("PATCH", "/accounts/TK2", {"email": None}),
     ("POST", "/accounts/TK2/status", {"trang_thai": 2}),
+    ("POST", "/accounts/TK2/archive", {"archived": True}),
     ("PUT", "/accounts/TK2/role", {"role": "ADMIN", "ma_kho": None}),
     ("POST", "/accounts/TK2/password", {"password": PASSWORD}),
     ("GET", "/me", None), ("PATCH", "/me", {"email": None}),
@@ -58,6 +59,19 @@ def accounts_client(monkeypatch):
 
     def handle(request):
         requests.append(request)
+        if request.url.path.endswith("/rpc/admin_archive_account_v1"):
+            data = json.loads(request.content)
+            if state["rpc_error"]:
+                return httpx.Response(400, json={"code": state["rpc_error"], "message": "private SQL details", "details": None, "hint": None})
+            row = next((r for r in tables["TAI_KHOAN"] if r["ma_tk"] == data["p_account_id"]), None)
+            if row is None:
+                return httpx.Response(400, json={"code": "P0002", "message": "missing", "details": None, "hint": None})
+            if bool(row.get("luu_tru_luc")) != data["p_archived"]:
+                row.update(luu_tru_luc="2026-11-09T07:00:00Z" if data["p_archived"] else None,
+                           luu_tru_boi=data["p_actor_account_id"] if data["p_archived"] else None, trang_thai=0)
+                if data["p_archived"]:
+                    row["phien_ban_mat_khau"] = str(uuid4())
+            return httpx.Response(200, json={k: row.get(k) for k in ("ma_tk", "luu_tru_luc", "luu_tru_boi")})
         if request.url.path.endswith("/rpc/admin_create_account_v2"):
             if state["rpc_error"] or state["conflict"]:
                 return httpx.Response(400, json={"code": state["rpc_error"] or "23505", "message": "private SQL details", "details": "private", "hint": None})
@@ -102,6 +116,8 @@ def accounts_client(monkeypatch):
                 if condition.startswith("eq.") and str(value) != condition[3:]:
                     matched = False
                 if condition == "not.is.null" and value is None:
+                    matched = False
+                if condition == "is.null" and value is not None:
                     matched = False
             if matched:
                 matching.append(row)
@@ -472,3 +488,59 @@ def test_openapi_documents_admin_security_without_password_read_fields():
     properties = spec["components"]["schemas"]["AccountRead"]["properties"]
     assert "mat_khau" not in properties and "password" not in properties
     assert spec["components"]["schemas"]["AccountCreate"]["properties"]["password"]["writeOnly"] is True
+
+
+def test_account_archive_restore_preserves_old_session_revocation(accounts_client):
+    client, tables, requests, _ = accounts_client
+    row = tables["TAI_KHOAN"][1]
+    original = row["phien_ban_mat_khau"]
+    url = "/api/admin/accounts/TK2/archive"
+    first = client.post(url, json={"archived": True}, headers=ORIGIN)
+    assert first.status_code == 200
+    assert first.json()["luu_tru_boi"] == "TK1" and first.json()["luu_tru_luc"]
+    assert row["trang_thai"] == 0 and row["phien_ban_mat_khau"] != original
+    revision = row["phien_ban_mat_khau"]
+    assert client.post(url, json={"archived": True}, headers=ORIGIN).json() == first.json()
+    assert row["phien_ban_mat_khau"] == revision
+    assert client.get("/api/admin/accounts").json()["total"] == 2
+    archived = client.get("/api/admin/accounts?archive=ARCHIVED").json()
+    assert archived["total"] == 1 and archived["data"][0]["ma_tk"] == "TK2"
+    assert client.get("/api/admin/accounts?archive=ALL").json()["total"] == 3
+    restored = client.post(url, json={"archived": False}, headers=ORIGIN)
+    assert restored.status_code == 200 and restored.json()["luu_tru_luc"] is None
+    assert restored.json()["trang_thai"] == 0 and row["phien_ban_mat_khau"] == revision
+    rpc = [r for r in requests if r.url.path.endswith("/rpc/admin_archive_account_v1")]
+    assert all(json.loads(r.content)["p_actor_account_id"] == "TK1" for r in rpc)
+    assert "mat_khau" not in first.json() and "phien_ban_mat_khau" not in first.json()
+
+
+def test_account_archive_self_and_validation_fail_without_writes(accounts_client):
+    client, _, requests, _ = accounts_client
+    assert client.post("/api/admin/accounts/TK1/archive", json={"archived": True}, headers=ORIGIN).status_code == 409
+    for body in ({"archived": "true"}, {"archived": 1}, {"archived": None}, {"archived": True, "p_actor_account_id": "forged"}):
+        assert client.post("/api/admin/accounts/TK2/archive", json=body, headers=ORIGIN).status_code == 422
+    assert client.get("/api/admin/accounts?archive=INVALID").status_code == 422
+    assert not requests
+
+
+@pytest.mark.parametrize("method,path,body", [
+    ("PATCH", "", {"email": "changed@example.test"}),
+    ("POST", "/status", {"trang_thai": 1}),
+    ("POST", "/password", {"password": "replacement-password"}),
+    ("PUT", "/role", {"role": "ADMIN", "ma_kho": None}),
+])
+def test_archived_account_is_read_only(accounts_client, method, path, body):
+    client, tables, requests, _ = accounts_client
+    tables["TAI_KHOAN"][1].update(luu_tru_luc="2026-11-09T07:00:00Z", luu_tru_boi="TK1", trang_thai=0)
+    response = client.request(method, "/api/admin/accounts/TK2" + path, json=body, headers=ORIGIN)
+    assert response.status_code == 409
+    assert not any(r.method != "GET" for r in requests)
+
+
+@pytest.mark.parametrize("code,status", [("PGRST202", 503), ("42501", 403), ("P0002", 404), ("40P01", 409)])
+def test_archive_database_error_is_not_success(accounts_client, code, status):
+    client, _, _, state = accounts_client
+    state["rpc_error"] = code
+    response = client.post("/api/admin/accounts/TK2/archive", json={"archived": True}, headers=ORIGIN)
+    assert response.status_code == status
+    assert "private SQL" not in response.text

@@ -280,8 +280,8 @@ def describe_auth_and_public(spec: dict) -> None:
                 operation["description"] = "Chỉ trả các bảng được phép theo phiên hiện tại. writable phản ánh quyền ghi chung của role. draft_update_path và draft_update_fields chỉ cấp cho NHAN_VIEN sửa thông tin phiếu nháp qua API riêng. create_schema là JSON Schema cho body tạo; không có mật khẩu."
             elif path.startswith("/api/crm/"):
                 operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]
-                report = path == "/api/crm/report" or path.endswith("/statistics")
-                survey_reference = method == "get" and path in {"/api/crm/surveys", "/api/crm/surveys/{survey_id}"}
+                report = path in {"/api/crm/report", "/api/crm/review-insights"}
+                survey_reference = method == "get" and (path in {"/api/crm/surveys", "/api/crm/surveys/{survey_id}", "/api/crm/interests"} or path.endswith(("/statistics", "/results")))
                 operation["x-roles"] = ["ADMIN"] if report else ["ADMIN", "NHAN_VIEN"] if survey_reference else ["NHAN_VIEN"]
             elif path.startswith(("/api/pricing/", "/api/staff/")):
                 operation["security"] = [{"BearerAuth": []}, {"SessionCookie": []}]

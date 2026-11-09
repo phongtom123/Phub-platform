@@ -158,7 +158,8 @@ Trong menu **Tiếp thị**:
 | Admin | GET/PUT `/api/crm/surveys/{id}` |
 | Admin | GET `/api/crm/surveys/{id}/preview?page=1` |
 | Admin | POST `/api/crm/surveys/{id}/publish` và `/close` |
-| Admin | GET `/api/crm/surveys/{id}/statistics?page=1` |
+| Admin/Nhân viên | GET `/api/crm/surveys/{id}/statistics?page=1` |
+| Admin/Nhân viên | GET `/api/crm/interests?survey_id=<uuid>&q=<tìm kiếm>&page=1` |
 | Admin | GET `/api/crm/report` |
 | Admin | GET `/api/crm/reviews?status=HIEN_THI&page=1` (hoặc `AN`, bỏ status để xem tất cả) |
 | Admin | POST `/api/crm/reviews/{id}/moderate` |

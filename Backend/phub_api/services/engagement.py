@@ -28,7 +28,7 @@ class EngagementService:
             if code == "23514":
                 # Only explicit RAISE messages from our RPCs are user-facing.
                 message = str(exc.message)
-                if message.startswith(("Khảo sát", "Thời hạn", "Chưa có khách", "Cần ", "Câu ", "Vui lòng", "Chọn ", "Điểm ", "Lựa chọn", "Một câu", "Chỉ đóng", "Sản phẩm")):
+                if message.startswith(("Khảo sát", "Thời hạn", "Chưa có khách", "Cần ", "Câu ", "Vui lòng", "Chọn ", "Điểm ", "Lựa chọn", "Một câu", "Chỉ đóng", "Sản phẩm", "Khách thêm thủ công", "Danh sách khách", "Mã khách", "Đối tượng")):
                     raise HTTPException(422, message) from None
                 raise HTTPException(422, "Nội dung hoặc trạng thái thao tác không hợp lệ.") from None
             raise
@@ -39,7 +39,7 @@ class EngagementService:
     def survey_read(self, admin, kind, survey_id=None, page=1):
         if admin:
             self.account(True)
-            if kind in {"report", "statistics"} and self.actor.role != "ADMIN":
+            if kind == "report" and self.actor.role != "ADMIN":
                 raise HTTPException(403, "Chỉ quản trị viên được xem thống kê.")
             if kind == "preview" and self.actor.role != "NHAN_VIEN":
                 raise HTTPException(403, "Chỉ nhân viên được xử lý đối tượng khảo sát.")
@@ -48,6 +48,26 @@ class EngagementService:
     def survey_write(self, action, survey_id, payload=None, version=None):
         self.require_staff()
         return self.call(self.repository.survey_write, self.account(True), str(survey_id), action, payload or {}, str(version) if version else None)
+
+    def survey_audience(self, config, scope, query, page):
+        self.require_staff()
+        return self.call(self.repository.survey_audience, self.account(True), config, scope, query.strip(), page)
+
+    def customer_interests(self, survey_id=None, query="", page=1):
+        actor = self.account(True)
+        return self.call(self.repository.customer_interests, actor, str(survey_id) if survey_id else None, query.strip(), page)
+
+    def survey_results(self, survey_id, query="", page=1, text_page=1):
+        return self.call(self.repository.survey_results, self.account(True), str(survey_id), query.strip(), page, text_page)
+
+    def review_insights(self, query, date_from, date_to, min_reviews, sort, page, product, review_page, low_only):
+        self.account(True)
+        if self.actor.role != "ADMIN":
+            raise HTTPException(403, "Chỉ quản trị viên được xem báo cáo đánh giá sản phẩm.")
+        if date_from is not None and date_to is not None and date_from > date_to:
+            raise HTTPException(422, "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.")
+        return self.call(self.repository.review_insights, self.actor.account_id, query.strip(), date_from, date_to,
+                         min_reviews, sort, page, product, review_page, low_only)
 
     def submit(self, survey_id, body):
         return self.call(self.repository.survey_submit, self.account(), str(survey_id), str(body.submission_id), [answer.model_dump(mode="json") for answer in body.answers])

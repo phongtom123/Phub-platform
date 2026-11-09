@@ -40,7 +40,7 @@ def test_admin_cannot_open_operational_endpoints(workspace_client, path):
 @pytest.mark.parametrize("path", [
     "/api/admin/accounts", "/api/admin/accounts/OTHER", "/api/admin/account-owners",
     "/api/admin/operations/read/summary", "/api/admin/operations/business-report?start=2026-11-01&end=2026-11-06",
-    "/api/crm/report", "/api/crm/surveys/11111111-1111-4111-8111-111111111111/statistics",
+    "/api/crm/report",
 ])
 def test_staff_cannot_open_accounts_or_reports(workspace_client, path):
     client, state = workspace_client; state["role"] = "NHAN_VIEN"

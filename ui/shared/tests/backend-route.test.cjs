@@ -25,6 +25,39 @@ function gateway(fetch, env = {}) {
   return (request, segments) => sandbox.exports.proxyBackend(request, { params: Promise.resolve({ path: segments }) });
 }
 
+test("account soft-delete gateway forwards archive body and filters but blocks hard delete", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method,body:options.body});return Response.json({ma_tk:'TK1'});});
+  const body=JSON.stringify({archived:true});
+  assert.equal((await proxy(new Request('http://localhost/x',{method:'POST',headers:{Origin:'http://localhost:3001'},body}),['admin','accounts','TK1','archive'])).status,200);
+  assert.equal(calls[0].body,body);
+  assert.ok(calls[0].url.endsWith('/api/admin/accounts/TK1/archive'));
+  assert.equal((await proxy(new Request('http://localhost/x?archive=ARCHIVED'),['admin','accounts'])).status,200);
+  assert.ok(calls[1].url.includes('archive=ARCHIVED'));
+  assert.equal((await proxy(new Request('http://localhost/x',{method:'DELETE'}),['admin','accounts','TK1'])).status,404);
+  assert.equal((await proxy(new Request('http://localhost/x',{method:'GET'}),['admin','accounts','TK1','archive'])).status,404);
+  assert.equal(calls.length,2);
+});
+
+test("survey interests gateway allows only filtered reads", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method});return Response.json({data:[]});});
+  assert.equal((await proxy(new Request('http://localhost/x?q=gaming&page=2'),['crm','interests'])).status,200);
+  assert.ok(calls[0].url.endsWith('/api/crm/interests?q=gaming&page=2'));
+  for(const method of ['POST','PUT','PATCH','DELETE'])assert.equal((await proxy(new Request('http://localhost/x',{method}),['crm','interests'])).status,404);
+  assert.equal(calls.length,1);
+});
+
+test("survey result page gateway forwards respondent filters and blocks writes", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{calls.push({url:String(url),method:options.method});return Response.json({});});
+  const segments=['crm','surveys','11111111-1111-4111-8111-111111111111','results'];
+  assert.equal((await proxy(new Request('http://localhost/x?q=Customer&page=2&text_page=3'),segments)).status,200);
+  assert.ok(calls[0].url.endsWith('/results?q=Customer&page=2&text_page=3'));
+  assert.equal((await proxy(new Request('http://localhost/x',{method:'POST'}),segments)).status,404);
+  assert.equal(calls.length,1);
+});
+
 test("admin order detail gateway forwards one read with auth and rejects writes/traversal", async () => {
   const calls = [];
   const proxy = gateway(async (url, options) => {

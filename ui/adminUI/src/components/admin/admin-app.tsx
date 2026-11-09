@@ -22,6 +22,7 @@ import type { AccountView } from "@internal/features/accounts/types";
 import SupportView from "@internal/features/support/support-view";
 import { ReportsView } from "@internal/features/reports/reports-view";
 import SurveysView from "@internal/features/engagement/surveys-view";
+import CustomerInterestsView from "@internal/features/engagement/customer-interests-view";
 import ReviewsView from "@internal/features/engagement/reviews-view";
 import CrmReportView from "@internal/features/engagement/crm-report-view";
 import { CustomerInsightsView } from "@internal/features/customer-insights/customer-insights-view";
@@ -32,7 +33,7 @@ type DrawerState = {
   mode: "create" | "edit" | "settings";
 } | null;
 
-export default function AdminApp({ dataResource, accountsPage, supportPage = false, reportsPage = false, customerInsightsPage = false, engagementPage, children, moduleHint, selfPage = false, pageTitle, pageHref }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean; reportsPage?: boolean; customerInsightsPage?: boolean; engagementPage?: "surveys" | "reviews" | "crmReport"; children?: React.ReactNode; moduleHint?: ModuleKey; selfPage?: boolean; pageTitle?: string; pageHref?: string } = {}) {
+export default function AdminApp({ dataResource, accountsPage, supportPage = false, reportsPage = false, customerInsightsPage = false, engagementPage, children, moduleHint, selfPage = false, pageTitle, pageHref }: { dataResource?: string; accountsPage?: AccountView; supportPage?: boolean; reportsPage?: boolean; customerInsightsPage?: boolean; engagementPage?: "surveys" | "reviews" | "crmReport" | "interests"; children?: React.ReactNode; moduleHint?: ModuleKey; selfPage?: boolean; pageTitle?: string; pageHref?: string } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { portal, user: sessionUser, checking: checkingSession, error: sessionError, checkSession, acceptLogin, logout: endSession } = useAdminAuth();
@@ -99,7 +100,7 @@ export default function AdminApp({ dataResource, accountsPage, supportPage = fal
             <span>{sessionError}</span>
             <button type="button" className="btn" onClick={retrySession} disabled={checkingSession}>Thử kết nối lại</button>
           </div>}
-          {!allowed ? <section className="live-note" role="alert"><p>Chức năng này không thuộc quyền của tài khoản đang đăng nhập.</p><a href={portalHome(portal)}>Về trang chính</a></section> : children ?? (activeModule === "customer-insights" ? <CustomerInsightsView /> : activeModule === "surveys" ? <SurveysView /> : activeModule === "reviews" ? <ReviewsView /> : activeModule === "crmReport" ? <CrmReportView /> : activeModule === "reports" ? <ReportsView /> : activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
+          {!allowed ? <section className="live-note" role="alert"><p>Chức năng này không thuộc quyền của tài khoản đang đăng nhập.</p><a href={portalHome(portal)}>Về trang chính</a></section> : children ?? (activeModule === "customer-insights" ? <CustomerInsightsView /> : activeModule === "interests" ? <CustomerInterestsView /> : activeModule === "surveys" ? <SurveysView /> : activeModule === "reviews" ? <ReviewsView /> : activeModule === "crmReport" ? <CrmReportView /> : activeModule === "reports" ? <ReportsView /> : activeModule === "support" ? <SupportView /> : accountsPage ? <AccountsView {...accountsPage} /> : dataResource ? <BackendDataView key={["products", "customers"].includes(dataResource) ? dataResource : `${dataResource}:${searchParams}`} resource={dataResource} /> : activeModule === "dashboard" ? (
             <DashboardView onNavigate={navigate} />
           ) : moduleResources[activeModule] ? (
             <ModuleView

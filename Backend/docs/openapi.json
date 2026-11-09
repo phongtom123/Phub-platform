@@ -1,6 +1,20 @@
 {
   "components": {
     "schemas": {
+      "AccountArchiveUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "archived": {
+            "title": "Archived",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "archived"
+        ],
+        "title": "AccountArchiveUpdate",
+        "type": "object"
+      },
       "AccountCreate": {
         "additionalProperties": false,
         "properties": {
@@ -136,6 +150,29 @@
           "is_self": {
             "title": "Is Self",
             "type": "boolean"
+          },
+          "luu_tru_boi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Luu Tru Boi"
+          },
+          "luu_tru_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Luu Tru Luc"
           },
           "ma_kh": {
             "anyOf": [
@@ -765,6 +802,85 @@
           "detail"
         ],
         "title": "ApiErrorResponse",
+        "type": "object"
+      },
+      "AudienceCustomer": {
+        "properties": {
+          "added_manually": {
+            "title": "Added Manually",
+            "type": "boolean"
+          },
+          "ma_kh": {
+            "title": "Ma Kh",
+            "type": "string"
+          },
+          "ten_kh": {
+            "title": "Ten Kh",
+            "type": "string"
+          },
+          "tuoi": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi"
+          }
+        },
+        "required": [
+          "ma_kh",
+          "ten_kh",
+          "tuoi",
+          "added_manually"
+        ],
+        "title": "AudienceCustomer",
+        "type": "object"
+      },
+      "AudiencePreviewPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AudienceCustomer"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "selected_total": {
+            "title": "Selected Total",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "unavailable_added_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unavailable Added Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "selected_total",
+          "page",
+          "page_size",
+          "unavailable_added_ids"
+        ],
+        "title": "AudiencePreviewPage",
         "type": "object"
       },
       "AvailableStock": {
@@ -2620,6 +2736,178 @@
         "title": "CustomerInsightsSummary",
         "type": "object"
       },
+      "CustomerInterestAnswer": {
+        "properties": {
+          "cau_hoi": {
+            "title": "Cau Hoi",
+            "type": "string"
+          },
+          "diem": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diem"
+          },
+          "hoan_thanh_luc": {
+            "format": "date-time",
+            "title": "Hoan Thanh Luc",
+            "type": "string"
+          },
+          "loai_cau_hoi": {
+            "enum": [
+              "MOT_LUA_CHON",
+              "VAN_BAN",
+              "DIEM_1_5"
+            ],
+            "title": "Loai Cau Hoi",
+            "type": "string"
+          },
+          "lua_chon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lua Chon"
+          },
+          "ma_cau_hoi": {
+            "format": "uuid",
+            "title": "Ma Cau Hoi",
+            "type": "string"
+          },
+          "ma_kh": {
+            "title": "Ma Kh",
+            "type": "string"
+          },
+          "ma_khao_sat": {
+            "format": "uuid",
+            "title": "Ma Khao Sat",
+            "type": "string"
+          },
+          "ma_tra_loi": {
+            "format": "uuid",
+            "title": "Ma Tra Loi",
+            "type": "string"
+          },
+          "noi_dung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noi Dung"
+          },
+          "ten_kh": {
+            "title": "Ten Kh",
+            "type": "string"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          },
+          "tuoi": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi"
+          }
+        },
+        "required": [
+          "ma_tra_loi",
+          "ma_kh",
+          "ten_kh",
+          "tuoi",
+          "ma_khao_sat",
+          "tieu_de",
+          "ma_cau_hoi",
+          "cau_hoi",
+          "loai_cau_hoi",
+          "lua_chon",
+          "noi_dung",
+          "diem",
+          "hoan_thanh_luc"
+        ],
+        "title": "CustomerInterestAnswer",
+        "type": "object"
+      },
+      "CustomerInterestsPage": {
+        "properties": {
+          "customers": {
+            "title": "Customers",
+            "type": "integer"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerInterestAnswer"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "question_count": {
+            "title": "Question Count",
+            "type": "integer"
+          },
+          "summaries": {
+            "items": {
+              "$ref": "#/components/schemas/InterestQuestionSummary"
+            },
+            "title": "Summaries",
+            "type": "array"
+          },
+          "survey_count": {
+            "title": "Survey Count",
+            "type": "integer"
+          },
+          "surveys": {
+            "items": {
+              "$ref": "#/components/schemas/InterestSurvey"
+            },
+            "title": "Surveys",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size",
+          "customers",
+          "survey_count",
+          "question_count",
+          "summaries",
+          "surveys"
+        ],
+        "title": "CustomerInterestsPage",
+        "type": "object"
+      },
       "CustomerOrder": {
         "properties": {
           "kenh_ban": {
@@ -4242,6 +4530,96 @@
           "percentage"
         ],
         "title": "InterestItem",
+        "type": "object"
+      },
+      "InterestOptionCount": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "count"
+        ],
+        "title": "InterestOptionCount",
+        "type": "object"
+      },
+      "InterestQuestionSummary": {
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "cau_hoi": {
+            "title": "Cau Hoi",
+            "type": "string"
+          },
+          "loai_cau_hoi": {
+            "enum": [
+              "MOT_LUA_CHON",
+              "VAN_BAN",
+              "DIEM_1_5"
+            ],
+            "title": "Loai Cau Hoi",
+            "type": "string"
+          },
+          "ma_cau_hoi": {
+            "format": "uuid",
+            "title": "Ma Cau Hoi",
+            "type": "string"
+          },
+          "ma_khao_sat": {
+            "format": "uuid",
+            "title": "Ma Khao Sat",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/InterestOptionCount"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_khao_sat",
+          "tieu_de",
+          "ma_cau_hoi",
+          "cau_hoi",
+          "loai_cau_hoi",
+          "answered",
+          "options"
+        ],
+        "title": "InterestQuestionSummary",
+        "type": "object"
+      },
+      "InterestSurvey": {
+        "properties": {
+          "ma_khao_sat": {
+            "format": "uuid",
+            "title": "Ma Khao Sat",
+            "type": "string"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_khao_sat",
+          "tieu_de"
+        ],
+        "title": "InterestSurvey",
         "type": "object"
       },
       "InvoiceOverview": {
@@ -8675,6 +9053,173 @@
         "title": "ResourceName",
         "type": "string"
       },
+      "ReviewInsightComment": {
+        "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "ma_danh_gia": {
+            "format": "uuid",
+            "title": "Ma Danh Gia",
+            "type": "string"
+          },
+          "ngay_tao": {
+            "format": "date-time",
+            "title": "Ngay Tao",
+            "type": "string"
+          },
+          "noi_dung": {
+            "title": "Noi Dung",
+            "type": "string"
+          },
+          "so_sao": {
+            "title": "So Sao",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ma_danh_gia",
+          "so_sao",
+          "author",
+          "noi_dung",
+          "ngay_tao",
+          "cap_nhat_luc"
+        ],
+        "title": "ReviewInsightComment",
+        "type": "object"
+      },
+      "ReviewInsightsDetail": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewInsightComment"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "low_only": {
+            "title": "Low Only",
+            "type": "boolean"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "product": {
+            "$ref": "#/components/schemas/ReviewProductInsights"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product",
+          "data",
+          "total",
+          "page",
+          "page_size",
+          "low_only"
+        ],
+        "title": "ReviewInsightsDetail",
+        "type": "object"
+      },
+      "ReviewInsightsPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewProductInsights"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewInsightsDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ReviewInsightsSummary"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size",
+          "summary",
+          "details"
+        ],
+        "title": "ReviewInsightsPage",
+        "type": "object"
+      },
+      "ReviewInsightsSummary": {
+        "properties": {
+          "average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average"
+          },
+          "low_count": {
+            "title": "Low Count",
+            "type": "integer"
+          },
+          "low_rate": {
+            "title": "Low Rate",
+            "type": "number"
+          },
+          "products": {
+            "title": "Products",
+            "type": "integer"
+          },
+          "reviews": {
+            "title": "Reviews",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "products",
+          "reviews",
+          "average",
+          "low_count",
+          "low_rate"
+        ],
+        "title": "ReviewInsightsSummary",
+        "type": "object"
+      },
       "ReviewModerate": {
         "additionalProperties": false,
         "properties": {
@@ -8697,6 +9242,55 @@
           "status"
         ],
         "title": "ReviewModerate",
+        "type": "object"
+      },
+      "ReviewProductInsights": {
+        "properties": {
+          "average": {
+            "title": "Average",
+            "type": "number"
+          },
+          "latest_at": {
+            "format": "date-time",
+            "title": "Latest At",
+            "type": "string"
+          },
+          "low_count": {
+            "title": "Low Count",
+            "type": "integer"
+          },
+          "low_rate": {
+            "title": "Low Rate",
+            "type": "number"
+          },
+          "ma_sp": {
+            "title": "Ma Sp",
+            "type": "string"
+          },
+          "review_count": {
+            "title": "Review Count",
+            "type": "integer"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "ten_sp": {
+            "title": "Ten Sp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_sp",
+          "sku",
+          "ten_sp",
+          "review_count",
+          "average",
+          "low_count",
+          "low_rate",
+          "latest_at"
+        ],
+        "title": "ReviewProductInsights",
         "type": "object"
       },
       "ReviewRecord": {
@@ -9974,6 +10568,71 @@
         "title": "SurveyAnswer",
         "type": "object"
       },
+      "SurveyAudience": {
+        "additionalProperties": false,
+        "properties": {
+          "khach_loai": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "title": "Khach Loai",
+            "type": "array"
+          },
+          "khach_them": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "title": "Khach Them",
+            "type": "array"
+          },
+          "loai_doi_tuong": {
+            "enum": [
+              "TAT_CA",
+              "DO_TUOI",
+              "CHUA_NGAY_SINH"
+            ],
+            "title": "Loai Doi Tuong",
+            "type": "string"
+          },
+          "tuoi_den": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Den"
+          },
+          "tuoi_tu": {
+            "anyOf": [
+              {
+                "maximum": 130.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi Tu"
+          }
+        },
+        "required": [
+          "loai_doi_tuong"
+        ],
+        "title": "SurveyAudience",
+        "type": "object"
+      },
       "SurveyCreate": {
         "additionalProperties": false,
         "properties": {
@@ -9981,6 +10640,26 @@
             "format": "date-time",
             "title": "Han Tra Loi",
             "type": "string"
+          },
+          "khach_loai": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "title": "Khach Loai",
+            "type": "array"
+          },
+          "khach_them": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "title": "Khach Them",
+            "type": "array"
           },
           "loai_doi_tuong": {
             "enum": [
@@ -10045,13 +10724,31 @@
           }
         },
         "required": [
-          "tieu_de",
           "loai_doi_tuong",
+          "tieu_de",
           "han_tra_loi",
           "questions",
           "request_id"
         ],
         "title": "SurveyCreate",
+        "type": "object"
+      },
+      "SurveyCreator": {
+        "properties": {
+          "ho_ten": {
+            "title": "Ho Ten",
+            "type": "string"
+          },
+          "ma_tk": {
+            "title": "Ma Tk",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ma_tk",
+          "ho_ten"
+        ],
+        "title": "SurveyCreator",
         "type": "object"
       },
       "SurveyDetail": {
@@ -10101,6 +10798,20 @@
             "format": "date-time",
             "title": "Han Tra Loi",
             "type": "string"
+          },
+          "khach_loai": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Khach Loai",
+            "type": "array"
+          },
+          "khach_them": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Khach Them",
+            "type": "array"
           },
           "loai_doi_tuong": {
             "title": "Loai Doi Tuong",
@@ -10295,6 +11006,20 @@
             ],
             "title": "Hoan Thanh Luc"
           },
+          "khach_loai": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Khach Loai",
+            "type": "array"
+          },
+          "khach_them": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Khach Them",
+            "type": "array"
+          },
           "loai_doi_tuong": {
             "title": "Loai Doi Tuong",
             "type": "string"
@@ -10485,6 +11210,192 @@
         "title": "SurveyQuestion",
         "type": "object"
       },
+      "SurveyRespondent": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyRespondentAnswer"
+            },
+            "title": "Answers",
+            "type": "array"
+          },
+          "hoan_thanh_luc": {
+            "format": "date-time",
+            "title": "Hoan Thanh Luc",
+            "type": "string"
+          },
+          "luu_tru_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Luu Tru Luc"
+          },
+          "ma_gui": {
+            "format": "uuid",
+            "title": "Ma Gui",
+            "type": "string"
+          },
+          "ma_kh": {
+            "title": "Ma Kh",
+            "type": "string"
+          },
+          "ten_kh": {
+            "title": "Ten Kh",
+            "type": "string"
+          },
+          "tuoi": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuoi"
+          }
+        },
+        "required": [
+          "ma_gui",
+          "ma_kh",
+          "ten_kh",
+          "tuoi",
+          "luu_tru_luc",
+          "hoan_thanh_luc",
+          "answers"
+        ],
+        "title": "SurveyRespondent",
+        "type": "object"
+      },
+      "SurveyRespondentAnswer": {
+        "properties": {
+          "cau_hoi": {
+            "title": "Cau Hoi",
+            "type": "string"
+          },
+          "diem": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Diem"
+          },
+          "lua_chon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lua Chon"
+          },
+          "ma_cau_hoi": {
+            "format": "uuid",
+            "title": "Ma Cau Hoi",
+            "type": "string"
+          },
+          "nhom_noi_dung": {
+            "enum": [
+              "CHUNG",
+              "SO_THICH",
+              "HAI_LONG"
+            ],
+            "title": "Nhom Noi Dung",
+            "type": "string"
+          },
+          "noi_dung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noi Dung"
+          }
+        },
+        "required": [
+          "ma_cau_hoi",
+          "cau_hoi",
+          "nhom_noi_dung",
+          "lua_chon",
+          "noi_dung",
+          "diem"
+        ],
+        "title": "SurveyRespondentAnswer",
+        "type": "object"
+      },
+      "SurveyRespondentPage": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SurveyRespondent"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "data",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "SurveyRespondentPage",
+        "type": "object"
+      },
+      "SurveyResults": {
+        "properties": {
+          "creator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurveyCreator"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "respondents": {
+            "$ref": "#/components/schemas/SurveyRespondentPage"
+          },
+          "statistics": {
+            "$ref": "#/components/schemas/SurveyStatistics"
+          }
+        },
+        "required": [
+          "statistics",
+          "creator",
+          "respondents"
+        ],
+        "title": "SurveyResults",
+        "type": "object"
+      },
       "SurveyStatistics": {
         "properties": {
           "completed": {
@@ -10563,6 +11474,26 @@
             "title": "Han Tra Loi",
             "type": "string"
           },
+          "khach_loai": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "title": "Khach Loai",
+            "type": "array"
+          },
+          "khach_them": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 5000,
+            "title": "Khach Them",
+            "type": "array"
+          },
           "loai_doi_tuong": {
             "enum": [
               "TAT_CA",
@@ -10621,8 +11552,8 @@
           }
         },
         "required": [
-          "tieu_de",
           "loai_doi_tuong",
+          "tieu_de",
           "han_tra_loi",
           "questions",
           "expected_version"
@@ -10665,6 +11596,8 @@
         "additionalProperties": false,
         "example": {
           "email": "example@example.com",
+          "luu_tru_boi": null,
+          "luu_tru_luc": null,
           "ma_kh": null,
           "ma_media_anh_dai_dien": null,
           "ma_nhan_vien": "NV001",
@@ -10683,6 +11616,29 @@
               }
             ],
             "description": "email"
+          },
+          "luu_tru_boi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "luu_tru_boi"
+          },
+          "luu_tru_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "luu_tru_luc"
           },
           "ma_kh": {
             "anyOf": [
@@ -10735,6 +11691,8 @@
           "ma_tk",
           "ten_tai_khoan",
           "email",
+          "luu_tru_luc",
+          "luu_tru_boi",
           "ma_media_anh_dai_dien",
           "ma_kh",
           "ma_nhan_vien",
@@ -12388,6 +13346,21 @@
               ],
               "title": "Role"
             }
+          },
+          {
+            "in": "query",
+            "name": "archive",
+            "required": false,
+            "schema": {
+              "default": "ACTIVE",
+              "enum": [
+                "ACTIVE",
+                "ARCHIVED",
+                "ALL"
+              ],
+              "title": "Archive",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -12908,6 +13881,161 @@
           }
         ],
         "summary": "Sửa tên đăng nhập và email",
+        "tags": [
+          "Admin · Tài khoản"
+        ],
+        "x-implementation-status": "implemented-live-unverified",
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/admin/accounts/{account_id}/archive": {
+      "post": {
+        "operationId": "archive_account_api_admin_accounts__account_id__archive_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.-]+$",
+              "title": "Account Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "CSRF: phải khớp FRONTEND_ORIGINS. Trình duyệt tự gửi header này; Swagger không thể sửa thủ công. Khi dùng Postman/CLI, gửi Origin đã cấu hình.",
+            "example": "http://localhost:8000",
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "format": "uri",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountArchiveUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không được ghi dữ liệu hoặc Origin không nằm trong allowlist."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Tài khoản không tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không tồn tại."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Mã hoặc dữ liệu duy nhất đã tồn tại."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Body/tham số không hợp lệ hoặc vi phạm khóa ngoại/check constraint."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Xóa mềm/khôi phục tài khoản; xóa mềm vô hiệu các phiên cũ",
         "tags": [
           "Admin · Tài khoản"
         ],
@@ -18465,6 +19593,168 @@
         ]
       }
     },
+    "/api/crm/interests": {
+      "get": {
+        "operationId": "customer_interests_api_crm_interests_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "survey_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Survey Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerInterestsPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Sở thích khách tự khai báo qua khảo sát đã hoàn thành (ADMIN/NHAN_VIEN)",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "ADMIN",
+          "NHAN_VIEN"
+        ]
+      }
+    },
     "/api/crm/report": {
       "get": {
         "operationId": "report_api_crm_report_get",
@@ -18576,6 +19866,252 @@
           }
         ],
         "summary": "Báo cáo độ tuổi, đánh giá và khảo sát sở thích (ADMIN)",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "ADMIN"
+        ]
+      }
+    },
+    "/api/crm/review-insights": {
+      "get": {
+        "operationId": "review_insights_api_crm_review_insights_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_reviews",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100000,
+              "minimum": 1,
+              "title": "Min Reviews",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "LOW_RATING",
+              "enum": [
+                "LOW_RATING",
+                "LOWEST_SCORE",
+                "MOST_REVIEWS",
+                "NEWEST"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "review_page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Review Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "low_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Low Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInsightsPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "ADMIN phân tích đánh giá theo sản phẩm, thời gian và số phản hồi; chỉ đọc",
         "tags": [
           "CRM · Khảo sát và đánh giá"
         ],
@@ -18901,6 +20437,174 @@
           }
         ],
         "summary": "Ẩn/hiển thị lại đúng phiên bản nội dung đánh giá",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/crm/survey-audience": {
+      "post": {
+        "operationId": "survey_audience_api_crm_survey_audience_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "schema": {
+              "default": "selected",
+              "enum": [
+                "selected",
+                "candidates"
+              ],
+              "title": "Scope",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveyAudience"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudiencePreviewPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "NHAN_VIEN xem trước/chọn khách nhận từ bộ lọc và các lựa chọn thêm/bỏ; không lưu dữ liệu",
         "tags": [
           "CRM · Khảo sát và đánh giá"
         ],
@@ -19918,6 +21622,173 @@
         ]
       }
     },
+    "/api/crm/surveys/{survey_id}/results": {
+      "get": {
+        "operationId": "survey_results_api_crm_surveys__survey_id__results_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "survey_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Survey Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "text_page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Text Page",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyResults"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy dữ liệu thuộc quyền truy cập của bạn."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "API chưa xác nhận kết quả; cần tải lại để đối chiếu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "ADMIN/NHAN_VIEN xem kết quả và người trả lời: họ tên, tuổi, bài đã gửi",
+        "tags": [
+          "CRM · Khảo sát và đánh giá"
+        ],
+        "x-roles": [
+          "ADMIN",
+          "NHAN_VIEN"
+        ]
+      }
+    },
     "/api/crm/surveys/{survey_id}/statistics": {
       "get": {
         "operationId": "statistics_api_crm_surveys__survey_id__statistics_get",
@@ -20052,12 +21923,13 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Kết quả từng câu; phân trang nội dung văn bản/Khác",
+        "summary": "ADMIN/NHAN_VIEN xem kết quả từng câu; phân trang văn bản/Khác",
         "tags": [
           "CRM · Khảo sát và đánh giá"
         ],
         "x-roles": [
-          "ADMIN"
+          "ADMIN",
+          "NHAN_VIEN"
         ]
       }
     },
@@ -23536,6 +25408,8 @@
                   "data": [
                     {
                       "email": "example@example.com",
+                      "luu_tru_boi": null,
+                      "luu_tru_luc": null,
                       "ma_kh": null,
                       "ma_media_anh_dai_dien": null,
                       "ma_nhan_vien": "NV001",

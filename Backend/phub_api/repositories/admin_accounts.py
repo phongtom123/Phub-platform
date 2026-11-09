@@ -2,7 +2,7 @@
 import json
 import re
 
-ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,email,ma_nhan_vien,ma_kh,trang_thai"
+ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,email,ma_nhan_vien,ma_kh,trang_thai,luu_tru_luc,luu_tru_boi"
 ACCOUNT_PROJECTION = ACCOUNT_COLUMNS + ",avatar:MEDIA!TAI_KHOAN_avatar_media_fkey(url)"
 EMPLOYEE_COLUMNS = "ma_nhan_vien,ho_ten,loai_nhan_vien,ma_kho,trang_thai"
 
@@ -28,10 +28,14 @@ class AccountsRepository:
     def warehouse(self, identifier):
         return self.client.table("KHO").select("ma_kho,trang_thai").eq("ma_kho", identifier).limit(1).execute().data
 
-    def page(self, page, page_size, q, status, role):
+    def page(self, page, page_size, q, status, role, archive="ACTIVE"):
         employee_join = "!inner" if role in {"ADMIN", "NHAN_VIEN"} else ""
         projection = ACCOUNT_PROJECTION + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh,luu_tru_luc)"
         query = self.client.table("TAI_KHOAN").select(projection, count="exact")
+        if archive == "ACTIVE":
+            query = query.is_("luu_tru_luc", "null")
+        elif archive == "ARCHIVED":
+            query = query.not_.is_("luu_tru_luc", "null")
         if q.strip():
             query = query.or_(literal_search(q, ("ma_tk", "ten_tai_khoan", "email")))
         if status is not None:
@@ -66,7 +70,12 @@ class AccountsRepository:
         return self.client.rpc("admin_create_account_v2", parameters).execute().data
 
     def update(self, identifier, values):
-        return self.client.table("TAI_KHOAN").update(values).eq("ma_tk", identifier).execute().data
+        return self.client.table("TAI_KHOAN").update(values).eq("ma_tk", identifier).is_("luu_tru_luc", "null").execute().data
+
+    def archive(self, identifier, actor_id, archived):
+        return self.client.rpc("admin_archive_account_v1", {
+            "p_account_id": identifier, "p_actor_account_id": actor_id, "p_archived": archived,
+        }).execute().data
 
     def update_employee(self, identifier, values):
         return self.client.table("NHAN_VIEN").update(values).eq("ma_nhan_vien", identifier).execute().data

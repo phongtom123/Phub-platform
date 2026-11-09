@@ -113,3 +113,9 @@ Push/merge/deploy cả backend và admin UI trước khi dùng trên cloud. Mở
 `/openapi.json` và `/docs` sau deploy để thấy nhóm Admin · Tài khoản.
 
 Chưa kiểm thử ghi live Supabase trong đợt này; không nhập khóa vào Swagger/UI.
+# Xóa mềm tài khoản
+
+Xem [quy tắc xóa mềm/khôi phục tài khoản](../../../docs/ACCOUNT-SOFT-DELETE.md).
+`POST /api/admin/accounts/{account_id}/archive` nhận `{ "archived": true|false }`.
+`GET /api/admin/accounts` mặc định loại tài khoản đã xóa; dùng
+`archive=ACTIVE|ARCHIVED|ALL` để lọc. Khôi phục giữ trạng thái ẩn và không phục hồi phiên cũ.

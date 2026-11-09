@@ -23,7 +23,8 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
     onEditingChange(busy || Boolean(password || confirmation || warehouseQuery) || role !== account.role || warehouse !== String(account.ma_kho ?? ""));
   }, [busy, password, confirmation, warehouseQuery, role, warehouse, account.role, account.ma_kho, onEditingChange]);
   useEffect(() => () => onEditingChange(false), [onEditingChange]);
-  const canManageRole = Boolean(account.ma_nhan_vien) && !account.is_self;
+  const archived = Boolean(account.luu_tru_luc);
+  const canManageRole = Boolean(account.ma_nhan_vien) && !account.is_self && !archived;
   const canAssignWarehouse = canManageRole && role === "NHAN_VIEN";
   const roleHelp = !account.ma_nhan_vien
     ? "Tài khoản khách hàng không áp dụng phân quyền nhân viên. Không thể nâng quyền khách hàng tại đây."
@@ -45,10 +46,12 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
   async function mutate(path: string, body: unknown, method = "POST", message = "Đã lưu thay đổi.") {
     if (busy) return;
     if (account.is_self) { setError("Thao tác này không áp dụng cho tài khoản đang đăng nhập."); return; }
+    if (archived && path !== "archive") { setError("Cần khôi phục tài khoản trước khi chỉnh sửa."); return; }
     if (path === "role" && !canManageRole) return;
     setBusy(true); setError(""); setNotice("");
     try {
       const saved = await accountApi<Account>(`accounts/${encodeURIComponent(account.ma_tk)}/${path}`, jsonRequest(method, body));
+      if (saved.ma_tk !== account.ma_tk || (path === "archive" && Boolean(saved.luu_tru_luc) !== !archived)) throw new Error("API chưa xác nhận đúng tài khoản và trạng thái đã lưu.");
       onChange(saved); setNotice(message); setPassword(""); setConfirmation("");
     } catch (error) { setError(errorMessage(error)); }
     finally { setBusy(false); }
@@ -76,13 +79,18 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
     <div className="live-page-actions">
       <button type="button" onClick={onBack}>← Quay lại</button>
       <div className="live-page-actions-group">
-        {([1, 2, 0] as AccountStatus[]).filter(value => value !== account.trang_thai).map(value => <button key={value} disabled={busy || account.is_self}
+        {!archived && ([1, 2, 0] as AccountStatus[]).filter(value => value !== account.trang_thai).map(value => <button key={value} disabled={busy || account.is_self}
           title={account.is_self ? "Không thể khóa hoặc ẩn tài khoản đang đăng nhập." : undefined}
           onClick={() => changeStatus(value)}>{value === 1 ? "Mở khóa / hiện lại" : value === 2 ? "Tạm khóa" : "Ẩn tài khoản"}</button>)}
-        <Link className="live-primary" href={accountHref(account.ma_tk, true)}>Chỉnh sửa</Link>
+        {!archived && <Link className="live-primary" href={accountHref(account.ma_tk, true)}>Chỉnh sửa</Link>}
+        <button type="button" disabled={busy || account.is_self} onClick={() => {
+          if (window.confirm(archived ? "Khôi phục tài khoản? Tài khoản vẫn ẩn cho đến khi bạn bật lại." : "Xóa mềm tài khoản? Chặn đăng nhập và vô hiệu phiên cũ; dữ liệu và lịch sử vẫn được giữ lại."))
+            void mutate("archive", { archived: !archived }, "POST", archived ? "Đã khôi phục. Tài khoản vẫn ẩn; bạn có thể bật lại sau khi kiểm tra hồ sơ." : "Đã xóa mềm tài khoản và vô hiệu các phiên cũ.");
+        }}>{archived ? "Khôi phục tài khoản" : "Xóa mềm tài khoản"}</button>
       </div>
     </div>
     {error && <p className="live-error" role="alert">{error}</p>}{notice && <p className="live-note" role="status">{notice}</p>}
+    {archived && <p className="live-note">Tài khoản đã xóa mềm lúc {new Date(account.luu_tru_luc!).toLocaleString("vi-VN")}, bởi {account.luu_tru_boi ?? "—"}. Khôi phục trước khi chỉnh sửa hoặc bật lại.</p>}
     <div className="live-form account-detail-card">
       {[ ["Mã tài khoản", account.ma_tk], ["Tên đăng nhập", account.ten_tai_khoan], ["Email", account.email ?? "—"], ["Chủ tài khoản", `${account.ho_ten} · ${account.ma_nhan_vien ?? account.ma_kh}`], ["Vai trò", roleLabels[account.role]], ["Kho phụ trách", account.ma_kho ?? "Không áp dụng"], ["Trạng thái tài khoản", statusLabels[account.trang_thai]], ["Trạng thái hồ sơ", account.owner_active ? "Hoạt động" : "Ngừng hoạt động"] ].map(([name, value]) => <div className="live-field" key={name}><strong>{name}</strong>{value}</div>)}
     </div>
@@ -113,12 +121,12 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
       <p className="account-wide account-help account-card-description" id="account-password-help">{account.is_self
         ? <>Để đổi mật khẩu của bạn, mở <Link href="/account">Tài khoản của tôi / đổi mật khẩu</Link> và xác nhận mật khẩu hiện tại.</>
         : "Cấp mật khẩu mới cho tài khoản này sẽ vô hiệu các phiên đăng nhập cũ."}</p>
-      <fieldset className="live-form-fields" disabled={busy || account.is_self} aria-describedby="account-password-help">
+      <fieldset className="live-form-fields" disabled={busy || account.is_self || archived} aria-describedby="account-password-help">
         <label>Mật khẩu mới *<input type="password" autoComplete="new-password" required minLength={10} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} /></label>
         <label>Nhập lại mật khẩu *<input type="password" autoComplete="new-password" required minLength={10} maxLength={128} value={confirmation} onChange={e => setConfirmation(e.target.value)} /></label>
         <div className="live-form-actions"><button className="live-primary">Cấp lại mật khẩu</button></div>
       </fieldset>
     </form>
-    <p className="live-note">Không xóa tài khoản hoặc lịch sử. Khóa tài khoản chặn truy cập; mở khóa có thể khôi phục phiên chưa hết hạn. Cấp lại mật khẩu sẽ vô hiệu các phiên cũ.</p>
+    <p className="live-note">Xóa mềm giữ lại tài khoản và lịch sử, chặn đăng nhập và vô hiệu phiên cũ. Khôi phục giữ tài khoản ở trạng thái ẩn để bạn chủ động bật lại. Tên đăng nhập và email vẫn được giữ cho tài khoản này.</p>
   </>;
 }

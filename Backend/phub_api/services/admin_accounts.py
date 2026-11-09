@@ -53,8 +53,8 @@ class AccountsService:
     def detail(self, account_id: str) -> AccountRead:
         return self.public(self.account(account_id))
 
-    def page(self, page: int, page_size: int, q: str, status: int | None, role: str | None):
-        result = self.repository.page(page, page_size, q, status, role)
+    def page(self, page: int, page_size: int, q: str, status: int | None, role: str | None, archive: str = "ACTIVE"):
+        result = self.repository.page(page, page_size, q, status, role, archive)
         return {"data": [self.public(row, row.get("employee"), row.get("customer")) for row in result.data],
                 "total": result.count or 0, "page": page, "page_size": page_size}
 
@@ -116,26 +116,55 @@ class AccountsService:
             raise
         return AccountRead.model_validate(result)
 
+    def editable_account(self, account_id: str) -> dict:
+        account = self.account(account_id)
+        if account.get("luu_tru_luc") is not None:
+            raise HTTPException(409, "Tài khoản đã xóa mềm. Cần khôi phục trước khi chỉnh sửa.")
+        return account
+
+    def archive(self, account_id: str, archived: bool):
+        if self.actor.role != "ADMIN":
+            raise HTTPException(403, "Chỉ quản trị viên được xóa mềm hoặc khôi phục tài khoản.")
+        if account_id == self.actor.account_id:
+            raise HTTPException(409, "Không được xóa mềm tài khoản đang đăng nhập.")
+        try:
+            result = self.repository.archive(account_id, self.actor.account_id, archived)
+        except APIError as exc:
+            code = str(exc.code)
+            if code in {"PGRST202", "42883", "42703"}:
+                raise HTTPException(503, "Database chưa hỗ trợ xóa mềm tài khoản. Cần cập nhật migration account_soft_delete.") from None
+            if code == "42501":
+                raise HTTPException(403, "Phiên quản trị không còn quyền thực hiện thao tác này.") from None
+            if code == "P0002":
+                raise HTTPException(404, "Không tìm thấy tài khoản.") from None
+            if code in {"23514", "40001", "40P01"}:
+                raise HTTPException(409, "Tài khoản đã thay đổi hoặc không thể xóa mềm. Tải lại để kiểm tra.") from None
+            raise
+        if not isinstance(result, dict) or result.get("ma_tk") != account_id or bool(result.get("luu_tru_luc")) != archived:
+            raise HTTPException(502, "API chưa xác nhận trạng thái xóa mềm. Tải lại để kiểm tra.")
+        return self.detail(account_id)
+
     def update(self, account_id: str, body: AccountUpdate):
-        self.account(account_id)
+        self.editable_account(account_id)
         rows = self.repository.update(account_id, body.model_dump(exclude_unset=True))
         if not rows:
             raise HTTPException(404, "Không tìm thấy tài khoản.")
         return self.detail(account_id)
 
     def status(self, account_id: str, value: int):
-        account = self.account(account_id)
+        account = self.editable_account(account_id)
         if account.get("ma_kh") and value != 0:
             customers = self.repository.customer(account["ma_kh"])
             if not customers or customers[0].get("luu_tru_luc") is not None:
                 raise HTTPException(409, "Cần khôi phục hồ sơ khách hàng trước khi thay đổi trạng thái tài khoản.")
         if account_id == self.actor.account_id and value != 1:
             raise HTTPException(409, "Không được khóa hoặc ẩn tài khoản đang đăng nhập.")
-        self.repository.update(account_id, {"trang_thai": value})
+        if not self.repository.update(account_id, {"trang_thai": value}):
+            raise HTTPException(409, "Tài khoản đã thay đổi. Tải lại để kiểm tra.")
         return self.detail(account_id)
 
     def role(self, account_id: str, body: RoleUpdate):
-        account = self.account(account_id)
+        account = self.editable_account(account_id)
         if not account["ma_nhan_vien"]:
             raise HTTPException(422, "Không nâng quyền khách hàng. Chỉ đổi vai trò tài khoản nhân viên.")
         employee = self.employee(account["ma_nhan_vien"])
@@ -154,7 +183,7 @@ class AccountsService:
         return self.detail(account_id)
 
     def password(self, account_id: str, password: str, current_password: str | None = None):
-        self.account(account_id)
+        self.editable_account(account_id)
         own = account_id == self.actor.account_id
         if own and current_password is None:
             raise HTTPException(409, "Đổi mật khẩu của bạn trong mục Tài khoản của tôi và xác nhận mật khẩu hiện tại.")

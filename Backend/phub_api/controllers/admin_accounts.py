@@ -6,6 +6,7 @@ from phub_api.dependencies.admin_accounts import read_service, write_service
 from phub_api.middleware.session import clear_session_cookie
 from phub_api.schemas.admin_accounts import (
     AccountCreate,
+    AccountArchiveUpdate,
     AccountPage,
     AccountRead,
     AccountUpdate,
@@ -33,8 +34,9 @@ Write = Annotated[AccountsService, Depends(write_service)]
 
 @router.get("/accounts", response_model=AccountPage, responses=READ_ERRORS, summary="Danh sách tài khoản, lọc vai trò/trạng thái")
 def list_accounts(service: Read, page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
-                  q: str = Query("", max_length=100), status: int | None = Query(None, ge=0, le=2), role: Role | None = None):
-    return service.page(page, page_size, q, status, role)
+                  q: str = Query("", max_length=100), status: int | None = Query(None, ge=0, le=2), role: Role | None = None,
+                  archive: Literal["ACTIVE", "ARCHIVED", "ALL"] = "ACTIVE"):
+    return service.page(page, page_size, q, status, role, archive)
 
 
 @router.get("/account-owners", response_model=OwnerPage, responses=READ_ERRORS, summary="Tra cứu hồ sơ để cấp tài khoản")
@@ -61,6 +63,12 @@ def update_account(account_id: Identifier, body: AccountUpdate, service: Write):
 @router.post("/accounts/{account_id}/status", response_model=AccountRead, responses=ERRORS, summary="Ẩn (0), mở khóa (1), tạm khóa (2) tài khoản")
 def set_status(account_id: Identifier, body: StatusUpdate, service: Write):
     return service.status(account_id, body.trang_thai)
+
+
+@router.post("/accounts/{account_id}/archive", response_model=AccountRead, responses=ERRORS,
+             summary="Xóa mềm/khôi phục tài khoản; xóa mềm vô hiệu các phiên cũ")
+def archive_account(account_id: Identifier, body: AccountArchiveUpdate, service: Write):
+    return service.archive(account_id, body.archived)
 
 
 @router.put("/accounts/{account_id}/role", response_model=AccountRead, responses=ERRORS, summary="Đổi quyền ADMIN/NHAN_VIEN và kho của nhân viên")

@@ -3,6 +3,7 @@ export type ModuleKey =
   | "reports"
   | "customer-insights"
   | "surveys"
+  | "interests"
   | "reviews"
   | "crmReport"
   | "orders"
