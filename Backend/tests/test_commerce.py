@@ -59,6 +59,8 @@ def commerce_client(monkeypatch):
         if request.url.path.endswith("/customer_cancel_order_v1"):
             state["cancel_calls"].append(json.loads(request.content))
             return httpx.Response(200, json=state.get("cancel_result", {"order": {**state["detail"], "status": "HUY"}}))
+        if request.url.path.endswith('/customer_voucher_choices_v1'):
+            return httpx.Response(200, json=state.get('vouchers', {'items': []}))
         payload = json.loads(request.content)
         if state["result"] is not None:
             return httpx.Response(200, json=state["result"])
@@ -87,6 +89,7 @@ def commerce_client(monkeypatch):
     ("GET", "/me", None), ("GET", "/orders", None), ("GET", "/orders/ORDER-A", None),
     ("PUT", "/me", {}),
     ("GET", "/addresses", None), ("POST", "/addresses", {}),
+    ('GET', '/vouchers', None),
     ("PUT", "/addresses/7b0f5f27-1c3b-4f0e-9d7a-3f6f0a1b2c3d", {}),
     ("POST", "/addresses/7b0f5f27-1c3b-4f0e-9d7a-3f6f0a1b2c3d/delete", None),
     ("POST", "/checkout/quote", {"items": [{"sku": "SKU-A", "quantity": 1}]}),
@@ -127,6 +130,33 @@ def test_quote_rpc_uses_server_identity_canonical_voucher_and_no_create_key(comm
     assert payload["p_customer_id"] == "KH-A" and payload["p_create"] is False and payload["p_key"] is None
     assert payload["p_request"]["voucher_code"] == "SAVE10"
     assert payload["p_promotion_timezone"] == "Asia/Ho_Chi_Minh"
+
+
+def test_voucher_choices_use_verified_customer_and_never_create_order(commerce_client):
+    client, state, requests, _, _ = commerce_client
+    state['vouchers'] = {'items': [{
+        'code': 'SAVE10', 'discount_type': 'PHAN_TRAM', 'discount_value': '10.00',
+        'minimum_order': '100.00', 'maximum_discount': '500.00',
+        'starts_at': '2026-11-01T00:00:00+07:00', 'expires_at': '2026-11-30T23:59:59+07:00',
+        'unavailable_reason': None,
+    }]}
+    response = client.get('/api/customer/vouchers')
+    assert response.status_code == 200
+    assert response.json() == {**state['vouchers'], 'currency': 'VND'}
+    assert len(requests) == 1
+    assert json.loads(requests[0].content) == {'p_customer_id': 'KH-A', 'p_timezone': 'Asia/Ho_Chi_Minh'}
+    assert client.get('/api/customer/vouchers?customer_id=KH-B').status_code == 422
+
+
+@pytest.mark.parametrize('reason,message', [('EXPIRED', 'đã hết hạn'), ('NOT_STARTED', 'chưa bắt đầu')])
+def test_voucher_quote_explains_active_code_outside_campaign_dates(commerce_client, reason, message):
+    client, state, _, _, _ = commerce_client
+    state['result'] = {'error': {'code': 'VOUCHER_NOT_AVAILABLE'}}
+    state['vouchers'] = {'items': [{'code': 'SAVE10', 'discount_type': 'PHAN_TRAM', 'discount_value': '10.00',
+        'minimum_order': '100.00', 'maximum_discount': None, 'starts_at': '2026-11-01T00:00:00Z',
+        'expires_at': '2026-11-30T00:00:00Z', 'unavailable_reason': reason}]}
+    response = client.post('/api/customer/checkout/quote', json={'items': [{'sku': 'SKU-A', 'quantity': 1}], 'voucher_code': ' save10 '})
+    assert response.status_code == 409 and message in response.json()['error']['message']
 
 
 def test_customer_order_creation_and_replay_share_one_rpc(commerce_client):
@@ -482,6 +512,7 @@ def test_cancel_order_with_reason(commerce_client):
     ("ORDER_NOT_FOUND", 404),
     ("ORDER_ALREADY_CANCELLED", 409),
     ("ORDER_NOT_CANCELABLE", 409),
+    ("ORDER_REFUND_REQUIRED", 409),
     ("AUTH_CUSTOMER_UNAVAILABLE", 403),
 ])
 def test_cancel_order_errors_map_safely(commerce_client, code, status):

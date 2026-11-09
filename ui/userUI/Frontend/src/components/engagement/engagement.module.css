@@ -17,3 +17,4 @@
 .starLabelText { font-size: 14px; font-weight: 500; color: #4b5563; }
 .starQuestionContainer { display: grid; gap: 8px; }
 .fieldLabel { font-weight: 500; font-size: 14px; color: #374151; }
+.page.embedded { width: 100%; min-width: 0; max-width: none; margin: 0; padding: 0; }

@@ -69,9 +69,14 @@ export function AccountMenu({
           <span>@{user.username}</span>
         </p>
         {user.role === "KHACH_HANG" ? (
-          <Link href="/main/profile" onClick={onNavigate}>
-            Tài khoản của tôi
-          </Link>
+          <>
+            <Link href="/main/profile" onClick={onNavigate}>
+              Tài khoản của tôi
+            </Link>
+            <Link href="/main/profile?view=orders" onClick={onNavigate}>
+              Đơn hàng của tôi
+            </Link>
+          </>
         ) : (
           <a href={portal} onClick={onNavigate}>
             Mở cổng {user.role === "ADMIN" ? "quản trị" : "kho"}
@@ -90,6 +95,9 @@ export function AccountMenu({
           <p>{shop.customer.name}</p>
           <Link href="/main/profile" onClick={onNavigate}>
             Tài khoản và đơn hàng
+          </Link>
+          <Link href="/main/profile?view=orders" onClick={onNavigate}>
+            Đơn hàng của tôi
           </Link>
         </>
       ) : (

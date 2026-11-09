@@ -195,3 +195,28 @@
   color: #777;
   font-size: 12px;
 }
+.voucherPicker { margin-top: 16px; min-width: 0; }
+.voucherPicker h3 { display: grid; gap: 3px; margin: 0 0 10px; font-size: 14px; }
+.voucherPicker h3 small, .voucherPicker > p { color: #656b7b; font-size: 12px; font-weight: 400; }
+.voucherList { display: grid; gap: 8px; max-height: 235px; overflow-y: auto; padding-right: 3px; scrollbar-width: thin; }
+.summary .voucherCard { display: flex; align-items: center; gap: 10px; margin: 0; padding: 10px; border: 1px dashed #b7c9f9; border-radius: 8px; background: #fff; }
+.voucherCard > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.summary .voucherCard strong { color: #0156ff; font-size: 13px; }
+.summary .voucherCard p { margin: 4px 0; font-size: 12px; line-height: 1.5; }
+.summary .voucherCard small { display: block; margin: 0; color: #656b7b; font-size: 11px; line-height: 1.5; }
+.voucherCard button, .voucherPicker > p button { flex-shrink: 0; padding: 6px 10px; border: 1px solid #0156ff; border-radius: 5px; color: #0156ff; background: white; font: inherit; font-size: 12px; cursor: pointer; }
+.voucherCard button:disabled { border-color: #d5d9e4; color: #808694; background: #f6f7fa; cursor: default; }
+.voucherCard[data-unavailable="true"] { border-color: #d5d9e4; }
+.summary .voucherCard[data-unavailable="true"] strong { color: #656b7b; }
+.voucherReason { display: block; margin-top: 4px; color: #9b4b13; font-size: 11px; }
+.confirmation { padding: 32px 24px; border-radius: 8px; margin-top: 40px; }
+.confirmation h1 { color: #187b34; font-size: 28px; margin: 0 0 12px; }
+.confirmation > p { margin: 0 0 8px; font-size: 16px; overflow-wrap: anywhere; }
+.confirmation .confirmationTotal { color: #555; font-size: 14px; margin: 0 0 20px; }
+.confirmationActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.confirmationActions > a { padding: 10px 22px; border-radius: 20px; text-decoration: none; font-weight: 600; font-size: 14px; }
+.confirmationPrimary { background: #0156ff; color: #fff; }
+.confirmationProfile { border: 2px solid #0156ff; color: #0156ff; }
+.confirmationShop { border: 2px solid #ccc; color: #333; }
+.cancelledConfirmation { background: #f5f6f8; color: #364152; border-color: #d5d9e4; }
+.cancelledConfirmation h1 { color: #364152; }

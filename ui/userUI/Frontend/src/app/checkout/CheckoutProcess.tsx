@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
-import { PaymentPanel } from "@/components/shopping/PaymentPanel";
-import { InvoicePanel } from "@/components/shopping/InvoicePanel";
 import { useCheckoutQuote } from "@/components/shopping/CheckoutSummary";
 import {
   createAddress,
@@ -14,9 +12,11 @@ import {
   ShoppingError,
   updateAddress,
 } from "@/lib/shopping/client";
-import { money, invoiceTotals } from "@/lib/shopping/money";
-import type { AddressBook, CustomerAddress, FulfillmentMethod, OrderRequest, PaymentDeadline, Receipt } from "@/lib/shopping/types";
+import { cents, decimal, money, invoiceTotals } from "@/lib/shopping/money";
+import type { AddressBook, CustomerAddress, FulfillmentMethod, OrderRequest, Receipt } from "@/lib/shopping/types";
 import { FulfillmentChoice } from "./FulfillmentChoice";
+import { VoucherPicker } from './VoucherPicker';
+import { CheckoutConfirmation } from './CheckoutConfirmation';
 import styles from "./checkout.module.css";
 
 // The address book used to live in localStorage; that stale copy of personal data is removed.
@@ -74,11 +74,6 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [orderReceipt, setOrderReceipt] = useState<Receipt | null>(null);
-  const [paymentDeadline, setPaymentDeadline] = useState<{ id: string; value: PaymentDeadline | null } | null>(null);
-  const receiptId = orderReceipt?.id;
-  const receiveDeadline = useCallback((value: PaymentDeadline | null) => {
-    if (receiptId) setPaymentDeadline({ id: receiptId, value });
-  }, [receiptId]);
   const placingOrder = useRef(false);
 
   // Show the book returned by the server and keep the selection when it still exists.
@@ -314,71 +309,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
 
   // If order successfully placed, show Confirmation screen
   if (orderReceipt) {
-    return (
-      <main className={styles.page}>
-        <div className={styles.container}>
-          <div className={styles.success} style={{ padding: "32px 24px", borderRadius: 8, marginTop: 40 }}>
-            <h1 style={{ color: "#187b34", fontSize: 28, margin: "0 0 12px" }}>
-              🎉 Đặt đơn hàng thành công!
-            </h1>
-            <p style={{ fontSize: 16, margin: "0 0 8px" }}>
-              Mã đơn hàng: <strong>{orderReceipt.id}</strong>
-            </p>
-            <p>{orderReceipt.fulfillment_method === "TAI_CUA_HANG" ? "Nhận tại cửa hàng" : "Giao hàng tận nơi"} · {orderReceipt.recipient.name} · {orderReceipt.recipient.phone}</p>
-            <p style={{ color: "#555", fontSize: 14, margin: "0 0 20px" }}>
-              Thành tiền sau thuế: <strong>{money(invoiceTotals(orderReceipt).total, orderReceipt.currency)}</strong>
-            </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link
-                href={`/main/orders/${encodeURIComponent(orderReceipt.id)}`}
-                style={{
-                  padding: "10px 22px",
-                  background: "#0156ff",
-                  color: "#fff",
-                  borderRadius: 20,
-                  textDecoration: "none",
-                  fontWeight: 600,
-                  fontSize: 14,
-                }}
-              >
-                Xem chi tiết đơn & Hóa đơn →
-              </Link>
-              <Link
-                href="/main/profile"
-                style={{
-                  padding: "10px 22px",
-                  border: "2px solid #0156ff",
-                  color: "#0156ff",
-                  borderRadius: 20,
-                  textDecoration: "none",
-                  fontWeight: 600,
-                  fontSize: 14,
-                }}
-              >
-                Vào trang cá nhân
-              </Link>
-              <Link
-                href="/main/product"
-                style={{
-                  padding: "10px 22px",
-                  border: "2px solid #ccc",
-                  color: "#333",
-                  borderRadius: 20,
-                  textDecoration: "none",
-                  fontWeight: 600,
-                  fontSize: 14,
-                }}
-              >
-                Tiếp tục mua sắm
-              </Link>
-            </div>
-          </div>
-          <InvoicePanel orderId={orderReceipt.id} onDeadlineChange={receiveDeadline} />
-          {shop.customer?.payment_bypass_enabled && <PaymentPanel orderId={orderReceipt.id}
-            paymentDeadline={paymentDeadline?.id === orderReceipt.id ? paymentDeadline.value : undefined} />}
-        </div>
-      </main>
-    );
+    return <CheckoutConfirmation key={orderReceipt.id} receipt={orderReceipt} />;
   }
 
   // If no items selected
@@ -959,6 +890,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                   </span>
                   <button
                     type="button"
+                    disabled={submitting}
                     onClick={handleRemoveVoucher}
                     style={{
                       border: 0,
@@ -973,6 +905,16 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                   </button>
                 </div>
               )}
+              <VoucherPicker
+                subtotal={quote?.subtotal ?? decimal(shop.selectedLines.reduce((sum, line) => sum + cents(line.unit_price) * BigInt(line.quantity), BigInt(0)))}
+                confirmedCode={voucherConfirmed ? appliedVoucher : null}
+                disabled={submitting || quoteLoading}
+                onSelect={code => {
+                  setVoucherCode(code);
+                  if (code === appliedVoucher) reloadQuote();
+                  else setAppliedVoucher(code);
+                }}
+              />
             </div>
 
             {/* Totals overview */}

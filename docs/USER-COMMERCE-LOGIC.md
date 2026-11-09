@@ -1,5 +1,24 @@
 # Logic mua hàng khách hàng và bàn giao cho AI
 
+**Cập nhật 09/11/2026 — đơn gần đây/hủy đơn:** `/main/profile` hiển thị 5 đơn
+mới nhất ngay dưới thông tin/địa chỉ; mục lịch sử đầy đủ vẫn phân trang 10 đơn.
+Ô đơn gần đây không có nút hủy. `CancelOrderButton` dùng chung cho danh sách
+đầy đủ, chi tiết và màn hình đặt hàng thành công tại `/checkout`, viền đỏ, xác nhận trước
+khi POST, khóa thao tác lặp và giữ lỗi tại đúng đơn. Chỉ đơn MOI/XAC_NHAN/
+DANG_CHUAN_BI được hủy. RPC `customer_cancel_order_v1` được khôi phục bằng
+migration `20261109133739_restore_customer_cancel_order.sql` (đã áp trên Phub).
+Hủy nhả reservation, không tăng TON_KHO, không xóa hóa đơn/dòng đơn và không
+khôi phục voucher đã dùng. Retry đơn HUY trả cùng trạng thái, không hoàn thêm.
+Đơn còn khoản thu thực tế chưa hoàn trả ORDER_REFUND_REQUIRED để nhân viên
+xử lý; chỉ khoản thu demo/bypass mới có bút toán hoàn mô phỏng trong RPC này.
+Không hiểu bút toán database là đã chuyển tiền ngân hàng. Kiểm thử bằng fixtures
+và PostgreSQL biệt lập; không hủy đơn thật để kiểm tra giao diện.
+
+`CheckoutConfirmation` đọc trạng thái đơn hiện tại trước khi cho hủy, dùng lại
+API hủy theo ownership. Khi hủy thành công, đổi tiêu đề sang “Đơn hàng đã hủy”,
+làm mới hóa đơn/hạn thanh toán và chặn thanh toán mới. Lỗi hủy giữ tại nút để
+khách thử lại; không thay đổi chính sách hoàn tiền hay tự hủy đơn thật để test.
+
 **Nhận tại cửa hàng 04/11/2026:** checkout hỗ trợ `TAI_CUA_HANG`, chỉ cần tên
 và số điện thoại; không cần địa chỉ. Đơn vẫn ONLINE, gom tồn mọi kho và có hóa
 đơn/hạn 24 giờ. Xem [hợp đồng, migration và kiểm thử](STORE-PICKUP.md).
@@ -382,3 +401,26 @@ Cập nhật tài liệu này khi người dùng thay đổi chính sách, ghi r
 thế và thêm ca kiểm thử phù hợp. Hướng dẫn Next.js nằm trong
 [AGENTS.md của frontend](../ui/userUI/Frontend/AGENTS.md); kiến trúc backend ở
 [Backend/ARCHITECTURE.md](../Backend/ARCHITECTURE.md).
+
+## Danh sách voucher tại checkout — 09/11/2026
+
+- `GET /api/customer/vouchers` lấy mã và điều kiện theo khách đã xác thực;
+  UI không gửi mã khách và không đọc trực tiếp bảng voucher từ trình duyệt.
+- `VoucherPicker` nằm dưới ô nhập mã: chọn một mã, xem mức giảm, đơn tối thiểu,
+  hạn dùng và lý do chưa dùng được. Danh sách nhỏ có cuộn, không tải lại khi gõ mã.
+- Ưu tiên mã dùng được cho giỏ hiện tại, sắp theo số tiền giảm thực tế giảm dần
+  (làm tròn đến xu, áp trần phần trăm và không vượt tiền hàng). Sau đó đến mã
+  chưa đạt đơn tối thiểu, cuối cùng là mã chưa đến hạn/hết hạn/hết lượt. Tính và
+  sắp xếp lại trên RAM khi tiền hàng đổi, không truy vấn lại danh sách.
+- Trạng thái `HOAT_DONG` chưa đủ: phải đúng thời gian chương trình, còn lượt
+  toàn hệ thống/của khách và đủ giá trị giỏ. Báo giá và transaction đặt hàng vẫn
+  kiểm tra lại; chỉ báo đã áp dụng sau khi quote xác nhận đúng mã.
+- Migration `20261109135628_customer_voucher_choices.sql` chỉ thêm RPC đọc,
+  chỉ `service_role` được gọi. Đã áp dụng trên Supabase của dự án, không sửa
+  ngày chương trình hay tạo lượt dùng, đơn, hóa đơn hoặc thanh toán.
+- Kiểm tra dữ liệu thật ngày 09/11: nhóm mã SEED kết thúc 31/10, nhóm mã mới
+  bắt đầu 19/11. Không kéo dài chương trình tự động để làm mã áp dụng được.
+- `Backend/tests/customer-vouchers-sql.test.cjs` dùng PostgreSQL RAM biệt lập
+  để đối chiếu thời gian, giới hạn khách/toàn hệ thống và quote giảm phần trăm
+  có trần. `checkout-voucher.e2e.cjs` dùng API fixtures, kiểm tra chọn mã,
+  điều kiện giỏ, tổng gồm VAT, response lỗi/sai mã/đến muộn và màn hình nhỏ.

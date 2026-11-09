@@ -8,8 +8,9 @@ import { AccountAccessContext } from "@/lib/account/useAccountResource";
 import { AUTH_SESSION_EVENT, getSession, logoutSession, type SessionUser } from "../../../../../../shared/auth-client";
 import { AccountDashboard } from "./AccountDashboard";
 import styles from "./profile.module.css";
+import type { AccountView } from './accountData';
 
-export default function ConnectedAccount() {
+export default function ConnectedAccount({ initialView = 'account' }: { initialView?: AccountView }) {
   const router = useRouter();
   const [account, setAccount] = useState<SessionUser | null>(null);
   const [error, setError] = useState("");
@@ -40,5 +41,5 @@ export default function ConnectedAccount() {
   if (!account) return <section className={styles.gate} aria-label="Truy cập tài khoản">
     {error ? <><h2>Không thể mở tài khoản</h2><p role="alert">{error}</p><div className={styles.actions}><Link href="/auth/login">Đăng nhập</Link><Button variant="outline" onClick={() => { setError(""); setVersion(value => value + 1); }}>Thử lại</Button></div></> : <p role="status">Đang xác thực tài khoản…</p>}
   </section>;
-  return <AccountAccessContext.Provider value={denyAccess}><AccountDashboard key={`${account.account_id}:${version}`} account={account} logout={logout} loggingOut={loggingOut} logoutError={logoutError} /></AccountAccessContext.Provider>;
+  return <AccountAccessContext.Provider value={denyAccess}><AccountDashboard key={`${account.account_id}:${version}:${initialView}`} initialView={initialView} account={account} logout={logout} loggingOut={loggingOut} logoutError={logoutError} /></AccountAccessContext.Provider>;
 }

@@ -80,6 +80,7 @@ function validCustomerPath(path: string[], method: string): boolean {
       return path.length === 4 && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[3]) && method === "GET";
     }
     if (path.length === 2 && path[1] === "me") return ["GET", "PUT"].includes(method);
+    if (path.length === 2 && path[1] === "vouchers") return method === "GET";
     if (path.length === 3 && path[1] === "me" && path[2] === "avatar") return method === "POST";
     if (path.length === 3 && path[1] === "checkout" && path[2] === "quote") return method === "POST";
     if (path[1] !== "orders") return false;

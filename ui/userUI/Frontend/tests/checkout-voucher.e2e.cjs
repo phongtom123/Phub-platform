@@ -34,6 +34,13 @@ function quote(code=null){
    assert.equal(request.method(),'GET','Voucher validation must not create business records');
    if(path.endsWith('/auth/me'))return route.fulfill({json:{account_id:'ACCOUNT',role:'KHACH_HANG',customer_id:profile.customer_id,name:profile.name,username:'test',employee_id:null,warehouse_id:null}});
    if(path.endsWith('/customer/me'))return route.fulfill({json:profile});
+   if(path.endsWith('/customer/vouchers'))return route.fulfill({json:{currency:'VND',items:[
+    {code:'PICK100',discount_type:'SO_TIEN',discount_value:'100000.00',minimum_order:'1000000.00',maximum_discount:null,starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
+    {code:'OLD',discount_type:'SO_TIEN',discount_value:'100000.00',minimum_order:'0.00',maximum_discount:null,starts_at:'2026-10-01T00:00:00+07:00',expires_at:'2026-10-31T23:59:59+07:00',unavailable_reason:'EXPIRED'},
+    {code:'BIG',discount_type:'PHAN_TRAM',discount_value:'10.00',minimum_order:'5000000.00',maximum_discount:'500000.00',starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
+    {code:'CAP50',discount_type:'PHAN_TRAM',discount_value:'50.00',minimum_order:'0.00',maximum_discount:'50000.00',starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
+    {code:'PICK250',discount_type:'SO_TIEN',discount_value:'250000.00',minimum_order:'0.00',maximum_discount:null,starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
+   ]}});
    if(path.endsWith('/customer/addresses'))return route.fulfill({json:{items:[{id:'00000000-0000-4000-8000-000000000001',...profile,is_default:true}],item:null}});
    if(path.endsWith('/products/P'))return route.fulfill({json:product});
    if(path.endsWith('/availability'))return route.fulfill({json:{items:[{sku:'S',available_quantity:10}],tax_rate:'10.00',currency:'VND'}});
@@ -64,6 +71,20 @@ function quote(code=null){
   await remove.click();release();
   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent==='Đặt hàng'&&!b.disabled));
   assert.equal(await page.getByText(/✓ Đã áp dụng mã:/).count(),0,'late response cannot reapply a removed code');
+  const picker=page.getByRole('region',{name:'Chọn mã giảm giá'});
+  assert.deepEqual(await picker.getByRole('article').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('aria-label'))),
+    ['Mã PICK250','Mã PICK100','Mã CAP50','Mã BIG','Mã OLD'], 'Eligible codes rank by actual capped discount; minimum-unmet and expired codes follow');
+  assert.ok(await picker.getByRole('button',{name:'Chọn mã OLD',exact:true}).isDisabled());
+  assert.ok(await picker.getByRole('button',{name:'Chọn mã BIG',exact:true}).isDisabled());
+  await picker.getByText('Cần mua thêm',{exact:false}).waitFor();
+  mode='accepted';hold=false;
+  await picker.getByRole('button',{name:'Chọn mã PICK100',exact:true}).click();
+  await page.getByText('✓ Đã áp dụng mã: PICK100',{exact:true}).waitFor();
+  assert.equal(await input.inputValue(),'PICK100');
+  assert.ok(await picker.getByRole('button',{name:'Chọn mã PICK100',exact:true}).isDisabled());
+  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'phub-checkout-vouchers.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   assert.deepEqual(errors,[]);
   console.log('PASS: pending/rejected codes never claim success; confirmed discounts, same-code retry, mismatched voucher rejection and cancellation of stale quotes');
  }finally{release?.();await browser.close();}

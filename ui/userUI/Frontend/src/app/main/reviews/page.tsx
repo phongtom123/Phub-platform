@@ -1,2 +1,3 @@
-import { CustomerEngagement } from "@/components/engagement/CustomerEngagement";
-export default function Page(){return <CustomerEngagement kind="reviews"/>;}
+import { redirect } from 'next/navigation';
+
+export default function Page() { redirect('/main/profile?view=reviews'); }

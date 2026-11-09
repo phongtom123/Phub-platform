@@ -5,6 +5,7 @@ import type {
   AddressInput,
   CustomerAddress,
   CustomerProfile,
+  CustomerVouchers,
   OrderDetail,
   OrderPage,
   OrderRequest,
@@ -413,6 +414,27 @@ export const getQuote = (
     { method: "POST", body: JSON.stringify({ items, voucher_code }), signal },
     validateQuote,
   );
+export function validateVouchers(value: unknown): CustomerVouchers {
+  const body = record(value);
+  currency(body.currency);
+  if (!Array.isArray(body.items) || body.items.length > 50) invalid();
+  const codes = new Set<string>();
+  for (const value of body.items) {
+    const item = record(value);
+    if (typeof item.code !== 'string' || !item.code.trim() || item.code.length > 100 || codes.has(item.code)) invalid();
+    codes.add(item.code);
+    if (!['SO_TIEN', 'PHAN_TRAM'].includes(String(item.discount_type))) invalid();
+    amount(item.discount_value); amount(item.minimum_order);
+    if (item.maximum_discount !== null) amount(item.maximum_discount);
+    if (item.discount_type === 'PHAN_TRAM' && cents(String(item.discount_value)) > BigInt(10000)) invalid();
+    for (const key of ['starts_at', 'expires_at']) {
+      if (typeof item[key] !== 'string' || !Number.isFinite(Date.parse(String(item[key])))) invalid();
+    }
+    if (![null, 'NOT_STARTED', 'EXPIRED', 'LIMIT_REACHED', 'CUSTOMER_LIMIT_REACHED'].includes(item.unavailable_reason as null | string)) invalid();
+  }
+  return body as unknown as CustomerVouchers;
+}
+export const listVouchers = (signal?: AbortSignal) => shoppingRequest('vouchers', { signal }, validateVouchers);
 export const createOrder = (body: OrderRequest, key: string) =>
   shoppingRequest(
     "orders",

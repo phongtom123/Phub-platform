@@ -28,6 +28,7 @@ async function forward(
   const validGet =
     joined === "me" ||
     joined === "addresses" ||
+    joined === "vouchers" ||
     joined === "orders" ||
     (path[0] === "orders" && path.length === 2) ||
     (path[0] === "orders" &&
