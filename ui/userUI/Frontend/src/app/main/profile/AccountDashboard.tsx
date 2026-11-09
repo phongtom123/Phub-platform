@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { CustomerEngagementContent } from '@/components/engagement/CustomerEngagement';
 import { Button } from "@/components/common/Button";
 import { parseProfile } from "@/lib/account/client";
 import { useAccountResource } from "@/lib/account/useAccountResource";
@@ -12,12 +12,12 @@ import { AccountAddresses } from "./AccountAddresses";
 import { AccountIcon } from "./AccountIcon";
 import { AccountOrders } from "./AccountOrders";
 import { DataState, Panel } from "./AccountPanels";
-import { accountNavigation, type AccountView } from "./accountData";
+import { accountNavigation, engagementNavigation, type AccountView } from "./accountData";
 import styles from "./profile.module.css";
 import { customerAge } from "../../../../../../shared/customer-age";
 
-export function AccountDashboard({ account, logout, loggingOut, logoutError }: { account: SessionUser; logout: () => void; loggingOut: boolean; logoutError: string }) {
-  const [view, setView] = useState<AccountView>("account");
+export function AccountDashboard({ account, logout, loggingOut, logoutError, initialView = 'account' }: { account: SessionUser; logout: () => void; loggingOut: boolean; logoutError: string; initialView?: AccountView }) {
+  const [view, setView] = useState<AccountView>(initialView);
   const [editing, setEditing] = useState(false);
   const [notice, setNotice] = useState("");
   const profile = useAccountResource("customer/me", parseProfile);
@@ -41,7 +41,9 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
       <nav className={styles.navigation} aria-label="Quản lý tài khoản">
         {accountNavigation.map(item => <button key={item.id} aria-current={view === item.id ? "page" : undefined} onClick={() => navigate(item.id)}><AccountIcon name={item.id} /><span>{item.label}</span><span className={styles.navArrow} aria-hidden="true">›</span></button>)}
       </nav>
-      <div className={styles.sidebarActions}><Link href="/main/surveys">Khảo sát của tôi →</Link><Link href="/main/reviews">Đánh giá sản phẩm đã mua →</Link></div>
+      <nav className={`${styles.navigation} ${styles.engagementNavigation}`} aria-label="Khảo sát và đánh giá">
+        {engagementNavigation.map(item => <button key={item.id} aria-current={view === item.id ? 'page' : undefined} onClick={() => navigate(item.id)}><AccountIcon name={item.id} /><span>{item.label}</span><span className={styles.navArrow} aria-hidden="true">›</span></button>)}
+      </nav>
       <div className={styles.sidebarActions}><button className={styles.logout} onClick={logout} disabled={loggingOut}>{loggingOut ? "Đang đăng xuất…" : "Đăng xuất"}</button></div>
     </aside>
 
@@ -62,15 +64,14 @@ export function AccountDashboard({ account, logout, loggingOut, logoutError }: {
         </Panel>
         <div className={styles.secondaryGrid}>
           <AccountAddresses key={`summary:${person?.name}:${person?.phone}`} prefill={addressPrefill} onChanged={profile.reload} onManage={() => navigate("addresses")} />
-          <section className={styles.orderShortcut} aria-label="Theo dõi đơn hàng">
-            <span className={styles.shortcutIcon}><AccountIcon name="orders" /></span>
-            <h2>Đơn hàng của bạn</h2><p>Theo dõi trạng thái, xem hóa đơn và thông tin thanh toán của từng đơn.</p>
-            <button className={styles.primaryLink} onClick={() => navigate("orders")}>Xem đơn hàng <span aria-hidden="true">→</span></button>
-          </section>
+          <div className={styles.recentOrders}><AccountOrders recent onViewAll={() => navigate("orders")} /></div>
         </div>
       </>}
       {view === "addresses" && <AccountAddresses prefill={addressPrefill} onChanged={profile.reload} />}
       {view === "orders" && <AccountOrders />}
+      {(view === 'surveys' || view === 'reviews') && <div className={styles.panel}>
+        <CustomerEngagementContent key={view} kind={view} embedded />
+      </div>}
     </div>
     {editing && person && <AccountEditor profile={person} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); profile.reload(); setNotice("Đã lưu thông tin nhận hàng vào hồ sơ."); }} />}
   </div>;

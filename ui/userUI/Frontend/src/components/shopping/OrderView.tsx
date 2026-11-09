@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useCallback, useEffect } from "react";
 import { useState } from "react";
-import { cancelOrder, validateOrder } from "@/lib/shopping/client";
+import { validateOrder } from "@/lib/shopping/client";
+import { CancelOrderButton } from "./CancelOrderButton";
 import { money } from "@/lib/shopping/money";
 import { groupInvoiceLines } from "@/lib/shopping/invoice-lines";
 import { CustomerGate, useShopping } from "./ShoppingProvider";
@@ -32,9 +33,6 @@ function Details({ id }: { id: string }) {
     `orders/${encodeURIComponent(id)}`,
     validateOrder,
   );
-  const [cancelling, setCancelling] = useState(false);
-  const [cancelError, setCancelError] = useState("");
-  const isCancelable = data && ["MOI", "XAC_NHAN", "DANG_CHUAN_BI"].includes(data.status);
 
   useEffect(() => {
     function onOrderChanged(event: Event) {
@@ -44,48 +42,14 @@ function Details({ id }: { id: string }) {
     return () => window.removeEventListener("phub:order-changed", onOrderChanged);
   }, [id, reload]);
 
-  async function handleCancel() {
-    if (cancelling) return;
-    const confirmed = window.confirm(
-      "Bạn có chắc chắn muốn hủy đơn hàng này không?\nNếu đơn đã được thanh toán, khoản tiền sẽ được hệ thống hoàn lại tự động."
-    );
-    if (!confirmed) return;
-    setCancelling(true);
-    setCancelError("");
-    try {
-      await cancelOrder(id);
-      reload();
-      window.dispatchEvent(new CustomEvent("phub:order-changed", { detail: { orderId: id } }));
-      window.dispatchEvent(new Event("phub:invoice-changed"));
-    } catch (err) {
-      setCancelError(err instanceof Error ? err.message : "Không thể hủy đơn hàng. Vui lòng thử lại.");
-    } finally {
-      setCancelling(false);
-    }
-  }
-
   return (
     <>
       <div className={styles.inline} style={{ marginBottom: 12 }}>
-        <button type="button" onClick={reload} disabled={loading || cancelling}>
+        <button type="button" onClick={reload} disabled={loading}>
           Cập nhật đơn
         </button>
-        {isCancelable && (
-          <button
-            type="button"
-            className={styles.cancelButton}
-            onClick={handleCancel}
-            disabled={loading || cancelling}
-          >
-            {cancelling ? "Đang hủy đơn…" : "Hủy đơn hàng"}
-          </button>
-        )}
+        {data && <CancelOrderButton key={id} orderId={id} status={data.status} disabled={loading} onCancelled={reload} />}
       </div>
-      {cancelError && (
-        <p className={styles.error} role="alert" style={{ marginBottom: 16 }}>
-          ⚠️ {cancelError}
-        </p>
-      )}
       {loading && <p role="status">Đang tải đơn…</p>}
       {error && (
         <p className={styles.error} role="alert">

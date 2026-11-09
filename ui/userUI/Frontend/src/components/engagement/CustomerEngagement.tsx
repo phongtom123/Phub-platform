@@ -7,7 +7,7 @@ import { dateTime, engagementRequest as api, jsonBody, reviewStatus, surveyCanAn
 import styles from "./engagement.module.css";
 import { ReviewStars, StarRatingInput } from "./ReviewStars";
 
-function SurveyForm({id,onBack}:{id:string;onBack:()=>void}){
+function SurveyForm({id,onBack,embedded=false}:{id:string;onBack:()=>void;embedded?:boolean}){
   const [detail,setDetail]=useState<SurveyDetail|null>(null),[answers,setAnswers]=useState<Record<string,Answer>>({}),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState(""),[version,setVersion]=useState(0),[dirty,setDirty]=useState(false);
   const request=useRef<AbortController|null>(null),key=useRef<string|null>(null);
   useEffect(()=>()=>request.current?.abort(),[]);
@@ -31,7 +31,7 @@ function SurveyForm({id,onBack}:{id:string;onBack:()=>void}){
       setDetail(saved);setAnswers(Object.fromEntries(saved.answers.map(a=>[a.ma_cau_hoi,a])));setDirty(false);setNotice("Đã gửi khảo sát. Cảm ơn bạn đã chia sẻ!");
     }catch(e){if(!c.signal.aborted)setError(e instanceof Error?e.message:"Chưa gửi được khảo sát.");}finally{if(request.current===c){request.current=null;setBusy(false);}}
   }
-  return <div className={styles.page}><div className={styles.actions}><button disabled={busy} onClick={()=>discard(onBack)}>← Khảo sát của tôi</button><button disabled={busy} onClick={()=>discard(()=>setVersion(x=>x+1))}>Tải lại khảo sát</button></div>
+  return <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}><div className={styles.actions}><button disabled={busy} onClick={()=>discard(onBack)}>← Khảo sát của tôi</button><button disabled={busy} onClick={()=>discard(()=>setVersion(x=>x+1))}>Tải lại khảo sát</button></div>
     {error&&<p role="alert" className={styles.error}>{error}</p>}{notice&&<p role="status" className={styles.notice}>{notice}</p>}{loading?<p role="status">Đang tải khảo sát…</p>:detail&&<>
       <header className={styles.card}><h1>{detail.survey.tieu_de}</h1><p className={styles.text}>{detail.survey.mo_ta}</p><p className={styles.muted}>Hạn trả lời: {dateTime(detail.survey.han_tra_loi)}</p>
         {detail.recipient?.hoan_thanh_luc?<p>Đã hoàn thành lúc {dateTime(detail.recipient.hoan_thanh_luc)}.</p>:!available&&<p>Khảo sát đã đóng hoặc hết hạn trả lời.</p>}</header>
@@ -84,13 +84,14 @@ function ReviewEditor({item,onSaved,onCancel}:{item:EligibleReview;onSaved:(revi
   </form>;
 }
 
-function Workspace({kind}:{kind:"surveys"|"reviews"}){
+// Used inside the authenticated account dashboard; API still verifies ownership.
+export function CustomerEngagementContent({kind,embedded=false}:{kind:"surveys"|"reviews";embedded?:boolean}){
   const [page,setPage]=useState(1),[version,setVersion]=useState(0),[surveys,setSurveys]=useState<Page<SurveyItem>|null>(null),[reviews,setReviews]=useState<Page<EligibleReview>|null>(null),[selected,setSelected]=useState<string|null>(null),[review,setReview]=useState<EligibleReview|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
   useEffect(()=>{if(selected)return;const c=new AbortController();setLoading(true);setError("");
     (kind==="surveys"?api<Page<SurveyItem>>(`customer/crm/surveys?page=${page}`,{signal:c.signal}).then(value=>{if(!c.signal.aborted)setSurveys(value);}):api<Page<EligibleReview>>(`customer/crm/reviews/eligible?page=${page}`,{signal:c.signal}).then(value=>{if(!c.signal.aborted)setReviews(value);}))
       .catch(e=>{if(!c.signal.aborted)setError(e.message);}).finally(()=>{if(!c.signal.aborted)setLoading(false);});return()=>c.abort();},[kind,page,version,selected]);
-  if(selected)return <SurveyForm key={selected} id={selected} onBack={()=>{setSelected(null);setVersion(x=>x+1);}}/>;
-  return <section className={styles.page}><header className={styles.actions}><div><h1>{kind==="surveys"?"Khảo sát của tôi":"Đánh giá sản phẩm đã mua"}</h1><p className={styles.muted}>{kind==="surveys"?"Chia sẻ nhu cầu và trải nghiệm với PHUB.":"Mỗi sản phẩm chỉ có một đánh giá của bạn và có thể sửa. Chỉ áp dụng cho sản phẩm trong đơn đã hoàn thành."}</p></div><Link href="/main/profile">← Tài khoản của tôi</Link></header>
+  if(selected)return <SurveyForm key={selected} id={selected} embedded={embedded} onBack={()=>{setSelected(null);setVersion(x=>x+1);}}/>;
+  return <section className={`${styles.page} ${embedded ? styles.embedded : ''}`}><header className={styles.actions}><div><h1>{kind==="surveys"?"Khảo sát của tôi":"Đánh giá sản phẩm đã mua"}</h1><p className={styles.muted}>{kind==="surveys"?"Chia sẻ nhu cầu và trải nghiệm với PHUB.":"Mỗi sản phẩm chỉ có một đánh giá của bạn và có thể sửa. Chỉ áp dụng cho sản phẩm trong đơn đã hoàn thành."}</p></div>{!embedded && <Link href="/main/profile">← Tài khoản của tôi</Link>}</header>
     {error&&<p role="alert" className={styles.error}>{error}</p>}{notice&&<p role="status" className={styles.notice}>{notice}</p>}{loading?<p role="status">Đang tải…</p>:!error&&<>
       {kind==="surveys"?surveys?.data.length?<div className={styles.grid}>{surveys.data.map(s=><article key={s.ma_khao_sat} className={styles.card}><h2>{s.tieu_de}</h2><p>{s.mo_ta}</p><p className={styles.muted}>{s.hoan_thanh_luc?"Đã hoàn thành":Date.parse(s.han_tra_loi)<=Date.now()?"Đã hết hạn":surveyStatus[s.trang_thai]} · Hạn {dateTime(s.han_tra_loi)}</p><button onClick={()=>setSelected(s.ma_khao_sat)}>{s.hoan_thanh_luc?"Xem bài đã gửi":"Mở khảo sát"}</button></article>)}</div>:<p>Chưa có khảo sát được gửi cho bạn.</p>
       :review?<ReviewEditor key={review.ma_sp} item={review} onCancel={()=>setReview(null)} onSaved={saved=>{setReviews(current=>current&&({...current,data:current.data.map(item=>item.ma_sp===saved.ma_sp?{...item,...saved}:item)}));setReview(null);setNotice(`Đã lưu đánh giá: ${reviewStatus[saved.trang_thai]}.`);}}/>
@@ -105,5 +106,5 @@ export function CustomerEngagement({kind}:{kind:"surveys"|"reviews"}){
   useEffect(()=>{const c=new AbortController();setUser(null);setError("");getSession(c.signal).then(value=>{if(!c.signal.aborted){if(value.role!=="KHACH_HANG")setError("Trang này dành cho tài khoản khách hàng.");else setUser(value);}}).catch(e=>{if(!c.signal.aborted)setError(e.message);});return()=>c.abort();},[version]);
   useEffect(()=>{const refresh=()=>{setUser(null);setError("");setVersion(x=>x+1);};window.addEventListener(AUTH_SESSION_EVENT,refresh);return()=>window.removeEventListener(AUTH_SESSION_EVENT,refresh);},[]);
   if(!user)return <section className={styles.page}>{error?<><p role="alert" className={styles.error}>{error}</p><Link href="/auth/login">Đăng nhập</Link><button onClick={()=>setVersion(x=>x+1)}>Thử lại</button></>:<p role="status">Đang kiểm tra tài khoản…</p>}</section>;
-  return <Workspace key={`${kind}:${user.account_id}:${version}`} kind={kind}/>;
+  return <CustomerEngagementContent key={`${kind}:${user.account_id}:${version}`} kind={kind}/>;
 }

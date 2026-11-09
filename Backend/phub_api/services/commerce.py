@@ -10,6 +10,7 @@ from phub_api.schemas.commerce import (
     CheckoutQuote,
     CustomerOrderReceipt,
     CustomerProfile,
+    CustomerVouchers,
     OrderDetail,
     OrderPage,
 )
@@ -30,6 +31,7 @@ ERRORS = {
     "ADDRESS_LIMIT_REACHED": (409, "Sổ địa chỉ đã đạt tối đa 10 địa chỉ. Hãy xóa bớt địa chỉ không dùng."),
     "ORDER_ALREADY_CANCELLED": (409, "Đơn hàng này đã được hủy trước đó."),
     "ORDER_NOT_CANCELABLE": (409, "Đơn hàng đã được xuất kho hoặc hoàn thành, không thể hủy."),
+    "ORDER_REFUND_REQUIRED": (409, "Đơn đã thu tiền. Vui lòng liên hệ cửa hàng để xác nhận hoàn tiền trước khi hủy."),
 }
 
 
@@ -106,11 +108,28 @@ class CommerceService:
     def delete_address(self, address_id, customer):
         return self._addresses(customer, "delete", address_id)
 
+    def vouchers(self, customer):
+        verified(customer)
+        result = checked_result(self.repository.vouchers(
+            customer.customer_id, os.getenv('CHECKOUT_PROMOTION_TIMEZONE', 'Asia/Ho_Chi_Minh')))
+        return CustomerVouchers.model_validate({**result, 'currency': os.getenv('CATALOG_CURRENCY', 'VND')})
+
     def quote(self, request, customer):
         verified(customer)
         payload = request.model_dump(mode="json")
         payload["items"].sort(key=lambda item: item["sku"])
-        result = checked_result(self.repository.checkout(checkout_parameters(payload, customer, create=False)))
+        raw = self.repository.checkout(checkout_parameters(payload, customer, create=False))
+        # Explain an active code's expired/future campaign without weakening the
+        # transactional checks or silently replacing it with another code.
+        error = raw.get('error') if isinstance(raw, dict) else None
+        if isinstance(error, dict) and error.get('code') == 'VOUCHER_NOT_AVAILABLE' and request.voucher_code:
+            choices = self.vouchers(customer)
+            selected = next((item for item in choices.items if item.code == request.voucher_code), None)
+            messages = {'EXPIRED': 'Mã giảm giá đã hết hạn của chương trình khuyến mãi.',
+                        'NOT_STARTED': 'Chương trình của mã giảm giá chưa bắt đầu.'}
+            if selected and selected.unavailable_reason in messages:
+                raise PaymentError(409, 'VOUCHER_NOT_AVAILABLE', messages[selected.unavailable_reason])
+        result = checked_result(raw)
         return CheckoutQuote.model_validate(result["quote"])
 
     def create(self, request, customer, key):

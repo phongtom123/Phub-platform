@@ -17,6 +17,7 @@ from phub_api.schemas.commerce import (
     CustomerOrderRequest,
     CustomerProfile,
     CustomerProfileUpdate,
+    CustomerVouchers,
     InvoiceOverview,
     OrderDetail,
     OrderPage,
@@ -80,6 +81,12 @@ def delete_address(address_id: UUID, customer: Customer, service: Service, query
     return service.delete_address(address_id, customer)
 
 
+@router.get('/vouchers', response_model=CustomerVouchers, responses=ERRORS,
+            summary='Mã giảm giá và điều kiện dành cho khách hiện tại (không tiêu lượt sử dụng)')
+def customer_vouchers(customer: Customer, service: Service, query: Annotated[NoQuery, Query()]):
+    return service.vouchers(customer)
+
+
 @router.post("/checkout/quote", response_model=CheckoutQuote, responses=ERRORS, summary="Báo giá giỏ hàng và kiểm tra voucher")
 def quote_checkout(request: QuoteRequest, customer: Customer, service: Service):
     return service.quote(request, customer)
@@ -118,6 +125,6 @@ def order_invoice(order_id: OrderId, customer: Customer, service: Service, query
 
 
 @router.post("/orders/{order_id}/cancel", response_model=OrderDetail, responses=ERRORS,
-             summary="Hủy đơn hàng thuộc tài khoản đang đăng nhập (hoàn tiền tự động nếu đã thanh toán)")
+             summary="Hủy đơn của khách trước xuất kho; khoản thu thực tế cần xử lý hoàn tiền trước")
 def cancel_order(order_id: OrderId, customer: Customer, service: Service, request: Annotated[CancelOrderRequest | None, Body()] = None):
     return service.cancel_order(order_id, customer, request=request)

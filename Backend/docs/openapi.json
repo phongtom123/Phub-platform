@@ -3516,6 +3516,108 @@
         "title": "CustomerUpdate",
         "type": "object"
       },
+      "CustomerVoucher": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "discount_type": {
+            "enum": [
+              "PHAN_TRAM",
+              "SO_TIEN"
+            ],
+            "title": "Discount Type",
+            "type": "string"
+          },
+          "discount_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Discount Value",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "maximum_discount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum Discount"
+          },
+          "minimum_order": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+            "title": "Minimum Order",
+            "type": "string"
+          },
+          "starts_at": {
+            "title": "Starts At",
+            "type": "string"
+          },
+          "unavailable_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "NOT_STARTED",
+                  "EXPIRED",
+                  "LIMIT_REACHED",
+                  "CUSTOMER_LIMIT_REACHED"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Reason"
+          }
+        },
+        "required": [
+          "code",
+          "discount_type",
+          "discount_value",
+          "minimum_order",
+          "maximum_discount",
+          "starts_at",
+          "expires_at",
+          "unavailable_reason"
+        ],
+        "title": "CustomerVoucher",
+        "type": "object"
+      },
+      "CustomerVouchers": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CustomerVoucher"
+            },
+            "maxItems": 50,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "currency",
+          "items"
+        ],
+        "title": "CustomerVouchers",
+        "type": "object"
+      },
       "DON_HANGPage": {
         "additionalProperties": false,
         "properties": {
@@ -25149,7 +25251,7 @@
             "SessionCookie": []
           }
         ],
-        "summary": "Hủy đơn hàng thuộc tài khoản đang đăng nhập (hoàn tiền tự động nếu đã thanh toán)",
+        "summary": "Hủy đơn của khách trước xuất kho; khoản thu thực tế cần xử lý hoàn tiền trước",
         "tags": [
           "Customer Shopping"
         ]
@@ -25311,6 +25413,154 @@
           }
         ],
         "summary": "Hóa đơn công khai của đơn thuộc khách",
+        "tags": [
+          "Customer Shopping"
+        ]
+      }
+    },
+    "/api/customer/vouchers": {
+      "get": {
+        "operationId": "customer_vouchers_api_customer_vouchers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerVouchers"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "AUTHENTICATION_REQUIRED",
+                    "details": [],
+                    "message": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Cần đăng nhập bằng phiên PHUB hợp lệ."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ACCESS_DENIED",
+                    "details": [],
+                    "message": "Tài khoản không có quyền hoặc không liên kết khách."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Tài khoản không có quyền hoặc không liên kết khách."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "ORDER_NOT_FOUND",
+                    "details": [],
+                    "message": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Đơn không tồn tại/không thuộc khách, hoặc sản phẩm/kho không khả dụng."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_CHANGED",
+                    "details": [],
+                    "message": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Giá/tồn kho/voucher thay đổi, hết lượt hoặc yêu cầu idempotent xung đột."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [],
+                    "message": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Mã đơn, giỏ hàng, người nhận hoặc query không hợp lệ."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INTERNAL_ERROR",
+                    "details": [],
+                    "message": "Không thể xử lý yêu cầu."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Không thể xử lý yêu cầu."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CHECKOUT_DATABASE_NOT_READY",
+                    "details": [],
+                    "message": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Migration/cấu hình checkout hoặc dịch vụ dữ liệu chưa sẵn sàng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Mã giảm giá và điều kiện dành cho khách hiện tại (không tiêu lượt sử dụng)",
         "tags": [
           "Customer Shopping"
         ]

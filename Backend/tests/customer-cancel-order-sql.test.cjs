@@ -17,6 +17,7 @@ async function main() {
     await db.exec(fs.readFileSync(path.join(root, 'Backend/migrations/20261102080347_automatic_checkout_invoice.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'Backend/migrations/20261102081903_bypass_business_payments.sql'), 'utf8'));
     await db.exec(fs.readFileSync(path.join(root, 'Backend/migrations/20261102100000_customer_cancel_order.sql'), 'utf8'));
+    await db.exec(fs.readFileSync(path.join(root, 'Backend/migrations/20261109133739_restore_customer_cancel_order.sql'), 'utf8'));
 
     // Insert sample customer, account, warehouse, product, order
     await db.exec(`
@@ -94,9 +95,10 @@ async function main() {
     assert.equal(refund.la_bypass, true);
     assert.equal(refund.ma_tk_ghi_nhan, 'TK-KH1');
 
-    // Test 3: Cancelling already cancelled order fails
+    // Retry after a lost response does not create another refund.
     res = await cancel('KH1', 'DH-PAID');
-    assert.equal(res.error?.code, 'ORDER_ALREADY_CANCELLED');
+    assert.equal(res.order.status, 'HUY');
+    assert.equal((await db.query(`select count(*)::int n from public."THANH_TOAN" where ma_donhang='DH-PAID'`)).rows[0].n,2);
 
     // Test 4: Cancelling dispatched order fails
     res = await cancel('KH1', 'DH-DISPATCHED');
@@ -106,7 +108,30 @@ async function main() {
     res = await cancel('KH2', 'DH-DISPATCHED');
     assert.equal(res.error?.code, 'ORDER_NOT_FOUND');
 
-    console.log('Customer cancel order SQL tests passed successfully!');
+    await db.exec(`insert into public."DON_HANG"(ma_donhang,ma_kh,kenh_ban,trang_thai,thoi_gian_dat) values
+      ('DH-REAL','KH1','ONLINE','XAC_NHAN',now()),('DH-CONFIRMED','KH1','ONLINE','XAC_NHAN',now()),
+      ('DH-ROLLBACK','KH1','ONLINE','MOI',now());
+      insert into public."THANH_TOAN"(ma_donhang,so_tien,loai_giao_dich,phuong_thuc,trang_thai,ma_giao_dich,la_bypass,thoi_gian)
+      values('DH-REAL',1000,'THU','CHUYEN_KHOAN','THANH_CONG','REAL-FIXTURE',false,now());`);
+    res=await cancel('KH1','DH-REAL');
+    assert.equal(res.error.code,'ORDER_REFUND_REQUIRED');
+    assert.equal((await db.query(`select trang_thai from public."DON_HANG" where ma_donhang='DH-REAL'`)).rows[0].trang_thai,'XAC_NHAN');
+    assert.equal((await db.query(`select count(*)::int n from public."THANH_TOAN" where ma_donhang='DH-REAL'`)).rows[0].n,1,'No fake real-money refund');
+    assert.equal((await cancel('KH1','DH-CONFIRMED')).order.status,'HUY');
+    assert.equal((await cancel('KH2','DH-CONFIRMED')).error.code,'ORDER_NOT_FOUND','Ownership holds for already cancelled orders');
+    assert.equal((await db.query(`select so_luong_ton from public."TON_KHO" where sku='SKU1'`)).rows[0].so_luong_ton,10,'Cancellation releases reservation, never increments physical stock');
+    assert.equal((await db.query(`select count(*)::int n from public."CT_DON_HANG"`)).rows[0].n,2,'Historical order lines stay intact');
+    await db.exec('reset role');
+    await db.exec(`create or replace function public.customer_read_orders_v2(p_customer_id text,p_order_id text,p_page integer,p_page_size integer,p_currency text) returns jsonb
+      language plpgsql as $$ begin raise exception 'offline snapshot failure'; end $$; set role service_role;`);
+    await assert.rejects(cancel('KH1','DH-ROLLBACK'),/offline snapshot failure/);
+    assert.equal((await db.query(`select trang_thai from public."DON_HANG" where ma_donhang='DH-ROLLBACK'`)).rows[0].trang_thai,'MOI','Representation failure rolls back cancellation');
+    for(const role of ['anon','authenticated']) {
+      await db.exec('reset role; set role '+role);
+      await assert.rejects(cancel('KH1','DH-ROLLBACK'),e=>e.code==='42501');
+    }
+
+    console.log('PASS: cancellation, ownership, idempotent retry, demo refund, real-payment guard, unchanged physical stock/history, rollback and role grants.');
   } finally {
     await db.close();
   }

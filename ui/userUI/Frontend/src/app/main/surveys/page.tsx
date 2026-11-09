@@ -1,2 +1,3 @@
-import { CustomerEngagement } from "@/components/engagement/CustomerEngagement";
-export default function Page(){return <CustomerEngagement kind="surveys"/>;}
+import { redirect } from 'next/navigation';
+
+export default function Page() { redirect('/main/profile?view=surveys'); }

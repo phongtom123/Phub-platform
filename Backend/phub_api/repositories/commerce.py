@@ -23,6 +23,11 @@ class CommerceRepository:
         name = "customer_checkout_fulfillment_v1" if parameters["p_create"] else "customer_checkout_multi_warehouse_v1"
         return self.client.rpc(name, parameters).execute().data
 
+    def vouchers(self, customer_id, timezone):
+        return self.client.rpc('customer_voucher_choices_v1', {
+            'p_customer_id': customer_id, 'p_timezone': timezone,
+        }).execute().data
+
     def orders(self, parameters):
         return self.client.rpc("customer_read_orders_v4", parameters).execute().data
 

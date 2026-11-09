@@ -364,6 +364,7 @@ test("customer gateway exposes only authenticated commerce contracts", async () 
   const allowed = [
     ["GET", ["customer", "me"]], ["PUT", ["customer", "me"]],
     ["POST", ["customer", "checkout", "quote"]],
+    ["GET", ["customer", "vouchers"]],
     ["GET", ["customer", "orders"]], ["POST", ["customer", "orders"]],
     ["GET", ["customer", "orders", "ORDER-1"]],
     ["GET", ["customer", "orders", "ORDER-1", "invoice"]],
@@ -381,6 +382,7 @@ test("customer gateway exposes only authenticated commerce contracts", async () 
   const proxy = gateway(async () => { calls++; return Response.json({}); });
   for (const [method, segments] of [
     ["DELETE", ["customer", "me"]], ["GET", ["customer", "checkout", "quote"]],
+    ["POST", ["customer", "vouchers"]],
     ["GET", ["customer", "orders", ".."]], ["POST", ["customer", "orders", "ORDER-1"]],
     ["GET", ["orders", "ORDER-1", "payment-request"]], ["GET", ["orders", "ORDER-1", "private"]],
   ]) assert.equal((await proxy(new Request("http://localhost:3001/api/backend/x", { method }), segments)).status, 404);

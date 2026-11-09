@@ -84,6 +84,23 @@ class WarehouseAllocation(BaseModel):
     quantity: int = Field(ge=1, le=2_147_483_647)
 
 
+class CustomerVoucher(MoneyOutput):
+    code: str = Field(min_length=1, max_length=100)
+    discount_type: Literal['PHAN_TRAM', 'SO_TIEN']
+    discount_value: Money
+    minimum_order: Money
+    maximum_discount: Money | None
+    starts_at: str
+    expires_at: str
+    unavailable_reason: Literal['NOT_STARTED', 'EXPIRED', 'LIMIT_REACHED', 'CUSTOMER_LIMIT_REACHED'] | None
+
+
+class CustomerVouchers(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    currency: str = Field(pattern=r'^[A-Z]{3}$')
+    items: list[CustomerVoucher] = Field(max_length=50)
+
+
 class CheckoutLine(MoneyOutput):
     sku: str
     warehouse_id: int = Field(description="Kho đầu tiên trong phân bổ; allocations liệt kê đầy đủ các kho cấp hàng.")

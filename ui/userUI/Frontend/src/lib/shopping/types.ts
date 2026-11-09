@@ -46,6 +46,20 @@ export interface Quote {
   tax_total: string;
   total: string;
 }
+export interface CustomerVoucher {
+  code: string;
+  discount_type: 'PHAN_TRAM' | 'SO_TIEN';
+  discount_value: string;
+  minimum_order: string;
+  maximum_discount: string | null;
+  starts_at: string;
+  expires_at: string;
+  unavailable_reason: 'NOT_STARTED' | 'EXPIRED' | 'LIMIT_REACHED' | 'CUSTOMER_LIMIT_REACHED' | null;
+}
+export interface CustomerVouchers {
+  currency: string;
+  items: CustomerVoucher[];
+}
 export interface Recipient {
   name: string;
   phone: string;

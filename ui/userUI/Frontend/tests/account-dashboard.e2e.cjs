@@ -21,6 +21,9 @@ const pagination=(page,total=11)=>({page,page_size:10,total,total_pages:Math.cei
    const ok=json=>route.fulfill({json}),fail=(status,message)=>route.fulfill({status,json:{error:{message}}});
    if(path.endsWith('/auth/me'))return mode==='guest'||loggedOut?fail(401,'Cần đăng nhập.'):ok({...session,role:mode==='admin'?'ADMIN':session.role});
    if(path.endsWith('/auth/logout')){loggedOut=true;return ok({message:'OK'});}
+   if(path.endsWith('/customer/crm/surveys'))return ok({data:[{ma_khao_sat:'SURVEY-TEST',tieu_de:'Khảo sát kiểm thử',mo_ta:'Nội dung fixture',trang_thai:'DANG_MO',han_tra_loi:'2099-12-31T23:59:59Z',hoan_thanh_luc:null}],total:1});
+   if(path.endsWith('/customer/crm/surveys/SURVEY-TEST'))return ok({survey:{ma_khao_sat:'SURVEY-TEST',tieu_de:'Khảo sát kiểm thử',mo_ta:'Nội dung fixture',trang_thai:'DANG_MO',han_tra_loi:'2099-12-31T23:59:59Z'},recipient:{hoan_thanh_luc:null},questions:[],answers:[]});
+   if(path.endsWith('/customer/crm/reviews/eligible'))return ok({data:[{ma_donhang:firstOrder.id,ma_sp:'PRODUCT-TEST',ten_sp:'Sản phẩm kiểm thử đánh giá',sku:'SKU-TEST',thoi_gian_dat:firstOrder.created_at,ma_danh_gia:null,so_sao:null,noi_dung:null,trang_thai:null,phien_ban:null}],total:1});
    if(path.startsWith('/api/catalog/'))return ok({items:[]});
    if(path==='/api/customer/me')return mode==='guest'||loggedOut?fail(401,'Cần đăng nhập.'):ok(profile);
    if(path==='/api/customer/addresses')return ok({items:[{id:'00000000-0000-4000-8000-000000000001',...profile,is_default:true}],item:null});
@@ -58,7 +61,8 @@ const pagination=(page,total=11)=>({page,page_size:10,total,total_pages:Math.cei
   assert.equal(await nav.getByRole('button').count(),3);
   assert.equal(await nav.getByRole('button',{name:'Thông tin cá nhân',exact:true}).getAttribute('aria-current'),'page');
   assert.equal(await page.locator('main').getByText(/Chưa có API|Compare Products|My Wish List|Newsletter|Stored Payment|Change Password/).count(),0);
-  assert.equal(requests.some(r=>r.path.includes('/customer/orders')),false,'orders load only when opened');
+  await page.getByRole('region',{name:'Đơn hàng gần đây',exact:true}).getByRole('article',{name:`Đơn ${firstOrder.id}`}).waitFor();
+  assert.ok(requests.some(r=>r.path.endsWith('/customer/orders')&&r.search.includes('page_size=5')),'profile loads a bounded recent-order preview');
   await fits();
   await page.screenshot({path:process.env.PHUB_ACCOUNT_DESKTOP_SCREENSHOT||require('node:path').join(require('node:os').tmpdir(),'phub-profile-desktop.png'),fullPage:true});
   await page.getByRole('button',{name:'Chỉnh sửa thông tin',exact:true}).click();
@@ -104,7 +108,34 @@ const pagination=(page,total=11)=>({page,page_size:10,total,total_pages:Math.cei
    mode=testMode;await page.goto(base+'/main/profile',{waitUntil:'domcontentloaded'});
    await page.getByRole('region',{name:'Truy cập tài khoản'}).getByRole('alert').waitFor();assert.equal(await nav.count(),0);
   }
-  mode='ready';await open();await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();await page.waitForURL('**/auth/login');
+  mode='ready';await open();await page.setViewportSize({width:1440,height:1000});
+  const engagementNav=page.getByRole('navigation',{name:'Khảo sát và đánh giá',exact:true});
+  await engagementNav.getByRole('button',{name:'Khảo sát của tôi',exact:true}).click();
+  await page.getByRole('heading',{name:'Khảo sát kiểm thử',exact:true}).waitFor();
+  assert.equal(await nav.count(),1);assert.equal(await engagementNav.getByRole('button',{name:'Khảo sát của tôi',exact:true}).getAttribute('aria-current'),'page');
+  await page.getByRole('button',{name:'Mở khảo sát',exact:true}).click();
+  await page.getByRole('button',{name:'Tải lại khảo sát',exact:true}).waitFor();assert.equal(await nav.count(),1);
+  await page.getByRole('button',{name:'← Khảo sát của tôi',exact:true}).click();
+  await engagementNav.getByRole('button',{name:'Đánh giá sản phẩm',exact:true}).click();
+  await page.getByRole('heading',{name:'Sản phẩm kiểm thử đánh giá',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Viết đánh giá',exact:true}).click();
+  await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).waitFor();assert.equal(await nav.count(),1);
+  await page.getByRole('button',{name:'Hủy',exact:true}).click();
+  await page.goto(base+'/main/surveys');await page.waitForURL('**/main/profile?view=surveys');
+  await page.getByRole('heading',{name:'Khảo sát kiểm thử',exact:true}).waitFor();assert.equal(await nav.count(),1);
+  await page.goto(base+'/main/reviews');await page.waitForURL('**/main/profile?view=reviews');
+  await page.getByRole('heading',{name:'Sản phẩm kiểm thử đánh giá',exact:true}).waitFor();assert.equal(await nav.count(),1);
+  await page.setViewportSize({width:390,height:844});await fits();
+  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'phub-account-reviews-mobile.png'),fullPage:true});
+  await page.setViewportSize({width:1440,height:1000});
+  await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'phub-account-reviews-desktop.png'),fullPage:true});
+  await page.getByRole('button',{name:`Mở tài khoản của ${session.name}`,exact:true}).click();
+  await page.getByRole('navigation',{name:'Tài khoản',exact:true}).getByRole('link',{name:'Đơn hàng của tôi',exact:true}).click();
+  await page.waitForURL('**/main/profile?view=orders');
+  await orders.getByRole('article',{name:`Đơn ${firstOrder.id}`}).waitFor();
+  assert.equal(await nav.getByRole('button',{name:'Đơn hàng của tôi',exact:true}).getAttribute('aria-current'),'page');
+  await page.reload();await orders.getByRole('article',{name:`Đơn ${firstOrder.id}`}).waitFor();
+  await open();await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();await page.waitForURL('**/auth/login');
   assert.equal(loggedOut,true);assert.deepEqual(errors,[]);
   console.log('PASS: three working sections, no placeholders, profile save/cancel/errors, addresses, order pagination and dedicated detail, access guards, logout and responsive layout');
  }finally{await browser.close();}

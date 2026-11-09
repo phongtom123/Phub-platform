@@ -26,6 +26,8 @@ const receipt = { ...quote, id: "AUTO-ORDER-TEST", status: "MOI", sales_channel:
       if (path.endsWith("/auth/me")) return ok({ account_id: "ACCOUNT-TEST", username: "test", role: "KHACH_HANG", name: profile.name, customer_id: profile.customer_id, employee_id: null, warehouse_id: null });
       if (path === "/api/customer/me" || path === "/api/backend/customer/me") return ok(profile);
       if (path === "/api/customer/addresses") return ok({ items: [{ id: "00000000-0000-4000-8000-000000000001", ...recipient, is_default: true }], item: null });
+      if (path === "/api/customer/vouchers") return ok({ currency: "VND", items: [] });
+      if (path === `/api/customer/orders/${receipt.id}`) return ok({ ...receipt, total: "1017500000.00", items: invoiceLines });
       if (path === `/api/catalog/products/${product.id}`) return ok(product);
       if (path === "/api/catalog/availability") return ok({ items: [{ sku: product.sku, available_quantity: 185 }], tax_rate: "10.00", currency: "VND" });
       if (path.startsWith("/api/catalog/")) return ok({ items: [] });
@@ -41,7 +43,7 @@ const receipt = { ...quote, id: "AUTO-ORDER-TEST", status: "MOI", sales_channel:
     });
     await page.goto(base + "/checkout");
     await page.getByRole("button", { name: "Đặt hàng", exact: true }).click();
-    await page.getByRole("heading", { name: /Đặt đơn hàng thành công/ }).waitFor();
+    await page.getByRole("region", { name: "Kết quả đặt hàng", exact: true }).waitFor();
     const invoice = page.getByRole("region", { name: "Hóa đơn của đơn hàng" });
     await invoice.getByText(/1\.017\.500\.000/).first().waitFor();
     await invoice.getByText("Thanh toán trong vòng 24 giờ", {exact:true}).waitFor();
