@@ -29,6 +29,8 @@
 .support-response fieldset { border:0; margin:0; padding:0; min-width:0; }
 .support-control-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:20px; }
 .support-response textarea { width:100%; resize:vertical; line-height:1.6; }
+.support-response select.status-closed { appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: none; cursor: default; }
+.support-response select.status-closed::-ms-expand { display: none; }
 .support-response .support-help { line-height:1.6; margin:10px 0 18px; }
 @media(max-width:1100px) { .support-layout { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:560px) {

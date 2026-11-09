@@ -12,6 +12,20 @@ import InvoiceClaimReview from "../invoice-claims/InvoiceClaimReview";
 
 const statuses: Record<string, string> = { MOI: "Mới tiếp nhận", DANG_XU_LY: "Đang xử lý", DA_GIAI_QUYET: "Đã giải quyết", DA_DONG: "Đã đóng" };
 const priorities: Record<string, string> = { THAP: "Thấp", BINH_THUONG: "Bình thường", CAO: "Cao", KHAN_CAP: "Khẩn cấp" };
+
+function getAllowedStatuses(currentStatus: string): string[] {
+  switch (currentStatus) {
+    case "MOI":
+      return ["MOI", "DANG_XU_LY", "DA_GIAI_QUYET", "DA_DONG"];
+    case "DANG_XU_LY":
+    case "DA_GIAI_QUYET":
+      return ["DANG_XU_LY", "DA_GIAI_QUYET", "DA_DONG"];
+    case "DA_DONG":
+      return ["DA_DONG"];
+    default:
+      return Object.keys(statuses);
+  }
+}
 type Ticket = { ma_phan_hoi: string; ma_kh: string; ten_kh: string | null; tieu_de: string; noi_dung: string;
   loai_yeu_cau?: string; ma_sp: string | null; ma_donhang: string | null; trang_thai: string; muc_do_uu_tien: string; nguoi_xu_ly: string | null;
   ten_nguoi_xu_ly: string | null; phan_hoi_quan_ly: string | null; ngay_phan_hoi: string | null; ngay_tao: string; cap_nhat_luc: string };
@@ -46,7 +60,8 @@ export default function SupportView() {
   const [saving, setSaving] = useState(false);
   const [version, setVersion] = useState(0), [listVersion, setListVersion] = useState(0);
   const write = useRef<AbortController | null>(null);
-  const dirty = Boolean(ticket && (reply !== (ticket.phan_hoi_quan_ly ?? "") || draftStatus !== ticket.trang_thai || draftPriority !== ticket.muc_do_uu_tien));
+  const isClosed = ticket?.trang_thai === "DA_DONG";
+  const dirty = Boolean(!isClosed && ticket && (reply !== (ticket.phan_hoi_quan_ly ?? "") || draftStatus !== ticket.trang_thai || draftPriority !== ticket.muc_do_uu_tien));
   const queryString = new URLSearchParams({ page: String(page), page_size: "20", q: query, ...(status ? { status } : {}), ...(priority ? { priority } : {}) }).toString();
 
   function adopt(value: Ticket) { setTicket(value); setReply(value.phan_hoi_quan_ly ?? ""); setDraftStatus(value.trang_thai); setDraftPriority(value.muc_do_uu_tien); }
@@ -86,10 +101,17 @@ export default function SupportView() {
   }
   async function save(event?: FormEvent, claim = false) {
     event?.preventDefault();
-    if (!ticket || saving || write.current) return;
+    if (!ticket || saving || write.current || isClosed) return;
+    if (claim && ticket.trang_thai !== "MOI") return;
     const patch: Record<string, string | boolean | null> = {};
     if (reply !== (ticket.phan_hoi_quan_ly ?? "")) patch.phan_hoi_quan_ly = reply.trim() || null;
-    if (draftStatus !== ticket.trang_thai) patch.trang_thai = draftStatus;
+    if (draftStatus !== ticket.trang_thai) {
+      if (!getAllowedStatuses(ticket.trang_thai).includes(draftStatus)) {
+        setSaveError("Không thể chuyển sang trạng thái này.");
+        return;
+      }
+      patch.trang_thai = draftStatus;
+    }
     if (draftPriority !== ticket.muc_do_uu_tien) patch.muc_do_uu_tien = draftPriority;
     if (claim) { patch.nhan_xu_ly = true; patch.trang_thai = "DANG_XU_LY"; }
     if (!Object.keys(patch).length) return;
@@ -133,7 +155,7 @@ export default function SupportView() {
       <section className="support-detail" aria-label="Chi tiết ticket">
         {!id ? <div className="support-empty"><h2>Chọn một ticket</h2><p>Xem nội dung, nhận xử lý và phản hồi cho khách tại đây.</p></div> : <>
           <div className="support-detail-actions"><button type="button" disabled={saving} onClick={() => selectTicket(null)}>← Danh sách ticket</button>
-            {ticket && <button className="live-primary" type="button" disabled={saving} onClick={() => void save(undefined, true)}>Nhận xử lý</button>}</div>
+            {ticket && <button className="live-primary" type="button" disabled={saving || ticket.trang_thai !== "MOI"} onClick={() => void save(undefined, true)}>Nhận xử lý</button>}</div>
           {detailError && <p className="live-error" role="alert">{detailError}</p>}
           {detailLoading && <p role="status">Đang tải nội dung…</p>}
           {ticket && !detailLoading && !detailError && <>
@@ -149,15 +171,15 @@ export default function SupportView() {
             {ticket.loai_yeu_cau === "LIEN_KET_HOA_DON" && <InvoiceClaimReview key={ticket.ma_phan_hoi} ticketId={ticket.ma_phan_hoi} onUpdated={() => { setVersion(v => v + 1); }}/>}
             <SupportThread key={ticket.ma_phan_hoi} ticketId={ticket.ma_phan_hoi} version={ticket.cap_nhat_luc} />
             <form className="support-response" onSubmit={save}>
-              <fieldset disabled={saving}><div className="support-control-grid">
-                <label>Trạng thái xử lý<select aria-label="Trạng thái xử lý" value={draftStatus} onChange={e => setDraftStatus(e.target.value)}>{Object.entries(statuses).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
-                <label>Mức độ ưu tiên<select aria-label="Mức độ ưu tiên" value={draftPriority} onChange={e => setDraftPriority(e.target.value)}>{Object.entries(priorities).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
-              </div><label>Phản hồi gửi khách<textarea aria-label="Phản hồi gửi khách" value={reply} maxLength={10000} rows={6} placeholder="Nhập kết quả tư vấn hoặc hướng xử lý…" onChange={e => setReply(e.target.value)} /></label>
+              <fieldset disabled={saving || isClosed}><div className="support-control-grid">
+                <label>Trạng thái xử lý<select aria-label="Trạng thái xử lý" className={isClosed ? "status-closed" : ""} style={isClosed ? { appearance: "none", WebkitAppearance: "none", MozAppearance: "none" } : undefined} value={draftStatus} disabled={saving || isClosed} onChange={e => setDraftStatus(e.target.value)}>{getAllowedStatuses(ticket.trang_thai).map(key => <option key={key} value={key}>{statuses[key]}</option>)}</select></label>
+                <label>Mức độ ưu tiên<select aria-label="Mức độ ưu tiên" className={isClosed ? "status-closed" : ""} style={isClosed ? { appearance: "none", WebkitAppearance: "none", MozAppearance: "none" } : undefined} value={draftPriority} disabled={saving || isClosed} onChange={e => setDraftPriority(e.target.value)}>{Object.entries(priorities).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select></label>
+              </div><label>Phản hồi gửi khách<textarea aria-label="Phản hồi gửi khách" value={reply} maxLength={10000} rows={6} disabled={saving || isClosed} placeholder={isClosed ? "Ticket đã đóng; không thể chỉnh sửa hoặc phản hồi thêm." : "Nhập kết quả tư vấn hoặc hướng xử lý…"} onChange={e => setReply(e.target.value)} /></label>
                 <p className="support-help">Phản hồi mới được lưu vào lịch sử trao đổi và hiển thị cho khách. Phần này hiển thị phản hồi quản trị gần nhất.</p>
                 {ticket.ngay_phan_hoi && <p className="support-help">Lần phản hồi gần nhất: {time(ticket.ngay_phan_hoi)}</p>}
               </fieldset>
               {saveError && <p className="live-error" role="alert">{saveError}</p>}{notice && <p className="live-note" role="status">{notice}</p>}
-              <button className="live-primary" disabled={saving || !dirty}>{saving ? "Đang lưu…" : "Lưu xử lý"}</button>
+              <button className="live-primary" disabled={saving || !dirty || isClosed}>{saving ? "Đang lưu…" : "Lưu xử lý"}</button>
             </form>
           </>}
         </>}
