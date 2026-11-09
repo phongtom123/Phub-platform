@@ -14,7 +14,8 @@ import {
   ShoppingError,
   updateAddress,
 } from "@/lib/shopping/client";
-import { money, invoiceTotals } from "@/lib/shopping/money";
+import { cents, invoiceTotals, money, moneyFromCents } from "@/lib/shopping/money";
+import { normalizeVoucherCode } from "@/lib/shopping/voucher";
 import type { AddressBook, CustomerAddress, FulfillmentMethod, OrderRequest, PaymentDeadline, Receipt } from "@/lib/shopping/types";
 import { FulfillmentChoice } from "./FulfillmentChoice";
 import styles from "./checkout.module.css";
@@ -65,8 +66,8 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
   const contactPhone = pickupPhone ?? shop.customer?.phone ?? "";
   const normalizedPickupPhone = contactPhone.replace(/[ ()-]/g, "").trim();
   const isPickup = fulfillmentMethod === "TAI_CUA_HANG";
-  const [voucherCode, setVoucherCode] = useState("");
-  const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
+  const [voucherCode, setVoucherCode] = useState(shop.checkoutVoucher || "");
+  const appliedVoucher = shop.checkoutVoucher;
 
   // Quote & submission states
   const { quote, loading: quoteLoading, error: quoteError, reload: reloadQuote } = useCheckoutQuote(appliedVoucher);
@@ -224,16 +225,16 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
 
   const handleApplyVoucher = (e: React.FormEvent) => {
     e.preventDefault();
-    const code = voucherCode.trim().toUpperCase();
+    const code = normalizeVoucherCode(voucherCode);
     if (code) {
       if (code === appliedVoucher) reloadQuote();
-      else setAppliedVoucher(code);
+      else shop.setCheckoutVoucher(code);
     }
   };
 
   const handleRemoveVoucher = () => {
     setVoucherCode("");
-    setAppliedVoucher(null);
+    shop.setCheckoutVoucher(null);
   };
 
   // 4. Handle "Đặt hàng" tại trang Đặt hàng
@@ -293,6 +294,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
           paymentMethod === "cod" ? "cash" : "bank_transfer");
       } catch { /* Order is already committed; storage failure must not report checkout failure. */ }
       setOrderReceipt(receipt);
+      shop.setCheckoutVoucher(null);
       shop.completeOrder(
         shop.selectedLines.map((l) => ({ sku: l.sku, quantity: l.quantity })),
         shop.customer?.customer_id || ""
@@ -888,11 +890,9 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
 
             <div>
               {shop.selectedLines.map((line) => {
-                const unitPrice = parseFloat(line.unit_price || "0");
-                const formattedPrice = new Intl.NumberFormat("vi-VN", {
-                  style: "currency",
-                  currency: line.currency || "VND",
-                }).format(unitPrice * line.quantity);
+                const quotedLine = quote?.items.find((item) => item.sku === line.sku);
+                const gross = moneyFromCents(cents(line.unit_price) * BigInt(line.quantity), line.currency);
+                const hasVoucherDiscount = quotedLine && cents(quotedLine.discount) > BigInt(0);
 
                 return (
                   <article key={line.sku}>
@@ -908,7 +908,9 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                     <div>
                       <p>{line.name || line.sku}</p>
                       <small>SL: {line.quantity}</small>
-                      <strong>{formattedPrice}</strong>
+                      {hasVoucherDiscount && <span className={styles.originalPrice}>{gross}</span>}
+                      <strong>{hasVoucherDiscount ? money(quotedLine.line_total, line.currency) : gross}</strong>
+                      {hasVoucherDiscount && <small className={styles.lineDiscount}>Voucher giảm {money(quotedLine.discount, line.currency)}</small>}
                     </div>
                   </article>
                 );
