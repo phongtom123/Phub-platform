@@ -61,6 +61,7 @@ function quote(code=null){
   mode='accepted';hold=false;await apply.click();
   await page.getByText('✓ Đã áp dụng mã: SEED100K',{exact:true}).waitFor();
   assert.ok(await place.isEnabled());assert.match(await page.locator('aside').innerText(),/2\.090\.000/);
+  assert.match(await page.locator('aside article').filter({hasText:'Voucher product'}).innerText(),/Voucher giảm.*100\.000/s,'discount is shown on the affected product');
   assert.ok(codes.filter(code=>code==='SEED100K').length>=2,'same code can be retried after a rejection');
   mode='mismatch';await input.fill('SECOND');await apply.click();
   await page.locator('aside').getByRole('alert').getByText(/Chưa xác nhận được mã giảm giá/).waitFor();

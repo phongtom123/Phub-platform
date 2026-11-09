@@ -19,6 +19,14 @@ API hủy theo ownership. Khi hủy thành công, đổi tiêu đề sang “Đ�
 làm mới hóa đơn/hạn thanh toán và chặn thanh toán mới. Lỗi hủy giữ tại nút để
 khách thử lại; không thay đổi chính sách hoàn tiền hay tự hủy đơn thật để test.
 
+**Cập nhật 09/11/2026 — voucher tại giỏ hàng:** khách đã đăng nhập có thể áp
+voucher cho các sản phẩm đang chọn ngay tại `/cart`. UI dùng quote thật của
+backend, hiển thị phần giảm được phân bổ trên từng SKU và giữ mã trong
+`ShoppingProvider` khi chuyển sang `/checkout`. Checkout luôn quote lại trước
+khi tạo đơn; transaction vẫn là nơi chốt giá, quota voucher và phân bổ giảm giá
+vào `CT_DON_HANG.giam_gia_voucher`. Schema hiện tại chỉ hỗ trợ voucher cấp đơn,
+không có phạm vi voucher theo một SKU cụ thể.
+
 **Nhận tại cửa hàng 04/11/2026:** checkout hỗ trợ `TAI_CUA_HANG`, chỉ cần tên
 và số điện thoại; không cần địa chỉ. Đơn vẫn ONLINE, gom tồn mọi kho và có hóa
 đơn/hạn 24 giờ. Xem [hợp đồng, migration và kiểm thử](STORE-PICKUP.md).
