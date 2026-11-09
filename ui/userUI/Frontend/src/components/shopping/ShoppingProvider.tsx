@@ -41,6 +41,8 @@ interface ShoppingState {
   availability: Record<string, number>;
   stockError: string;
   taxRate: string | null;
+  checkoutVoucher: string | null;
+  setCheckoutVoucher: (code: string | null) => void;
   refreshStock: () => void;
   refreshSession: () => Promise<void>;
   add: (
@@ -86,6 +88,10 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
   const [cartRestoring, setCartRestoring] = useState(false);
   const [addingProductIds, setAddingProductIds] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
+  const [voucherSelection, setVoucherSelection] = useState<{ customerId: string; code: string } | null>(null);
+  const checkoutVoucher = customer && voucherSelection?.customerId === customer.customer_id
+    ? voucherSelection.code
+    : null;
   const [stockResult, setStockResult] = useState<{
     key: string; quantities: Record<string, number>; taxRate: string | null; error: string;
   } | null>(null);
@@ -448,6 +454,10 @@ export function ShoppingProvider({ children }: { children: ReactNode }) {
         availability,
         stockError,
         taxRate,
+        checkoutVoucher,
+        setCheckoutVoucher: (code) => {
+          setVoucherSelection(code && customer ? { customerId: customer.customer_id, code } : null);
+        },
         refreshStock: () => setStockVersion(version => version + 1),
         notice,
         count: lines.reduce((sum, item) => sum + item.quantity, 0),

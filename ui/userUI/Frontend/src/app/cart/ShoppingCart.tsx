@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useShopping } from "@/components/shopping/ShoppingProvider";
+import { useCheckoutQuote } from "@/components/shopping/CheckoutSummary";
 import styles from "./cart.module.css";
-import { cents, money, moneyFromCents, vatCents } from "@/lib/shopping/money";
+import { cents, invoiceTotals, money, moneyFromCents, vatCents } from "@/lib/shopping/money";
+import { normalizeVoucherCode } from "@/lib/shopping/voucher";
 
 interface CartQuantityInputProps {
   sku: string;
@@ -85,7 +87,12 @@ export function ShoppingCart() {
   const router = useRouter();
   const shop = useShopping();
   const [checkingStock, setCheckingStock] = useState(false);
+  const [voucherDraft, setVoucherDraft] = useState(shop.checkoutVoucher || "");
+  const appliedVoucher = shop.checkoutVoucher;
   const checkoutPending = useRef(false);
+  const { quote, loading: quoteLoading, error: quoteError, reload: reloadQuote } = useCheckoutQuote(appliedVoucher);
+  const voucherConfirmed = !!appliedVoucher && quote?.voucher_code === appliedVoucher;
+  const voucherBlocking = !!appliedVoucher && !voucherConfirmed;
 
   const selectedTotal = shop.selectedLines.reduce((sum, line) => sum + cents(line.unit_price) * BigInt(line.quantity), BigInt(0));
   const tax = shop.taxRate === null ? null : shop.selectedLines.reduce((sum, line) => sum + vatCents(cents(line.unit_price) * BigInt(line.quantity), shop.taxRate!), BigInt(0));
@@ -110,7 +117,7 @@ export function ShoppingCart() {
   };
 
   const handleCheckout = async () => {
-    if (stockBlocked || tax === null || amountTooLarge) return;
+    if (stockBlocked || tax === null || amountTooLarge || voucherBlocking) return;
     if (checkoutPending.current || shop.cartLoading || !shop.selectedLines.length) return;
     checkoutPending.current = true;
     setCheckingStock(true);
@@ -197,6 +204,8 @@ export function ShoppingCart() {
               {shop.lines.map((line) => {
                 const formattedUnitPrice = money(line.unit_price, line.currency);
                 const formattedLineTotal = moneyFromCents(cents(line.unit_price) * BigInt(line.quantity), line.currency);
+                const quotedLine = quote?.items.find((item) => item.sku === line.sku);
+                const hasVoucherDiscount = line.selected !== false && quotedLine && cents(quotedLine.discount) > BigInt(0);
                 const available = shop.availability[line.sku];
 
                 return (
@@ -245,7 +254,11 @@ export function ShoppingCart() {
                       <small className={styles.stock} role="status">{available === undefined ? "Đang kiểm tra tồn kho…" : available === 0 ? "Hết hàng" : `Tối đa ${available.toLocaleString("vi-VN")} sản phẩm`}</small>
                       {available !== undefined && available > 0 && line.quantity > available && <button type="button" className={styles.adjustStock} onClick={() => shop.update(line.sku, available)}>Giảm còn {available}</button>}
                     </div>
-                    <strong style={{ color: "#0156ff" }}>{formattedLineTotal}</strong>
+                    <div className={styles.linePrice}>
+                      {hasVoucherDiscount && <span className={styles.originalPrice}>{formattedLineTotal}</span>}
+                      <strong>{hasVoucherDiscount ? money(quotedLine.line_total, line.currency) : formattedLineTotal}</strong>
+                      {hasVoucherDiscount && <small>Voucher giảm {money(quotedLine.discount, line.currency)}</small>}
+                    </div>
                     <div className={styles.itemActions}>
                       <button
                         type="button"
@@ -271,6 +284,54 @@ export function ShoppingCart() {
 
             <aside className={styles.summary}>
               <h2>Tổng quan giỏ hàng</h2>
+              <div className={styles.discount}>
+                <form
+                  className={styles.discountForm}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const code = normalizeVoucherCode(voucherDraft);
+                    if (!code) return;
+                    if (code === appliedVoucher) reloadQuote();
+                    else shop.setCheckoutVoucher(code);
+                  }}
+                >
+                  <label>
+                    Mã giảm giá
+                    <input
+                      name="voucher"
+                      value={voucherDraft}
+                      maxLength={100}
+                      placeholder="Nhập mã voucher"
+                      disabled={shop.authStatus !== "authenticated" || quoteLoading}
+                      onChange={(event) => setVoucherDraft(event.target.value)}
+                    />
+                  </label>
+                  <button type="submit" disabled={shop.authStatus !== "authenticated" || quoteLoading || !voucherDraft.trim()}>
+                    Áp dụng vào sản phẩm đã chọn
+                  </button>
+                </form>
+                {shop.authStatus === "guest" && <p className={styles.voucherMessage}>Đăng nhập để kiểm tra và áp dụng voucher.</p>}
+                {appliedVoucher && (
+                  <div className={styles.voucherStatus}>
+                    <span role={quoteError ? "alert" : "status"}>
+                      {voucherConfirmed
+                        ? `✓ Đã áp dụng ${appliedVoucher}`
+                        : quoteLoading
+                          ? `Đang kiểm tra ${appliedVoucher}…`
+                          : quoteError || `Chưa áp dụng ${appliedVoucher}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVoucherDraft("");
+                        shop.setCheckoutVoucher(null);
+                      }}
+                    >
+                      Bỏ mã
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className={styles.totals}>
                 <p>
                   <span>Số lượng chọn mua:</span>
@@ -278,12 +339,13 @@ export function ShoppingCart() {
                 </p>
                 <p>
                   <span>Tạm tính:</span>
-                  <strong>{formattedSelectedTotal}</strong>
+                  <strong>{quote ? money(quote.subtotal, quote.currency) : formattedSelectedTotal}</strong>
                 </p>
-                <p><span>Thuế VAT ({shop.taxRate ? Number(shop.taxRate) : "…"}%)</span><strong>{tax === null ? "Đang xác nhận…" : moneyFromCents(tax)}</strong></p>
-                <p className={styles.orderTotal}><span>Thành tiền sau thuế</span><strong>{tax === null ? "—" : moneyFromCents(selectedTotal + tax)}</strong></p>
+                {quote && cents(quote.discount_total) > BigInt(0) && <p className={styles.voucherTotal}><span>Giảm giá voucher</span><strong>−{money(quote.discount_total, quote.currency)}</strong></p>}
+                <p><span>Thuế VAT ({shop.taxRate ? Number(shop.taxRate) : "…"}%)</span><strong>{quote ? money(invoiceTotals(quote).tax, quote.currency) : tax === null ? "Đang xác nhận…" : moneyFromCents(tax)}</strong></p>
+                <p className={styles.orderTotal}><span>Thành tiền sau thuế</span><strong>{quote ? money(invoiceTotals(quote).total, quote.currency) : tax === null ? "—" : moneyFromCents(selectedTotal + tax)}</strong></p>
                 <small>
-                  Đã gồm VAT. Phí vận chuyển được xác nhận riêng; voucher được áp dụng ở bước đặt hàng.
+                  Voucher được phân bổ vào các sản phẩm đã chọn. Phí vận chuyển được xác nhận riêng.
                 </small>
               </div>
               {stockBlocked && <div className={styles.stockWarning} role="alert"><p>{shop.stockError || "Vui lòng kiểm tra số lượng và tồn kho trước khi đặt hàng."}</p><button type="button" onClick={shop.refreshStock}>Kiểm tra lại tồn kho</button></div>}
@@ -296,7 +358,7 @@ export function ShoppingCart() {
                   checkingStock ||
                   shop.cartLoading ||
                   shop.selectedLines.length === 0 ||
-                  stockBlocked || amountTooLarge || tax === null ||
+                  stockBlocked || amountTooLarge || tax === null || voucherBlocking ||
                   shop.authStatus === "loading" ||
                   shop.authStatus === "unavailable"
                 }
@@ -305,6 +367,8 @@ export function ShoppingCart() {
               >
                 {checkingStock
                   ? "Đang kiểm tra tồn kho…"
+                  : voucherBlocking
+                    ? quoteLoading ? "Đang kiểm tra voucher…" : "Bỏ hoặc áp dụng lại voucher"
                   : shop.selectedLines.length === 0
                   ? "Vui lòng chọn sản phẩm"
                   : shop.authStatus === "guest"
