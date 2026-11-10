@@ -32,6 +32,7 @@ async function main() {
     assert.equal(changed.nguoi_xu_ly, 'NV1'); assert.equal(changed.ten_kh, 'Khach 1');
     assert.equal(changed.ten_nguoi_xu_ly, 'Admin'); assert.equal(changed.phan_hoi_quan_ly, 'Da tiep nhan');
     assert.ok(changed.ngay_phan_hoi); assert.equal(changed.trang_thai, 'DANG_XU_LY');
+    await assert.rejects(update({ trang_thai: 'MOI' }), e => e.code === '23514');
     await assert.rejects(update({ trang_thai: 'NOPE', phan_hoi_quan_ly: 'MUST_ROLLBACK' }), e => e.code === '23514');
     assert.equal((await db.query('select phan_hoi_quan_ly from public."PHAN_HOI"')).rows[0].phan_hoi_quan_ly, 'Da tiep nhan');
     await assert.rejects(update({ ma_kh: 'KH2' }), e => e.code === '23514');
@@ -39,6 +40,8 @@ async function main() {
     await assert.rejects(update({ trang_thai: 'DA_DONG' }, 'AD1', '11111111-1111-4111-8111-111111111111'), e => e.code === 'P0002');
     changed = await update({ phan_hoi_quan_ly: null, trang_thai: 'DA_DONG' });
     assert.equal(changed.phan_hoi_quan_ly, null); assert.equal(changed.ngay_phan_hoi, null);
+    await assert.rejects(update({ phan_hoi_quan_ly: 'Blocked' }), e => e.code === '23514');
+    await assert.rejects(update({ trang_thai: 'MOI' }), e => e.code === '23514');
     await db.exec('update public."TAI_KHOAN" set trang_thai=2 where ma_tk=\'AD1\'');
     await assert.rejects(update({ trang_thai: 'MOI' }), e => e.code === '42501');
     await db.exec('update public."TAI_KHOAN" set trang_thai=2 where ma_tk=\'TK1\'');
