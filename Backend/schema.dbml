@@ -320,6 +320,7 @@ Table HOA_DON {
   thoi_gian_lap datetime [not null]
 
   ten_nguoi_mua varchar
+  email_nguoi_mua varchar [note: 'Email khach hang trong hoa don lap thu cong']
   ma_so_thue varchar
   dia_chi_nguoi_mua varchar
 

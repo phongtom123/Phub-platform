@@ -1,9 +1,10 @@
 """Contracts for receiving and stock history in an employee's assigned warehouse."""
+import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 from phub_api.schemas.pricing import PricingModel
 
 
@@ -108,3 +109,32 @@ class WarehouseHistoryPage(BaseModel):
     page: int
     page_size: int
     warehouse_id: int
+
+
+class ManualInvoiceLine(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    sku: str = Field(min_length=1, max_length=100)
+    quantity: int = Field(strict=True, ge=1, le=1000000)
+    unit_price: Decimal = Field(ge=0, max_digits=18, decimal_places=2)
+    discount: Decimal = Field(default=Decimal('0'), ge=0, max_digits=18, decimal_places=2)
+
+    @field_serializer('unit_price', 'discount')
+    def decimal_amount(self, value):
+        return format(value, 'f')
+
+
+class ManualInvoiceCreate(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+    buyer: str = Field(min_length=1, max_length=200)
+    email: str = Field(min_length=3, max_length=254)
+    tax_id: str | None = Field(default=None, max_length=100)
+    address: str | None = Field(default=None, max_length=500)
+    lines: list[ManualInvoiceLine] = Field(min_length=1, max_length=100)
+
+    @field_validator('email')
+    @classmethod
+    def normalize_email(cls, value):
+        normalized = value.strip().lower()
+        if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', normalized):
+            raise ValueError('Nhập email khách hàng hợp lệ.')
+        return normalized

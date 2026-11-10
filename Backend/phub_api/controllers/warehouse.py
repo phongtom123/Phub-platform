@@ -9,7 +9,7 @@ from phub_api.dependencies.origin import check_origin
 from phub_api.dependencies.warehouse import get_service
 from phub_api.schemas.api_contracts import READ_ERRORS, WRITE_ERRORS, error_response
 from phub_api.schemas.warehouse import (
-    ReceiptCreate, ReceiptUpdate, ReceiptVersion, ReceiptConfirmVersion, WarehouseHistoryPage, WarehouseReceiptPage, WarehouseReceiptRead,
+    ManualInvoiceCreate, ReceiptCreate, ReceiptUpdate, ReceiptVersion, ReceiptConfirmVersion, WarehouseHistoryPage, WarehouseReceiptPage, WarehouseReceiptRead,
 )
 
 router = APIRouter(prefix='/api/warehouse', tags=['Kho · Nghiệp vụ'])
@@ -59,6 +59,28 @@ async def confirm_receipt(receipt_id: ReceiptId, body: ReceiptConfirmVersion, re
 @router.post('/receipts/{receipt_id}/cancel', response_model=WarehouseReceiptRead, responses=ERRORS, summary='Hủy phiếu nháp, giữ nguyên tồn kho')
 async def cancel_receipt(receipt_id: ReceiptId, body: ReceiptVersion, request: Request, response: Response, service: Service, operation_key: OperationKey):
     return await write(request, response, service, 'cancel', operation_key, receipt_id, body)
+
+
+@router.get('/manual-invoices/options', responses=READ_ERRORS, summary='Sản phẩm còn tồn khả dụng để lập hóa đơn thủ công')
+def manual_invoice_options(response: Response, service: Service):
+    response.headers['Cache-Control'] = 'no-store'
+    return service.manual_invoice_options()
+
+
+@router.get('/manual-invoices/customers', responses=READ_ERRORS, summary='Tìm khách hàng theo một phần email')
+def manual_invoice_customers(response: Response, service: Service, q: str = Query('', max_length=100)):
+    response.headers['Cache-Control'] = 'no-store'
+    return service.search_invoice_customers(q)
+
+
+@router.post('/manual-invoices', status_code=201, responses=ERRORS, summary='Lập hóa đơn trực tiếp từ tồn kho trong một transaction')
+async def create_manual_invoice(body: ManualInvoiceCreate, request: Request, response: Response,
+                                service: Service, operation_key: OperationKey):
+    check_origin(request)
+    result = await run_in_threadpool(service.create_manual_invoice, operation_key, body)
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Idempotency-Replayed'] = str(result.get('replayed', False)).lower()
+    return result
 
 
 @router.get('/history', response_model=WarehouseHistoryPage, responses=READ_ERRORS, summary='Lịch sử biến động tồn trong kho được phân công')
