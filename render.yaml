@@ -8,7 +8,7 @@ services:
     branch: main
     rootDir: .
     autoDeployTrigger: commit
-    buildCommand: pip install -r Backend/requirements.txt -c Backend/constraints-render.txt
+    buildCommand: pip install -r Backend/requirements.txt -c Backend/constraints-render.txt && python Backend/scripts/export_openapi.py --output /tmp/phub-openapi.json
     startCommand: cd Backend && python -m uvicorn phub_api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     buildFilter:
