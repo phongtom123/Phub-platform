@@ -27,6 +27,7 @@ import { OperationPanel } from "@internal/features/operations/operation-panel";
 import { ListFilters } from "@internal/features/operations/list-filters";
 import { ReferenceInput, references } from "@internal/features/operations/reference-input";
 import { StockHistory } from "@internal/features/operations/stock-history";
+import { ManualInvoiceCreator } from "@internal/features/operations/manual-invoice-creator";
 import { useAdminAuth } from "@internal/components/admin/auth-provider";
 import "@internal/features/operations/operations.css";
 
@@ -109,10 +110,11 @@ export default function BackendDataView(props: { resource: string; embedded?: bo
 }
 
 function GenericBackendDataView({ resource, embedded = false }: { resource: string; embedded?: boolean }) {
+  const { user, portal } = useAdminAuth();
   const router = useRouter();
   const params = useSearchParams();
-  const { portal } = useAdminAuth();
-  const workflowCreate = params.get("workflow") === "new" && ["orders", "receipts"].includes(resource);
+  const workflowCreate = params.get("workflow") === "new" && ["orders", "receipts", "invoices"].includes(resource);
+  const canCreateManualInvoice = user?.role === "NHAN_VIEN" && user.warehouse_id !== null;
   const filterQuery = params.get("filters") ?? "{}";
   let filters: Record<string, string> = {};
   try { const value = JSON.parse(filterQuery); if (value && typeof value === "object" && !Array.isArray(value)) filters = value; } catch { /* The API reports malformed filters. */ }
@@ -335,7 +337,10 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     {!detailMode && <div className={embedded ? "live-section-heading" : "admin-sr-only"}><h2>{embedded ? "Danh sách đơn hàng" : meta?.title ?? "Đang tải…"}</h2>{embedded && <Link href={dataHref("orders")}>Xem tất cả đơn hàng →</Link>}</div>}
     {error && <p className="live-error" role="alert">{error} <button onClick={refresh}>Thử lại</button></p>}
     {loading && !(warehouseCustomerSearch && meta && result) ? <p role="status">Đang tải dữ liệu…</p> : meta && !error && <>
-      {workflowCreate ? <OperationPanel resource={resource} create onChanged={refresh} onEditingChange={setInlineEditing} /> : ((view.create && meta.writable || view.edit && canUpdate && result?.data[0] && canEditRow(result.data[0]))) ? <form className="live-form" onSubmit={save}>
+      {workflowCreate ? resource === "invoices"
+        ? canCreateManualInvoice ? <ManualInvoiceCreator onCreated={refresh} />
+          : <p className="live-error" role="alert">Chỉ nhân viên kho được phân công mới lập hóa đơn thủ công.</p>
+        : <OperationPanel resource={resource} create onChanged={refresh} onEditingChange={setInlineEditing} /> : ((view.create && meta.writable || view.edit && canUpdate && result?.data[0] && canEditRow(result.data[0]))) ? <form className="live-form" onSubmit={save}>
         {saveError && <p className="live-error image-save-error" role="alert">{saveError}</p>}
         <fieldset disabled={saving} className="live-form-fields">
         {resource === "products" && <ProductGalleryEditor ref={galleryEditor} productId={result?.data[0]?.ma_sp ? String(result.data[0].ma_sp) : undefined}
@@ -376,7 +381,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       </> : <>
         {resource === "customers" && notice && <p className="live-note" role="status">{notice}</p>}
         {["invoices", "payments"].includes(resource) && <nav className="live-tools" aria-label="Hóa đơn và thanh toán"><Link href={dataHref("invoices")}>Hóa đơn</Link><Link href={dataHref("payments")}>Giao dịch thanh toán</Link></nav>}
-        <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query.trim()); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input type="search" autoComplete="off" className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder={resource === "customers" ? "Tìm mã, tên, số điện thoại hoặc địa chỉ…" : "Tìm mã, tên hoặc SKU…"} /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : "+ Lập phiếu nhập"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
+        <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query.trim()); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input type="search" autoComplete="off" className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder={resource === "customers" ? "Tìm mã, tên, số điện thoại hoặc địa chỉ…" : "Tìm mã, tên hoặc SKU…"} /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) || resource === "invoices" && canCreateManualInvoice ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : resource === "receipts" ? "+ Lập phiếu nhập" : "+ Lập hóa đơn thủ công"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
         <ListFilters columns={meta.columns} values={filters} label={label} disabled={inlineEditing} onChange={next => { setPage(1); router.replace(dataHref(resource, { orderId: view.orderId, filters: next })); }} />
         {resource === "customers" && <div className="live-tools"><label>Hồ sơ khách hàng <select aria-label="Lọc hồ sơ khách hàng"
           value={filters.luu_tru_luc ?? "ACTIVE"} disabled={inlineEditing} onChange={event => {
@@ -407,4 +412,3 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     </>}
   </section>;
 }
-

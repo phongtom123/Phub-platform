@@ -18,7 +18,7 @@ VALUES = {
     "sdt_nguoi_nhan": "0900000000", "ma_ct_donhang": 1, "ten_sp_luc_ban": "Intel Core i5-14400F",
     "don_vi_luc_ban": "Cai", "don_gia": "2500000.00", "giam_gia": "0.00", "giam_gia_voucher": "50000.00",
     "thue_suat": "0.00", "tien_thue": "0.00", "thanh_tien": "4950000.00",
-    "ma_hoadon": "HD001", "tong_tien_giam": "50000.00", "tong_tien_truoc_thue": "4950000.00",
+    "ma_hoadon": "HD001", "email_nguoi_mua": "example@example.com", "tong_tien_giam": "50000.00", "tong_tien_truoc_thue": "4950000.00",
     "tong_tien_thue": "0.00", "tong_tien_sau_thue": "4950000.00", "nguoi_lap": "NV001",
     "ma_thanh_toan": 1, "so_tien": "4950000.00", "loai_giao_dich": "THU", "phuong_thuc": "CHUYEN_KHOAN",
     "ma_giao_dich": "EXAMPLE-TXN-001", "ma_ctkm": 1, "ten_chuong_trinh": "Ưu đãi linh kiện minh họa",

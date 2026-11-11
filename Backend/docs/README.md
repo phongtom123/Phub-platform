@@ -48,6 +48,8 @@ Báo cáo doanh thu/giá vốn/lợi nhuận gộp: xem [Báo cáo kinh doanh](.
 
 Định giá bán từ giá nhập, markup và nhiều loại thuế: xem [Định giá phiếu nhập](RECEIPT_PRICING.md), gồm công thức, API, snapshot và thứ tự triển khai.
 
+Lập hóa đơn trực tiếp từ tồn kho, tìm khách hàng theo email và theo dõi biến động kho: xem [Lập hóa đơn trực tiếp từ kho](MANUAL-WAREHOUSE-INVOICES.md).
+
 - **Shared**: xác thực, health và metadata.
 - **Admin**: tổ chức (kho/nhân viên/tài khoản), khách hàng, sản phẩm, khuyến mãi.
 - **Kho**: quản lý các kho, tồn kho, nhà cung cấp và phiếu nhập. Nhân viên chỉ thao tác kho được phân công. Chuyển kho vẫn ngừng sử dụng; xem [phạm vi kho](../../docs/SINGLE-WAREHOUSE.md).
