@@ -1,0 +1,18 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn đủ điều kiện]
+    choose --> exists{Đã có hóa đơn?}
+    exists -->|Có| existing[Hiển thị hóa đơn hiện có]
+    existing --> finish([Kết thúc])
+    exists -->|Không| preview[Xem trước dữ liệu hóa đơn]
+    preview --> confirm{Xác nhận phát hành?}
+    confirm -->|Không| finish
+    confirm -->|Có| recheck[Backend chốt lại đơn và tổng tiền]
+    recheck --> valid{Dữ liệu còn hợp lệ?}
+    valid -->|Không| error[Rollback và thông báo lý do]
+    error --> finish
+    valid -->|Có| create[Lưu hóa đơn duy nhất theo đơn]
+    create --> saved{Transaction thành công?}
+    saved -->|Không| error
+    saved -->|Có| note[Hiển thị hóa đơn đã lập]
+    note --> finish

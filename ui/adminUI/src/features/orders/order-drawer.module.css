@@ -1,0 +1,82 @@
+.detailTrigger, .actionButton {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #28751b;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.detailTrigger:hover, .actionButton:hover { color: #14550d; }
+.detailTrigger:focus-visible, .actionButton:focus-visible { outline: 2px solid #318316; outline-offset: 3px; border-radius: 3px; }
+
+.backdrop {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  background: rgb(21 28 20 / 44%);
+  backdrop-filter: blur(5px);
+  animation: fadeIn .2s ease-out;
+}
+.drawer {
+  width: min(1180px, calc(100vw - 52px));
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f7f9f5;
+  box-shadow: -20px 0 60px rgb(0 0 0 / 24%);
+  animation: slideIn .28s cubic-bezier(.22, .8, .3, 1);
+}
+.drawerHeader {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 24px;
+  border-bottom: 1px solid #dfe6dc;
+  background: rgb(255 255 255 / 94%);
+  backdrop-filter: blur(10px);
+}
+.drawerHeader p { margin: 0 0 2px; color: #788173; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.drawerHeader h2 { margin: 0; color: #202820; font-size: 21px; overflow-wrap: anywhere; }
+.drawerHeader button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid #dce3d8;
+  border-radius: 10px;
+  background: #fff;
+  color: #465142;
+  cursor: pointer;
+  line-height: 0;
+}
+.drawerHeader button svg { display: block; width: 22px; height: 22px; margin: 0; flex: 0 0 22px; }
+.drawerHeader button:hover { border-color: #9fba94; background: #f4f8f1; color: #28601d; }
+.drawerHeader button:focus-visible { outline: 3px solid rgb(49 131 22 / 30%); outline-offset: 2px; }
+.drawerBody { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; }
+.state { display: grid; place-items: center; min-height: 240px; color: #687363; text-align: center; }
+.state p { margin: 0 0 14px; color: #a33434; }
+.state button { padding: 9px 14px; border: 1px solid #b9c9b3; border-radius: 8px; background: #fff; cursor: pointer; }
+
+@keyframes slideIn { from { transform: translateX(100%); } }
+@keyframes fadeIn { from { opacity: 0; } }
+
+@media (max-width: 760px) {
+  .drawer { width: 100%; }
+  .drawerHeader { padding: 15px 16px; }
+  .drawerBody { padding: 18px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop, .drawer { animation: none; }
+}

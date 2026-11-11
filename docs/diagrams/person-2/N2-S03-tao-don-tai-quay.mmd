@@ -1,0 +1,40 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Nhập email tại quầy
+    UI->>C: 2. Tra cứu email chính xác
+    C->>S: 3. Yêu cầu tìm khách hoạt động
+    S->>R: 4. Tra cứu khách theo email
+    R->>DB: 5. Gọi RPC tra cứu email
+    DB-->>R: 6. Kết quả khách hàng
+    R-->>S: 7. Trả kết quả
+    S-->>C: 8. Trả khách hợp lệ
+    C-->>UI: 9. Hiển thị khách hoặc vãng lai
+
+    ND->>UI: 10. Chọn sản phẩm số lượng và kho
+    UI->>C: 11. Gửi tạo đơn cùng khóa idempotency
+    C->>S: 12. Kiểm tra payload và kho
+    S->>R: 13. Yêu cầu tạo đơn tại quầy
+    R->>DB: 14. Gọi staff_counter_order_email_v1
+    DB->>DB: 15. Kiểm tra email giá và tồn khả dụng
+
+    alt Dữ liệu thay đổi hoặc không đủ tồn
+        DB-->>R: 16. Rollback và trả mã lỗi
+        R-->>S: 17. Trả lỗi nghiệp vụ
+        S-->>C: 18. Chuyển thành lỗi HTTP
+        C-->>UI: 19. Trả lý do
+        UI-->>ND: 20. Yêu cầu kiểm tra lại
+    else Tạo đơn thành công
+        DB->>DB: 16. Ghi đơn và dòng hàng một lần
+        DB-->>R: 17. Trả đơn mới
+        R-->>S: 18. Trả kết quả transaction
+        S-->>C: 19. Trả đơn chưa mặc định đã thu
+        C-->>UI: 20. Trả dữ liệu đơn
+        UI-->>ND: 21. Hiển thị đơn mới
+    end

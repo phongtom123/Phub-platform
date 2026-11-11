@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> input[/Nhập từ khóa và bộ lọc/]
+    input --> search[Tra cứu chương trình]
+    search --> found{Có kết quả?}
+    found -->|Không| empty[Hiển thị danh sách trống]
+    empty --> finish([Kết thúc])
+    found -->|Có| list[Hiển thị thời gian và trạng thái]
+    list --> choose[Chọn chương trình]
+    choose --> detail[Đọc chi tiết chương trình]
+    detail --> vouchers[Đọc voucher liên quan]
+    vouchers --> valid{Dữ liệu hợp lệ?}
+    valid -->|Không| error[Thông báo không tải đủ dữ liệu]
+    error --> finish
+    valid -->|Có| show[Hiển thị chi tiết]
+    show --> finish

@@ -49,6 +49,15 @@ def test_customer_lookup_is_exact_normalized_email(counter_client):
     assert json.loads(request.content)=={'p_actor':'STAFF','p_email':'customer@example.com'}
 
 
+def test_customer_live_search_uses_catalog_for_name_email_or_phone(counter_client):
+    client,state=counter_client
+    response=client.get('/api/staff/counter/customers',params={'q':'0901234567'})
+    assert response.status_code==200
+    request=state['calls'][0]
+    assert request.url.path.endswith('/rpc/staff_counter_catalog_v1')
+    assert json.loads(request.content)=={'p_actor':'STAFF','p_kind':'customers','p_query':'0901234567'}
+
+
 @pytest.mark.parametrize('email',['','not-an-email','a@b','a b@example.com'])
 def test_invalid_email_never_queries_database(counter_client,email):
     client,state=counter_client

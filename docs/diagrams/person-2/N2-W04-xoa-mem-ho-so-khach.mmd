@@ -1,0 +1,15 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn hồ sơ đang sử dụng]
+    choose --> archive[Chọn xóa mềm]
+    archive --> confirm{Xác nhận lưu trữ?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| guard{Được phép lưu trữ?}
+    guard -->|Không| error[Thông báo lý do]
+    error --> finish
+    guard -->|Có| update[Lưu thời điểm lưu trữ]
+    update --> saved{Lưu thành công?}
+    saved -->|Không| error
+    saved -->|Có| keep[Giữ nguyên đơn và chứng từ]
+    keep --> note[Thông báo đã xóa mềm]
+    note --> finish

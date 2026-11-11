@@ -1,0 +1,41 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Chọn thao tác trên đơn
+    UI->>C: 2. Gửi lệnh và trạng thái dự kiến
+    C->>S: 3. Yêu cầu thực hiện nghiệp vụ
+    S->>S: 4. Kiểm tra quyền và payload
+
+    alt Phân công người phụ trách
+        S->>R: 5. Gửi lệnh assign
+        R->>DB: 6. Gọi admin_operation_v1
+        DB->>DB: 7. Kiểm tra nhân viên hợp lệ
+    else Xác nhận đơn
+        S->>R: 5. Gửi lệnh confirm
+        R->>DB: 6. Gọi admin_operation_v1
+        DB->>DB: 7. Kiểm tra trạng thái MOI
+    else Chuẩn bị hàng
+        S->>R: 5. Gửi lệnh prepare
+        R->>DB: 6. Gọi admin_operation_v1
+        DB->>DB: 7. Kiểm tra trạng thái XAC_NHAN
+    end
+
+    alt Trạng thái hoặc phiên bản xung đột
+        DB-->>R: 8. Rollback và trả STATE_CONFLICT
+        R-->>S: 9. Trả lỗi
+        S-->>C: 10. Trả lỗi nghiệp vụ
+        C-->>UI: 11. Yêu cầu làm mới
+        UI-->>ND: 12. Hiển thị lý do
+    else Cập nhật thành công
+        DB-->>R: 8. Trả đơn đã cập nhật
+        R-->>S: 9. Trả kết quả
+        S-->>C: 10. Trả dữ liệu
+        C-->>UI: 11. Trả trạng thái mới
+        UI-->>ND: 12. Hiển thị thành công
+    end

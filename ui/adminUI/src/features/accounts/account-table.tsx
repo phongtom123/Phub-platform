@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ScrollableTable } from "../tables/scrollable-table";
@@ -10,6 +10,7 @@ import { accountHref, roleLabels, statusLabels, type Account, type AccountStatus
 type Editor = { id: string; username: string; email: string; focus: "username" | "email" };
 type Props = {
   rows: Account[];
+  search: string;
   requestedEdit: string | null;
   onSaved: (account: Account) => void;
   onEditingChange: (editing: boolean) => void;
@@ -17,7 +18,46 @@ type Props = {
   onArchiveChange: () => void;
 };
 
-export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, onRequestedEditHandled, onArchiveChange }: Props) {
+function foldSearchText(value: string) {
+  return value.normalize("NFD").replace(/\p{M}/gu, "").replace(/đ/gi, "d").toLocaleLowerCase("vi");
+}
+
+function HighlightMatch({ value, search }: { value: string; search: string }) {
+  const needle = foldSearchText(search.trim());
+  if (!needle) return <>{value}</>;
+
+  let folded = "";
+  const offsets: { start: number; end: number }[] = [];
+  let sourceOffset = 0;
+  for (const char of value) {
+    const normalized = foldSearchText(char);
+    for (const normalizedChar of normalized) {
+      folded += normalizedChar;
+      offsets.push({ start: sourceOffset, end: sourceOffset + char.length });
+    }
+    sourceOffset += char.length;
+  }
+
+  const parts: ReactNode[] = [];
+  let foldedOffset = 0;
+  let sourceCursor = 0;
+  while (foldedOffset < folded.length) {
+    const match = folded.indexOf(needle, foldedOffset);
+    if (match < 0) break;
+    const start = offsets[match]?.start;
+    const end = offsets[match + needle.length - 1]?.end;
+    if (start === undefined || end === undefined) break;
+    if (start > sourceCursor) parts.push(value.slice(sourceCursor, start));
+    parts.push(<mark className="account-search-match" key={`${start}-${end}`}>{value.slice(start, end)}</mark>);
+    sourceCursor = end;
+    foldedOffset = match + needle.length;
+  }
+  if (!parts.length) return <>{value}</>;
+  if (sourceCursor < value.length) parts.push(value.slice(sourceCursor));
+  return <>{parts}</>;
+}
+
+export function AccountTable({ rows, search, requestedEdit, onSaved, onEditingChange, onRequestedEditHandled, onArchiveChange }: Props) {
   const router = useRouter();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [saving, setSaving] = useState(false);
@@ -189,10 +229,10 @@ export function AccountTable({ rows, requestedEdit, onSaved, onEditingChange, on
         const editing = editor?.id === row.ma_tk;
         return <tr key={row.ma_tk} ref={node => { if (node) rowNodes.current.set(row.ma_tk, node); else rowNodes.current.delete(row.ma_tk); }} data-account-id={row.ma_tk} className={editing ? "account-row-editing" : undefined} tabIndex={0}
           onDoubleClick={event => doubleClick(event, row)} onKeyDown={event => keyDown(event, row)} title={row.luu_tru_luc ? "Tài khoản đã xóa mềm; khôi phục trước khi chỉnh sửa." : "Nhấp đúp hoặc nhấn F2 để sửa tên đăng nhập và email"}>
-          <td><Link href={accountHref(row.ma_tk)}>{row.ma_tk}</Link></td>
-          <td className="account-editable-cell" data-field="username">{editing ? <input ref={usernameInput} aria-label={`Tên đăng nhập ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} required minLength={3} maxLength={80} pattern="[A-Za-z0-9_.-]+" autoComplete="off" disabled={saving} value={editor.username} onChange={event => change("username", event.target.value)} /> : <>{row.ten_tai_khoan}{row.is_self && " (Bạn)"}</>}</td>
-          <td>{row.ho_ten}{!row.owner_active && <small className="account-inactive">Hồ sơ ngừng hoạt động</small>}</td>
-          <td className="account-editable-cell" data-field="email">{editing ? <input ref={emailInput} type="email" aria-label={`Email ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} maxLength={254} disabled={saving} value={editor.email} onChange={event => change("email", event.target.value)} /> : row.email ?? "—"}</td>
+          <td><Link href={accountHref(row.ma_tk)}><HighlightMatch value={row.ma_tk} search={search} /></Link></td>
+          <td className="account-editable-cell" data-field="username">{editing ? <input ref={usernameInput} aria-label={`Tên đăng nhập ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} required minLength={3} maxLength={80} pattern="[A-Za-z0-9_.-]+" autoComplete="off" disabled={saving} value={editor.username} onChange={event => change("username", event.target.value)} /> : <><HighlightMatch value={row.ten_tai_khoan} search={search} />{row.is_self && " (Bạn)"}</>}</td>
+          <td><HighlightMatch value={row.ho_ten} search={search} />{!row.owner_active && <small className="account-inactive">Hồ sơ ngừng hoạt động</small>}</td>
+          <td className="account-editable-cell" data-field="email">{editing ? <input ref={emailInput} type="email" aria-label={`Email ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} maxLength={254} disabled={saving} value={editor.email} onChange={event => change("email", event.target.value)} /> : row.email ? <HighlightMatch value={row.email} search={search} /> : "—"}</td>
           <td>{roleLabels[row.role]}{row.ma_kho !== null && <small className="account-inactive">Kho {row.ma_kho}</small>}</td>
           <td><select className={`account-status-select status-${row.trang_thai}`} aria-label={`Trạng thái tài khoản ${row.ma_tk}`}
             disabled={Boolean(row.luu_tru_luc) || row.is_self || editor !== null || statusSaving !== null}

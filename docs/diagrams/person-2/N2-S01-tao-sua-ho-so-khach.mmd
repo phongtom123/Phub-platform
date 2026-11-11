@@ -1,0 +1,33 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Mở form hồ sơ khách
+    UI->>C: 2. Gửi dữ liệu hồ sơ
+    C->>S: 3. Yêu cầu kiểm tra và lưu
+    S->>S: 4. Kiểm tra quyền và dữ liệu
+
+    alt Dữ liệu không hợp lệ
+        S-->>C: 5. Từ chối yêu cầu
+        C-->>UI: 6. Trả lỗi từng trường
+        UI-->>ND: 7. Hiển thị lỗi nhập liệu
+    else Dữ liệu hợp lệ
+        alt Tạo hồ sơ mới
+            S->>R: 5. Tạo hồ sơ khách hàng
+            R->>DB: 6. Ghi KHACH_HANG
+            DB-->>R: 7. Hồ sơ đã tạo
+        else Sửa hồ sơ hiện có
+            S->>R: 5. Cập nhật hồ sơ bằng actor
+            R->>DB: 6. Gọi hàm lưu CRM
+            DB-->>R: 7. Snapshot đã commit
+        end
+        R-->>S: 8. Trả hồ sơ đã lưu
+        S-->>C: 9. Trả kết quả
+        C-->>UI: 10. Trả dữ liệu hồ sơ
+        UI-->>ND: 11. Hiển thị lưu thành công
+    end

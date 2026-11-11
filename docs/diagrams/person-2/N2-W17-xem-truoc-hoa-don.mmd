@@ -1,0 +1,14 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn hàng]
+    choose --> load[Đọc dòng hàng đã chốt]
+    load --> valid{Đơn đủ dữ liệu?}
+    valid -->|Không| error[Thông báo không thể xem trước]
+    error --> finish([Kết thúc])
+    valid -->|Có| buyer[Đọc thông tin người mua]
+    buyer --> calculate[Tổng hợp giảm thuế và tổng tiền]
+    calculate --> preview[Hiển thị bản xem trước]
+    preview --> decision{Tiếp tục lập hóa đơn?}
+    decision -->|Không| finish
+    decision -->|Có| handoff[Chuyển sang thao tác lập hóa đơn]
+    handoff --> finish

@@ -1,0 +1,15 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> open[Mở form chương trình mới]
+    open --> input[/Nhập tên thời gian và trạng thái/]
+    input --> valid{Thông tin hợp lệ?}
+    valid -->|Không| error[Hiển thị lỗi nhập liệu]
+    error --> input
+    valid -->|Có| confirm{Xác nhận tạo?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| create[Lưu chương trình]
+    create --> saved{Lưu thành công?}
+    saved -->|Không| fail[Thông báo lý do]
+    fail --> finish
+    saved -->|Có| note[Hiển thị chương trình mới]
+    note --> finish

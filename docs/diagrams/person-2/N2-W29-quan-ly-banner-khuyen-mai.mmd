@@ -1,0 +1,19 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn chương trình]
+    choose --> action{Chọn thao tác banner}
+    action -->|Tải hoặc thay| input[/Chọn ảnh hoặc URL hợp lệ/]
+    action -->|Gỡ| confirmRemove{Xác nhận gỡ?}
+    action -->|Hủy| finish([Kết thúc])
+    input --> validate{Tệp và định dạng hợp lệ?}
+    validate -->|Không| error[Thông báo lỗi ảnh]
+    error --> finish
+    validate -->|Có| save[Lưu media và liên kết banner]
+    confirmRemove -->|Không| finish
+    confirmRemove -->|Có| remove[Gỡ liên kết banner]
+    save --> result{Lưu thành công?}
+    remove --> result
+    result -->|Không| fail[Thông báo lý do]
+    fail --> finish
+    result -->|Có| preview[Kiểm tra vị trí hiển thị khách hàng]
+    preview --> finish

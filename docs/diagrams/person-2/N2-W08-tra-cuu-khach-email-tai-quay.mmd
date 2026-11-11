@@ -1,0 +1,17 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> input[/Nhập email khách hàng/]
+    input --> changed{Email đã thay đổi?}
+    changed -->|Có| clear[Xóa khách đã chọn trước đó]
+    changed -->|Không| validate
+    clear --> validate{Email hợp lệ?}
+    validate -->|Không| error[Thông báo email không hợp lệ]
+    error --> input
+    validate -->|Có| search[Tra cứu tài khoản khách hoạt động]
+    search --> found{Tìm thấy duy nhất?}
+    found -->|Có| select[Chọn khách hàng]
+    select --> finish([Kết thúc])
+    found -->|Không| guest{Tiếp tục khách vãng lai?}
+    guest -->|Không| input
+    guest -->|Có| anonymous[Không gắn tài khoản khách]
+    anonymous --> finish

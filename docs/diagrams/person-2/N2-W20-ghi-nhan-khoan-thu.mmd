@@ -1,0 +1,18 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn và hóa đơn]
+    choose --> due[Tính số còn phải thu]
+    due --> payable{Còn số tiền phải thu?}
+    payable -->|Không| error[Thông báo đơn đã thu đủ]
+    error --> finish([Kết thúc])
+    payable -->|Có| input[/Chọn phương thức và mã đối soát/]
+    input --> confirm{Đã xác nhận thu thực tế?}
+    confirm -->|Không| finish
+    confirm -->|Có| validate{Dữ liệu và hạn thanh toán hợp lệ?}
+    validate -->|Không| fail[Thông báo lý do]
+    fail --> finish
+    validate -->|Có| record[Ghi bút toán thu với idempotency]
+    record --> saved{Transaction thành công?}
+    saved -->|Không| fail
+    saved -->|Có| note[Hiển thị số đã thu và còn lại]
+    note --> finish

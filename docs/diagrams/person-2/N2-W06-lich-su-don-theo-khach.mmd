@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn khách hàng]
+    choose --> validate{Hồ sơ tồn tại?}
+    validate -->|Không| error[Thông báo không tìm thấy]
+    error --> finish([Kết thúc])
+    validate -->|Có| read[Đọc đơn thuộc khách đã chọn]
+    read --> found{Có đơn hàng?}
+    found -->|Không| empty[Hiển thị lịch sử trống]
+    empty --> finish
+    found -->|Có| sort[Sắp mới nhất và phân trang]
+    sort --> list[Hiển thị lịch sử đơn]
+    list --> open{Mở một đơn?}
+    open -->|Không| finish
+    open -->|Có| detail[Hiển thị đúng chi tiết đơn]
+    detail --> finish

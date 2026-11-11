@@ -1,0 +1,14 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn hàng]
+    choose --> staff[/Chọn người phụ trách/]
+    staff --> valid{Nhân viên hợp lệ?}
+    valid -->|Không| error[Thông báo không thể phân công]
+    error --> finish([Kết thúc])
+    valid -->|Có| confirm{Xác nhận phân công?}
+    confirm -->|Không| finish
+    confirm -->|Có| save[Lưu người phụ trách]
+    save --> changed{Lưu thành công?}
+    changed -->|Không| error
+    changed -->|Có| note[Thông báo đã phân công]
+    note --> finish

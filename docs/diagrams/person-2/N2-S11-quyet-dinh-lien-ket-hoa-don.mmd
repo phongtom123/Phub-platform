@@ -1,0 +1,47 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Mở yêu cầu liên kết hóa đơn
+    UI->>C: 2. Yêu cầu chi tiết ticket
+    C->>S: 3. Yêu cầu đối chiếu
+    S->>R: 4. Đọc ticket khách và hóa đơn
+    R->>DB: 5. Gọi staff_invoice_claim_read_v1
+    DB-->>R: 6. Dữ liệu và phiên bản
+    R-->>S: 7. Trả dữ liệu
+    S-->>C: 8. Trả kết quả đối chiếu
+    C-->>UI: 9. Trả chi tiết
+    UI-->>ND: 10. Hiển thị chứng cứ và điều kiện
+
+    ND->>UI: 11. Chọn chấp nhận hoặc từ chối
+    UI->>C: 12. Gửi quyết định ghi chú và phiên bản
+    C->>S: 13. Kiểm tra payload quyết định
+    S->>R: 14. Gửi quyết định cùng khóa idempotency
+    R->>DB: 15. Gọi staff_invoice_claim_decide_v1
+    DB->>DB: 16. Khóa ticket đơn và kiểm tra phiên bản
+
+    alt Chấp nhận
+        DB->>DB: 17. Kiểm tra đơn tại quầy chưa có chủ
+        DB->>DB: 18. Gắn khách và cập nhật ticket
+    else Từ chối
+        DB->>DB: 17. Lưu lý do và cập nhật ticket
+    end
+
+    alt Xung đột hoặc không đủ điều kiện
+        DB-->>R: 19. Rollback và trả lỗi
+        R-->>S: 20. Trả lỗi nghiệp vụ
+        S-->>C: 21. Trả lý do
+        C-->>UI: 22. Trả lỗi
+        UI-->>ND: 23. Yêu cầu làm mới
+    else Quyết định thành công
+        DB-->>R: 19. Trả ticket đã cập nhật
+        R-->>S: 20. Trả kết quả
+        S-->>C: 21. Trả dữ liệu
+        C-->>UI: 22. Trả thành công
+        UI-->>ND: 23. Hiển thị kết quả quyết định
+    end

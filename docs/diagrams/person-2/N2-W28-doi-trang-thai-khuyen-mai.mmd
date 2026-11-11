@@ -1,0 +1,15 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn chương trình]
+    choose --> action[Chọn bật hoặc tạm ngừng]
+    action --> confirm{Xác nhận thay đổi?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| valid{Chuyển trạng thái hợp lệ?}
+    valid -->|Không| error[Thông báo lý do]
+    error --> finish
+    valid -->|Có| update[Cập nhật trạng thái]
+    update --> saved{Lưu thành công?}
+    saved -->|Không| error
+    saved -->|Có| clarify[Hiển thị trạng thái và thời gian áp dụng]
+    clarify --> note[Nhắc hoạt động không đồng nghĩa còn hiệu lực]
+    note --> finish

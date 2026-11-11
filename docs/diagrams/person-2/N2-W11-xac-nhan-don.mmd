@@ -1,0 +1,14 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn trạng thái Mới]
+    choose --> confirm{Xác nhận xử lý đơn?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| guard{Trạng thái và phiên bản hợp lệ?}
+    guard -->|Không| error[Thông báo trạng thái đã thay đổi]
+    error --> finish
+    guard -->|Có| update[Chuyển sang Đã xác nhận]
+    update --> saved{Transaction thành công?}
+    saved -->|Không| fail[Rollback và thông báo lỗi]
+    fail --> finish
+    saved -->|Có| note[Hiển thị trạng thái mới]
+    note --> finish
