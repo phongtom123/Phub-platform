@@ -13,6 +13,7 @@ from phub_api.dependencies.auth import current_user
 from phub_api.services.auth import login_attempts
 from phub_api.main import app
 from phub_api.config.database import get_supabase
+from phub_api.repositories.admin_accounts import smart_search_pattern
 
 ORIGIN = {"Origin": "http://localhost:3000"}
 ADMIN = User("TK1", "Admin.One", "ADMIN", "Admin", employee_id="NV1")
@@ -202,6 +203,25 @@ def test_list_filters_pagination_projection_and_search(accounts_client):
     assert client.get("/api/admin/accounts?page_size=101").status_code == 422
     assert client.get("/api/admin/accounts?role=ROOT").status_code == 422
     assert client.get("/api/admin/accounts?status=3").status_code == 422
+
+
+def test_account_search_includes_owner_name_and_ignores_vietnamese_accents(accounts_client):
+    client, _, requests, _ = accounts_client
+    before = len(requests)
+    response = client.get("/api/admin/accounts", params={"q": "Nguyen"})
+    assert response.status_code == 200
+    assert len(requests) == before + 1
+    account_request = requests[-1]
+    assert account_request.url.path.endswith("/TAI_KHOAN")
+    search = account_request.url.params["or"]
+    assert "ma_tk.imatch" in search and "ten_tai_khoan.imatch" in search and "email.imatch" in search
+    assert "employee_match.not.is.null" in search and "customer_match.not.is.null" in search
+    assert account_request.url.params["employee_match.ho_ten"].startswith("imatch.")
+    assert account_request.url.params["customer_match.ten_kh"].startswith("imatch.")
+    assert "employee_match:NHAN_VIEN()" in account_request.url.params["select"]
+    assert "customer_match:KHACH_HANG()" in account_request.url.params["select"]
+    assert smart_search_pattern("Nguyễn") == smart_search_pattern("nguyen")
+    assert smart_search_pattern("a.*") != "a.*"
 
 
 def test_detail_me_and_owners(accounts_client):

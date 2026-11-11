@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> list[Tra cứu đơn đủ điều kiện xuất]
+    list --> choose[Chọn đơn hàng]
+    choose --> lines[Đọc dòng hàng và kho xuất]
+    lines --> confirm{Xác nhận xuất hàng?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| guard{Đơn hóa đơn và tồn hợp lệ?}
+    guard -->|Không| error[Thông báo lý do]
+    error --> finish
+    guard -->|Có| dispatch[Trừ tồn và ghi lịch sử một lần]
+    dispatch --> saved{Transaction thành công?}
+    saved -->|Không| fail[Rollback toàn bộ]
+    fail --> finish
+    saved -->|Có| note[Chuyển trạng thái Đã xuất kho]
+    note --> finish

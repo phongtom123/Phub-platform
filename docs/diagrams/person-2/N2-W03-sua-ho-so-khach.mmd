@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn hồ sơ khách]
+    choose --> load[Đọc thông tin hiện tại]
+    load --> found{Hồ sơ tồn tại?}
+    found -->|Không| error[Thông báo không tìm thấy]
+    error --> finish([Kết thúc])
+    found -->|Có| input[/Sửa thông tin hồ sơ/]
+    input --> valid{Dữ liệu hợp lệ?}
+    valid -->|Không| invalid[Hiển thị lỗi nhập liệu]
+    invalid --> input
+    valid -->|Có| save[Lưu thay đổi hồ sơ]
+    save --> saved{Lưu thành công?}
+    saved -->|Không| error
+    saved -->|Có| show[Hiển thị dữ liệu đã lưu]
+    show --> finish

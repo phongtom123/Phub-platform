@@ -1,0 +1,14 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> list[Tra cứu yêu cầu liên kết]
+    list --> choose[Chọn một ticket]
+    choose --> read[Đọc khách hóa đơn và phiên bản]
+    read --> found{Dữ liệu tồn tại?}
+    found -->|Không| error[Thông báo không thể đối chiếu]
+    error --> finish([Kết thúc])
+    found -->|Có| counter{Đơn tại quầy chưa có chủ?}
+    counter -->|Không| reject[Đánh dấu không đủ điều kiện]
+    reject --> finish
+    counter -->|Có| evidence[Đối chiếu chứng cứ khách cung cấp]
+    evidence --> result[Hiển thị thông tin để quyết định]
+    result --> finish

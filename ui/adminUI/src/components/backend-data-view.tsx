@@ -19,7 +19,6 @@ import { CustomerStatusCell, type CustomerLinkedAccount } from "@internal/featur
 import { CustomerArchiveButton } from "@internal/features/customers/customer-archive-button";
 import { customerAge, type CustomerDetail as CustomerDetailData } from "@internal/lib/customer-profile";
 import { OrderData } from "@internal/features/orders/order-data";
-import type { AdminOrderDetailData } from "@internal/features/orders/order-detail-data";
 import { InvoiceDetail } from "@internal/features/billing/invoice-detail";
 import { ProductStock } from "@internal/features/products/product-stock";
 import { ProductSuppliers } from "@internal/features/products/product-suppliers";
@@ -29,14 +28,14 @@ import { ListFilters } from "@internal/features/operations/list-filters";
 import { ReferenceInput, references } from "@internal/features/operations/reference-input";
 import { StockHistory } from "@internal/features/operations/stock-history";
 import { ManualInvoiceCreator } from "@internal/features/operations/manual-invoice-creator";
+import { useAdminAuth } from "@internal/components/admin/auth-provider";
 import "@internal/features/operations/operations.css";
-import { useAdminAuth } from "./admin/auth-provider";
 
 type Row = DataRow;
 type Column = DataColumn;
 type Resource = { name: string; title: string; keys: string[]; columns: Column[]; writable: boolean;
   draft_update_path?: string | null; draft_update_fields?: string[] | null };
-type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string; order_detail?: AdminOrderDetailData;
+type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string;
   customer_accounts?: Record<string, CustomerLinkedAccount | null> };
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
 
@@ -61,7 +60,10 @@ const labels: Record<string, string> = {
   email_nguoi_mua: "Email khách hàng",
   phuong_thuc_nhan: "Phương thức nhận hàng",
   ma_hoadon: "Mã hóa đơn", nguoi_lap: "Người lập", thoi_gian_lap: "Thời gian lập",
-  nguon_lap: "Nguồn lập", ma_tk_lap: "Tài khoản khởi tạo", la_bypass: "Thanh toán bypass", ma_tk_ghi_nhan: "Tài khoản ghi nhận",
+  han_thanh_toan: "Hạn thanh toán (đơn online)", huy_qua_han_luc: "Hệ thống hủy quá hạn lúc",
+  ma_thanh_toan: "Mã thanh toán", ma_giao_dich: "Mã giao dịch", loai_giao_dich: "Loại giao dịch",
+  phuong_thuc: "Phương thức", thoi_gian: "Thời gian",
+  nguon_lap: "Nguồn lập", ma_tk_lap: "Tài khoản kích hoạt hóa đơn", la_bypass: "Ghi nhận trực tiếp", ma_tk_ghi_nhan: "Tài khoản yêu cầu ghi nhận",
   ten_nguoi_mua: "Tên người mua", ma_so_thue: "Mã số thuế", dia_chi_nguoi_mua: "Địa chỉ người mua",
   tong_tien_truoc_thue: "Tổng trước thuế", tong_tien_thue: "Tiền thuế",
   ngay_nhap: "Ngày nhập", ngay_xuat: "Ngày xuất", ngay_nhan: "Ngày nhận", ma_kho_xuat: "Kho xuất", ma_kho_nhan: "Kho nhận",
@@ -87,17 +89,15 @@ async function api<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 async function readDataPage(resource: string, params: URLSearchParams, options: RequestInit): Promise<Page> {
-  if (resource !== "orders" || !params.get("key")) return api<Page>("data/" + resource + "?" + params, options);
-  let keys: unknown;
-  try { keys = JSON.parse(params.get("key")!); } catch { throw new Error("Mã đơn hàng không hợp lệ."); }
-  if (!Array.isArray(keys) || keys.length !== 1 || typeof keys[0] !== "string" || !keys[0]) throw new Error("Mã đơn hàng không hợp lệ.");
-  const detail = await api<AdminOrderDetailData>(`admin/orders/${encodeURIComponent(keys[0])}/detail`, options);
-  if (detail.order_id !== keys[0] || detail.order?.ma_donhang !== keys[0] || !detail.financial ||
-      !Array.isArray(detail.lines) || !Array.isArray(detail.payments) || !Array.isArray(detail.voucher_uses) ||
-      !Array.isArray(detail.history) || !(detail.invoice === null || typeof detail.invoice === "object")) {
-    throw new Error("API chưa trả đúng chi tiết đơn hàng.");
-  }
-  return { data: [detail.order], total: 1, page: 1, page_size: 1, order_id: detail.order_id, order_detail: detail };
+  return api<Page>("data/" + resource + "?" + params, options);
+}
+
+function orderIdFromKey(key: string | null): string | null {
+  if (!key) return null;
+  try {
+    const values = JSON.parse(key);
+    return Array.isArray(values) && values.length === 1 && typeof values[0] === "string" && values[0] ? values[0] : null;
+  } catch { return null; }
 }
 
 export default function BackendDataView(props: { resource: string; embedded?: boolean }) {
@@ -110,7 +110,7 @@ export default function BackendDataView(props: { resource: string; embedded?: bo
 }
 
 function GenericBackendDataView({ resource, embedded = false }: { resource: string; embedded?: boolean }) {
-  const { user } = useAdminAuth();
+  const { user, portal } = useAdminAuth();
   const router = useRouter();
   const params = useSearchParams();
   const workflowCreate = params.get("workflow") === "new" && ["orders", "receipts", "invoices"].includes(resource);
@@ -121,8 +121,10 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const [meta, setMeta] = useState<Resource | null>(null);
   const [available, setAvailable] = useState<Resource[]>([]);
   const [result, setResult] = useState<Page | null>(null);
+  const initialOrderId = resource === "orders" ? orderIdFromKey(params.get("key")) : null;
   const view: View = embedded ? { key: null, edit: false, create: false, orderId: null } : {
-    key: params.get("key"), edit: params.get("edit") === "1", create: params.get("new") === "1", orderId: params.get("order_id"),
+    key: resource === "orders" ? null : params.get("key"), edit: resource !== "orders" && params.get("edit") === "1",
+    create: params.get("new") === "1", orderId: params.get("order_id"),
   };
   const [values, setValues] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState<string[]>([]);
@@ -176,7 +178,16 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const reuseSavedRoute = useRef<string | null>(null);
   const persistedKey = useRef<string | null>(null);
   const routeIdentity = JSON.stringify([resource, embedded, view.key, view.edit, view.create, view.orderId, filterQuery]);
+  const warehouseCustomerSearch = portal === "staff" && resource === "customers" && !view.key && !view.create;
   useEffect(() => () => { saveController.current?.abort(); }, []);
+
+  useEffect(() => {
+    if (!warehouseCustomerSearch || inlineEditing) return;
+    const next = query.trim();
+    if (next === search) return;
+    const timer = setTimeout(() => { setSearch(next); setPage(1); }, 300);
+    return () => clearTimeout(timer);
+  }, [warehouseCustomerSearch, inlineEditing, query, search]);
 
   const pollError = useAdminPolling(JSON.stringify([routeIdentity, page, search, version]),
     !loading && !error && Boolean(result) && !view.edit && !view.create && !inlineEditing && !saving && !uploading && !dirty.length && !galleryDirty,
@@ -208,7 +219,10 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     if (reuseSavedRoute.current === routeIdentity) { reuseSavedRoute.current = null; return; }
     reuseSavedRoute.current = null;
     const controller = new AbortController();
-    setLoading(true); setError(""); setMeta(null); setResult(null); setDirty([]); setNotice("");
+    setLoading(true); setError(""); setDirty([]); setNotice("");
+    // Keep warehouse customer results mounted during a debounced search so
+    // the input retains focus and staff can continue typing.
+    if (!warehouseCustomerSearch) { setMeta(null); setResult(null); }
     (async () => {
       const resources = await api<Resource[]>("data/resources", { signal: controller.signal });
       if (controller.signal.aborted) return;
@@ -242,7 +256,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     })().catch((err: Error) => { if (!controller.signal.aborted) setError(err.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [routeIdentity, page, search, version]);
+  }, [routeIdentity, page, search, version, warehouseCustomerSearch]);
 
   const href = (row?: Row, edit = false) => dataHref(resource, { orderId: view.orderId,
     key: row && meta ? JSON.stringify(meta.keys.map(key => row[key])) : null, edit });
@@ -322,7 +336,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     </div>}
     {!detailMode && <div className={embedded ? "live-section-heading" : "admin-sr-only"}><h2>{embedded ? "Danh sách đơn hàng" : meta?.title ?? "Đang tải…"}</h2>{embedded && <Link href={dataHref("orders")}>Xem tất cả đơn hàng →</Link>}</div>}
     {error && <p className="live-error" role="alert">{error} <button onClick={refresh}>Thử lại</button></p>}
-    {loading ? <p role="status">Đang tải dữ liệu…</p> : meta && !error && <>
+    {loading && !(warehouseCustomerSearch && meta && result) ? <p role="status">Đang tải dữ liệu…</p> : meta && !error && <>
       {workflowCreate ? resource === "invoices"
         ? canCreateManualInvoice ? <ManualInvoiceCreator onCreated={refresh} />
           : <p className="live-error" role="alert">Chỉ nhân viên kho được phân công mới lập hóa đơn thủ công.</p>
@@ -346,15 +360,13 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {notice && <p className="live-note image-save-error" role="status">{notice} {result?.data[0] && <Link prefetch={false} href={href(result.data[0])}>Xem chi tiết</Link>}</p>}
         <div className="live-form-actions"><button className="live-primary" disabled={saving || (resource === "products" && (!galleryReady || ((!view.create || persistedKey.current !== null) && !galleryDirty && !dirty.length)))}>{uploading ? "Đang lưu ảnh…" : saving ? "Đang lưu…" : "Lưu dữ liệu"}</button>{!saving && <Link href={dataHref(resource, { key: persistedKey.current ?? view.key, orderId: view.orderId })}>Hủy</Link>}</div>
       </form> : view.key && result?.data[0] ? <>
-        {["orders", "receipts", "inventory"].includes(resource) && <OperationPanel key={`${resource}:${view.key}`} resource={resource} row={result.data[0]}
-          orderDetail={resource === "orders" ? result.order_detail : undefined} onChanged={refresh} onEditingChange={setInlineEditing} />}
+        {["receipts", "inventory"].includes(resource) && <OperationPanel key={`${resource}:${view.key}`} resource={resource} row={result.data[0]}
+          onChanged={refresh} onEditingChange={setInlineEditing} />}
         {resource === "promotions" && <PromotionBannerPreview mediaId={String(result.data[0].ma_media_banner ?? "")} name={String(result.data[0].ten_chuong_trinh ?? "")} />}
         <div className={resource === "products" ? "product-detail-layout" : undefined}>
         {resource === "products" && <ProductGalleryPreview key={String(result.data[0].ma_sp)} productId={String(result.data[0].ma_sp)}
           legacyUrl={String(result.data[0].duong_dan_anh ?? "")} name={String(result.data[0].ten_sp ?? "")} />}
-        {resource === "orders" ? <OrderData rows={result.data} columns={meta.columns} keys={meta.keys} detail version={version} label={label} href={href}
-          related={available.filter(item => orderChildren.includes(item.name))} detailData={result.order_detail} onRefresh={refresh} />
-        : resource === "invoices" ? <InvoiceDetail row={result.data[0]} columns={meta.columns} label={label} />
+        {resource === "invoices" ? <InvoiceDetail row={result.data[0]} columns={meta.columns} label={label} />
         : resource === "categories" ? <CategoryDetail row={result.data[0]} columns={meta.columns} label={label}
           related={available.filter(item => ["subcategories", "products"].includes(item.name))} />
         : <div className="live-form">{meta.columns.filter(column => !(resource === "promotions" && column.name === "ma_media_banner")).map(column => <div className="live-field" key={column.name}><strong>{label(column.name)}</strong>{displayValue(result.data[0], column)}</div>)}</div>}
@@ -369,7 +381,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       </> : <>
         {resource === "customers" && notice && <p className="live-note" role="status">{notice}</p>}
         {["invoices", "payments"].includes(resource) && <nav className="live-tools" aria-label="Hóa đơn và thanh toán"><Link href={dataHref("invoices")}>Hóa đơn</Link><Link href={dataHref("payments")}>Giao dịch thanh toán</Link></nav>}
-        <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm mã, tên hoặc SKU…" /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) || resource === "invoices" && canCreateManualInvoice ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : resource === "receipts" ? "+ Lập phiếu nhập" : "+ Lập hóa đơn thủ công"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
+        <form className="live-tools" onSubmit={e => { e.preventDefault(); if (!inlineEditing) { setSearch(query.trim()); setPage(1); } }}><fieldset className="live-form-fields" disabled={inlineEditing}><input type="search" autoComplete="off" className="live-search" aria-label="Tìm kiếm" value={query} onChange={e => setQuery(e.target.value)} placeholder={resource === "customers" ? "Tìm mã, tên, số điện thoại hoặc địa chỉ…" : "Tìm mã, tên hoặc SKU…"} /><button>Tìm kiếm</button><button type="button" onClick={refresh}>Làm mới</button></fieldset>{["orders", "receipts"].includes(resource) || resource === "invoices" && canCreateManualInvoice ? <Link className="live-primary" href={`/data/${resource}?workflow=new`}>{resource === "orders" ? "+ Tạo đơn tại quầy" : resource === "receipts" ? "+ Lập phiếu nhập" : "+ Lập hóa đơn thủ công"}</Link> : meta.writable && <Link className="live-primary" href={dataHref(resource, { orderId: view.orderId, create: true })}>+ Thêm {meta.title.toLowerCase()}</Link>}</form>
         <ListFilters columns={meta.columns} values={filters} label={label} disabled={inlineEditing} onChange={next => { setPage(1); router.replace(dataHref(resource, { orderId: view.orderId, filters: next })); }} />
         {resource === "customers" && <div className="live-tools"><label>Hồ sơ khách hàng <select aria-label="Lọc hồ sơ khách hàng"
           value={filters.luu_tru_luc ?? "ACTIVE"} disabled={inlineEditing} onChange={event => {
@@ -377,7 +389,9 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           }}><option value="ACTIVE">Đang sử dụng</option><option value="ARCHIVED">Đã xóa mềm</option><option value="ALL">Tất cả</option></select></label></div>}
         {resource === "inventory" && <StockHistory />}
         {draftPath && <p className="inline-data-help">Nhấp đúp để sửa phiếu nháp. Phiếu đã xử lý chỉ xem thông tin; trạng thái được cập nhật qua nghiệp vụ kho.</p>}
-        {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label} href={href} />
+        {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label}
+          related={available.filter(item => orderChildren.includes(item.name))} onRefresh={refresh} initialOrderId={initialOrderId}
+          onDismissInitial={() => router.replace(dataHref("orders", { filters }))} />
         : inlineEnabled ? <InlineDataTable resource={resource} rows={result?.data ?? []} columns={listColumns} keys={meta.keys}
           quickEditFields={resource === "products" ? ["ten_sp", "thuong_hieu", "gia_ban_hien_tai", "don_vi", "bao_hanh_thang", "trang_thai"] : undefined}
           editableFields={draftPath ? meta.draft_update_fields ?? [] : undefined}

@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn ticket đã đối chiếu]
+    choose --> input[/Nhập ghi chú xác minh/]
+    input --> confirm{Xác nhận chấp nhận?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| lock[Khóa ticket và đơn theo phiên bản]
+    lock --> valid{Đơn vẫn chưa có chủ?}
+    valid -->|Không| error[Thông báo xung đột]
+    error --> finish
+    valid -->|Có| link[Gắn đúng khách vào đơn]
+    link --> update[Cập nhật kết quả ticket]
+    update --> saved{Transaction thành công?}
+    saved -->|Không| error
+    saved -->|Có| keep[Giữ nguyên tiền tồn và chứng từ]
+    keep --> finish

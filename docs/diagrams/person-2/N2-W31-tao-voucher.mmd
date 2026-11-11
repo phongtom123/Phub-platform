@@ -1,0 +1,17 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> program[Chọn chương trình]
+    program --> input[/Nhập mã loại giảm điều kiện và quota/]
+    input --> valid{Dữ liệu hợp lệ?}
+    valid -->|Không| error[Hiển thị lỗi nhập liệu]
+    error --> input
+    valid -->|Có| programValid{Chương trình hợp lệ?}
+    programValid -->|Không| fail[Thông báo chương trình không phù hợp]
+    fail --> finish([Kết thúc])
+    programValid -->|Có| confirm{Xác nhận tạo voucher?}
+    confirm -->|Không| finish
+    confirm -->|Có| create[Lưu voucher]
+    create --> saved{Lưu thành công?}
+    saved -->|Không| fail
+    saved -->|Có| note[Hiển thị voucher mới]
+    note --> finish

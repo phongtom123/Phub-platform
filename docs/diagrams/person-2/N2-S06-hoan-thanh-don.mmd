@@ -1,0 +1,33 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Chọn hoàn thành đơn
+    UI->>ND: 2. Yêu cầu xác nhận
+    ND->>UI: 3. Đồng ý hoàn thành
+    UI->>C: 4. Gửi lệnh complete
+    C->>S: 5. Kiểm tra yêu cầu
+    S->>R: 6. Gửi lệnh nghiệp vụ
+    R->>DB: 7. Gọi admin_operation_v1
+    DB->>DB: 8. Khóa và kiểm tra trạng thái đơn
+    DB->>DB: 9. Kiểm tra hóa đơn và số đã thu
+
+    alt Chưa đủ điều kiện hoàn thành
+        DB-->>R: 10. Rollback và trả PAYMENT_REQUIRED
+        R-->>S: 11. Trả lỗi
+        S-->>C: 12. Trả lý do nghiệp vụ
+        C-->>UI: 13. Trả lỗi
+        UI-->>ND: 14. Hiển thị điều kiện còn thiếu
+    else Đủ điều kiện hoàn thành
+        DB->>DB: 10. Cập nhật HOAN_THANH và lịch sử
+        DB-->>R: 11. Trả đơn đã cập nhật
+        R-->>S: 12. Trả kết quả
+        S-->>C: 13. Trả dữ liệu
+        C-->>UI: 14. Trả thành công
+        UI-->>ND: 15. Hiển thị đơn hoàn thành
+    end

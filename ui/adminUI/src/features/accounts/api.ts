@@ -5,7 +5,7 @@ export class AccountApiError extends Error {
 }
 
 export async function accountApi<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await adminFetch(`/api/backend/admin/${path}`, { cache: "no-store", ...options });
+  const response = await adminFetch(`/api/backend/admin/${path}`, options);
   const body = await response.json().catch(() => null);
   if (!response.ok) {
     const detail = body?.detail;

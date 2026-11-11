@@ -1,0 +1,19 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn voucher]
+    choose --> action{Chọn thao tác}
+    action -->|Sửa điều kiện| input[/Cập nhật mức giảm và hạn mức/]
+    action -->|Bật hoặc ngừng| status[Chọn trạng thái mới]
+    action -->|Hủy| finish([Kết thúc])
+    input --> valid{Điều kiện hợp lệ?}
+    status --> valid
+    valid -->|Không| error[Hiển thị lý do]
+    error --> finish
+    valid -->|Có| confirm{Xác nhận lưu?}
+    confirm -->|Không| finish
+    confirm -->|Có| save[Lưu thay đổi voucher]
+    save --> saved{Lưu thành công?}
+    saved -->|Không| error
+    saved -->|Có| keep[Giữ dữ liệu lượt sử dụng]
+    keep --> impact[Kiểm tra ảnh hưởng tại checkout]
+    impact --> finish

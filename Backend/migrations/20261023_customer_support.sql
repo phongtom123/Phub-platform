@@ -83,6 +83,12 @@ begin
   end if;
   select * into v_row from public."PHAN_HOI" where ma_phan_hoi=p_feedback_id for update;
   if not found then raise exception 'FEEDBACK_NOT_FOUND' using errcode='P0002'; end if;
+  if v_row.trang_thai = 'DA_DONG' then
+    raise exception 'STATE_CONFLICT' using errcode='23514';
+  end if;
+  if p_changes ? 'trang_thai' and p_changes->>'trang_thai' = 'MOI' and v_row.trang_thai in ('DANG_XU_LY', 'DA_GIAI_QUYET') then
+    raise exception 'STATE_CONFLICT' using errcode='23514';
+  end if;
   update public."PHAN_HOI" set
     trang_thai=case when p_changes ? 'trang_thai' then p_changes->>'trang_thai' else trang_thai end,
     muc_do_uu_tien=case when p_changes ? 'muc_do_uu_tien' then p_changes->>'muc_do_uu_tien' else muc_do_uu_tien end,

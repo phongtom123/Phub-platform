@@ -1,0 +1,42 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Mở ghi nhận khoản thu
+    UI->>C: 2. Yêu cầu chi tiết tài chính đơn
+    C->>S: 3. Yêu cầu đọc hóa đơn và bút toán
+    S->>R: 4. Đọc dữ liệu tài chính
+    R->>DB: 5. Truy vấn hóa đơn và THANH_TOAN
+    DB-->>R: 6. Tổng tiền và số đã thu
+    R-->>S: 7. Trả dữ liệu
+    S-->>C: 8. Tính số còn phải thu
+    C-->>UI: 9. Trả tình hình thanh toán
+    UI-->>ND: 10. Hiển thị số còn lại
+
+    ND->>UI: 11. Xác nhận đã thu thực tế
+    UI->>C: 12. Gửi phương thức đối soát và khóa yêu cầu
+    C->>S: 13. Kiểm tra dữ liệu khoản thu
+    S->>R: 14. Gửi lệnh payment
+    R->>DB: 15. Gọi admin_operation_v1
+    DB->>DB: 16. Khóa đơn và kiểm tra hạn thanh toán
+    DB->>DB: 17. Kiểm tra giới hạn phải thu và idempotency
+
+    alt Khoản thu không hợp lệ
+        DB-->>R: 18. Rollback và trả mã lỗi
+        R-->>S: 19. Trả lỗi nghiệp vụ
+        S-->>C: 20. Trả lý do
+        C-->>UI: 21. Trả lỗi
+        UI-->>ND: 22. Hiển thị không ghi nhận
+    else Ghi nhận thành công
+        DB->>DB: 18. Ghi bút toán thu
+        DB-->>R: 19. Trả kết quả tài chính
+        R-->>S: 20. Trả kết quả
+        S-->>C: 21. Trả dữ liệu
+        C-->>UI: 22. Trả số đã thu và còn lại
+        UI-->>ND: 23. Hiển thị thành công
+    end

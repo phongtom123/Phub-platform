@@ -65,7 +65,7 @@ function InvoiceBlock({ orderId, orderStatus, invoice, lines }: {
   const invoiceId = text(invoice.ma_hoadon);
   const source = inlineChoiceLabel("nguon_lap", invoice.nguon_lap);
   const creator = invoice.nguoi_lap ? `Nhân viên ${String(invoice.nguoi_lap)}`
-    : invoice.ma_tk_lap ? `Tài khoản ${String(invoice.ma_tk_lap)}` : source;
+    : invoice.ma_tk_lap ? `Tự động theo tài khoản ${String(invoice.ma_tk_lap)}` : source;
   const invoiceHref = typeof invoice.ma_hoadon === "string" && invoice.ma_hoadon
     ? dataHref("invoices", { orderId, key: JSON.stringify([invoice.ma_hoadon]) }) : dataHref("invoices", { orderId });
   const print = () => {
@@ -118,7 +118,7 @@ function Payments({ payments }: { payments: DataRow[] }) {
           <td>{inlineChoiceLabel("phuong_thuc", payment.phuong_thuc)}</td>
           <td>{inlineChoiceLabel("trang_thai", payment.trang_thai)}</td>
           <td className={refund ? styles.negativeMoney : undefined}>{refund ? "−" : "+"}{money(payment.so_tien)}</td>
-          <td>{payment.ma_tk_ghi_nhan ? `Admin · ${String(payment.ma_tk_ghi_nhan)}` : payment.la_bypass ? "Bypass" : "Hệ thống thanh toán"}</td>
+          <td>{payment.ma_tk_ghi_nhan ? `Tài khoản ${String(payment.ma_tk_ghi_nhan)}` : payment.la_bypass ? "Ghi nhận trực tiếp" : "Hệ thống thanh toán"}</td>
         </tr>;
       })}</tbody>
     </table></ScrollableTable> : <p className={styles.empty}>Chưa có giao dịch thu hoặc hoàn tiền cho đơn hàng này.</p>}
