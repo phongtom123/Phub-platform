@@ -21,8 +21,7 @@ export function DashboardView({ onNavigate }: { onNavigate: (key: ModuleKey) => 
       <span>{metric.label}</span><strong>{data.counts[metric.resource]?.toLocaleString("vi-VN") ?? "—"}</strong>
       <p>{data.countErrors[metric.resource] ? "Không tải được dữ liệu" : "Tổng bản ghi trên Supabase"}</p>
     </article>)}</div>
-    <DashboardCharts data={data} onNavigate={() => onNavigate("reports")} />
-    <FinancialSummary summary={data.summary} disabled={data.orders.loading || Boolean(data.orders.error || data.pollError)}
-      reportHref={data.summary ? `/reports?${new URLSearchParams({ start: data.summary.start, end: data.summary.end })}` : "/reports"} />
+    <DashboardCharts data={data} onNavigate={onNavigate} />
+    <FinancialSummary summary={data.summary} disabled={data.orders.loading || Boolean(data.orders.error || data.pollError)} />
   </>;
 }

@@ -2,7 +2,7 @@ export type Choice = { ma_lua_chon: string; noi_dung: string; cho_phep_nhap_khac
 export type Question = { ma_cau_hoi: string; noi_dung: string; loai_cau_hoi: "MOT_LUA_CHON" | "DIEM_1_5" | "VAN_BAN";
   nhom_noi_dung: "CHUNG" | "SO_THICH" | "HAI_LONG"; bat_buoc: boolean; options: Choice[] };
 export type Survey = { ma_khao_sat: string; tieu_de: string; mo_ta: string; trang_thai: "NHAP" | "DANG_MO" | "DONG";
-  loai_doi_tuong: "TAT_CA" | "DO_TUOI" | "CHUA_NGAY_SINH"; tuoi_tu: number | null; tuoi_den: number | null;
+  loai_doi_tuong: "TAT_CA" | "DO_TUOI" | "CHUA_NGAY_SINH" | "DA_CO_DON" | "CHUA_CO_DON"; tuoi_tu: number | null; tuoi_den: number | null;
   han_tra_loi: string; phien_ban: string; ngay_tao: string; ngay_chot_doi_tuong?: string | null; khach_them?: string[]; khach_loai?: string[] };
 export type SurveyAudience = Pick<Survey, "loai_doi_tuong" | "tuoi_tu" | "tuoi_den"> & { khach_them?: string[]; khach_loai?: string[] };
 export type Answer = { ma_cau_hoi: string; ma_lua_chon?: string | null; diem?: number | null; noi_dung?: string | null };

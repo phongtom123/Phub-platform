@@ -138,10 +138,20 @@ def test_only_staff_can_select_survey_recipients(engagement_client,actor):
     assert client.post('/api/crm/survey-audience',json={'loai_doi_tuong':'TAT_CA'},headers=ORIGIN).status_code==403 and state['calls']==[]
 
 
-@pytest.mark.parametrize('changes',[{'khach_them':['KH1','KH1']},{'khach_them':['KH1'],'khach_loai':['KH1']},{'khach_them':['']},{'khach_them':None},{'loai_doi_tuong':'DO_TUOI','tuoi_tu':30,'tuoi_den':18},{'p_actor':'FORGED'}])
+@pytest.mark.parametrize('changes',[{'khach_them':['KH1','KH1']},{'khach_them':['KH1'],'khach_loai':['KH1']},{'khach_them':['']},{'khach_them':None},{'loai_doi_tuong':'DO_TUOI','tuoi_tu':30,'tuoi_den':18},{'loai_doi_tuong':'DA_CO_DON','tuoi_tu':18},{'loai_doi_tuong':'CHUA_CO_DON','tuoi_tu':18},{'p_actor':'FORGED'}])
 def test_invalid_manual_audience_never_queries_db(engagement_client,changes):
     client,state=engagement_client
     assert client.post('/api/crm/survey-audience',json={'loai_doi_tuong':'TAT_CA',**changes},headers=ORIGIN).status_code==422 and state['calls']==[]
+
+
+@pytest.mark.parametrize('kind',['DA_CO_DON','CHUA_CO_DON'])
+def test_order_based_audience_preview_succeeds(engagement_client,kind):
+    client,state=engagement_client
+    state['result']={'data':[],'total':0,'selected_total':0,'page':1,'page_size':20,'unavailable_added_ids':[]}
+    body={'loai_doi_tuong':kind,'khach_them':[],'khach_loai':[]}
+    response=client.post('/api/crm/survey-audience',json=body,headers=ORIGIN)
+    assert response.status_code==200
+    assert state['calls'][-1]==('crm_survey_audience_preview_v1',{'p_actor':'AD1','p_config':{**body,'tuoi_tu':None,'tuoi_den':None},'p_scope':'selected','p_query':'','p_page':1})
 
 
 def test_draft_save_includes_manual_audience_but_legacy_update_does_not_clear_it(engagement_client):

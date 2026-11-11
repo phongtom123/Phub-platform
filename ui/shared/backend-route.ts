@@ -183,7 +183,7 @@ export async function proxyBackend(request: Request, context: Context): Promise<
     }
     if (write) headers.set("Content-Type", imageUpload ? contentType : "application/json");
     const upstream = await fetch(url, {
-      method: request.method, headers, body, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(imageUpload ? 30_000 : 15_000),
+      method: request.method, headers, body, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(imageUpload ? 30_000 : 45_000),
     });
     const outputHeaders = new Headers({ "Cache-Control": "no-store" });
     if (upstream.headers.get("content-type")) outputHeaders.set("Content-Type", upstream.headers.get("content-type")!);

@@ -68,7 +68,7 @@ function SurveyEditor({id,onClose}:{id:string|null;onClose:()=>void}) {
       </fieldset>
       <fieldset className={styles.fields} disabled={busy||!isDraft}>
         <label>Đối tượng<select aria-label="Đối tượng khảo sát" value={form.loai_doi_tuong} onChange={e=>change({...form,loai_doi_tuong:e.target.value as SurveyDraft["loai_doi_tuong"],tuoi_tu:e.target.value==="DO_TUOI"?18:null,tuoi_den:e.target.value==="DO_TUOI"?24:null})}>
-          <option value="TAT_CA">Tất cả khách đang hoạt động</option><option value="DO_TUOI">Theo khoảng tuổi</option><option value="CHUA_NGAY_SINH">Chưa cung cấp ngày sinh</option></select></label>
+          <option value="TAT_CA">Tất cả khách đang hoạt động</option><option value="DO_TUOI">Theo khoảng tuổi</option><option value="CHUA_NGAY_SINH">Chưa cung cấp ngày sinh</option><option value="DA_CO_DON">Khách hàng đã có đơn hàng</option><option value="CHUA_CO_DON">Khách hàng chưa có đơn hàng</option></select></label>
         {form.loai_doi_tuong==="DO_TUOI"&&<><label>Từ tuổi<input aria-label="Từ tuổi" type="number" required min={0} max={130} value={form.tuoi_tu??""} onChange={e=>change({...form,tuoi_tu:e.target.value===""?null:Number(e.target.value)})}/></label>
           <label>Đến tuổi<input aria-label="Đến tuổi" type="number" required min={form.tuoi_tu??0} max={130} value={form.tuoi_den??""} onChange={e=>change({...form,tuoi_den:e.target.value===""?null:Number(e.target.value)})}/></label></>}
       </fieldset>

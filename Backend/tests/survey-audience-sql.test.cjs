@@ -19,6 +19,7 @@ const sql=name=>fs.readFileSync(path.join(__dirname,'../migrations',name),'utf8'
    '20261109072011_staff_survey_results_interests.sql',
    '20261109073654_survey_results_respondents.sql',
    '20261109081917_survey_custom_audience.sql',
+   '20261111223000_survey_audience_orders.sql',
   ];
  for(const name of names){
   await db.exec(sql(name));
@@ -44,6 +45,17 @@ const sql=name=>fs.readFileSync(path.join(__dirname,'../migrations',name),'utf8'
  const target={loai_doi_tuong:'DO_TUOI',tuoi_tu:20,tuoi_den:24,khach_them:[],khach_loai:[]};
  const preview=(config,scope='selected',query='',actor='STAFF')=>rpc('public.crm_survey_audience_preview_v1',[actor,JSON.stringify(config),scope,query,1]);
  assert.deepEqual((await preview(target)).data.map(p=>p.ma_kh),['KH_A']);
+
+ await db.exec(`insert into public."DON_HANG"(ma_donhang,ma_kh,kenh_ban,trang_thai,thoi_gian_dat) values
+  ('DH_A1','KH_A','ONLINE','HOAN_THANH',statement_timestamp()),
+  ('DH_B1','KH_B','ONLINE','MOI',statement_timestamp()),
+  ('DH_B2','KH_B','ONLINE','HUY',statement_timestamp());`);
+ const hasOrders=await preview({loai_doi_tuong:'DA_CO_DON',tuoi_tu:null,tuoi_den:null,khach_them:[],khach_loai:[]});
+ assert.equal(hasOrders.selected_total,1);
+ assert.deepEqual(hasOrders.data.map(p=>p.ma_kh),['KH_A']);
+ const noCompletedOrders=await preview({loai_doi_tuong:'CHUA_CO_DON',tuoi_tu:null,tuoi_den:null,khach_them:[],khach_loai:[]});
+ assert.equal(noCompletedOrders.selected_total,3);
+ assert.deepEqual(noCompletedOrders.data.map(p=>p.ma_kh).sort(),['KH1','KH_B','KH_C']);
  const custom={...target,khach_them:['KH_C','KH_B'],khach_loai:['KH_A']};
  const chosen=await preview(custom);assert.equal(chosen.selected_total,2);assert.equal(chosen.total,2);assert.ok(chosen.data.every(p=>p.added_manually));
  assert.equal(chosen.data.find(p=>p.ma_kh==='KH_C').tuoi,null,'No birthday customers can be explicitly added');
