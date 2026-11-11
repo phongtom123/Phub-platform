@@ -11,7 +11,20 @@
 .accounts-page .account-row-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .accounts-page .account-editable-cell input { width: 100%; min-width: 160px; }
 .accounts-page .account-row-editing { background: #f4fbf1; }
+.accounts-page .account-inline-table { overflow-x: auto; }
+.accounts-page .account-inline-table table { width: 100%; min-width: 800px; table-layout: fixed; }
+.accounts-page .account-inline-table th,
+.accounts-page .account-inline-table td { min-width: 0; white-space: normal; overflow-wrap: anywhere; vertical-align: middle; }
+.accounts-page .account-inline-table th:nth-child(1) { width: 12%; }
+.accounts-page .account-inline-table th:nth-child(2) { width: 14%; }
+.accounts-page .account-inline-table th:nth-child(3) { width: 18%; }
+.accounts-page .account-inline-table th:nth-child(4) { width: 20%; }
+.accounts-page .account-inline-table th:nth-child(5) { width: 11%; }
+.accounts-page .account-inline-table th:nth-child(6) { width: 13%; }
+.accounts-page .account-inline-table th:nth-child(7) { width: 12%; }
+.accounts-page .account-inline-table td:nth-child(6) select { width: 100%; min-width: 0; }
 .accounts-page .account-inline-table tr:focus-visible { outline: 2px solid #14a800; outline-offset: -2px; }
+.accounts-page .account-search-match { background: #fff1a8; color: inherit; font-weight: 800; padding: 0; }
 .accounts-page .account-inactive { display: block; margin-top: 5px; font-size: 14px; color: #61705e; }
 .accounts-page .account-status { display: inline-flex; border-radius: 20px; padding: 5px 12px; font-size: 15px; }
 .accounts-page .account-status-select { min-width: 142px; border-color: transparent; border-radius: 20px; padding: 6px 10px; font-size: 15px; cursor: pointer; }

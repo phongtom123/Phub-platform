@@ -16,7 +16,7 @@ const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
 const handledFields = new Set([
   "ma_hoadon", "ma_donhang", "thoi_gian_lap", "ten_nguoi_mua", "ma_so_thue", "dia_chi_nguoi_mua",
   "nguoi_lap", "tong_tien_giam", "tong_tien_truoc_thue", "tong_tien_thue", "tong_tien_sau_thue",
-  "nguon_lap", "ma_tk_lap",
+  "nguon_lap", "ma_tk_lap", "han_thanh_toan", "huy_qua_han_luc",
 ]);
 const text = (value: DataRow[string]) => value === null || value === undefined || value === "" ? "—" : String(value);
 
@@ -41,6 +41,7 @@ export function InvoiceDetail({ row, columns, label }: Props) {
   const [itemsReady, setItemsReady] = useState(false);
   const orderId = typeof row.ma_donhang === "string" && row.ma_donhang ? row.ma_donhang : null;
   const orderHref = orderId ? dataHref("orders", { key: JSON.stringify([orderId]) }) : null;
+  const hasPaymentDeadline = columns.some(column => column.name === "han_thanh_toan");
   const extraColumns = columns.filter(column => !handledFields.has(column.name));
 
   return <div className={`invoice-detail ${styles.detail}`}>
@@ -77,8 +78,14 @@ export function InvoiceDetail({ row, columns, label }: Props) {
             <div className={`live-field ${styles.field}`}><dt>Người lập</dt><dd>{row.nguoi_lap
               ? portal === "admin" ? <Link href={dataHref("employees", { key: JSON.stringify([row.nguoi_lap]) })}>{String(row.nguoi_lap)}</Link> : String(row.nguoi_lap)
               : row.nguon_lap === "TU_DONG" ? "Hệ thống tự động" : "—"}</dd></div>
-            {row.ma_tk_lap && <div className={`live-field ${styles.field}`}><dt>Tài khoản khởi tạo</dt><dd>
+            {row.ma_tk_lap && <div className={`live-field ${styles.field}`}><dt>Tài khoản kích hoạt hóa đơn</dt><dd>
               {portal === "admin" ? <Link href={`/accounts/${encodeURIComponent(String(row.ma_tk_lap))}`}>{String(row.ma_tk_lap)}</Link> : String(row.ma_tk_lap)}
+            </dd></div>}
+            {hasPaymentDeadline && <div className={`live-field ${styles.field}`}><dt>Hạn thanh toán (đơn online)</dt><dd>
+              {row.han_thanh_toan ? invoiceDate(row.han_thanh_toan) : "Không áp dụng"}
+            </dd></div>}
+            {row.huy_qua_han_luc && <div className={`live-field ${styles.field}`}><dt>Hệ thống hủy quá hạn lúc</dt><dd>
+              {invoiceDate(row.huy_qua_han_luc)}
             </dd></div>}
           </dl>
         </section>

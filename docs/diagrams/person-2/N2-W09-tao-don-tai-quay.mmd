@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> buyer[Chọn khách hoặc khách vãng lai]
+    buyer --> lines[/Chọn sản phẩm số lượng và kho/]
+    lines --> price[Lấy giá hiện hành từ hệ thống]
+    price --> valid{Dòng hàng hợp lệ?}
+    valid -->|Không| error[Thông báo giá tồn hoặc dữ liệu lỗi]
+    error --> lines
+    valid -->|Có| confirm{Xác nhận tạo đơn?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| create[Tạo đơn bằng khóa idempotency]
+    create --> saved{Transaction thành công?}
+    saved -->|Không| fail[Rollback và thông báo lý do]
+    fail --> finish
+    saved -->|Có| result[Hiển thị đơn mới chưa mặc định đã thu]
+    result --> finish

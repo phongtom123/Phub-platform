@@ -1,0 +1,15 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> input[/Nhập từ khóa và bộ lọc/]
+    input --> search[Tra cứu hồ sơ khách]
+    search --> found{Có kết quả?}
+    found -->|Không| empty[Thông báo không có dữ liệu]
+    empty --> finish([Kết thúc])
+    found -->|Có| list[Hiển thị danh sách phân trang]
+    list --> choose[Chọn một khách hàng]
+    choose --> read[Đọc hồ sơ và tài khoản liên kết]
+    read --> valid{Dữ liệu hợp lệ?}
+    valid -->|Không| error[Thông báo không tải được hồ sơ]
+    error --> finish
+    valid -->|Có| show[Hiển thị chi tiết khách hàng]
+    show --> finish

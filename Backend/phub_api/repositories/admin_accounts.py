@@ -1,6 +1,7 @@
 """Account persistence only; ownership/role/password decisions live in the service."""
 import json
 import re
+import unicodedata
 
 ACCOUNT_COLUMNS = "ma_tk,ten_tai_khoan,email,ma_nhan_vien,ma_kh,trang_thai,luu_tru_luc,luu_tru_boi"
 ACCOUNT_PROJECTION = ACCOUNT_COLUMNS + ",avatar:MEDIA!TAI_KHOAN_avatar_media_fkey(url)"
@@ -9,6 +10,33 @@ EMPLOYEE_COLUMNS = "ma_nhan_vien,ho_ten,loai_nhan_vien,ma_kho,trang_thai"
 
 def literal_search(query: str, fields: tuple[str, ...]) -> str:
     value = json.dumps(re.escape(query.strip()), ensure_ascii=False)
+    return ",".join(f"{field}.imatch.{value}" for field in fields)
+
+
+_VIETNAMESE_SEARCH_CHARS = {
+    "a": "aàáảãạăằắẳẵặâầấẩẫậ",
+    "e": "eèéẻẽẹêềếểễệ",
+    "i": "iìíỉĩị",
+    "o": "oòóỏõọôồốổỗộơờớởỡợ",
+    "u": "uùúủũụưừứửữự",
+    "y": "yỳýỷỹỵ",
+    "d": "dđ",
+}
+
+
+def smart_search_pattern(query: str) -> str:
+    """Build a literal, case-insensitive regex that also ignores Vietnamese accents."""
+    pattern = []
+    for char in unicodedata.normalize("NFC", query.strip()):
+        lowered = char.casefold()
+        base = "d" if lowered == "đ" else unicodedata.normalize("NFD", lowered)[0]
+        equivalents = _VIETNAMESE_SEARCH_CHARS.get(base)
+        pattern.append(f"[{equivalents}]" if equivalents else re.escape(lowered))
+    return "".join(pattern)
+
+
+def smart_literal_search(query: str, fields: tuple[str, ...]) -> str:
+    value = json.dumps(smart_search_pattern(query), ensure_ascii=False)
     return ",".join(f"{field}.imatch.{value}" for field in fields)
 
 
@@ -30,14 +58,19 @@ class AccountsRepository:
 
     def page(self, page, page_size, q, status, role, archive="ACTIVE"):
         employee_join = "!inner" if role in {"ADMIN", "NHAN_VIEN"} else ""
-        projection = ACCOUNT_PROJECTION + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),customer:KHACH_HANG(ma_kh,ten_kh,luu_tru_luc)"
+        projection = (ACCOUNT_PROJECTION + f",employee:NHAN_VIEN{employee_join}({EMPLOYEE_COLUMNS}),"
+                      "customer:KHACH_HANG(ma_kh,ten_kh,luu_tru_luc),employee_match:NHAN_VIEN(),customer_match:KHACH_HANG()")
         query = self.client.table("TAI_KHOAN").select(projection, count="exact")
         if archive == "ACTIVE":
             query = query.is_("luu_tru_luc", "null")
         elif archive == "ARCHIVED":
             query = query.not_.is_("luu_tru_luc", "null")
         if q.strip():
-            query = query.or_(literal_search(q, ("ma_tk", "ten_tai_khoan", "email")))
+            pattern = smart_search_pattern(q)
+            query = (query.filter("employee_match.ho_ten", "imatch", pattern)
+                     .filter("customer_match.ten_kh", "imatch", pattern)
+                     .or_(smart_literal_search(q, ("ma_tk", "ten_tai_khoan", "email")) +
+                          ",employee_match.not.is.null,customer_match.not.is.null"))
         if status is not None:
             query = query.eq("trang_thai", status)
         if role == "KHACH_HANG":

@@ -1,0 +1,15 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> filter[/Nhập bộ lọc đơn hàng/]
+    filter --> list[Tra cứu danh sách đơn]
+    list --> choose[Chọn chi tiết đơn]
+    choose --> read[Đọc dữ liệu tổng hợp của đơn]
+    read --> found{Đơn tồn tại?}
+    found -->|Không| error[Thông báo không tìm thấy]
+    error --> finish([Kết thúc])
+    found -->|Có| validate{Dữ liệu liên quan hợp lệ?}
+    validate -->|Không| fail[Thông báo không tải đủ dữ liệu]
+    fail --> finish
+    validate -->|Có| show[Hiển thị dòng hàng và giao nhận]
+    show --> related[Hiển thị hóa đơn thanh toán voucher]
+    related --> finish

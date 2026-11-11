@@ -1,0 +1,37 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Chọn lưu đối tượng tiếp thị
+    UI->>C: 2. Gửi dữ liệu và thao tác
+    C->>S: 3. Yêu cầu kiểm tra và lưu
+    S->>S: 4. Kiểm tra quyền và kiểu dữ liệu
+
+    alt Chương trình khuyến mãi
+        S->>R: 5. Tạo sửa hoặc đổi trạng thái chương trình
+        R->>DB: 6. Ghi CHUONG_TRINH_KHUYEN_MAI
+        DB->>DB: 7. Kiểm tra thời gian và trạng thái
+    else Voucher
+        S->>R: 5. Tạo sửa hoặc đổi trạng thái voucher
+        R->>DB: 6. Ghi VOUCHER
+        DB->>DB: 7. Kiểm tra chương trình mức giảm và quota
+    end
+
+    alt Dữ liệu hoặc tham chiếu không hợp lệ
+        DB-->>R: 8. Từ chối ghi dữ liệu
+        R-->>S: 9. Trả lỗi
+        S-->>C: 10. Trả lý do
+        C-->>UI: 11. Trả lỗi nhập liệu
+        UI-->>ND: 12. Hiển thị lỗi
+    else Lưu thành công
+        DB-->>R: 8. Trả bản ghi đã lưu
+        R-->>S: 9. Trả kết quả
+        S-->>C: 10. Trả dữ liệu
+        C-->>UI: 11. Trả thành công
+        UI-->>ND: 12. Hiển thị bản ghi mới
+    end

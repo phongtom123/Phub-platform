@@ -1,0 +1,18 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn có khoản thu]
+    choose --> refundable[Tính số được hoàn]
+    refundable --> available{Có số tiền được hoàn?}
+    available -->|Không| error[Thông báo không thể hoàn]
+    error --> finish([Kết thúc])
+    available -->|Có| input[/Nhập số tiền phương thức và đối soát/]
+    input --> confirm{Đã xác nhận hoàn thực tế?}
+    confirm -->|Không| finish
+    confirm -->|Có| validate{Số tiền và mã đối soát hợp lệ?}
+    validate -->|Không| fail[Thông báo lý do]
+    fail --> finish
+    validate -->|Có| record[Ghi bút toán hoàn chống trùng]
+    record --> saved{Transaction thành công?}
+    saved -->|Không| fail
+    saved -->|Có| note[Thông báo đã ghi nhận hoàn tiền]
+    note --> finish

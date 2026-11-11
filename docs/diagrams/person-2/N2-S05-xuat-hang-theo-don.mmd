@@ -1,0 +1,34 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Chọn xác nhận xuất kho
+    UI->>ND: 2. Hiển thị dòng hàng và kho xuất
+    ND->>UI: 3. Xác nhận xuất hàng
+    UI->>C: 4. Gửi lệnh dispatch và khóa yêu cầu
+    C->>S: 5. Yêu cầu thực hiện nghiệp vụ
+    S->>R: 6. Gửi lệnh xuất hàng
+    R->>DB: 7. Gọi admin_operation_v1
+    DB->>DB: 8. Khóa đơn và dòng tồn liên quan
+    DB->>DB: 9. Kiểm tra trạng thái hóa đơn và tồn
+
+    alt Không đủ điều kiện xuất
+        DB-->>R: 10. Rollback và trả mã lỗi
+        R-->>S: 11. Trả lỗi nghiệp vụ
+        S-->>C: 12. Trả lỗi HTTP
+        C-->>UI: 13. Trả lý do
+        UI-->>ND: 14. Hiển thị lỗi
+    else Được phép xuất
+        DB->>DB: 10. Trừ tồn và ghi lịch sử một lần
+        DB->>DB: 11. Chuyển trạng thái DA_XUAT_KHO
+        DB-->>R: 12. Trả đơn đã cập nhật
+        R-->>S: 13. Trả kết quả
+        S-->>C: 14. Trả dữ liệu
+        C-->>UI: 15. Trả thành công
+        UI-->>ND: 16. Hiển thị đã xuất kho
+    end

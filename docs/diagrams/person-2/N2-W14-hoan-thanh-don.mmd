@@ -1,0 +1,17 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn đã xuất kho]
+    choose --> complete[Chọn hoàn thành đơn]
+    complete --> confirm{Xác nhận hoàn thành?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| state{Trạng thái hợp lệ?}
+    state -->|Không| error[Thông báo xung đột trạng thái]
+    error --> finish
+    state -->|Có| finance{Đủ điều kiện tài chính và giao hàng?}
+    finance -->|Không| unpaid[Thông báo chưa đủ điều kiện]
+    unpaid --> finish
+    finance -->|Có| update[Chuyển sang Hoàn thành]
+    update --> saved{Lưu thành công?}
+    saved -->|Không| error
+    saved -->|Có| note[Thông báo hoàn thành đơn]
+    note --> finish

@@ -1,0 +1,14 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn đã xác nhận]
+    choose --> prepare[Chọn chuẩn bị hàng]
+    prepare --> confirm{Xác nhận thao tác?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| guard{Đơn còn đủ điều kiện?}
+    guard -->|Không| error[Thông báo lý do]
+    error --> finish
+    guard -->|Có| update[Chuyển sang Đang chuẩn bị]
+    update --> saved{Lưu thành công?}
+    saved -->|Không| error
+    saved -->|Có| note[Hiển thị trạng thái mới]
+    note --> finish

@@ -1,0 +1,17 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn đơn cần hủy]
+    choose --> cancel[Chọn hủy đơn]
+    cancel --> confirm{Xác nhận hủy?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| state{Trạng thái cho phép hủy?}
+    state -->|Không| error[Thông báo không được hủy]
+    error --> finish
+    state -->|Có| paid{Có khoản thu cần hoàn?}
+    paid -->|Có| block[Yêu cầu xử lý hoàn tiền trước]
+    block --> finish
+    paid -->|Không| update[Hủy đơn và giải phóng reservation]
+    update --> saved{Transaction thành công?}
+    saved -->|Không| error
+    saved -->|Có| keep[Giữ hóa đơn và chứng từ đối chiếu]
+    keep --> finish

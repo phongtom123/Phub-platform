@@ -1,0 +1,43 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Mở xem trước hóa đơn
+    UI->>C: 2. Yêu cầu dữ liệu đơn
+    C->>S: 3. Yêu cầu đọc chi tiết
+    S->>R: 4. Đọc đơn và dòng hàng
+    R->>DB: 5. Truy vấn dữ liệu đã chốt
+    DB-->>R: 6. Đơn dòng hàng và tổng tiền
+    R-->>S: 7. Trả dữ liệu
+    S-->>C: 8. Trả bản xem trước chỉ đọc
+    C-->>UI: 9. Trả nội dung hóa đơn
+    UI-->>ND: 10. Hiển thị preview
+
+    opt Nhân viên xác nhận phát hành
+        ND->>UI: 11. Chọn lập hóa đơn
+        UI->>C: 12. Gửi lệnh invoice và khóa yêu cầu
+        C->>S: 13. Kiểm tra payload
+        S->>R: 14. Gửi lệnh lập hóa đơn
+        R->>DB: 15. Gọi admin_operation_v1
+        DB->>DB: 16. Khóa đơn và kiểm tra tính duy nhất
+
+        alt Đã có hóa đơn hoặc dữ liệu thay đổi
+            DB-->>R: 17. Rollback và trả xung đột
+            R-->>S: 18. Trả lỗi
+            S-->>C: 19. Trả lý do
+            C-->>UI: 20. Yêu cầu làm mới
+            UI-->>ND: 21. Hiển thị lỗi
+        else Phát hành thành công
+            DB->>DB: 17. Chốt tổng và ghi hóa đơn
+            DB-->>R: 18. Trả hóa đơn
+            R-->>S: 19. Trả kết quả transaction
+            S-->>C: 20. Trả dữ liệu
+            C-->>UI: 21. Trả hóa đơn đã lập
+            UI-->>ND: 22. Hiển thị thành công
+        end
+    end

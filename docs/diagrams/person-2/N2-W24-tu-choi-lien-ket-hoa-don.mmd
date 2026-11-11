@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn ticket đã đối chiếu]
+    choose --> reason[/Nhập lý do từ chối/]
+    reason --> valid{Lý do hợp lệ?}
+    valid -->|Không| error[Nhắc nhập lý do]
+    error --> reason
+    valid -->|Có| confirm{Xác nhận từ chối?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| lock[Kiểm tra phiên bản ticket]
+    lock --> update[Cập nhật kết quả từ chối]
+    update --> saved{Lưu thành công?}
+    saved -->|Không| fail[Thông báo xung đột]
+    fail --> finish
+    saved -->|Có| keep[Không cấp quyền xem đơn]
+    keep --> finish

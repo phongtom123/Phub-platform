@@ -25,7 +25,7 @@ test("preload warms only authorized first pages, deduplicates metadata names and
   });
   await app.preloadAdminData(new AbortController().signal, () => true, href => routes.push(href));
   assert.equal(calls.length, 6); assert.equal(maximum, 2); assert.equal(routes.length, 5);
-  assert.ok(calls.includes("/api/backend/admin/accounts?q=&page=1"));
+  assert.ok(calls.includes("/api/backend/admin/accounts?q=&page=1&archive=ACTIVE"));
   assert.ok(calls.every(url => url.endsWith("resources") || url.includes("page=1")));
   assert.ok(!calls.some(url => url.includes("page=2") || url.includes("auth") || url.includes("key=")));
 });

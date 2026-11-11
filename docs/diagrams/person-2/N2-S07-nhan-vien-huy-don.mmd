@@ -1,0 +1,35 @@
+%%{init: {"theme": "base", "themeVariables": {"actorBkg": "#ffffff", "actorBorder": "#000000", "actorTextColor": "#000000", "signalColor": "#000000", "signalTextColor": "#000000", "labelBoxBkgColor": "#ffffff", "labelBoxBorderColor": "#000000", "labelTextColor": "#000000", "loopTextColor": "#000000", "activationBkgColor": "#ffffff", "activationBorderColor": "#000000"}}}%%
+sequenceDiagram
+    actor ND as Nhân viên
+    participant UI as Giao diện
+    participant C as Controller
+    participant S as Service
+    participant R as Repository
+    participant DB as Database
+
+    ND->>UI: 1. Chọn hủy đơn
+    UI->>ND: 2. Cảnh báo và yêu cầu xác nhận
+    ND->>UI: 3. Xác nhận hủy
+    UI->>C: 4. Gửi lệnh cancel
+    C->>S: 5. Yêu cầu xử lý hủy
+    S->>R: 6. Gửi lệnh nghiệp vụ
+    R->>DB: 7. Gọi admin_operation_v1
+    DB->>DB: 8. Khóa đơn và kiểm tra trạng thái
+    DB->>DB: 9. Đối chiếu khoản thu còn hiệu lực
+
+    alt Có khoản thu cần xử lý hoàn
+        DB-->>R: 10. Rollback và chặn hủy
+        R-->>S: 11. Trả lỗi tài chính
+        S-->>C: 12. Trả lý do
+        C-->>UI: 13. Yêu cầu hoàn tiền trước
+        UI-->>ND: 14. Hiển thị cảnh báo
+    else Được phép hủy
+        DB->>DB: 10. Cập nhật HUY và lịch sử actor
+        DB->>DB: 11. Giải phóng reservation
+        DB->>DB: 12. Giữ nguyên chứng từ
+        DB-->>R: 13. Trả đơn đã hủy
+        R-->>S: 14. Trả kết quả
+        S-->>C: 15. Trả dữ liệu
+        C-->>UI: 16. Trả thành công
+        UI-->>ND: 17. Hiển thị đơn đã hủy
+    end

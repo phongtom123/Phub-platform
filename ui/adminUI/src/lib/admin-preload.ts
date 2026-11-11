@@ -38,7 +38,7 @@ export async function preloadAdminData(signal: AbortSignal, canRun: () => boolea
   const priority = ["products", "orders", "customers", "inventory", "warehouses", "accounts"];
   names.sort((a, b) => (priority.includes(a) ? priority.indexOf(a) : priority.length) - (priority.includes(b) ? priority.indexOf(b) : priority.length));
   const jobs = names.map(name => name === "accounts"
-    ? { path: "/api/backend/admin/accounts?q=&page=1", href: "/accounts" }
+    ? { path: "/api/backend/admin/accounts?q=&page=1&archive=ACTIVE", href: "/accounts" }
     : { path: `/api/backend/data/${name}?page=1&page_size=20&q=`, href: `/data/${name}` });
   let cursor = 0;
   async function worker() {

@@ -18,9 +18,10 @@ const { chromium } = require(process.env.PHUB_PLAYWRIGHT_MODULE || 'playwright')
    if(path==='auth/me')body={account_id:'FIXTURE',username:'staff',role:'NHAN_VIEN',name:'Staff fixture',employee_id:'NV1',warehouse_id:1,customer_id:null};
    else if(path==='data/resources')body=[{name:'orders',title:'Đơn hàng',keys:['ma_donhang'],columns:[],writable:false}];
    else if(path==='staff/counter/customers') {
-    assert(url.searchParams.has('email'),'Look up customers by email');
-    const email=url.searchParams.get('email');
-    body={data:email==='customer@example.com'?[{ma_kh:'KH1',ten_kh:'Customer fixture',sdt:'0901234567',email,ten_tai_khoan:'customer'}]:[]};
+    assert(url.searchParams.has('q'),'Live-search customers by name, email or phone');
+    const q=url.searchParams.get('q').trim().toLowerCase();
+    body={data:['customer','0901234567'].some(value=>value.includes(q)||q.includes(value))
+     ?[{ma_kh:'KH1',ten_kh:'Customer fixture',sdt:'0901234567',email:'customer@example.com',ten_tai_khoan:'customer'}]:[]};
    }
    else if(path==='staff/counter/products')body={data:[{sku:'S1',ten_sp:'Product fixture',unit_price:'100.00',warehouse_id:1,available:20}]};
    if(url.searchParams.has('filters'))body.filters=JSON.parse(url.searchParams.get('filters'));
@@ -33,16 +34,18 @@ const { chromium } = require(process.env.PHUB_PLAYWRIGHT_MODULE || 'playwright')
   const email=form.getByLabel('Email khách hàng',{exact:true});
   assert.equal(await email.getAttribute('type'),'email');
   assert.equal(await email.getAttribute('required'),'');
-  await email.fill('  CUSTOMER@example.com  ');
-  await form.getByRole('button',{name:'Tìm khách theo email',exact:true}).click();
+  const search=form.getByRole('combobox',{name:'Tìm tài khoản khách hàng'});
+  await search.fill('0901234567');
+  await form.getByRole('option',{name:/Customer fixture/}).click();
   await form.getByText('Đã chọn',{exact:false}).waitFor();
   assert.equal(await form.getByLabel('Tên người mua',{exact:true}).inputValue(),'Customer fixture');
-  await email.fill('missing@example.com');
+  assert.equal(await email.inputValue(),'customer@example.com');
+  assert.equal(await form.getByLabel('Số điện thoại người mua',{exact:true}).inputValue(),'0901234567');
+  await search.fill('missing@example.com');
   assert.equal(await form.getByLabel('Tên người mua',{exact:true}).inputValue(),'','Changing email clears the previous owner');
-  await form.getByRole('button',{name:'Tìm khách theo email',exact:true}).click();
-  await form.getByRole('alert').getByText('Không có tài khoản khách đang hoạt động',{exact:false}).waitFor();
-  await email.fill('customer@example.com');
-  await form.getByRole('button',{name:'Tìm khách theo email',exact:true}).click();
+  await form.getByText('Không tìm thấy tài khoản đang hoạt động.',{exact:true}).waitFor();
+  await search.fill('customer@example.com');
+  await form.getByRole('option',{name:/Customer fixture/}).click();
   await form.getByText('Đã chọn',{exact:false}).waitFor();
   await form.getByRole('button',{name:'Tìm hàng trong kho',exact:true}).click();
   await form.getByLabel('Thêm sản phẩm',{exact:true}).selectOption('S1:1');

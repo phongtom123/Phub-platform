@@ -12,7 +12,7 @@ const choiceLabels: Record<string, Record<string, string>> = {
   phuong_thuc: { TIEN_MAT: "Tiền mặt", CHUYEN_KHOAN: "Chuyển khoản", THE: "Thẻ", VI_DIEN_TU: "Ví điện tử" },
   loai_giao_dich: { THU: "Thu tiền", HOAN_TIEN: "Hoàn tiền" },
   nguon_lap: { QUAN_TRI: "Quản trị", TU_DONG: "Tự động" },
-  la_bypass: { true: "Bypass", false: "Thông thường" },
+  la_bypass: { true: "Có", false: "Không" },
 };
 export function inlineChoiceLabel(field: string, value: DataRow[string]) {
   return value === null || value === undefined ? "—" : choiceLabels[field]?.[String(value)] ?? String(value);

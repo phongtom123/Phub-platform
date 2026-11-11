@@ -1,0 +1,15 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> choose[Chọn hóa đơn]
+    choose --> load[Đọc hóa đơn và dòng sản phẩm]
+    load --> valid{Dữ liệu in đầy đủ?}
+    valid -->|Không| error[Thông báo chưa thể in]
+    error --> finish([Kết thúc])
+    valid -->|Có| status[Kiểm tra trạng thái đơn]
+    status --> cancelled{Đơn đã hủy?}
+    cancelled -->|Có| mark[Đánh dấu chứng từ đối chiếu]
+    cancelled -->|Không| preview[Hiển thị bản in]
+    mark --> preview
+    preview --> print[Người dùng mở hộp thoại in]
+    print --> note[In hoặc lưu PDF bằng trình duyệt]
+    note --> finish

@@ -6,10 +6,20 @@
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .buyer .fields label { display: flex; flex-direction: column; gap: 8px; font-size: 16px; min-width: 0; }
 .fields .email { grid-column: 1 / -1; }
-.lookup { display: flex; gap: 10px; align-items: stretch; }
+.searchBlock { margin-bottom: 16px; }
+.searchBlock > label { display: block; margin-bottom: 8px; font-size: 16px; }
+.searchControl { position: relative; }
+.searchControl > input { box-sizing: border-box; width: 100%; min-width: 0; font: inherit; border: 1px solid #dce1db; border-radius: 8px; padding: 11px 12px; color: #111; background: #fff; }
+.searchControl > input:focus { outline: 2px solid rgba(20, 168, 0, .2); border-color: #38952a; }
+.results { position: absolute; z-index: 50; top: calc(100% + 6px); left: 0; right: 0; max-height: 300px; overflow-y: auto; border: 1px solid #dce1db; border-radius: 10px; background: #fff; box-shadow: 0 12px 30px rgba(23, 36, 25, .16); }
+.results button { display: flex; width: 100%; flex-direction: column; align-items: flex-start; gap: 3px; padding: 11px 13px; border: 0; border-bottom: 1px solid #edf0eb; background: #fff; color: #1f2921; text-align: left; font: inherit; cursor: pointer; }
+.results button:last-child { border-bottom: 0; }
+.results button:hover, .results .activeResult { background: #eef8eb; }
+.results span { color: #4d5b50; font-size: 14px; overflow-wrap: anywhere; }
+.results small { color: #748078; font-size: 12px; }
+.resultState { padding: 13px; color: #657067; font-size: 14px; }
 .buyer .fields input { box-sizing: border-box; width: 100%; min-width: 0; font: inherit; border: 1px solid #dce1db; border-radius: 8px; padding: 11px 12px; color: #111; background: #fff; }
 .buyer .fields input:read-only { background: #f6f8f4; }
-.buyer .lookup button { flex: 0 0 auto; border: 1px solid #dce1db; border-radius: 8px; padding: 10px 14px; background: white; font: inherit; cursor: pointer; }
 .notice { margin: 14px 0 0; font-size: 14px; color: #526056; line-height: 1.6; }
 .error { margin: 14px 0 0; color: #a62020; background: #fff1f1; border-radius: 8px; padding: 12px; }
-@media (max-width: 650px) { .fields { grid-template-columns: 1fr; } .lookup { flex-wrap: wrap; } .buyer { padding: 16px; } }
+@media (max-width: 650px) { .fields { grid-template-columns: 1fr; } .buyer { padding: 16px; } }

@@ -1,0 +1,16 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> open[Mở form thêm khách hàng]
+    open --> input[/Nhập thông tin hồ sơ/]
+    input --> submit[Chọn lưu]
+    submit --> valid{Dữ liệu hợp lệ?}
+    valid -->|Không| error[Hiển thị lỗi từng trường]
+    error --> input
+    valid -->|Có| confirm{Xác nhận tạo?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| create[Tạo hồ sơ khách hàng]
+    create --> saved{Lưu thành công?}
+    saved -->|Không| fail[Thông báo lý do]
+    fail --> finish
+    saved -->|Có| note[Thông báo đã tạo hồ sơ]
+    note --> finish

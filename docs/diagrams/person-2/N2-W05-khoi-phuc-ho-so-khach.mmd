@@ -1,0 +1,14 @@
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#000000", "primaryBorderColor": "#000000", "secondaryColor": "#ffffff", "tertiaryColor": "#ffffff", "lineColor": "#000000", "textColor": "#000000", "edgeLabelBackground": "#ffffff"}}}%%
+flowchart TD
+    start([Bắt đầu]) --> filter[Chọn danh sách đã lưu trữ]
+    filter --> choose[Chọn hồ sơ khách]
+    choose --> restore[Chọn khôi phục]
+    restore --> confirm{Xác nhận khôi phục?}
+    confirm -->|Không| finish([Kết thúc])
+    confirm -->|Có| update[Gỡ thời điểm lưu trữ]
+    update --> saved{Lưu thành công?}
+    saved -->|Không| error[Thông báo lý do]
+    error --> finish
+    saved -->|Có| keep[Không tự mở tài khoản bị khóa hoặc ẩn]
+    keep --> note[Thông báo đã khôi phục hồ sơ]
+    note --> finish
