@@ -33,7 +33,7 @@ class SurveyQuestion(Input):
 
 
 class SurveyAudience(Input):
-    loai_doi_tuong: Literal["TAT_CA", "DO_TUOI", "CHUA_NGAY_SINH"]
+    loai_doi_tuong: Literal["TAT_CA", "DO_TUOI", "CHUA_NGAY_SINH", "DA_CO_DON", "CHUA_CO_DON"]
     tuoi_tu: StrictInt | None = Field(default=None, ge=0, le=130)
     tuoi_den: StrictInt | None = Field(default=None, ge=0, le=130)
     khach_them: list[Annotated[str, Field(min_length=1, max_length=100)]] = Field(default_factory=list, max_length=5000)

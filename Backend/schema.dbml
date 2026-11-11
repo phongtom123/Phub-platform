@@ -519,7 +519,7 @@ Table KHAO_SAT {
   tieu_de varchar [not null]
   mo_ta text [not null]
   trang_thai varchar [not null, note: 'NHAP / DANG_MO / DONG']
-  loai_doi_tuong varchar [not null, note: 'TAT_CA / DO_TUOI / CHUA_NGAY_SINH']
+  loai_doi_tuong varchar [not null, note: 'TAT_CA / DO_TUOI / CHUA_NGAY_SINH / DA_CO_DON / CHUA_CO_DON']
   tuoi_tu int
   tuoi_den int
   han_tra_loi timestamptz [not null]
