@@ -45,6 +45,10 @@ begin
    values(order_id,body->>'customer_id',employee,'TAI_QUAY','MOI',created,body->>'recipient',body->>'phone',body->>'note');$old$;
  new_insert:=$new$insert into public."DON_HANG"(ma_donhang,ma_kh,ma_nhan_vien,kenh_ban,trang_thai,thoi_gian_dat,ten_nguoi_nhan,sdt_nguoi_nhan,email_nguoi_mua,ghi_chu)
    values(order_id,body->>'customer_id',employee,'TAI_QUAY','MOI',created,body->>'recipient',body->>'phone',lower(btrim(body->>'buyer_email')),body->>'note');$new$;
+ old_guard:=replace(old_guard,E'\r\n',E'\n');
+ new_guard:=replace(new_guard,E'\r\n',E'\n');
+ old_insert:=replace(old_insert,E'\r\n',E'\n');
+ new_insert:=replace(new_insert,E'\r\n',E'\n');
  if strpos(source,old_guard)=0 or strpos(source,old_insert)=0 then
   raise exception 'Unexpected counter order implementation; no changes were applied'; end if;
  execute replace(replace(source,old_guard,new_guard),old_insert,new_insert);

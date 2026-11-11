@@ -61,6 +61,7 @@ export default function SupportView() {
   const [version, setVersion] = useState(0), [listVersion, setListVersion] = useState(0);
   const write = useRef<AbortController | null>(null);
   const isClosed = ticket?.trang_thai === "DA_DONG";
+  const canClaim = Boolean(ticket && !isClosed && (ticket.trang_thai === "MOI" || (ticket.trang_thai === "DANG_XU_LY" && !ticket.nguoi_xu_ly)));
   const dirty = Boolean(!isClosed && ticket && (reply !== (ticket.phan_hoi_quan_ly ?? "") || draftStatus !== ticket.trang_thai || draftPriority !== ticket.muc_do_uu_tien));
   const queryString = new URLSearchParams({ page: String(page), page_size: "20", q: query, ...(status ? { status } : {}), ...(priority ? { priority } : {}) }).toString();
 
@@ -102,7 +103,7 @@ export default function SupportView() {
   async function save(event?: FormEvent, claim = false) {
     event?.preventDefault();
     if (!ticket || saving || write.current || isClosed) return;
-    if (claim && ticket.trang_thai !== "MOI") return;
+    if (claim && !canClaim) return;
     const patch: Record<string, string | boolean | null> = {};
     if (reply !== (ticket.phan_hoi_quan_ly ?? "")) patch.phan_hoi_quan_ly = reply.trim() || null;
     if (draftStatus !== ticket.trang_thai) {
@@ -113,7 +114,13 @@ export default function SupportView() {
       patch.trang_thai = draftStatus;
     }
     if (draftPriority !== ticket.muc_do_uu_tien) patch.muc_do_uu_tien = draftPriority;
-    if (claim) { patch.nhan_xu_ly = true; patch.trang_thai = "DANG_XU_LY"; }
+    if (claim) {
+      patch.nhan_xu_ly = true;
+      patch.trang_thai = "DANG_XU_LY";
+    }
+    if ((draftStatus === "DANG_XU_LY" || draftStatus === "DA_GIAI_QUYET") && !ticket.nguoi_xu_ly) {
+      patch.nhan_xu_ly = true;
+    }
     if (!Object.keys(patch).length) return;
     const controller = new AbortController(); write.current = controller;
     setSaving(true); setSaveError(""); setNotice("");
@@ -155,7 +162,7 @@ export default function SupportView() {
       <section className="support-detail" aria-label="Chi tiết ticket">
         {!id ? <div className="support-empty"><h2>Chọn một ticket</h2><p>Xem nội dung, nhận xử lý và phản hồi cho khách tại đây.</p></div> : <>
           <div className="support-detail-actions"><button type="button" disabled={saving} onClick={() => selectTicket(null)}>← Danh sách ticket</button>
-            {ticket && <button className="live-primary" type="button" disabled={saving || ticket.trang_thai !== "MOI"} onClick={() => void save(undefined, true)}>Nhận xử lý</button>}</div>
+            {ticket && <button className="live-primary" type="button" disabled={saving || !canClaim} onClick={() => void save(undefined, true)}>Nhận xử lý</button>}</div>
           {detailError && <p className="live-error" role="alert">{detailError}</p>}
           {detailLoading && <p role="status">Đang tải nội dung…</p>}
           {ticket && !detailLoading && !detailError && <>
