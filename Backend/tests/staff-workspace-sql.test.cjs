@@ -21,6 +21,8 @@ const sql = name => fs.readFileSync(path.join(migrations, name), 'utf8');
    '20261105093025_crm_surveys_reviews.sql', '20261106083600_counter_invoice_claims.sql',
    '20261106142849_staff_operational_workspace.sql',
    '20261107030114_counter_buyer_email.sql',
+   '20261112043742_invoice_buyer_email_compatibility.sql',
+   '20261112045449_counter_orders_all_active_warehouses.sql',
    '20261112140000_register_links_counter_orders.sql',
   ];
   for (const name of names) {
@@ -29,6 +31,7 @@ const sql = name => fs.readFileSync(path.join(migrations, name), 'utf8');
     if (name === '001_initial_schema.sql') await db.exec(`insert into public."KHO"(ma_kho,ten_kho,dia_chi) values(2,'Store 2','Address');`);
    } catch (error) { throw new Error(`Migration ${name}: ${error.message}`); }
   }
+  await db.exec(sql('20261112045449_counter_orders_all_active_warehouses.sql')); // repeat-safe
   await db.exec(`
    insert into public."KHO"(ma_kho,ten_kho,dia_chi) values(1,'Store 1','Address'),(2,'Store 2','Address') on conflict do nothing;
    insert into public."NHAN_VIEN"(ma_nhan_vien,loai_nhan_vien,ho_ten,ma_kho) values('NV1','ADMIN','Admin',null),('NV2','NHAN_VIEN','Staff',1);
@@ -94,6 +97,23 @@ const sql = name => fs.readFileSync(path.join(migrations, name), 'utf8');
   assert.equal(guestOrder.data[0].email_nguoi_mua,'guest@example.com');
   assert.equal(guestOrder.data[0].ma_kh,null,'Walk-in email does not assign an account');
   assert.equal((await rpc('public.staff_counter_order_email_v1',['STAFF',guestKey,guestBody])).replayed,true);
+  // A staff member assigned to warehouse 1 can sell from active warehouse 2.
+  const crossWarehouseBody = JSON.stringify({...JSON.parse(guestBody), lines:[{sku:'SKU1',warehouse_id:2,quantity:1,unit_price:'80.00'}]});
+  const crossWarehouseKey = randomUUID();
+  const catalogWarehouses = (await rpc('public.staff_counter_catalog_v1',['STAFF','products','SKU1'])).data.map(item => item.warehouse_id).sort();
+  assert.deepEqual(catalogWarehouses,[1,2],'Counter search includes all active warehouses');
+  const crossWarehouse = await rpc('public.staff_counter_order_email_v1',['STAFF',crossWarehouseKey,crossWarehouseBody]);
+  assert.equal(crossWarehouse.data[0].ma_nhan_vien,'NV2');
+  const crossWarehouseId = crossWarehouse.data[0].ma_donhang;
+  assert.equal((await db.query('select ma_kho_xuat from public."CT_DON_HANG" where ma_donhang=$1',[crossWarehouseId])).rows[0].ma_kho_xuat,2);
+  assert.equal((await rpc('public.staff_counter_order_email_v1',['STAFF',crossWarehouseKey,crossWarehouseBody])).replayed,true);
+  await forbidden(rpc('public.staff_counter_order_email_v1',['CUSTOMER',randomUUID(),crossWarehouseBody]));
+  await db.exec('reset role; update public."KHO" set trang_thai=0 where ma_kho=2; set role service_role');
+  assert.ok((await rpc('public.staff_counter_catalog_v1',['STAFF','products','SKU1'])).data.every(item => item.warehouse_id !== 2));
+  await assert.rejects(rpc('public.staff_counter_order_email_v1',['STAFF',randomUUID(),crossWarehouseBody]),/VALIDATION_ERROR/);
+  await db.exec('reset role; update public."KHO" set trang_thai=1 where ma_kho=2; set role service_role');
+  const excessive = JSON.stringify({...JSON.parse(guestBody),lines:[{sku:'SKU1',warehouse_id:2,quantity:1000000,unit_price:'80.00'}]});
+  await assert.rejects(rpc('public.staff_counter_order_email_v1',['STAFF',randomUUID(),excessive]),/INSUFFICIENT_STOCK/);
   const memberBody = {...JSON.parse(guestBody),customer_id:'KH1',buyer_email:'customer@example.com'};
   const memberOrder = await rpc('public.staff_counter_order_email_v1',['STAFF',randomUUID(),JSON.stringify(memberBody)]);
   assert.equal(memberOrder.data[0].ma_kh,'KH1');

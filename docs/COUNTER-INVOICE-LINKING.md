@@ -26,7 +26,9 @@ không chuyển đơn từ khách khác. Tạo yêu cầu không tiết lộ hó
   Hai yêu cầu cùng hóa đơn không thể cùng được chấp nhận.
 - API ghi kiểm tra Origin và `Idempotency-Key` UUID v4. Gửi lại cùng nội dung dùng cùng mã;
   nội dung khác dùng lại mã trả lỗi. UI chỉ báo thành công khi backend xác nhận thành công.
-- Nhân viên tạo đơn qua transaction có sẵn, chỉ bán từ kho được phân công.
+- Nhân viên tạo đơn qua transaction có sẵn, được chọn hàng từ mọi kho đang hoạt động.
+  Migration `20261112045449_counter_orders_all_active_warehouses.sql` đồng bộ phạm vi
+  tra cứu và tạo đơn; vẫn kiểm tra quyền nhân viên, kho hoạt động, giá và tồn khả dụng.
   Tạo đơn không tự lập hóa đơn/thu tiền/xuất hàng/hoàn thành. Quyền quản trị khác giữ nguyên.
 
 ## API
