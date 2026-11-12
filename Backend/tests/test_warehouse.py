@@ -14,7 +14,7 @@ from phub_api.models.user import User
 
 @pytest.fixture
 def warehouse_client():
-    state = {'role': 'NHAN_VIEN', 'warehouse': 2, 'employee': 'NV1', 'calls': [], 'error': None}
+    state = {'role': 'NHAN_VIEN', 'warehouse': 2, 'scope_warehouse': 2, 'employee': 'NV1', 'calls': [], 'error': None}
     receipt = {'ma_phieu_nhap': -5, 'ma_phieu_code': 'PN-TEST', 'ma_ncc': 0, 'ma_kho': 2,
                'ngay_tao': '2026-10-29T10:00:00', 'trang_thai': 'NHAP', 'nguoi_tao': 'NV1', 'supplier_name': 'Supplier'}
     detail = {'receipt': receipt, 'lines': [{'sku': 'SKU1', 'product_name': 'Product', 'quantity': 2, 'unit_price': '10.25', 'unit': 'unit'}], 'version': 'a' * 64, 'replayed': False}
@@ -25,7 +25,7 @@ def warehouse_client():
             return httpx.Response(400, json=state['error'])
         if body.get('p_kind') in {'history', 'receipts'}:
             data = [] if body['p_kind'] == 'history' else [receipt | {'creator_name': 'Staff', 'line_count': 1}]
-            return httpx.Response(200, json={'data': data, 'total': len(data), 'page': 1, 'page_size': 20, 'warehouse_id': 2})
+            return httpx.Response(200, json={'data': data, 'total': len(data), 'page': 1, 'page_size': 20, 'warehouse_id': state['scope_warehouse']})
         return httpx.Response(200, json=detail)
 
     with httpx.Client(transport=httpx.MockTransport(handle)) as transport:
@@ -56,6 +56,19 @@ def test_receipts_and_history_read_only_server_scoped_rpcs(warehouse_client):
     query = state['calls'][-1][1]['p_query']
     assert query['start'] == '2026-10-27T17:00:00+00:00'
     assert query['end'] == '2026-10-29T17:00:00+00:00'
+
+
+@pytest.mark.parametrize('resource', ['receipts', 'history'])
+def test_all_warehouse_lists_accept_explicit_null_scope(warehouse_client, resource):
+    client, state = warehouse_client
+    state['scope_warehouse'] = None
+    response = client.get(f'/api/warehouse/{resource}')
+    assert response.status_code == 200
+    assert 'warehouse_id' in response.json()
+    assert response.json()['warehouse_id'] is None
+    if resource == 'receipts':
+        assert response.json()['data'][0]['ma_kho'] == 2
+    assert 'warehouse_id' not in state['calls'][0][1]['p_query']
 
 
 def test_create_edit_confirm_cancel_are_atomic_rpc_commands(warehouse_client):

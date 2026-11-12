@@ -13120,8 +13120,16 @@
             "type": "integer"
           },
           "warehouse_id": {
-            "title": "Warehouse Id",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Kho cụ thể; null khi lịch sử bao gồm tất cả kho.",
+            "title": "Warehouse Id"
           }
         },
         "required": [
@@ -13156,8 +13164,16 @@
             "type": "integer"
           },
           "warehouse_id": {
-            "title": "Warehouse Id",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Kho cụ thể; null khi danh sách bao gồm tất cả kho.",
+            "title": "Warehouse Id"
           }
         },
         "required": [

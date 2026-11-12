@@ -7,5 +7,5 @@ export type ReceiptHeader = {
 };
 export type ReceiptLine = { sku: string; product_name: string; quantity: number; unit_price: string; unit: string; pricing?: import("../../../../shared/pricing").Price | null };
 export type Receipt = { receipt: ReceiptHeader; lines: ReceiptLine[]; version: string; replayed: boolean };
-export type Page<T> = { data: T[]; total: number; page: number; page_size: number; warehouse_id?: number };
+export type Page<T> = { data: T[]; total: number; page: number; page_size: number; warehouse_id?: number | null };
 export type ReceiptListItem = ReceiptHeader & { creator_name: string | null; line_count: number };
