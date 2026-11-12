@@ -13,3 +13,6 @@ __pycache__
 /.password-migration-local/
 /.id-normalization-local/
 /Backend/supabase/.temp/
+/Backend/scripts/database-backup/config.local.json
+*.dump
+*.backup

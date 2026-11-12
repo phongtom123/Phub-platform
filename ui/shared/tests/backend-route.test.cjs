@@ -115,6 +115,48 @@ test("manual invoice gateway forwards exact routes, session, origin, query and i
   assert.equal(calls.length,3,'Unsupported paths and methods never reach the backend');
 });
 
+test("manual invoice gateway forwards lookups and preserves authenticated idempotent creation", async () => {
+  const calls = [];
+  const key = "a77a9370-caa8-48d8-a3dc-60f352cedee1";
+  const body = JSON.stringify({ buyer: "Fixture buyer", email: "buyer@example.test",
+    lines: [{ sku: "SKU1", quantity: 1, unit_price: "100.00", discount: "0.00" }] });
+  const proxy = gateway(async (url, options) => {
+    calls.push({ url: String(url), method: options.method, body: options.body,
+      cookie: options.headers.get("Cookie"), origin: options.headers.get("Origin"),
+      key: options.headers.get("Idempotency-Key"), type: options.headers.get("Content-Type") });
+    return options.method === "POST"
+      ? Response.json({ data: [{ id: "HD-FIXTURE" }], replayed: false }, { status: 201 })
+      : Response.json({ data: [] });
+  });
+  for (const port of [3000, 3002]) {
+    const origin = `http://localhost:${port}`;
+    for (const name of ["options", "customers"]) {
+      const response = await proxy(new Request(`${origin}/api/backend/warehouse/manual-invoices/${name}?q=buyer%40example.test`, {
+        headers: { Cookie: "other=private; phub_session=fixture" },
+      }), ["warehouse", "manual-invoices", name]);
+      assert.equal(response.status, 200);
+      assert.equal(calls.at(-1).url, `http://127.0.0.1:8000/api/warehouse/manual-invoices/${name}?q=buyer%40example.test`);
+      assert.equal(calls.at(-1).cookie, "phub_session=fixture");
+    }
+    const response = await proxy(new Request(`${origin}/api/backend/warehouse/manual-invoices`, {
+      method: "POST", body,
+      headers: { Origin: origin, Cookie: "phub_session=fixture", "Idempotency-Key": key },
+    }), ["warehouse", "manual-invoices"]);
+    assert.equal(response.status, 201);
+    assert.deepEqual(await response.json(), { data: [{ id: "HD-FIXTURE" }], replayed: false });
+    assert.deepEqual(calls.at(-1), { url: "http://127.0.0.1:8000/api/warehouse/manual-invoices", method: "POST", body,
+      cookie: "phub_session=fixture", origin, key, type: "application/json" });
+  }
+  const forwarded = calls.length;
+  for (const [method, segments] of [
+    ["GET", ["warehouse", "manual-invoices"]], ["PATCH", ["warehouse", "manual-invoices"]],
+    ["DELETE", ["warehouse", "manual-invoices"]], ["POST", ["warehouse", "manual-invoices", "options"]],
+    ["POST", ["warehouse", "manual-invoices", "customers"]], ["GET", ["warehouse", "manual-invoices", "private"]],
+    ["GET", ["warehouse", "manual-invoices", "options", "extra"]],
+  ]) assert.equal((await proxy(new Request("http://localhost/api/backend/x", { method }), segments)).status, 404);
+  assert.equal(calls.length, forwarded, "unsupported methods and paths never reach the backend");
+});
+
 test("staff handoff forwards issuance with the source cookie, keeping exchange server-only", async () => {
   const calls=[];
   const proxy=gateway(async(url,options)=>{calls.push({url:String(url),cookie:options.headers.get('Cookie'),origin:options.headers.get('Origin'),body:options.body});return Response.json({code:'A'.repeat(43),expires_in:60});});
