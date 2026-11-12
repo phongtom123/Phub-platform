@@ -47,7 +47,16 @@ test("customer registration normalizes public fields and never sends password co
   assert.deepEqual(await client.registerCustomer({
     name: " Customer Name ", username: " customer ", email: " CUSTOMER@EXAMPLE.COM ",
     phone: " ", password: "customer-password",
-  }), customer);
+  }).then(value => JSON.parse(JSON.stringify(value))), { ...customer, linked_orders: 0 });
+});
+
+test("registration reports walk-in orders linked by email and ignores invalid counts", async () => {
+  const customer = { ...session, role: "KHACH_HANG", customer_id: "KH1", employee_id: null };
+  for (const [value, expected] of [[2, 2], [0, 0], [-1, 0], [1.5, 0], ["2", 0]]) {
+    const client = authClient(async () => Response.json({ ...customer, linked_orders: value }, { status: 201 }));
+    const result = await client.registerCustomer({ name: "Khách", username: "khach", email: "khach@example.com", password: "mat-khau-dai" });
+    assert.equal(result.linked_orders, expected);
+  }
 });
 
 test("session validation rejects malformed responses", async () => {

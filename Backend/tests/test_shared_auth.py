@@ -123,7 +123,8 @@ def test_customer_auth_flows_through_the_shared_dependency(monkeypatch, endpoint
             assert client.get("/customer", headers=headers).json() == {"customer_id": "KH3"}
 
 
-def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch):
+@pytest.mark.parametrize(("linked_from_db", "linked_orders"), [(None, 0), (2, 2), ("3", 0), (-1, 0), (True, 0)])
+def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch, linked_from_db, linked_orders):
     monkeypatch.setenv("JWT_SECRET", "test-only-" + "x" * 64)
     registration_attempts.clear()
     state = {}
@@ -137,12 +138,15 @@ def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch):
             assert payload["p_name"] == "Customer Name"
             assert payload["p_phone"] == "0901234567"
             assert ("customer-password" == payload["p_password"])
-            return httpx.Response(200, json={
+            result = {
                 "account_id": "KH000001", "username": "customer", "role": "KHACH_HANG",
                 "name": "Customer Name", "customer_id": payload["p_customer_id"],
                 "employee_id": None, "warehouse_id": None,
                 "credential_version": "00000000-0000-4000-8000-000000000001",
-            })
+            }
+            if linked_from_db is not None:
+                result["linked_orders"] = linked_from_db
+            return httpx.Response(200, json=result)
         if request.url.path.endswith("/TAI_KHOAN"):
             return httpx.Response(200, json=[{
                 "ma_tk": "KH000001", "ten_tai_khoan": "customer",
@@ -167,7 +171,7 @@ def test_customer_registration_is_atomic_and_starts_a_session(monkeypatch):
             assert response.json() == {
                 "account_id": "KH000001", "username": "customer", "role": "KHACH_HANG",
                 "name": "Customer Name", "customer_id": state["p_customer_id"],
-                "employee_id": None, "warehouse_id": None,
+                "employee_id": None, "warehouse_id": None, "linked_orders": linked_orders,
             }
             assert "HttpOnly" in response.headers["set-cookie"]
             assert "customer-password" not in response.text and "p_password" not in response.text

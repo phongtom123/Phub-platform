@@ -9100,6 +9100,79 @@
         "title": "RegisterBody",
         "type": "object"
       },
+      "RegisteredUser": {
+        "properties": {
+          "account_id": {
+            "title": "Account Id",
+            "type": "string"
+          },
+          "customer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Id"
+          },
+          "employee_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Id"
+          },
+          "linked_orders": {
+            "default": 0,
+            "description": "Số đơn mua tại quầy (cùng email) vừa được gắn vào tài khoản mới.",
+            "minimum": 0.0,
+            "title": "Linked Orders",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "ADMIN",
+              "NHAN_VIEN",
+              "KHACH_HANG"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "warehouse_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warehouse Id"
+          }
+        },
+        "required": [
+          "account_id",
+          "username",
+          "role",
+          "name"
+        ],
+        "title": "RegisteredUser",
+        "type": "object"
+      },
       "ResourceColumn": {
         "properties": {
           "choices": {
@@ -16954,7 +17027,7 @@
                   "warehouse_id": null
                 },
                 "schema": {
-                  "$ref": "#/components/schemas/SessionUser"
+                  "$ref": "#/components/schemas/RegisteredUser"
                 }
               }
             },

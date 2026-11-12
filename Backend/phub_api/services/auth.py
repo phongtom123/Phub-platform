@@ -158,7 +158,9 @@ def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[U
         account_id=result["account_id"], username=result["username"], role="KHACH_HANG",
         name=result["name"], customer_id=result["customer_id"],
     )
-    return user, password + "\0" + str(result["credential_version"])
+    linked = result.get("linked_orders")
+    linked_orders = linked if isinstance(linked, int) and not isinstance(linked, bool) and linked > 0 else 0
+    return user, password + "\0" + str(result["credential_version"]), linked_orders
 
 
 class AuthService:

@@ -104,7 +104,10 @@ export async function loginSession(username: string, password: string): Promise<
   return user;
 }
 
-export async function registerCustomer(input: CustomerRegistration): Promise<SessionUser> {
+/** linked_orders: walk-in counter orders with the same email attached during registration. */
+export type RegisteredCustomer = SessionUser & { linked_orders: number };
+
+export async function registerCustomer(input: CustomerRegistration): Promise<RegisteredCustomer> {
   const user = await sessionRequest("/api/backend/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -117,7 +120,8 @@ export async function registerCustomer(input: CustomerRegistration): Promise<Ses
     }),
   }, "Không tạo được tài khoản. Kiểm tra lại thông tin và thử lại.");
   announceSession(user);
-  return user;
+  const linked = (user as { linked_orders?: unknown }).linked_orders;
+  return { ...user, linked_orders: typeof linked === "number" && Number.isInteger(linked) && linked > 0 ? linked : 0 };
 }
 
 export async function logoutSession(): Promise<void> {
