@@ -48,6 +48,8 @@ class AdminOperationsService:
                     raise HTTPException(status, detail) from None
             if exc.code in {'42883', 'PGRST202', '42P01', '42703'}:
                 raise HTTPException(503, 'Database thiếu cấu trúc nghiệp vụ. Cần áp dụng migration admin_operations, receipt_sale_pricing và counter_buyer_email; không có thao tác nào được ghi.') from None
+            if exc.code == '42501':
+                raise HTTPException(403, 'Bạn không có quyền thực hiện thao tác này với dữ liệu đã chọn.') from None
             if exc.code == '23505':
                 raise HTTPException(409, 'Mã phiếu hoặc mã đối soát đã tồn tại.') from None
             if exc.code in {'23503', '23514', '22003', '22P02'}:

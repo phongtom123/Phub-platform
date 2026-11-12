@@ -103,6 +103,7 @@ def test_signed_ids_exact_money_and_idempotency_header(client):
 
 @pytest.mark.parametrize('code,message,status', [('P0001', 'STATE_CONFLICT', 409), ('P0001', 'INSUFFICIENT_STOCK', 409),
     ('P0001', 'PAYMENT_DEADLINE_EXPIRED', 409),
+    ('42501', 'permission denied for table secret_table', 403),
     ('P0001', 'PAYMENT_LIMIT', 409), ('P0001', 'INVOICE_REQUIRED', 409), ('P0001', 'NOT_FOUND', 404), ('PGRST202', 'missing RPC', 503), ('23505', 'duplicate', 409)])
 def test_business_errors_keep_safe_status(client, code, message, status):
     http, state = client
