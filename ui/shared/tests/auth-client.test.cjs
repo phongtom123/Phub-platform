@@ -60,6 +60,29 @@ test("backend auth errors keep their status and safe message", async () => {
   await assert.rejects(client.getSession(), error => error.status === 401 && error.message === "Vui lòng đăng nhập.");
 });
 
+const registration = { name: "Khách", username: "khach", email: "khach@example.com", phone: "", password: "mat-khau-dai" };
+
+test("registration shows each field error in Vietnamese instead of a session error", async () => {
+  const client = authClient(async () => Response.json({ detail: [
+    { loc: ["body", "email"], msg: "Value error, Email không đúng định dạng.", type: "value_error" },
+    { loc: ["body", "phone"], msg: "Value error, Số điện thoại không đúng định dạng.", type: "value_error" },
+    { loc: ["body", "password"], msg: "String should have at least 10 characters", type: "string_too_short" },
+  ] }, { status: 422 }));
+  await assert.rejects(client.registerCustomer(registration), error => error.status === 422 &&
+    error.message === "Email không đúng định dạng. Số điện thoại không đúng định dạng. Mật khẩu cần ít nhất 10 ký tự.");
+});
+
+test("registration keeps the backend conflict text and has its own fallback", async () => {
+  const conflict = authClient(async () => Response.json({ detail: "Tên tài khoản đã được sử dụng. Vui lòng chọn tên khác." }, { status: 409 }));
+  await assert.rejects(conflict.registerCustomer(registration),
+    error => error.status === 409 && error.message === "Tên tài khoản đã được sử dụng. Vui lòng chọn tên khác.");
+  const unknown = authClient(async () => new Response("upstream down", { status: 502 }));
+  await assert.rejects(unknown.registerCustomer(registration),
+    error => error.message === "Không tạo được tài khoản. Kiểm tra lại thông tin và thử lại.");
+  const session = authClient(async () => Response.json({ detail: [{ loc: ["header"], msg: "x" }] }, { status: 401 }));
+  await assert.rejects(session.getSession(), error => error.message === "Không xác thực được phiên đăng nhập.");
+});
+
 test("logout uses the same gateway and no token is exposed to JavaScript", async () => {
   const client = authClient(async (url, options) => {
     assert.equal(url, "/api/backend/auth/logout");

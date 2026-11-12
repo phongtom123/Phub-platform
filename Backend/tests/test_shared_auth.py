@@ -203,3 +203,36 @@ def test_customer_registration_returns_safe_conflict_and_rejects_extra_fields(mo
             assert invalid.status_code == 422
             assert calls == 1
     registration_attempts.clear()
+
+
+@pytest.mark.parametrize(("message", "details", "expected"), [
+    ('duplicate key value violates unique constraint "TAI_KHOAN_ten_tai_khoan_key"',
+     "Key (ten_tai_khoan)=(customer) already exists.", "Tên tài khoản đã được sử dụng. Vui lòng chọn tên khác."),
+    ('duplicate key value violates unique constraint "TAI_KHOAN_email_key"',
+     "Key (email)=(customer@example.com) already exists.",
+     "Email đã được đăng ký. Hãy đăng nhập, hoặc liên hệ cửa hàng nếu tài khoản bị khóa."),
+    ('duplicate key value violates unique constraint "TAI_KHOAN_email_key"', None,
+     "Email đã được đăng ký. Hãy đăng nhập, hoặc liên hệ cửa hàng nếu tài khoản bị khóa."),
+])
+def test_customer_registration_names_the_duplicate_field_without_echoing_data(monkeypatch, message, details, expected):
+    monkeypatch.setenv("JWT_SECRET", "test-only-" + "x" * 64)
+    registration_attempts.clear()
+
+    def handle(request):
+        return httpx.Response(409, json={"code": "23505", "message": message, "details": details, "hint": None})
+
+    with httpx.Client(transport=httpx.MockTransport(handle)) as transport:
+        db = SyncPostgrestClient("https://auth.test/rest/v1", http_client=transport)
+        app = FastAPI()
+        app.include_router(auth_router)
+        app.dependency_overrides[get_supabase] = lambda: db
+        with TestClient(app) as client:
+            payload = {
+                "name": "Customer Name", "username": "customer", "email": "customer@example.com",
+                "password": "customer-password",
+            }
+            response = client.post("/api/auth/register", json=payload, headers={"Origin": "http://localhost:3001"})
+            assert response.status_code == 409
+            assert response.json() == {"detail": expected}
+            assert "TAI_KHOAN" not in response.text and "already exists" not in response.text
+    registration_attempts.clear()

@@ -83,15 +83,15 @@ function RegisterForm() {
           </label>
           <label className="block text-sm font-medium text-zinc-800">
             Tên tài khoản
-            <input required name="username" autoComplete="username" minLength={3} maxLength={80} pattern="[A-Za-z0-9_.-]+" title="Chỉ dùng chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang." className={fieldClass} />
+            <input required name="username" autoComplete="username" minLength={3} maxLength={80} pattern="[A-Za-z0-9_.\-]+" title="Chỉ dùng chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang." className={fieldClass} />
           </label>
           <label className="block text-sm font-medium text-zinc-800">
             Số điện thoại <span className="font-normal text-zinc-400">(không bắt buộc)</span>
-            <input name="phone" type="tel" autoComplete="tel" maxLength={20} className={fieldClass} />
+            <input name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} pattern="\+?[0-9][0-9 .\(\)\-]{7,19}" title="Chỉ gồm chữ số, có thể có dấu + ở đầu, khoảng trắng, dấu chấm, gạch ngang hoặc ngoặc; từ 8 đến 20 ký tự." className={fieldClass} />
           </label>
           <label className="block text-sm font-medium text-zinc-800 sm:col-span-2">
             Email
-            <input required name="email" type="email" autoComplete="email" maxLength={254} className={fieldClass} />
+            <input required name="email" type="email" autoComplete="email" maxLength={254} pattern="[^\s@]+@[^\s@]+\.[^\s@]+" title="Email cần có dạng ten@tenmien.com." className={fieldClass} />
           </label>
           <label className="block text-sm font-medium text-zinc-800">
             Mật khẩu
