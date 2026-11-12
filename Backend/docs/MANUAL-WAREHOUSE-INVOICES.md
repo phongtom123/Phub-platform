@@ -16,6 +16,15 @@ Request tạo hóa đơn cần header `Idempotency-Key` là UUID v4. Khi không 
 
 ## Triển khai
 
+**Bản sửa 12/11/2026:** gateway dùng chung phải cho phép `POST /warehouse/manual-invoices`
+và `GET /warehouse/manual-invoices/options`, `/customers`. Khi database chưa có RPC,
+áp dụng `20261112050923_restore_manual_invoice_workflow.sql`: tạo lại các hàm theo
+workflow hiện có, sửa biến lưu kết quả để retry không trừ tồn lặp và chặn kho ngừng hoạt động.
+Migration này đã bao gồm cột email hóa đơn và chạy lặp lại được, không sửa chứng từ cũ.
+Sau khi cập nhật gateway phải deploy lại UI nhân viên; thay đổi schema response
+cho lịch sử/phiếu nhập toàn kho cần deploy lại API. `warehouse_id: null` ở danh sách
+biểu thị toàn bộ kho; mã kho trên từng phiếu và từng biến động vẫn là số nguyên.
+
 Áp dụng [migration `20261110174500_manual_warehouse_invoices.sql`](../migrations/20261110174500_manual_warehouse_invoices.sql) sau các migration kho đang dùng. Migration thêm email người mua vào `HOA_DON` và các RPC chỉ cho phép `service_role`; không cấp quyền gọi trực tiếp cho browser hoặc vai trò `anon`/`authenticated`.
 
 Giao diện lập hóa đơn nằm trong **Kho · Hóa đơn**. Lịch sử kho có bộ lọc thời gian và liên kết các biến động do hóa đơn thủ công tới hóa đơn tương ứng.

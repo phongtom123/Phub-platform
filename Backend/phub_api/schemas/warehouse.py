@@ -86,7 +86,7 @@ class WarehouseReceiptPage(BaseModel):
     total: int
     page: int
     page_size: int
-    warehouse_id: int
+    warehouse_id: int | None = Field(description='Kho cụ thể; null khi danh sách bao gồm tất cả kho.')
 
 
 class StockEvent(BaseModel):
@@ -108,7 +108,7 @@ class WarehouseHistoryPage(BaseModel):
     total: int
     page: int
     page_size: int
-    warehouse_id: int
+    warehouse_id: int | None = Field(description='Kho cụ thể; null khi lịch sử bao gồm tất cả kho.')
 
 
 class ManualInvoiceLine(BaseModel):

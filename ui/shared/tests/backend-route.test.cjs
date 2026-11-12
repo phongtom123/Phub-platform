@@ -88,6 +88,33 @@ test("warehouse gateway permits scoped receipt/history operations and rejects ar
   }
 });
 
+test("manual invoice gateway forwards exact routes, session, origin, query and idempotency", async () => {
+  const calls=[];
+  const proxy=gateway(async(url,options)=>{
+    calls.push({url:String(url),method:options.method,cookie:options.headers.get('Cookie'),origin:options.headers.get('Origin'),key:options.headers.get('Idempotency-Key'),body:options.body});
+    return Response.json({data:[],replayed:false});
+  });
+  const key='a77a9370-caa8-48d8-a3dc-60f352cedee1';
+  const headers={Origin:'http://localhost:3002',Cookie:'phub_session=fixture','Idempotency-Key':key};
+  for(const segments of [['warehouse','manual-invoices','options'],['warehouse','manual-invoices','customers']]) {
+    const response=await proxy(new Request('http://localhost/x?q=customer%40example.com',{headers}),segments);
+    assert.equal(response.status,200);
+    assert.ok(calls.at(-1).url.endsWith('/api/'+segments.join('/')+'?q=customer%40example.com'));
+  }
+  const body=JSON.stringify({buyer:'Customer',email:'customer@example.com',lines:[{sku:'SKU1',quantity:1,unit_price:'100',discount:'0'}]});
+  assert.equal((await proxy(new Request('http://localhost/x',{method:'POST',headers,body}),['warehouse','manual-invoices'])).status,200);
+  assert.equal(calls.at(-1).body,body);
+  assert.ok(calls.every(call=>call.cookie==='phub_session=fixture'&&call.origin==='http://localhost:3002'&&call.key===key));
+  for(const [method,segments] of [
+    ['GET',['warehouse','manual-invoices']],['DELETE',['warehouse','manual-invoices']],
+    ['PATCH',['warehouse','manual-invoices']],['PUT',['warehouse','manual-invoices']],
+    ['POST',['warehouse','manual-invoices','options']],['POST',['warehouse','manual-invoices','customers']],
+    ['GET',['warehouse','manual-invoices','delete']],['GET',['warehouse','manual-invoices','options','extra']],
+    ['GET',['warehouse','manual-invoices','..']],['GET',['warehouse','manual-invoices','%2e%2e']],
+  ]) assert.equal((await proxy(new Request('http://localhost/x',{method}),segments)).status,404);
+  assert.equal(calls.length,3,'Unsupported paths and methods never reach the backend');
+});
+
 test("staff handoff forwards issuance with the source cookie, keeping exchange server-only", async () => {
   const calls=[];
   const proxy=gateway(async(url,options)=>{calls.push({url:String(url),cookie:options.headers.get('Cookie'),origin:options.headers.get('Origin'),body:options.body});return Response.json({code:'A'.repeat(43),expires_in:60});});

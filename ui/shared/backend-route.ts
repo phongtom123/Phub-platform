@@ -106,6 +106,10 @@ function validAuthPath(path: string[], method: string): boolean {
 function validWarehousePath(path: string[], method: string): boolean {
   if (path[0] !== "warehouse") return false;
   if (path.length === 2 && path[1] === "history") return method === "GET";
+  if (path[1] === "manual-invoices") {
+    if (path.length === 2) return method === "POST";
+    return path.length === 3 && ["options", "customers"].includes(path[2]) && method === "GET";
+  }
   if (path[1] !== "receipts") return false;
   if (path.length === 2) return ["GET", "POST"].includes(method);
   if (!/^-?(0|[1-9]\d*)$/.test(path[2] ?? "") || !Number.isSafeInteger(Number(path[2])) || Number(path[2]) < -(2 ** 31) || Number(path[2]) > 2 ** 31 - 1) return false;
