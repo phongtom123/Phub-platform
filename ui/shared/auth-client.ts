@@ -50,18 +50,41 @@ async function responseBody(response: Response): Promise<unknown> {
   return response.json();
 }
 
-function errorMessage(body: unknown, fallback: string): string {
-  if (body && typeof body === "object" && typeof (body as { detail?: unknown }).detail === "string") {
-    return (body as { detail: string }).detail;
-  }
-  return fallback;
+/** Vietnamese text for FastAPI field errors that carry no message of our own. */
+const FIELD_MESSAGES: Record<string, string> = {
+  name: "Vui lòng nhập họ và tên (ít nhất 2 ký tự).",
+  username: "Tên tài khoản cần ít nhất 3 ký tự, chỉ gồm chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang.",
+  email: "Email không đúng định dạng.",
+  phone: "Số điện thoại không đúng định dạng.",
+  password: "Mật khẩu cần ít nhất 10 ký tự.",
+};
+const VALUE_ERROR = "Value error, ";
+
+function validationMessages(detail: unknown): string[] {
+  if (!Array.isArray(detail)) return [];
+  const messages = detail.map(item => {
+    if (!item || typeof item !== "object") return "";
+    const { loc, msg } = item as { loc?: unknown; msg?: unknown };
+    if (typeof msg === "string" && msg.startsWith(VALUE_ERROR)) return msg.slice(VALUE_ERROR.length);
+    const field = Array.isArray(loc) && loc.length ? String(loc[loc.length - 1]) : "";
+    return FIELD_MESSAGES[field] ?? "";
+  }).filter(Boolean);
+  return Array.from(new Set(messages));
 }
 
-async function sessionRequest(url: string, init?: RequestInit): Promise<SessionUser> {
+function errorMessage(body: unknown, fallback: string): string {
+  const detail = body && typeof body === "object" ? (body as { detail?: unknown }).detail : undefined;
+  if (typeof detail === "string") return detail;
+  const messages = validationMessages(detail);
+  return messages.length ? messages.join(" ") : fallback;
+}
+
+async function sessionRequest(url: string, init?: RequestInit,
+  fallback = "Không xác thực được phiên đăng nhập."): Promise<SessionUser> {
   const response = await fetch(url, { ...init, cache: "no-store", credentials: "same-origin" });
   const body = await responseBody(response);
   if (!response.ok) {
-    throw new AuthRequestError(errorMessage(body, "Không xác thực được phiên đăng nhập."), response.status);
+    throw new AuthRequestError(errorMessage(body, fallback), response.status);
   }
   if (!isSessionUser(body)) throw new AuthRequestError("Phản hồi phiên đăng nhập không hợp lệ.", 502);
   return body;
@@ -81,7 +104,10 @@ export async function loginSession(username: string, password: string): Promise<
   return user;
 }
 
-export async function registerCustomer(input: CustomerRegistration): Promise<SessionUser> {
+/** linked_orders: walk-in counter orders with the same email attached during registration. */
+export type RegisteredCustomer = SessionUser & { linked_orders: number };
+
+export async function registerCustomer(input: CustomerRegistration): Promise<RegisteredCustomer> {
   const user = await sessionRequest("/api/backend/auth/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -92,9 +118,10 @@ export async function registerCustomer(input: CustomerRegistration): Promise<Ses
       phone: input.phone?.trim() || null,
       password: input.password,
     }),
-  });
+  }, "Không tạo được tài khoản. Kiểm tra lại thông tin và thử lại.");
   announceSession(user);
-  return user;
+  const linked = (user as { linked_orders?: unknown }).linked_orders;
+  return { ...user, linked_orders: typeof linked === "number" && Number.isInteger(linked) && linked > 0 ? linked : 0 };
 }
 
 export async function logoutSession(): Promise<void> {

@@ -166,7 +166,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         : current.data.filter(row => row.ma_kh !== saved.profile.ma_kh), total: current.total - (!keep && present ? 1 : 0),
         customer_accounts: { ...current.customer_accounts, [saved.profile.ma_kh]: saved.account ? { ma_tk: saved.account.ma_tk, trang_thai: saved.account.trang_thai as 0 | 1 | 2 } : null } };
     });
-    setNotice(saved.profile.luu_tru_luc ? "Đã xóa mềm khách hàng; đơn hàng và hóa đơn vẫn được giữ." : "Đã khôi phục hồ sơ. Tài khoản vẫn bị ẩn cho đến khi Admin bật lại.");
+    setNotice(saved.profile.luu_tru_luc ? "Đã xóa khách hàng; đơn hàng và hóa đơn vẫn được giữ." : "Đã khôi phục hồ sơ. Tài khoản vẫn bị ẩn cho đến khi Admin bật lại.");
   }, [filters.luu_tru_luc]);
   const galleryEditor = useRef<GalleryEditorHandle | null>(null);
   const [galleryDirty, setGalleryDirty] = useState(false);
@@ -386,7 +386,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {resource === "customers" && <div className="live-tools"><label>Hồ sơ khách hàng <select aria-label="Lọc hồ sơ khách hàng"
           value={filters.luu_tru_luc ?? "ACTIVE"} disabled={inlineEditing} onChange={event => {
             setPage(1); router.replace(dataHref(resource, { filters: { ...filters, luu_tru_luc: event.target.value } }));
-          }}><option value="ACTIVE">Đang sử dụng</option><option value="ARCHIVED">Đã xóa mềm</option><option value="ALL">Tất cả</option></select></label></div>}
+          }}><option value="ACTIVE">Đang sử dụng</option><option value="ARCHIVED">Đã xóa</option><option value="ALL">Tất cả</option></select></label></div>}
         {resource === "inventory" && <StockHistory />}
         {draftPath && <p className="inline-data-help">Nhấp đúp để sửa phiếu nháp. Phiếu đã xử lý chỉ xem thông tin; trạng thái được cập nhật qua nghiệp vụ kho.</p>}
         {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label}
@@ -398,7 +398,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           writePath={draftPath ? "/api/backend/" + draftPath.slice(5) : undefined} canEditRow={canEditRow}
           externalBusy={customerStatusSaving}
           extraColumns={resource === "customers" ? [{ key: "customer-age", title: "Tuổi", render: row => customerAge(row.ngay_sinh as string | null) ?? "Chưa có thông tin" },
-            { key: "customer-profile-status", title: "Hồ sơ", render: row => row.luu_tru_luc ? "Đã xóa mềm" : "Đang sử dụng" },
+            { key: "customer-profile-status", title: "Hồ sơ", render: row => row.luu_tru_luc ? "Đã xóa" : "Đang sử dụng" },
             { key: "customer-account-status", title: "Trạng thái tài khoản", render: (row, blocked) =>
             <CustomerStatusCell customerId={String(row.ma_kh)} customerName={String(row.ten_kh ?? row.ma_kh)}
               account={result?.customer_accounts?.[String(row.ma_kh)]} disabled={blocked}

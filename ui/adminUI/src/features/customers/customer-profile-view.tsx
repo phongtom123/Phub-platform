@@ -87,8 +87,8 @@ export function CustomerProfileView({ data: { profile, account }, age, formatDat
           <dl className={styles.metadata}>
             <div className={`live-field ${styles.metaField}`}><dt><CalendarDays size={15} aria-hidden="true" />Ngày tạo hồ sơ</dt><dd>{formatDate(profile.ngay_tao)}</dd></div>
             <div className={`live-field ${styles.metaField}`}><dt><Clock3 size={15} aria-hidden="true" />Cập nhật lần cuối</dt><dd>{formatDate(profile.cap_nhat_luc)}</dd></div>
-            <div className={`live-field ${styles.metaField}`}><dt>Trạng thái hồ sơ</dt><dd>{profile.luu_tru_luc ? "Đã xóa mềm" : "Đang sử dụng"}</dd></div>
-            {profile.luu_tru_luc && <div className={`live-field ${styles.metaField}`}><dt>Thời điểm xóa mềm</dt><dd>{formatDate(profile.luu_tru_luc)}</dd></div>}
+            <div className={`live-field ${styles.metaField}`}><dt>Trạng thái hồ sơ</dt><dd>{profile.luu_tru_luc ? "Đã xóa" : "Đang sử dụng"}</dd></div>
+            {profile.luu_tru_luc && <div className={`live-field ${styles.metaField}`}><dt>Thời điểm xóa</dt><dd>{formatDate(profile.luu_tru_luc)}</dd></div>}
           </dl>
         </section>
       </div>

@@ -63,7 +63,7 @@ class CommerceService:
             raise PaymentError(403, "AUTH_CUSTOMER_UNAVAILABLE", "Tài khoản chưa liên kết khách hàng hợp lệ.")
         row = rows[0]
         if row.get("luu_tru_luc") is not None:
-            raise PaymentError(403, "AUTH_CUSTOMER_UNAVAILABLE", "Hồ sơ khách hàng đã được xóa mềm.")
+            raise PaymentError(403, "AUTH_CUSTOMER_UNAVAILABLE", "Tài khoản khách hàng đã bị xóa.")
         account = row.get("account")
         if isinstance(account, list):
             account = account[0] if len(account) == 1 else None

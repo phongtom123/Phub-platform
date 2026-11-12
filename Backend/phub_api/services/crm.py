@@ -52,9 +52,9 @@ class CrmService:
             return self.repository.archive(customer_id, self.actor.account_id, archived)
         except APIError as exc:
             if str(exc.code) in {"PGRST202", "42883"}:
-                raise HTTPException(503, "Backend/database chưa hỗ trợ xóa mềm. Cần áp dụng migration customer_soft_delete.") from None
+                raise HTTPException(503, "Backend/database chưa hỗ trợ xóa khách hàng. Cần áp dụng migration customer_soft_delete.") from None
             if str(exc.code) == "P0002":
                 raise HTTPException(404, "Không tìm thấy khách hàng.") from None
             if str(exc.code) == "42501":
-                raise HTTPException(403, "Chỉ nhân viên đang hoạt động được xóa mềm/khôi phục khách hàng.") from None
+                raise HTTPException(403, "Chỉ nhân viên đang hoạt động được xóa/khôi phục khách hàng.") from None
             raise

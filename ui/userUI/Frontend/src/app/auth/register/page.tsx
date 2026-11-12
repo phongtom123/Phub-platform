@@ -20,6 +20,7 @@ function RegisterForm() {
   const loginHref = authPageHref("/auth/login", redirectTo, "/main/landing");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [linkedOrders, setLinkedOrders] = useState(0);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,7 +35,7 @@ function RegisterForm() {
     setLoading(true);
     setError("");
     try {
-      await registerCustomer({
+      const registered = await registerCustomer({
         name: String(form.get("name") ?? ""),
         username: String(form.get("username") ?? ""),
         email: String(form.get("email") ?? ""),
@@ -42,6 +43,10 @@ function RegisterForm() {
         password,
       });
       await refreshSession();
+      if (registered.linked_orders > 0) {
+        setLinkedOrders(registered.linked_orders);
+        return;
+      }
       router.replace(redirectTo);
       router.refresh();
     } catch (err) {
@@ -69,6 +74,25 @@ function RegisterForm() {
         </ul>
       </div>
 
+      {linkedOrders > 0 ? (
+        <div role="status" aria-live="polite" className="rounded-2xl border border-zinc-200 bg-white p-7 shadow-[0_18px_55px_rgba(0,0,0,0.08)] sm:p-9">
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-green-700">Đăng ký thành công</span>
+          <h2 className="mt-2 text-2xl font-semibold text-zinc-950">Tài khoản đã sẵn sàng</h2>
+          <p className="mt-4 text-sm leading-6 text-zinc-600">
+            Chúng tôi đã gắn <strong className="text-zinc-950">{linkedOrders} đơn mua tại cửa hàng</strong> có
+            cùng email vào tài khoản của bạn. Bạn có thể xem đơn, hóa đơn và đánh giá sản phẩm đã mua trong trang tài khoản.
+          </p>
+          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+            <Link href="/main/profile" className="flex h-12 items-center justify-center rounded-lg bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-green-700">
+              Xem đơn hàng
+            </Link>
+            <button type="button" onClick={() => { router.replace(redirectTo); router.refresh(); }}
+              className="h-12 rounded-lg border border-zinc-300 px-5 text-sm font-semibold text-zinc-800 transition hover:border-green-700 hover:text-green-700">
+              Tiếp tục mua sắm
+            </button>
+          </div>
+        </div>
+      ) : (
       <form onSubmit={submit} className="rounded-2xl border border-zinc-200 bg-white p-7 shadow-[0_18px_55px_rgba(0,0,0,0.08)] sm:p-9">
         <div>
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-green-700">Tài khoản khách hàng</span>
@@ -83,15 +107,15 @@ function RegisterForm() {
           </label>
           <label className="block text-sm font-medium text-zinc-800">
             Tên tài khoản
-            <input required name="username" autoComplete="username" minLength={3} maxLength={80} pattern="[A-Za-z0-9_.-]+" title="Chỉ dùng chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang." className={fieldClass} />
+            <input required name="username" autoComplete="username" minLength={3} maxLength={80} pattern="[A-Za-z0-9_.\-]+" title="Chỉ dùng chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang." className={fieldClass} />
           </label>
           <label className="block text-sm font-medium text-zinc-800">
             Số điện thoại <span className="font-normal text-zinc-400">(không bắt buộc)</span>
-            <input name="phone" type="tel" autoComplete="tel" maxLength={20} className={fieldClass} />
+            <input name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} pattern="\+?[0-9][0-9 .\(\)\-]{7,19}" title="Chỉ gồm chữ số, có thể có dấu + ở đầu, khoảng trắng, dấu chấm, gạch ngang hoặc ngoặc; từ 8 đến 20 ký tự." className={fieldClass} />
           </label>
           <label className="block text-sm font-medium text-zinc-800 sm:col-span-2">
             Email
-            <input required name="email" type="email" autoComplete="email" maxLength={254} className={fieldClass} />
+            <input required name="email" type="email" autoComplete="email" maxLength={254} pattern="[^\s@]+@[^\s@]+\.[^\s@]+" title="Email cần có dạng ten@tenmien.com." className={fieldClass} />
           </label>
           <label className="block text-sm font-medium text-zinc-800">
             Mật khẩu
@@ -115,6 +139,7 @@ function RegisterForm() {
           Đã có tài khoản?{" "}<Link href={loginHref} className="font-semibold text-green-700 hover:underline">Đăng nhập</Link>
         </p>
       </form>
+      )}
     </section>
   );
 }

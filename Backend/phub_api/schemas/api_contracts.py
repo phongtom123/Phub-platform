@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ValidationIssue(BaseModel):
@@ -21,6 +21,10 @@ class SessionUser(BaseModel):
     customer_id: str | None = None
     employee_id: str | None = None
     warehouse_id: int | None = None
+
+
+class RegisteredUser(SessionUser):
+    linked_orders: int = Field(0, ge=0, description="Số đơn mua tại quầy (cùng email) vừa được gắn vào tài khoản mới.")
 
 
 class ResourceColumn(BaseModel):

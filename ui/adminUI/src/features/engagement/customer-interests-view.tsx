@@ -57,7 +57,7 @@ export default function CustomerInterestsView() {
             <Link href={resultsHref(summary.ma_khao_sat)}>Xem kết quả khảo sát →</Link>
           </article>)}</div>
         </section>
-        <section className={styles.card}><h2>Phản hồi của từng khách hàng</h2><p className={styles.muted}>Chỉ lấy câu hỏi “Nhu cầu / sở thích” và bài đã gửi. Nội dung “Khác” giữ nguyên lời khách; hồ sơ đã xóa mềm không xuất hiện.</p>
+        <section className={styles.card}><h2>Phản hồi của từng khách hàng</h2><p className={styles.muted}>Chỉ lấy câu hỏi “Nhu cầu / sở thích” và bài đã gửi. Nội dung “Khác” giữ nguyên lời khách; hồ sơ đã xóa không xuất hiện.</p>
           <div className={styles.scroll}><table><thead><tr><th>Khách hàng</th><th>Tuổi hiện tại</th><th>Khảo sát / Câu hỏi</th><th>Sở thích / Nhu cầu đã trả lời</th><th>Ngày trả lời</th></tr></thead><tbody>{data.data.map(answer => <tr key={answer.ma_tra_loi}>
             <td><Link href={`/data/customers?key=${encodeURIComponent(JSON.stringify([answer.ma_kh]))}`}>{answer.ten_kh}</Link><div className={styles.muted}>{answer.ma_kh}</div></td><td>{answer.tuoi ?? "Chưa có ngày sinh"}</td>
             <td><Link href={resultsHref(answer.ma_khao_sat)}>{answer.tieu_de}</Link><p>{answer.cau_hoi}</p></td><td className={styles.text}>{answer.lua_chon && <strong>{answer.lua_chon}</strong>}{answer.noi_dung && <p>{answer.noi_dung}</p>}{answer.diem !== null && <span>{answer.diem}/5</span>}</td><td>{dateTime(answer.hoan_thanh_luc)}</td>

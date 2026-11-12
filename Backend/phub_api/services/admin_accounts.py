@@ -83,7 +83,7 @@ class AccountsService:
         else:
             customers = self.repository.customer(owner)
             if not customers or customers[0].get("luu_tru_luc") is not None:
-                raise HTTPException(422, "Khách hàng không tồn tại hoặc đã xóa mềm.")
+                raise HTTPException(422, "Khách hàng không tồn tại hoặc đã bị xóa.")
         if self.repository.owner_has_account(field, owner):
             raise HTTPException(409, "Người này đã có tài khoản. Mỗi người chỉ được có một tài khoản.")
         values = body.model_dump(exclude={"password"}) | {"mat_khau": body.password, "trang_thai": 1}
@@ -119,29 +119,29 @@ class AccountsService:
     def editable_account(self, account_id: str) -> dict:
         account = self.account(account_id)
         if account.get("luu_tru_luc") is not None:
-            raise HTTPException(409, "Tài khoản đã xóa mềm. Cần khôi phục trước khi chỉnh sửa.")
+            raise HTTPException(409, "Tài khoản đã bị xóa. Cần khôi phục trước khi chỉnh sửa.")
         return account
 
     def archive(self, account_id: str, archived: bool):
         if self.actor.role != "ADMIN":
-            raise HTTPException(403, "Chỉ quản trị viên được xóa mềm hoặc khôi phục tài khoản.")
+            raise HTTPException(403, "Chỉ quản trị viên được xóa hoặc khôi phục tài khoản.")
         if account_id == self.actor.account_id:
-            raise HTTPException(409, "Không được xóa mềm tài khoản đang đăng nhập.")
+            raise HTTPException(409, "Không được xóa tài khoản đang đăng nhập.")
         try:
             result = self.repository.archive(account_id, self.actor.account_id, archived)
         except APIError as exc:
             code = str(exc.code)
             if code in {"PGRST202", "42883", "42703"}:
-                raise HTTPException(503, "Database chưa hỗ trợ xóa mềm tài khoản. Cần cập nhật migration account_soft_delete.") from None
+                raise HTTPException(503, "Database chưa hỗ trợ xóa tài khoản. Cần cập nhật migration account_soft_delete.") from None
             if code == "42501":
                 raise HTTPException(403, "Phiên quản trị không còn quyền thực hiện thao tác này.") from None
             if code == "P0002":
                 raise HTTPException(404, "Không tìm thấy tài khoản.") from None
             if code in {"23514", "40001", "40P01"}:
-                raise HTTPException(409, "Tài khoản đã thay đổi hoặc không thể xóa mềm. Tải lại để kiểm tra.") from None
+                raise HTTPException(409, "Tài khoản đã thay đổi hoặc không thể xóa. Tải lại để kiểm tra.") from None
             raise
         if not isinstance(result, dict) or result.get("ma_tk") != account_id or bool(result.get("luu_tru_luc")) != archived:
-            raise HTTPException(502, "API chưa xác nhận trạng thái xóa mềm. Tải lại để kiểm tra.")
+            raise HTTPException(502, "API chưa xác nhận trạng thái xóa. Tải lại để kiểm tra.")
         return self.detail(account_id)
 
     def update(self, account_id: str, body: AccountUpdate):

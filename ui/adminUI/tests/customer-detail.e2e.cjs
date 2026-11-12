@@ -174,7 +174,7 @@ async function main() {
     assert.equal(await listStatus.isDisabled(), true, "Status is disabled while editing a profile row");
     await page.getByRole("textbox", { name: "Tên khách hàng KH1", exact: true }).press("Escape");
     assert.equal(await listStatus.isEnabled(), true);
-    const archiveButton = page.getByRole("button", { name: "Xóa mềm khách hàng KH1", exact: true });
+    const archiveButton = page.getByRole("button", { name: "Xóa khách hàng KH1", exact: true });
     acceptStatus = false;
     await archiveButton.click();
     assert.equal(archiveWrites.length, 0);
@@ -185,7 +185,7 @@ async function main() {
     failArchive = false;
     const beforeArchive = listReads;
     await archiveButton.click();
-    await page.getByText("Đã xóa mềm khách hàng; đơn hàng và hóa đơn vẫn được giữ.", { exact: true }).waitFor();
+    await page.getByText("Đã xóa khách hàng; đơn hàng và hóa đơn vẫn được giữ.", { exact: true }).waitFor();
     assert.equal(await page.getByRole("link", { name: "KH1", exact: true }).count(), 0);
     assert.equal(listReads, beforeArchive, "Archive updates list in place");
     await page.getByLabel("Lọc hồ sơ khách hàng", { exact: true }).selectOption("ARCHIVED");
@@ -201,7 +201,7 @@ async function main() {
     assert.equal(await listStatus.isEnabled(), true);
     await page.getByRole("link", { name: "KH1", exact: true }).click();
     await page.getByRole("heading", { name: "Thông tin khách hàng" }).waitFor();
-    await page.getByRole("button", { name: "Xóa mềm khách hàng KH1", exact: true }).click();
+    await page.getByRole("button", { name: "Xóa khách hàng KH1", exact: true }).click();
     await page.getByRole("button", { name: "Khôi phục khách hàng KH1", exact: true }).waitFor();
     assert.equal(await status.isDisabled(), true);
     assert.equal(await page.getByRole("link", { name: "Chỉnh sửa", exact: true }).count(), 0);

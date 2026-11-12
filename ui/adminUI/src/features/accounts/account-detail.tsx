@@ -84,13 +84,13 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
           onClick={() => changeStatus(value)}>{value === 1 ? "Mở khóa / hiện lại" : value === 2 ? "Tạm khóa" : "Ẩn tài khoản"}</button>)}
         {!archived && <Link className="live-primary" href={accountHref(account.ma_tk, true)}>Chỉnh sửa</Link>}
         <button type="button" disabled={busy || account.is_self} onClick={() => {
-          if (window.confirm(archived ? "Khôi phục tài khoản? Tài khoản vẫn ẩn cho đến khi bạn bật lại." : "Xóa mềm tài khoản? Chặn đăng nhập và vô hiệu phiên cũ; dữ liệu và lịch sử vẫn được giữ lại."))
-            void mutate("archive", { archived: !archived }, "POST", archived ? "Đã khôi phục. Tài khoản vẫn ẩn; bạn có thể bật lại sau khi kiểm tra hồ sơ." : "Đã xóa mềm tài khoản và vô hiệu các phiên cũ.");
-        }}>{archived ? "Khôi phục tài khoản" : "Xóa mềm tài khoản"}</button>
+          if (window.confirm(archived ? "Khôi phục tài khoản? Tài khoản vẫn ẩn cho đến khi bạn bật lại." : "Xóa tài khoản? Chặn đăng nhập và vô hiệu phiên cũ; dữ liệu và lịch sử vẫn được giữ lại."))
+            void mutate("archive", { archived: !archived }, "POST", archived ? "Đã khôi phục. Tài khoản vẫn ẩn; bạn có thể bật lại sau khi kiểm tra hồ sơ." : "Đã xóa tài khoản và vô hiệu các phiên cũ.");
+        }}>{archived ? "Khôi phục tài khoản" : "Xóa tài khoản"}</button>
       </div>
     </div>
     {error && <p className="live-error" role="alert">{error}</p>}{notice && <p className="live-note" role="status">{notice}</p>}
-    {archived && <p className="live-note">Tài khoản đã xóa mềm lúc {new Date(account.luu_tru_luc!).toLocaleString("vi-VN")}, bởi {account.luu_tru_boi ?? "—"}. Khôi phục trước khi chỉnh sửa hoặc bật lại.</p>}
+    {archived && <p className="live-note">Tài khoản đã xóa lúc {new Date(account.luu_tru_luc!).toLocaleString("vi-VN")}, bởi {account.luu_tru_boi ?? "—"}. Khôi phục trước khi chỉnh sửa hoặc bật lại.</p>}
     <div className="live-form account-detail-card">
       {[ ["Mã tài khoản", account.ma_tk], ["Tên đăng nhập", account.ten_tai_khoan], ["Email", account.email ?? "—"], ["Chủ tài khoản", `${account.ho_ten} · ${account.ma_nhan_vien ?? account.ma_kh}`], ["Vai trò", roleLabels[account.role]], ["Kho phụ trách", account.ma_kho ?? "Không áp dụng"], ["Trạng thái tài khoản", statusLabels[account.trang_thai]], ["Trạng thái hồ sơ", account.owner_active ? "Hoạt động" : "Ngừng hoạt động"] ].map(([name, value]) => <div className="live-field" key={name}><strong>{name}</strong>{value}</div>)}
     </div>
@@ -127,6 +127,6 @@ export function AccountDetail({ account, onChange, onBack, onEditingChange }: { 
         <div className="live-form-actions"><button className="live-primary">Cấp lại mật khẩu</button></div>
       </fieldset>
     </form>
-    <p className="live-note">Xóa mềm giữ lại tài khoản và lịch sử, chặn đăng nhập và vô hiệu phiên cũ. Khôi phục giữ tài khoản ở trạng thái ẩn để bạn chủ động bật lại. Tên đăng nhập và email vẫn được giữ cho tài khoản này.</p>
+    <p className="live-note">Khi xóa, hệ thống vẫn giữ lại tài khoản và lịch sử, chỉ chặn đăng nhập và vô hiệu phiên cũ. Khôi phục giữ tài khoản ở trạng thái ẩn để bạn chủ động bật lại. Tên đăng nhập và email vẫn được giữ cho tài khoản này.</p>
   </>;
 }

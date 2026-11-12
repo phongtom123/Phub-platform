@@ -321,7 +321,7 @@ def describe_auth_and_public(spec: dict) -> None:
         "description": "Nếu gửi Origin thì phải thuộc FRONTEND_ORIGINS. Postman/CLI có thể bỏ; trình duyệt tự gửi Origin.",
     })
     registration = paths["/api/auth/register"]["post"]
-    registration["description"] = "Tạo KHACH_HANG và TAI_KHOAN trong một transaction qua customer_register_v2, chỉ cho role KHACH_HANG. Mật khẩu lưu nguyên văn ở mat_khau; thành công tạo cookie HttpOnly 8 giờ và không trả mật khẩu/token."
+    registration["description"] = "Tạo KHACH_HANG và TAI_KHOAN trong một transaction qua customer_register_v2, chỉ cho role KHACH_HANG. Mật khẩu lưu nguyên văn ở mat_khau; thành công tạo cookie HttpOnly 8 giờ và không trả mật khẩu/token. Bản demo tự gắn các đơn mua tại quầy chưa có chủ, không hủy, có email người mua (trên đơn hoặc hóa đơn) trùng email đăng ký vào tài khoản mới; email chưa được xác minh."
     registration["requestBody"]["content"]["application/json"]["example"] = {
         "name": "Nguyễn Văn A", "username": "nguyenvana", "email": "customer@example.com",
         "phone": "0901234567", "password": "Replace_with_10+_characters",

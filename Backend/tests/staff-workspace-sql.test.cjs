@@ -21,6 +21,7 @@ const sql = name => fs.readFileSync(path.join(migrations, name), 'utf8');
    '20261105093025_crm_surveys_reviews.sql', '20261106083600_counter_invoice_claims.sql',
    '20261106142849_staff_operational_workspace.sql',
    '20261107030114_counter_buyer_email.sql',
+   '20261112140000_register_links_counter_orders.sql',
   ];
   for (const name of names) {
    try {
@@ -97,6 +98,11 @@ const sql = name => fs.readFileSync(path.join(migrations, name), 'utf8');
   const memberOrder = await rpc('public.staff_counter_order_email_v1',['STAFF',randomUUID(),JSON.stringify(memberBody)]);
   assert.equal(memberOrder.data[0].ma_kh,'KH1');
   assert.equal(memberOrder.data[0].email_nguoi_mua,'customer@example.com');
+  // A walk-in sale typed with the email of an active customer account is attached immediately.
+  const walkInMember = await rpc('public.staff_counter_order_email_v1',['STAFF',randomUUID(),
+    JSON.stringify({...JSON.parse(guestBody),buyer_email:' Customer@Example.com '})]);
+  assert.equal(walkInMember.data[0].ma_kh,'KH1','Counter sale with an account email links the account');
+  assert.equal(walkInMember.data[0].email_nguoi_mua,'customer@example.com');
   const beforeInvalid = (await db.query('select count(*)::int total from public."DON_HANG"')).rows[0].total;
   await assert.rejects(rpc('public.admin_operation_v1',['STAFF','orders','create',randomUUID(),null,JSON.stringify({...memberBody,buyer_email:'wrong@example.com'})]),/BUYER_EMAIL_MISMATCH/);
   await assert.rejects(rpc('public.admin_operation_v1',['STAFF','orders','create',randomUUID(),null,JSON.stringify({...memberBody,buyer_email:null})]),/BUYER_EMAIL_INVALID/);

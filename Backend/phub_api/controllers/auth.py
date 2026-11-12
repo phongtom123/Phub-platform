@@ -6,7 +6,7 @@ from phub_api.dependencies.auth import current_user, get_auth_service, get_hando
 from phub_api.dependencies.origin import check_origin
 from phub_api.middleware.session import clear_session_cookie, set_session_cookie
 from phub_api.models.user import User
-from phub_api.schemas.api_contracts import READ_ERRORS, SessionUser, WRITE_ERRORS, error_response
+from phub_api.schemas.api_contracts import READ_ERRORS, RegisteredUser, SessionUser, WRITE_ERRORS, error_response
 from phub_api.schemas.auth import LoginBody, RegisterBody, TokenResponse
 from phub_api.schemas.portal_handoff import HandoffCode, HandoffExchange, HandoffRequest
 from phub_api.services.auth import AuthService, create_access_token, create_access_token_from_version, registration_attempts, throttle
@@ -59,14 +59,14 @@ def issue_token(body: LoginBody, request: Request, response: Response, service: 
     return TokenResponse(access_token=create_access_token(user, password))
 
 
-@router.post("/register", status_code=201, summary="Đăng ký tài khoản khách hàng", response_model=SessionUser,
+@router.post("/register", status_code=201, summary="Đăng ký tài khoản khách hàng", response_model=RegisteredUser,
              responses={**WRITE_ERRORS, 429: error_response(429, "Quá 5 lần đăng ký/IP/phút; thử lại sau một phút.")})
 def register(body: RegisterBody, request: Request, response: Response, service: AuthService = Depends(get_auth_service)):
     check_origin(request)
     throttle(request.client.host if request.client else "unknown", registration_attempts, 5)
-    user, password = service.register(body)
+    user, password, linked_orders = service.register(body)
     issue_session(response, user, password)
-    return asdict(user)
+    return asdict(user) | {"linked_orders": linked_orders}
 
 
 @router.get("/me", summary="Lấy tài khoản, role và kho được phân công", response_model=SessionUser, responses=READ_ERRORS)

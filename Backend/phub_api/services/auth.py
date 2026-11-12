@@ -3,6 +3,7 @@ from threading import Lock
 from uuid import uuid4
 import hashlib
 import hmac
+import re
 import time
 
 from fastapi import HTTPException
@@ -38,7 +39,7 @@ def identity(account: dict, repository: AuthRepository) -> User:
     if not rows:
         raise HTTPException(403, "Không tìm thấy khách hàng.")
     if rows[0].get("luu_tru_luc") is not None:
-        raise HTTPException(403, "Hồ sơ khách hàng đã được xóa mềm. Vui lòng liên hệ quản trị viên.")
+        raise HTTPException(403, "Tài khoản khách hàng đã bị xóa. Vui lòng liên hệ cửa hàng để được hỗ trợ.")
     return User(account["ma_tk"], account["ten_tai_khoan"], "KHACH_HANG", rows[0]["ten_kh"], customer_id=customer)
 
 
@@ -110,6 +111,25 @@ def authenticate_credentials(body: LoginBody, host: str, repository: AuthReposit
     return user, credential_state(account)
 
 
+DUPLICATE_REGISTRATION = {
+    "username": "Tên tài khoản đã được sử dụng. Vui lòng chọn tên khác.",
+    "email": "Email đã được đăng ký. Hãy đăng nhập, hoặc liên hệ cửa hàng nếu tài khoản bị khóa.",
+    None: "Tên tài khoản hoặc email đã được sử dụng.",
+}
+
+
+def duplicate_field(exc: APIError) -> str | None:
+    """Which TAI_KHOAN unique column was violated; database text is never echoed."""
+    text = f"{exc.message or ''} {exc.details or ''}"
+    match = re.search(r"Key \(([^)]*)", text) or re.search(r'constraint "([^"]+)"', text)
+    target = match.group(1).lower() if match else ""
+    if "ten_tai_khoan" in target:
+        return "username"
+    if "email" in target:
+        return "email"
+    return None
+
+
 def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[User, str]:
     jwt_secret()
     password = body.password
@@ -128,7 +148,7 @@ def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[U
         if code == "PGRST202":
             raise HTTPException(503, "Chưa cài chức năng đăng ký khách hàng trong database. Cần chạy migration 20261024161801_account_plaintext_passwords.sql.") from None
         if code == "23505":
-            raise HTTPException(409, "Tên tài khoản hoặc email đã được sử dụng.") from None
+            raise HTTPException(409, DUPLICATE_REGISTRATION[duplicate_field(exc)]) from None
         if code in {"23502", "23514", "22P02"}:
             raise HTTPException(422, "Thông tin đăng ký không hợp lệ.") from None
         raise
@@ -138,7 +158,9 @@ def register_customer(body: RegisterBody, repository: AuthRepository) -> tuple[U
         account_id=result["account_id"], username=result["username"], role="KHACH_HANG",
         name=result["name"], customer_id=result["customer_id"],
     )
-    return user, password + "\0" + str(result["credential_version"])
+    linked = result.get("linked_orders")
+    linked_orders = linked if isinstance(linked, int) and not isinstance(linked, bool) and linked > 0 else 0
+    return user, password + "\0" + str(result["credential_version"]), linked_orders
 
 
 class AuthService:
