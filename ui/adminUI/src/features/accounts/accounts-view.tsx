@@ -103,7 +103,7 @@ export default function AccountsView({ mode = "list", id }: AccountView) {
         <input type="search" autoComplete="off" className="live-search" aria-label="Tìm tài khoản" placeholder="Tìm mã tài khoản, tên đăng nhập, chủ tài khoản hoặc email…" value={query} onChange={e => setQuery(e.target.value)} />
         <select aria-label="Vai trò" value={role} onChange={e => { setRole(e.target.value); setPage(1); }}><option value="">Tất cả vai trò</option>{Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
         <select aria-label="Trạng thái" value={status} onChange={e => { setStatus(e.target.value); setPage(1); }}><option value="">Tất cả trạng thái</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-        <select aria-label="Xóa mềm" value={archive} onChange={e => { setArchive(e.target.value); setPage(1); }}><option value="ACTIVE">Chưa xóa</option><option value="ARCHIVED">Đã xóa mềm</option><option value="ALL">Tất cả tài khoản</option></select>
+        <select aria-label="Trạng thái xóa" value={archive} onChange={e => { setArchive(e.target.value); setPage(1); }}><option value="ACTIVE">Chưa xóa</option><option value="ARCHIVED">Đã xóa</option><option value="ALL">Tất cả tài khoản</option></select>
         <button>Tìm ngay</button><button type="button" onClick={refresh}>Làm mới</button>
         </fieldset><Link className="live-primary" href="/accounts/new">+ Thêm tài khoản</Link>
       </form>

@@ -155,7 +155,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
       {data && !editMode && !error && <div className="live-tools">
         <CustomerArchiveButton customerId={data.profile.ma_kh} archived={Boolean(data.profile.luu_tru_luc)} disabled={statusSaving || archiving || saving}
           onSavingChange={archiveSaving} onSaved={saved => { setData(saved); setStatusError(""); setNotice(saved.profile.luu_tru_luc
-            ? "Đã xóa mềm khách hàng; lịch sử đơn hàng và hóa đơn vẫn được giữ." : "Đã khôi phục hồ sơ. Tài khoản vẫn bị ẩn; Admin có thể bật lại."); }} />
+            ? "Đã xóa khách hàng; lịch sử đơn hàng và hóa đơn vẫn được giữ." : "Đã khôi phục hồ sơ. Tài khoản vẫn bị ẩn; Admin có thể bật lại."); }} />
         {!data.profile.luu_tru_luc && (statusSaving || archiving ? <button className="live-primary" disabled>Chỉnh sửa</button>
           : <Link className="live-primary" href={dataHref("customers", { key: recordKey, edit: true })}>Chỉnh sửa</Link>)}
       </div>}
@@ -164,7 +164,7 @@ export function CustomerDetail({ recordKey, editMode }: { recordKey: string; edi
     {pollError && <p className="live-error" role="alert">Tự cập nhật tạm lỗi, đang hiển thị dữ liệu lần trước. {pollError}</p>}
     {error && <p className="live-error" role="alert">{error} <button onClick={() => setVersion(v => v + 1)}>Thử lại</button></p>}
     {loading ? <p role="status">Đang tải hồ sơ khách hàng…</p> : data && !error && <>
-      {data.profile.luu_tru_luc && <p className="live-note">Hồ sơ đã xóa mềm. Khôi phục hồ sơ trước khi chỉnh sửa hoặc bật lại tài khoản.
+      {data.profile.luu_tru_luc && <p className="live-note">Hồ sơ đã xóa. Khôi phục hồ sơ trước khi chỉnh sửa hoặc bật lại tài khoản.
         {editMode && <Link href={detailHref}> Xem hồ sơ để khôi phục</Link>}</p>}
       {editMode && !data.profile.luu_tru_luc ? <form className={`live-form ${styles.editForm}`} onSubmit={save}>
         <fieldset className="live-form-fields" disabled={saving || statusSaving}>

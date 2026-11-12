@@ -138,14 +138,14 @@ export function AccountTable({ rows, search, requestedEdit, onSaved, onEditingCh
     if (row.is_self || editor || statusController.current || controller.current) return;
     const archived = !row.luu_tru_luc;
     if (!window.confirm(archived
-      ? `Xóa mềm tài khoản ${row.ten_tai_khoan}? Tài khoản sẽ ngừng đăng nhập và các phiên cũ bị vô hiệu. Dữ liệu, lịch sử vẫn được giữ lại.`
+      ? `Xóa tài khoản ${row.ten_tai_khoan}? Tài khoản sẽ ngừng đăng nhập và các phiên cũ bị vô hiệu. Dữ liệu, lịch sử vẫn được giữ lại.`
       : `Khôi phục tài khoản ${row.ten_tai_khoan}? Tài khoản vẫn ở trạng thái ẩn; bạn có thể bật lại sau khi kiểm tra hồ sơ.`)) return;
     const request = new AbortController();
     statusController.current = request; setStatusSaving(row.ma_tk); setStatusError(null); setNotice("");
     try {
       const saved = await accountApi<Account>(`accounts/${encodeURIComponent(row.ma_tk)}/archive`, { ...jsonRequest("POST", { archived }), signal: request.signal });
       if (request.signal.aborted) return;
-      if (saved.ma_tk !== row.ma_tk || Boolean(saved.luu_tru_luc) !== archived) throw new Error("API chưa xác nhận xóa mềm/khôi phục tài khoản.");
+      if (saved.ma_tk !== row.ma_tk || Boolean(saved.luu_tru_luc) !== archived) throw new Error("API chưa xác nhận xóa/khôi phục tài khoản.");
       onSaved(saved); onArchiveChange();
     } catch (error) { if (!request.signal.aborted) setStatusError({ id: row.ma_tk, message: errorMessage(error) }); }
     finally { if (!request.signal.aborted) { statusController.current = null; setStatusSaving(null); } }
@@ -228,7 +228,7 @@ export function AccountTable({ rows, search, requestedEdit, onSaved, onEditingCh
       <tbody>{rows.map(row => {
         const editing = editor?.id === row.ma_tk;
         return <tr key={row.ma_tk} ref={node => { if (node) rowNodes.current.set(row.ma_tk, node); else rowNodes.current.delete(row.ma_tk); }} data-account-id={row.ma_tk} className={editing ? "account-row-editing" : undefined} tabIndex={0}
-          onDoubleClick={event => doubleClick(event, row)} onKeyDown={event => keyDown(event, row)} title={row.luu_tru_luc ? "Tài khoản đã xóa mềm; khôi phục trước khi chỉnh sửa." : "Nhấp đúp hoặc nhấn F2 để sửa tên đăng nhập và email"}>
+          onDoubleClick={event => doubleClick(event, row)} onKeyDown={event => keyDown(event, row)} title={row.luu_tru_luc ? "Tài khoản đã xóa; khôi phục trước khi chỉnh sửa." : "Nhấp đúp hoặc nhấn F2 để sửa tên đăng nhập và email"}>
           <td><Link href={accountHref(row.ma_tk)}><HighlightMatch value={row.ma_tk} search={search} /></Link></td>
           <td className="account-editable-cell" data-field="username">{editing ? <input ref={usernameInput} aria-label={`Tên đăng nhập ${row.ma_tk}`} aria-describedby={error ? errorId : hintId} aria-invalid={Boolean(error)} required minLength={3} maxLength={80} pattern="[A-Za-z0-9_.-]+" autoComplete="off" disabled={saving} value={editor.username} onChange={event => change("username", event.target.value)} /> : <><HighlightMatch value={row.ten_tai_khoan} search={search} />{row.is_self && " (Bạn)"}</>}</td>
           <td><HighlightMatch value={row.ho_ten} search={search} />{!row.owner_active && <small className="account-inactive">Hồ sơ ngừng hoạt động</small>}</td>
@@ -241,11 +241,11 @@ export function AccountTable({ rows, search, requestedEdit, onSaved, onEditingCh
             value={row.trang_thai} onChange={event => { const value = Number(event.currentTarget.value); event.currentTarget.value = String(row.trang_thai); void changeStatus(row, value); }}>
             {([1, 2, 0] as AccountStatus[]).map(status => <option key={status} value={status}>{statusLabels[status]}</option>)}
           </select>
-            {row.luu_tru_luc && <small className="account-inactive">Đã xóa mềm · {new Date(row.luu_tru_luc).toLocaleString("vi-VN")}</small>}
+            {row.luu_tru_luc && <small className="account-inactive">Đã xóa · {new Date(row.luu_tru_luc).toLocaleString("vi-VN")}</small>}
             {statusSaving === row.ma_tk && <small className="account-status-message" role="status">Đang lưu trạng thái…</small>}
             {statusError?.id === row.ma_tk && <small className="account-status-message account-status-error" id={`${formId}-status-${row.ma_tk}`} role="alert">{statusError.message}</small>}
           </td>
-          <td><div className="account-row-actions"><Link href={accountHref(row.ma_tk)}>Chi tiết</Link><button type="button" disabled={row.is_self || editor !== null || statusSaving !== null} onClick={() => void changeArchive(row)}>{row.luu_tru_luc ? "Khôi phục" : "Xóa mềm"}</button>{editing && saving && <span role="status">Đang lưu…</span>}</div></td>
+          <td><div className="account-row-actions"><Link href={accountHref(row.ma_tk)}>Chi tiết</Link><button type="button" disabled={row.is_self || editor !== null || statusSaving !== null} onClick={() => void changeArchive(row)}>{row.luu_tru_luc ? "Khôi phục" : "Xóa"}</button>{editing && saving && <span role="status">Đang lưu…</span>}</div></td>
         </tr>;
       })}</tbody>
     </table>{!rows.length && <p className="live-note">Không có tài khoản phù hợp.</p>}</ScrollableTable>

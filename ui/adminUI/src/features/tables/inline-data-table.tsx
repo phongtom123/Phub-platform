@@ -151,7 +151,7 @@ export function InlineDataTable({ resource, rows, columns, keys, label, href, on
         const key = dataRowKey(row, keys); const editing = editor?.key === key;
         return <tr key={key} ref={node => { if (node) rowNodes.current.set(key, node); else rowNodes.current.delete(key); }}
           tabIndex={0} className={editing ? "inline-data-row-editing" : undefined} title={canEditRow?.(row) === false
-            ? resource === "customers" ? "Hồ sơ đã xóa mềm; khôi phục trước khi chỉnh sửa" : "Phiếu đã xử lý chỉ xem thông tin"
+            ? resource === "customers" ? "Hồ sơ đã xóa; khôi phục trước khi chỉnh sửa" : "Phiếu đã xử lý chỉ xem thông tin"
             : "Nhấp đúp hoặc nhấn F2 để chỉnh sửa"}
           onDoubleClick={event => doubleClick(event, row)} onKeyDown={event => keyDown(event, row)}>
           {columns.map(column => <td key={column.name} data-field={column.name}>
