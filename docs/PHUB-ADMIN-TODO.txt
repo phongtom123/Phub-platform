@@ -1,4 +1,11 @@
 PHUB — DANH SÁCH VIỆC CẦN LÀM TIẾP CHO ADMIN
+Ghi chú mới 13/11/2026: đã chốt phương án rút gọn thao tác đơn hàng.
+Xem docs/ORDER-WORKFLOW-SIMPLIFICATION.md (chưa triển khai):
+- Nhận tại cửa hàng: một nút Đã giao cho khách, gộp xuất kho và hoàn thành.
+- Giao tận nơi: Bàn giao vận chuyển -> Xác nhận đã giao, tổng hai thao tác.
+- Giữ xuất kho ở backend, transaction/idempotency và điều kiện thu đủ tiền.
+Các mục bên dưới là lịch sử kế hoạch, không phải tất cả đều là trạng thái mã mới nhất.
+
 Cập nhật: 04/11/2026
 Mục tiêu: xử lý trọn một đơn hàng trên một trang, rõ hóa đơn, tiền và tồn kho.
 Đây là danh sách công việc dự kiến; [ ] nghĩa là chưa đánh dấu hoàn tất.
