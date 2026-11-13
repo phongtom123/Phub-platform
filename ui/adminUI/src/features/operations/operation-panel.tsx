@@ -78,7 +78,7 @@ export function OperationPanel({
   resource: string;
   row?: DataRow;
   create?: boolean;
-  onChanged: () => void;
+  onChanged: (saved?: DataRow) => void;
   onEditingChange?: (editing: boolean) => void;
   orderDetail?: AdminOrderDetailData;
 }) {
@@ -130,6 +130,10 @@ export function OperationPanel({
     submitting = useRef(false);
   const status = String(row?.trang_thai ?? ""),
     id = row && ids[resource] ? String(row[ids[resource]]) : null;
+  const canAssign = resource === "orders" && ["MOI", "XAC_NHAN", "DANG_CHUAN_BI", "DA_XUAT_KHO"].includes(status);
+  useEffect(() => {
+    if (mode === "assign" && !canAssign) setMode("");
+  }, [mode, canAssign]);
   const invoiceExists = Boolean(
     orderDetail?.invoice || orderDetail?.financial.invoice_id,
   );
@@ -225,7 +229,7 @@ export function OperationPanel({
       } else {
         setMode("");
         setMoreOpen(false);
-        onChanged();
+        onChanged(result.data[0] as DataRow);
         if (typeof window !== "undefined") {
           requestAnimationFrame(() => {
             window.scrollTo({ top: scrollPos, behavior: "instant" });
@@ -315,6 +319,7 @@ export function OperationPanel({
   function submit(e: FormEvent) {
     e.preventDefault();
     if (mode === "assign") {
+      if (!canAssign) return;
       void run(mode, { employee_id: employee });
       return;
     }
@@ -389,7 +394,6 @@ export function OperationPanel({
                 <span className="operation-condition-hint condition-ready">
                   Xem kết quả chi tiết và lịch sử xử lý bên dưới.
                 </span>
-                {Number(orderDetail?.financial.paid ?? 0) > 0 && <button type="button" className="operation-primary-btn" disabled={busy || Boolean(pending.current)} onClick={() => { setAmount(""); setMethod("TIEN_MAT"); setReference(""); setMode("refund"); }}>Ghi nhận hoàn tiền</button>}
               </div>
             ) : status === "HUY" ? (
               <div className="operation-terminal-note">
@@ -544,7 +548,7 @@ export function OperationPanel({
                     role="menu"
                   >
                     {/* Phân công phụ trách */}
-                    <button
+                    {canAssign && <button
                       type="button"
                       className="operation-more-item"
                       disabled={busy || Boolean(pending.current)}
@@ -554,7 +558,7 @@ export function OperationPanel({
                       }}
                     >
                       Phân công phụ trách
-                    </button>
+                    </button>}
 
                     {/* Ghi nhận hoàn tiền */}
                     <button
@@ -696,7 +700,7 @@ export function OperationPanel({
           onConfirm={() => void run("invoice")}
         />
       )}
-      {mode && mode !== "invoice" && (
+      {mode && mode !== "invoice" && (mode !== "assign" || canAssign) && (
         <form onSubmit={submit} className="live-form operation-form">
           <h2>
             {mode === "create"

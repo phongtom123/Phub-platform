@@ -12,7 +12,7 @@ def selected_columns(name: str, user: User, include_buyer_email: bool = True) ->
     if user.role == "ADMIN" and name == "warehouses":
         return "ma_kho,ten_kho,trang_thai"
     parts = [c["name"] + ("::text" if c["type"].startswith("decimal") else "") for c in public_columns(name)
-             if include_buyer_email or name != "orders" or c["name"] != "email_nguoi_mua"]
+             if include_buyer_email or name not in {"orders", "invoices"} or c["name"] != "email_nguoi_mua"]
     if name == "customers" and user.role == "NHAN_VIEN":
         parts.append("linked_account:TAI_KHOAN(ma_tk,trang_thai)")
     if user.role == "KHACH_HANG" and name in CUSTOMER_CHILDREN:
@@ -55,9 +55,9 @@ class TablesRepository:
         try:
             return query(True).execute()
         except APIError as error:
-            # Keep historical order reads available before the additive migration.
-            # Writes never use a fallback or discard the buyer's email.
-            if name != "orders" or error.code != "42703" or "email_nguoi_mua" not in str(error.message):
+            # Keep historical order/invoice reads available before their
+            # additive buyer-email migrations. Writes never use this fallback.
+            if name not in {"orders", "invoices"} or error.code != "42703" or "email_nguoi_mua" not in str(error.message):
                 raise
             result = query(False).execute()
             for row in result.data:
@@ -70,7 +70,7 @@ class TablesRepository:
             pattern = json.dumps(re.escape(q.strip()), ensure_ascii=False)
             fields = [c["name"] for c in public_columns(name) if c["type"] == "varchar"
                       and (name != "employees" or user.role != "NHAN_VIEN" or c["name"] in EMPLOYEE_LOOKUP_FIELDS)
-                      and (include_email or name != "orders" or c["name"] != "email_nguoi_mua")]
+                      and (include_email or name not in {"orders", "invoices"} or c["name"] != "email_nguoi_mua")]
             if fields:
                 search = ",".join(f"{field}.imatch.{pattern}" for field in fields)
             # Supplier IDs are integers, so name/text search needs an exact ID
@@ -94,8 +94,17 @@ class TablesRepository:
                     query = query.not_.is_(field, "null")
             else:
                 query = getattr(query, operator)(field, value)
-        for field in RESOURCES[name].keys:
-            query = query.order(field)
+        if name == "orders":
+            # The operations screen is a live work queue: keep the newest
+            # order visible on the first page instead of sorting by its ID.
+            query = query.order("thoi_gian_dat", desc=True, nullsfirst=False)
+            query = query.order("ma_donhang", desc=True)
+        elif name == "invoices":
+            query = query.order("thoi_gian_lap", desc=True, nullsfirst=False)
+            query = query.order("ma_hoadon", desc=True)
+        else:
+            for field in RESOURCES[name].keys:
+                query = query.order(field)
         return query.range((page - 1) * page_size, page * page_size - 1)
 
     def detail(self, name, user, keys):

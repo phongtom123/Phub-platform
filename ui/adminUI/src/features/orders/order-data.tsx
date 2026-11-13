@@ -7,7 +7,7 @@ import { adminFetch } from "../../lib/admin-fetch";
 import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
 import { useAdminAuth } from "../../components/admin/auth-provider";
-import { orderListColumns, orderValue } from "./order-presentation";
+import { newestOrderRows, orderListColumns, orderValue } from "./order-presentation";
 import { OrderDetail } from "./order-detail";
 import type { AdminOrderDetailData } from "./order-detail-data";
 import { ScrollableTable } from "../tables/scrollable-table";
@@ -70,6 +70,8 @@ type Props = {
   rows: DataRow[]; columns: DataColumn[]; keys: string[]; detail?: boolean; version: number;
   related?: { name: string; title: string }[];
   detailData?: AdminOrderDetailData; onRefresh?: () => void;
+  onRowChanged?: (row: DataRow) => void;
+  onDetailOpenChange?: (open: boolean) => void;
   initialOrderId?: string | null;
   onDismissInitial?: () => void;
   label: (field: string) => string;
@@ -82,10 +84,11 @@ function validDetail(value: unknown, orderId: string): value is AdminOrderDetail
     Array.isArray(detail.history) && (detail.invoice === null || typeof detail.invoice === "object"));
 }
 
-export function OrderData({ rows, columns, keys, detail = false, version, label, related = [], detailData, onRefresh,
+export function OrderData({ rows, columns, keys, detail = false, version, label, related = [], detailData, onRefresh, onRowChanged, onDetailOpenChange,
   initialOrderId = null, onDismissInitial }: Props) {
   const { portal } = useAdminAuth();
-  const { names, retry } = useOrderPeople(detail ? [] : rows, version);
+  const visibleRows = detail ? rows : newestOrderRows(rows);
+  const { names, retry } = useOrderPeople(detail ? [] : visibleRows, version);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(initialOrderId);
   const [drawerDetail, setDrawerDetail] = useState<AdminOrderDetailData | null>(null);
   const [drawerError, setDrawerError] = useState("");
@@ -93,6 +96,10 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
   const [drawerVersion, setDrawerVersion] = useState(0);
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const rowChanged = useRef(onRowChanged);
+  rowChanged.current = onRowChanged;
+  const activeOrderId = useRef(selectedOrderId);
+  activeOrderId.current = selectedOrderId;
   const activeDetail = detail ? detailData : drawerDetail ?? undefined;
   const visibleColumns = detail ? columns : orderListColumns(columns);
   const nameLabel = (field: string) => field === "ma_kh" ? "Khách hàng" : field === "ma_nhan_vien" ? "Nhân viên phụ trách" : label(field);
@@ -119,6 +126,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
 
   const openDetail = (orderId: string, trigger: HTMLElement) => {
     returnFocus.current = trigger;
+    setDrawerDetail(null); setDrawerError("");
     setSelectedOrderId(orderId);
   };
   const closeDetail = useCallback(() => {
@@ -131,16 +139,23 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     if (initialOrderId) setSelectedOrderId(initialOrderId);
   }, [initialOrderId]);
   useEffect(() => {
+    onDetailOpenChange?.(Boolean(selectedOrderId));
+    return () => onDetailOpenChange?.(false);
+  }, [selectedOrderId, onDetailOpenChange]);
+  useEffect(() => {
     if (!selectedOrderId) return;
     const controller = new AbortController();
-    setDrawerLoading(true); setDrawerError(""); setDrawerDetail(null);
+    setDrawerLoading(true); setDrawerError("");
     adminFetch(`/api/backend/admin/orders/${encodeURIComponent(selectedOrderId)}/detail`, {
-      signal: controller.signal, cache: "no-store",
+      signal: controller.signal, cache: "reload",
     }).then(async response => {
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không tải được chi tiết đơn hàng.");
       if (!validDetail(body, selectedOrderId)) throw new Error("API chưa trả đúng chi tiết đơn hàng.");
-      if (!controller.signal.aborted) setDrawerDetail(body);
+      if (!controller.signal.aborted) {
+        setDrawerDetail(body);
+        rowChanged.current?.(body.order);
+      }
     }).catch((reason: Error) => {
       if (!controller.signal.aborted) setDrawerError(reason.message || "Không tải được chi tiết đơn hàng.");
     }).finally(() => { if (!controller.signal.aborted) setDrawerLoading(false); });
@@ -156,8 +171,17 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", escape); };
   }, [selectedOrderId, closeDetail]);
 
-  const refreshDetail = () => {
-    onRefresh?.();
+  const refreshDetail = (saved?: DataRow) => {
+    // Use the committed row immediately, even if the drawer closes before its
+    // financial/history refresh completes. Never reload the surrounding list.
+    if (saved?.ma_donhang === selectedOrderId && typeof saved.trang_thai === "string") {
+      rowChanged.current?.(saved);
+      if (activeOrderId.current !== selectedOrderId) return;
+      setDrawerDetail(current => current?.order_id === selectedOrderId
+        ? { ...current, order: { ...current.order, ...saved } } : current);
+    }
+    if (activeOrderId.current !== selectedOrderId) return;
+    setDrawerLoading(true);
     setDrawerVersion(value => value + 1);
   };
 
@@ -167,11 +191,11 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     </p>}
     {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} detailData={detailData} onRefresh={onRefresh} /> : <ScrollableTable><table>
       <thead><tr>{visibleColumns.map(column => <th key={column.name}>{nameLabel(column.name)}</th>)}<th>Thao tác</th></tr></thead>
-      <tbody>{rows.map(row => <tr key={JSON.stringify(keys.map(key => row[key]))}>
+      <tbody>{visibleRows.map(row => <tr key={JSON.stringify(keys.map(key => row[key]))}>
         {visibleColumns.map(column => <td key={column.name}>{cell(row, column)}</td>)}
         <td><button className={styles.actionButton} type="button" onClick={event => openDetail(String(row.ma_donhang), event.currentTarget)}>Chi tiết</button></td>
       </tr>)}</tbody>
-    </table>{!rows.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
+    </table>{!visibleRows.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
     {!detail && selectedOrderId && <div className={styles.backdrop} onMouseDown={event => event.target === event.currentTarget && closeDetail()}>
       <section className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="order-drawer-title">
         <header className={styles.drawerHeader}>
@@ -179,10 +203,13 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
           <button ref={closeButton} type="button" onClick={closeDetail} aria-label="Đóng chi tiết đơn hàng"><X aria-hidden="true" /></button>
         </header>
         <div className={styles.drawerBody}>
-          {drawerLoading && <div className={styles.state} role="status">Đang tải chi tiết đơn hàng…</div>}
+          {drawerLoading && !drawerDetail && <div className={styles.state} role="status">Đang tải chi tiết đơn hàng…</div>}
+          {drawerLoading && drawerDetail && <p role="status">Đang cập nhật chi tiết đơn hàng…</p>}
           {drawerError && <div className={styles.state} role="alert"><p>{drawerError}</p><button type="button" onClick={() => setDrawerVersion(value => value + 1)}>Thử lại</button></div>}
           {drawerDetail && <>
-            <OperationPanel resource="orders" row={drawerDetail.order} orderDetail={drawerDetail} onChanged={refreshDetail} />
+            <fieldset disabled={drawerLoading || Boolean(drawerError)} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+              <OperationPanel resource="orders" row={drawerDetail.order} orderDetail={drawerDetail} onChanged={refreshDetail} />
+            </fieldset>
             <OrderDetail row={drawerDetail.order} columns={columns} label={label} personName={personName}
               related={related} version={version + drawerVersion} detailData={drawerDetail} onRefresh={refreshDetail} />
           </>}

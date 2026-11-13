@@ -22,7 +22,7 @@ def detail_client():
         "ma_thanh_toan": id, "ma_donhang": ORDER, "so_tien": amount,
         "loai_giao_dich": kind, "trang_thai": status,
     }
-    state = {"actor": ADMIN, "bad_count": False, "db_error": False, "history": [{
+    state = {"actor": ADMIN, "bad_count": False, "db_error": False, "missing_invoice_email": False, "history": [{
         "key": "11111111-1111-4111-8111-111111111111", "actor_id": "TK1",
         "actor_name": "Admin", "occurred_at": "2026-11-04T01:02:03Z",
         "action": "confirm", "to_status": "XAC_NHAN",
@@ -46,6 +46,8 @@ def detail_client():
             return httpx.Response(200, json=deepcopy(state["history"]))
         assert request.method == "GET"
         name = request.url.path.rsplit("/", 1)[-1]
+        if name == "HOA_DON" and state["missing_invoice_email"] and "email_nguoi_mua" in request.url.params["select"]:
+            return httpx.Response(400, json={"code": "42703", "message": "column HOA_DON.email_nguoi_mua does not exist", "details": None, "hint": None})
         if state["db_error"] and name == "THANH_TOAN":
             return httpx.Response(500, json={"code": "XX000", "message": "internal db error"})
         rows = deepcopy(state["tables"][name])
@@ -130,6 +132,18 @@ def test_no_invoice_and_guest_order(detail_client):
     assert body["invoice"] is body["customer"] is body["employee"] is None
     assert body["financial"]["total"] is body["financial"]["remaining"] is None
     assert body["financial"]["payment_status"] == "CHUA_CO_HOA_DON"
+
+
+def test_detail_survives_pending_invoice_email_migration(detail_client):
+    client, state, requests = detail_client
+    state["missing_invoice_email"] = True
+    response = client.get(URL)
+    assert response.status_code == 200, response.text
+    assert response.json()["invoice"]["email_nguoi_mua"] is None
+    invoice_reads = [request for request in requests if request.url.path.endswith("/HOA_DON")]
+    assert len(invoice_reads) == 2
+    assert "email_nguoi_mua" in invoice_reads[0].url.params["select"]
+    assert "email_nguoi_mua" not in invoice_reads[1].url.params["select"]
 
 
 def test_history_keeps_exact_transitions_and_does_not_invent_cancel_source(detail_client):

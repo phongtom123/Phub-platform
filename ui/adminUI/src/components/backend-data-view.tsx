@@ -133,6 +133,16 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   const [page, setPage] = useState(1);
   const [version, setVersion] = useState(0);
   const refresh = () => { invalidateAdminCache(); setVersion(value => value + 1); };
+  const [orderDetailOpen, setOrderDetailOpen] = useState(false);
+  const savedOrder = useCallback((saved: Row) => {
+    setResult(current => {
+      if (!current || !current.data.some(row => row.ma_donhang === saved.ma_donhang)) return current;
+      const keep = !filters.trang_thai || saved.trang_thai === filters.trang_thai;
+      return { ...current, data: keep
+        ? current.data.map(row => row.ma_donhang === saved.ma_donhang ? { ...row, ...saved } : row)
+        : current.data.filter(row => row.ma_donhang !== saved.ma_donhang), total: current.total - (keep ? 0 : 1) };
+    });
+  }, [filters.trang_thai]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -190,7 +200,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
   }, [warehouseCustomerSearch, inlineEditing, query, search]);
 
   const pollError = useAdminPolling(JSON.stringify([routeIdentity, page, search, version]),
-    !loading && !error && Boolean(result) && !view.edit && !view.create && !inlineEditing && !saving && !uploading && !dirty.length && !galleryDirty,
+    !loading && !error && Boolean(result) && !view.edit && !view.create && !inlineEditing && !saving && !uploading && !dirty.length && !galleryDirty && !orderDetailOpen,
     async (signal, canApply) => {
       const params = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
       params.set("filters", filterQuery);
@@ -243,7 +253,8 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
       if (view.key) params.set("key", view.key);
       if (view.orderId) params.set("order_id", view.orderId);
       params.set("filters", filterQuery);
-      const data = await readDataPage(resource, params, { signal: controller.signal });
+      const data = await readDataPage(resource, params, { signal: controller.signal,
+        cache: resource === "invoices" && !view.key ? "reload" : "no-store" });
       // Old deployments ignore unknown query params. Do not display unrelated
       // records as if the backend had filtered them to the selected order.
       if (view.orderId && (data.order_id !== view.orderId || data.data.some(row => row.ma_donhang !== view.orderId))) {
@@ -390,7 +401,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {resource === "inventory" && <StockHistory />}
         {draftPath && <p className="inline-data-help">Nhấp đúp để sửa phiếu nháp. Phiếu đã xử lý chỉ xem thông tin; trạng thái được cập nhật qua nghiệp vụ kho.</p>}
         {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label}
-          related={available.filter(item => orderChildren.includes(item.name))} onRefresh={refresh} initialOrderId={initialOrderId}
+          related={available.filter(item => orderChildren.includes(item.name))} onRowChanged={savedOrder} onDetailOpenChange={setOrderDetailOpen} initialOrderId={initialOrderId}
           onDismissInitial={() => router.replace(dataHref("orders", { filters }))} />
         : inlineEnabled ? <InlineDataTable resource={resource} rows={result?.data ?? []} columns={listColumns} keys={meta.keys}
           quickEditFields={resource === "products" ? ["ten_sp", "thuong_hieu", "gia_ban_hien_tai", "don_vi", "bao_hanh_thang", "trang_thai"] : undefined}

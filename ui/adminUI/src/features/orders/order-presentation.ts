@@ -15,6 +15,19 @@ export function orderListColumns(columns: DataColumn[]) {
   return listFields.flatMap(name => columns.filter(column => column.name === name));
 }
 
+function orderTime(value: unknown): number {
+  if (typeof value !== "string" || !value) return Number.NEGATIVE_INFINITY;
+  const input = /(Z|[+-]\d{2}:?\d{2})$/i.test(value) ? value : value + "+07:00";
+  const timestamp = Date.parse(input);
+  return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
+}
+
+/** Defensive UI ordering while the backend also paginates newest-first. */
+export function newestOrderRows(rows: DataRow[]): DataRow[] {
+  return [...rows].sort((left, right) => orderTime(right.thoi_gian_dat) - orderTime(left.thoi_gian_dat)
+    || String(right.ma_donhang ?? "").localeCompare(String(left.ma_donhang ?? "")));
+}
+
 export function orderValue(row: DataRow, field: string): string {
   const value = row[field];
   if (value === null || value === undefined || value === "") return "—";

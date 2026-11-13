@@ -288,6 +288,19 @@ def test_admin_can_read_every_table(platform_client, name):
     assert "mat_khau" not in requests[-1].url.params["select"]
 
 
+@pytest.mark.parametrize("resource,ordering", [
+    ("orders", "thoi_gian_dat.desc.nullslast,ma_donhang.desc"),
+    ("invoices", "thoi_gian_lap.desc.nullslast,ma_hoadon.desc"),
+])
+@pytest.mark.parametrize("page", [1, 2])
+def test_document_lists_show_newest_time_first(platform_client, resource, ordering, page):
+    client, _, requests = platform_client
+    assert client.get(f"/api/data/{resource}", params={"page": page, "page_size": 20}).status_code == 200
+    assert requests[-1].url.params["order"] == ordering
+    assert requests[-1].url.params["offset"] == str((page - 1) * 20)
+    assert requests[-1].url.params["limit"] == "20"
+
+
 @pytest.mark.parametrize("name,field", [("warehouses", "ma_kho"), ("inventory", "ma_kho"), ("receipts", "ma_kho"), ("receipt-lines", "scope.ma_kho")])
 def test_warehouse_scope(platform_client, name, field):
     client, state, requests = platform_client

@@ -1,0 +1,39 @@
+{
+  "projectRef": "btfhahnjydaiivvcqnna",
+  "pgBin": "C:\\Program Files\\PostgreSQL\\18\\bin",
+  "backupRoot": "C:\\PHUB-backups",
+  "source": {
+    "host": "REPLACE_WITH_SESSION_POOLER_HOST",
+    "port": 5432,
+    "database": "postgres",
+    "user": "postgres.btfhahnjydaiivvcqnna",
+    "sslMode": "require",
+    "credentialFile": "%LOCALAPPDATA%\\PHUB\\backup\\supabase-db.credential.xml"
+  },
+  "schemas": [
+    "public",
+    "admin_ops",
+    "admin_account_private",
+    "customer_order_private",
+    "payment_demo",
+    "portal_auth",
+    "supabase_migrations"
+  ],
+  "retention": {
+    "maximumAgeDays": 30,
+    "maximumTotalBytes": 21474836480,
+    "minimumFreeBytes": 5368709120,
+    "minimumSuccessfulBackups": 2,
+    "estimatedNextBackupBytes": 1073741824
+  },
+  "schedule": {
+    "dailyAt": "02:00"
+  },
+  "restoreTest": {
+    "host": "127.0.0.1",
+    "port": 5432,
+    "user": "postgres",
+    "databasePrefix": "pchub_restore_test_",
+    "credentialFile": "%LOCALAPPDATA%\\PHUB\\backup\\local-postgres.credential.xml"
+  }
+}
