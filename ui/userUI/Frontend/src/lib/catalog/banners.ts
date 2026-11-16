@@ -6,7 +6,7 @@ export type CatalogBanner = {
 };
 
 export async function getBanners(signal: AbortSignal): Promise<CatalogBanner[]> {
-  const body = await readJson(await fetch("/api/catalog/banners", { signal, cache: "no-store" })) as { items?: unknown };
+  const body = await readJson(await fetch("/api/catalog/banners", { signal })) as { items?: unknown };
   if (!Array.isArray(body?.items) || body.items.some((item: CatalogBanner) => {
     if (!item || !Number.isSafeInteger(item.id) || typeof item.title !== "string" || typeof item.alt_text !== "string" || typeof item.image_url !== "string") return true;
     try { const url = new URL(item.image_url); return !["https:", "http:"].includes(url.protocol) || Boolean(url.username || url.password); }

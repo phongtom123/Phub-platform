@@ -28,6 +28,7 @@ from phub_api.schemas.catalog import (
     clean_text,
 )
 from phub_api.services.catalog_availability import available_skus, available_quantities
+from phub_api.services import catalog_cache
 from phub_api.config.orders import OrderSettings
 from phub_api.services.catalog_facets import build_facets, filter_products
 
@@ -224,7 +225,14 @@ class CatalogService:
             total_pages=(total + filters.page_size - 1) // filters.page_size,
         ))
 
+    def cache_key(self, name, *parts):
+        return (name, getattr(self.repository, "active_status", None), getattr(self.repository, "currency", None), *parts)
+
     def facets(self, filters: CatalogQuery):
+        return catalog_cache.cached(self.cache_key("facets", filters.model_dump_json()),
+                                    catalog_cache.ttl_seconds(30), lambda: self.compute_facets(filters))
+
+    def compute_facets(self, filters: CatalogQuery):
         scope = filters.model_copy(update={"brand": None, "min_price": None, "max_price": None, "color": None, "stock_status": None, "spec": []})
         products = self.resolve_component_specs([self.product_from_row(row) for row in self.repository.products(scope)])
         available = available_skus(self.repository, [product.sku for product in products]) if filters.stock_status else None
@@ -250,6 +258,9 @@ class CatalogService:
         return ProductAvailability(id=product.id, sku=product.sku, quantity=quantity, available=available >= quantity)
 
     def list_categories(self) -> list[CategoryTree]:
+        return catalog_cache.cached(self.cache_key("categories"), catalog_cache.ttl_seconds(60), self.compute_categories)
+
+    def compute_categories(self) -> list[CategoryTree]:
         parents, children = self.repository.categories()
         children_by_parent = {}
         for row in children:
@@ -259,11 +270,17 @@ class CatalogService:
                              children=children_by_parent.get(row["ma_loai_sp"], [])) for row in parents]
 
     def list_brands(self) -> list[Brand]:
+        return catalog_cache.cached(self.cache_key("brands"), catalog_cache.ttl_seconds(60), self.compute_brands)
+
+    def compute_brands(self) -> list[Brand]:
         names = {row["thuong_hieu"] for row in self.repository.brand_rows()
                  if row.get("thuong_hieu") and row["thuong_hieu"].strip()}
         return [Brand(name=name) for name in sorted(names, key=lambda name: (name.casefold(), name))]
 
     def list_colors(self) -> list[ColorOption]:
+        return catalog_cache.cached(self.cache_key("colors"), catalog_cache.ttl_seconds(60), self.compute_colors)
+
+    def compute_colors(self) -> list[ColorOption]:
         names, unknown = {}, False
         for row in self.repository.specification_rows():
             color = product_color(row.get("thong_so_ky_thuat"))
