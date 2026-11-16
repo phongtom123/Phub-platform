@@ -1,98 +1,134 @@
-# Kế hoạch rút gọn thao tác xử lý đơn hàng
+# Danh sách việc cần làm — Rút gọn xử lý đơn hàng PCHUB
 
-Ngày chốt phương án: 13/11/2026.
-Trạng thái: đã thống nhất hướng làm, chưa triển khai theo tài liệu này.
+Cập nhật: **15/11/2026**. Phương án nghiệp vụ đã chốt ngày 13/11/2026.
+Nhánh làm việc: `feat/backend-middleware-api`.
+Trạng thái: **backend và giao diện đã làm trên nhánh `feat/order-fulfillment-shortcuts`;
+chờ chạy migration `20261115100000_order_fulfillment_shortcuts.sql` lên Supabase và deploy**.
 
-## Mục tiêu
+Chốt thêm ngày 15/11/2026: đơn bán tại quầy (chưa ghi phương thức nhận) tính là **Nhận tại cửa hàng**;
+đơn online được thu đủ tiền tự chuyển sang **Đang chuẩn bị**, nhân viên không cần bấm xác nhận.
 
-Giảm số lần nhân viên phải bấm để hoàn thành một đơn, xử lý tại trang chi tiết
-đơn hiện có. Giữ hai khu vực nội bộ Admin và Nhân viên; không cần thêm role
-hoặc portal để thực hiện phương án này.
+## 1. Kết quả cần đạt
 
-Số thao tác dưới đây tính từ lúc đơn đã ở **Đang chuẩn bị**, không tính thao tác
-thu tiền nếu đơn chưa thanh toán đủ. Không bắt xác nhận lại các bước đã hoàn tất.
+Nhân viên xử lý đơn ngay tại trang chi tiết, không phải chuyển qua nhiều trang
+hoặc bấm lại những bước đã hoàn tất. Giữ hai vai trò nội bộ Admin và Nhân viên.
 
-## Luồng được duyệt
+Số thao tác trong bảng tính từ trạng thái **Đang chuẩn bị**; chưa tính việc thu
+tiền nếu đơn còn thiếu tiền.
 
-| Cách nhận hàng | Luồng sau thanh toán | Thao tác của nhân viên |
-| --- | --- | --- |
-| Nhận tại cửa hàng | Đang chuẩn bị → Hoàn thành | Một nút **Đã giao cho khách** |
-| Giao tận nơi | Đang chuẩn bị → Đang giao → Hoàn thành | **Bàn giao vận chuyển**, sau đó **Xác nhận đã giao** |
+| Cách nhận | Nút thao tác | Kết quả |
+|---|---|---|
+| Nhận tại cửa hàng | **Đã giao cho khách** | Xuất kho và hoàn thành cùng một transaction, khi đã có hóa đơn và thu đủ tiền. |
+| Giao tận nơi — bước 1 | **Bàn giao vận chuyển** | Xuất kho và chuyển sang Đang giao; COD vẫn được bàn giao trước khi thu đủ theo quy định hiện có. |
+| Giao tận nơi — bước 2 | **Xác nhận đã giao** | Hoàn thành khi đã giao thực tế, có hóa đơn và thu đủ tiền; không trừ kho lần nữa. |
 
-### Nhận tại cửa hàng
+Không tự hoàn thành đơn khi thanh toán thành công, bypass hoặc hết một khoảng thời gian.
 
-Nhân viên chỉ bấm **Đã giao cho khách** khi thực tế đã giao hàng.
-Backend thực hiện trong cùng transaction:
+## 2. Phần đã có để tái sử dụng
 
-1. Kiểm tra quyền, phương thức nhận, trạng thái đơn, hóa đơn và số tiền đã thu.
-2. Kiểm tra dữ liệu giữ hàng và tồn kho theo các dòng đơn.
-3. Xuất kho, trừ tồn vật lý đúng một lần, kết thúc giữ hàng.
-4. Chuyển đơn sang hoàn thành và ghi lịch sử người/thời điểm thực hiện.
-5. Đơn hoàn thành trở thành căn cứ để khách được đánh giá sản phẩm.
+Các dấu hoàn tất ở đây chỉ ghi nhận nền tảng đã có trong mã, không phải nghiệm thu luồng mới.
 
-Nếu chưa thu đủ tiền thì giải thích số còn phải thu và chặn hoàn thành. Không
-tự ghi nhận đã thu tiền chỉ vì nhân viên bấm giao hàng. Lỗi ở bất kỳ bước ghi
-nào phải rollback toàn bộ, không để đơn hoàn thành nhưng kho chưa cập nhật.
+- [x] Checkout online tạo đơn và hóa đơn trong cùng transaction.
+- [x] Bypass ghi giao dịch và có thể đưa đơn hợp lệ sang Đang chuẩn bị.
+- [x] Có nghiệp vụ xác nhận, chuẩn bị, xuất kho, hoàn thành, hủy và thu/hoàn tiền.
+- [x] Có trang chi tiết đơn tổng hợp sản phẩm, hóa đơn, thanh toán và lịch sử.
+- [x] Có kiểm tra tồn khả dụng, khóa dữ liệu và chống ghi lặp.
 
-### Giao tận nơi
+## 3. Checklist triển khai
 
-1. **Bàn giao vận chuyển**: nhân viên xác nhận đã bàn giao thực tế. Backend xuất
-   kho, trừ tồn đúng một lần, kết thúc giữ hàng và chuyển đơn sang đang giao.
-   COD vẫn được xuất trước khi thu đủ theo quy định hiện hành.
-2. **Xác nhận đã giao**: sau khi khách thực tế nhận hàng, backend kiểm tra hóa
-   đơn và thu đủ tiền rồi hoàn thành đơn. Không trừ kho thêm lần nữa.
+### Backend và database — làm trước
 
-Trong lần triển khai đầu, dự kiến dùng trạng thái kỹ thuật `DA_XUAT_KHO` cho
-mốc đã bàn giao; hiển thị **Đang giao** đối với đơn giao tận nơi. Không tự đổi
-mã trạng thái lịch sử hoặc coi mọi đơn đã xuất kho là đã giao xong.
+- [x] **BE-01 — Giao tại cửa hàng:** bổ sung một lệnh kiểm tra điều kiện,
+  xuất kho và hoàn thành trong cùng transaction. Không ghép hai request xuất
+  kho/hoàn thành từ frontend để thay cho transaction.
+- [x] **BE-02 — Bàn giao vận chuyển:** dùng lại nghiệp vụ xuất kho hiện có;
+  kiểm tra đúng phương thức nhận và trạng thái trước khi cho bàn giao.
+- [x] **BE-03 — Xác nhận đã giao:** kiểm tra hóa đơn, số tiền đã thu và trạng
+  thái đã bàn giao; hoàn thành đơn mà không trừ tồn thêm.
+- [x] **BE-04 — Thanh toán:** rà các luồng thu tiền và bypass; đưa đơn hợp lệ
+  sang Đang chuẩn bị theo điều kiện nghiệp vụ, không bắt xác nhận/chuẩn bị lại.
+  Không tự ghi nhận tiền chỉ vì nhân viên bấm giao hàng.
+- [x] **BE-05 — Chống ghi lặp:** giữ khóa đơn/tồn và idempotency cho các lệnh
+  gộp. Thử lại cùng yêu cầu hoặc hai nhân viên thao tác đồng thời không được
+  trừ tồn, tạo hóa đơn hay ghi khoản thu hai lần.
+- [x] **BE-06 — Lịch sử và lỗi:** ghi người thực hiện, thời điểm và thao tác
+  thực tế. Lỗi ở bất kỳ bước nào phải rollback toàn bộ và trả đúng nguyên nhân.
+- [x] **BE-07 — Đơn cũ:** đơn đã xuất vẫn hoàn thành được mà không xuất lại;
+  đơn thiếu phương thức nhận giữ luồng cũ hoặc yêu cầu xác minh, không tự gán
+  thành Nhận tại cửa hàng.
 
-## Những phần tự động
+Backend tiếp tục theo **Controller → Service → Repository**. Chỉ tạo migration
+mới cho thay đổi cần thiết; không viết lại lịch sử đơn hoặc số liệu tồn cũ.
 
-- Giữ cơ chế tạo hóa đơn cùng transaction đặt đơn online hiện có; có hóa đơn
-  không đồng nghĩa đã thanh toán. Không bắt nhân viên lập lại hóa đơn đã có.
-- Thanh toán/bypass thành công: ghi giao dịch và đưa đơn hợp lệ sang đang
-  chuẩn bị; không bắt bấm lại Xác nhận đơn hoặc Chuẩn bị hàng.
-- Nghiệp vụ xuất kho chạy bên trong nút giao/bàn giao tương ứng, thay cho một
-  thao tác xuất kho riêng. Không chỉ ẩn nút cũ rồi để đơn bị kẹt.
-- Sau lệnh thành công, cập nhật đơn, hóa đơn, tiền, tồn và lịch sử tại chỗ.
-- Sau này có thể dùng thông báo giao thành công từ đơn vị vận chuyển để thay
-  nút xác nhận đã giao; vẫn phải kiểm tra tính xác thực, chống xử lý trùng và
-  điều kiện thanh toán. Chưa tích hợp vận chuyển trong phạm vi đầu tiên.
+### Giao diện — sau khi đã có lệnh backend
 
-Không tự hoàn thành đơn khi thanh toán/bypass thành công hoặc sau một khoảng
-thời gian. Không suy diễn đã nhận hàng từ việc đã xuất kho.
+- [x] **UI-01 — Nút theo phương thức nhận:** hiện Đã giao cho khách cho đơn
+  nhận tại cửa hàng; hiện Bàn giao vận chuyển/Xác nhận đã giao cho đơn giao tận nơi.
+- [x] **UI-02 — Nút theo bước tiếp theo:** không bắt lập lại hóa đơn, thu lại
+  tiền hoặc xuất kho riêng nếu các bước đó đã được xử lý trong lệnh mới.
+  Không chỉ ẩn nút cũ rồi để đơn không còn thao tác đi tiếp.
+- [x] **UI-03 — Trạng thái:** dùng `DA_XUAT_KHO` cho mốc đã bàn giao trong
+  lần triển khai đầu; hiển thị Đang giao đối với đơn giao tận nơi. Không đổi
+  tên mọi đơn đã xuất, nhất là đơn cũ chưa rõ phương thức nhận.
+- [x] **UI-04 — Điều kiện thao tác:** giải thích số tiền còn thiếu, thiếu hóa
+  đơn hoặc thiếu tồn ngay tại trang; không báo thành công trước phản hồi backend.
+- [x] **UI-05 — Cập nhật tại chỗ:** làm mới trạng thái, hóa đơn, tiền, tồn và
+  lịch sử sau thành công; giữ vị trí cuộn. Nếu chưa rõ kết quả request, giữ
+  cùng yêu cầu để thử lại và tránh tạo giao dịch mới.
+- [ ] **UI-06 — Đồng bộ cách hiển thị:** rà chi tiết đơn, danh sách đơn, Phiếu
+  xuất và phía khách hàng để các nhãn trạng thái không mâu thuẫn.
+  Đã đồng bộ: danh sách và chi tiết đơn, Phiếu xuất, danh sách/chi tiết đơn của khách.
+  Còn lại: lịch sử đơn trong hồ sơ khách (cổng nhân viên) và bảng dữ liệu chung.
 
-## Việc cần triển khai
+## 4. Quy tắc phải giữ
 
-- [ ] Bổ sung lệnh backend gộp giao tại cửa hàng với xuất kho và hoàn thành.
-- [ ] Dùng nghiệp vụ xuất kho hiện có cho nút Bàn giao vận chuyển, tránh tạo
-      một cơ chế trừ kho song song.
-- [ ] Giữ transaction, khóa dữ liệu và idempotency: bấm lặp/thử lại hoặc hai
-      nhân viên thao tác đồng thời không trừ kho, tạo hóa đơn hay thu tiền lặp.
-- [ ] Giữ phân bổ theo kho của từng dòng đơn và quy tắc tồn khả dụng hiện có.
-      Không thay bằng giới hạn một kho hoặc gộp dòng lưu trữ theo giao diện.
-- [ ] Ghi lịch sử các nghiệp vụ được gộp, cùng người thực hiện, thời điểm và
-      trạng thái thực tế; giữ tương thích báo cáo và lịch sử đơn cũ.
-- [ ] Chỉ hiện nút bước tiếp theo tại trang chi tiết đơn của Nhân viên. Không
-      bắt chuyển qua trang hóa đơn, thanh toán hoặc phiếu xuất để hoàn tất.
-- [ ] Hiển thị lỗi backend đúng, không báo thành công trước khi transaction
-      hoàn tất; giữ thông tin đối chiếu nếu kết quả request chưa xác định.
-- [ ] Với đơn cũ thiếu phương thức nhận, giữ luồng hiện hành hoặc yêu cầu xác
-      minh theo nghiệp vụ; không tự gán nhận tại cửa hàng.
-- [ ] Giữ luồng đơn chưa thanh toán, hủy và hoàn tiền theo điều kiện riêng;
-      không gom hủy đơn và hoàn tiền thành thao tác tự động không kiểm soát.
+- Nhân viên thực hiện nghiệp vụ; Admin giữ phạm vi quản trị và thống kê hiện có.
+- Checkout gom tồn khả dụng từ mọi kho hoạt động; không trở lại kho cố định.
+- Giữ phân bổ theo kho trong từng dòng `CT_DON_HANG`; chỉ gộp cách hiển thị.
+- Thêm giỏ/xem báo giá không giữ hàng. Giữ nguyên quy tắc giữ hàng của đơn
+  đang xử lý đã có hóa đơn hoặc khoản thu thành công.
+- Có hóa đơn không đồng nghĩa đã thanh toán; xuất kho không đồng nghĩa khách đã nhận hàng.
+- Hủy và hoàn tiền vẫn theo điều kiện riêng; không gộp thành thao tác tự động.
+- Chỉ mở quyền đánh giá khi đơn thực sự Hoàn thành.
+- Chưa tích hợp đơn vị vận chuyển hoặc tự xác nhận giao hàng trong đợt này.
 
-## Nghiệm thu khi triển khai
+## 5. Checklist nghiệm thu
 
-- [ ] Đơn nhận tại cửa hàng đã thu đủ: một lệnh giao hàng xuất kho và hoàn
-      thành; khách đủ điều kiện đánh giá.
-- [ ] Đơn giao tận nơi: bàn giao chỉ trừ kho một lần; xác nhận nhận hàng mới
-      hoàn thành. COD chưa thu đủ không được hoàn thành.
-- [ ] Thử lại cùng yêu cầu, bấm lặp và xử lý đồng thời không làm trừ kho lặp.
-- [ ] Thiếu tồn, thiếu tiền, sai quyền, sai trạng thái hoặc lỗi transaction
-      không để lại kết quả ghi một phần hay thông báo thành công sai.
-- [ ] Đơn đã xuất trước khi nâng cấp vẫn hoàn thành được mà không trừ kho lại.
-- [ ] Không tự mở quyền đánh giá cho đơn mới thanh toán hoặc mới bàn giao.
+Dùng fixtures hoặc PostgreSQL biệt lập cho các bài ghi dữ liệu. Không sửa tồn,
+hủy đơn hoặc xóa thanh toán thật để làm cho giao diện trông đúng.
 
-Tài liệu liên quan: [logic mua hàng](USER-COMMERCE-LOGIC.md),
-[nhận tại cửa hàng](STORE-PICKUP.md), [danh sách công việc](PHUB-ADMIN-TODO.txt).
+- [x] **KT-01:** nhận tại cửa hàng đã thu đủ → một lệnh xuất kho và hoàn thành;
+  khách đủ điều kiện đánh giá.
+- [x] **KT-02:** nhận tại cửa hàng chưa thu đủ → bị chặn, không thay đổi tồn/trạng thái.
+- [x] **KT-03:** giao tận nơi → bàn giao chỉ trừ tồn một lần; xác nhận đã giao
+  mới hoàn thành. COD chưa thu đủ không hoàn thành được.
+- [x] **KT-04:** gửi lại cùng yêu cầu, bấm lặp và hai nhân viên xử lý đồng thời
+  không tạo kết quả trùng.
+- [x] **KT-05:** thiếu tồn, thiếu hóa đơn, sai quyền, sai trạng thái hoặc lỗi
+  giữa transaction không để lại dữ liệu ghi một phần.
+- [x] **KT-06:** đơn đã xuất trước nâng cấp hoàn thành được mà không trừ kho lại;
+  đơn thiếu phương thức nhận không bị tự đổi loại nhận.
+- [x] **KT-07:** thanh toán/bypass hoặc bàn giao vận chuyển chưa mở quyền đánh giá;
+  lịch sử và báo cáo chỉ phản ánh trạng thái thực tế.
+- [x] **KT-08:** dữ liệu trên giao diện được cập nhật sau thành công; lỗi giữ
+  thông báo và cho thử lại an toàn.
+
+Kết quả 15/11/2026: KT-01 → KT-07 đạt trên PostgreSQL biệt lập chạy chuỗi migration đơn hàng
+(`Backend/tests/order-fulfillment-sql.test.cjs`); KT-08 đạt trên trình duyệt với API giả lập
+(`ui/adminUI/tests/order-fulfilment.e2e.cjs`). Chưa kiểm thử trên môi trường đang chạy.
+
+## 6. Hoàn tất và triển khai
+
+- [x] Cập nhật API contract/OpenAPI, nhãn trạng thái và tài liệu kiểm thử theo mã đã làm.
+- [x] Kiểm tra migration trên môi trường biệt lập trước khi áp dụng vào database dùng chung.
+- [ ] Push nhánh feat, review, merge main rồi deploy API và các UI có thay đổi.
+- [ ] Kiểm tra lại phiên bản và hai luồng nhận hàng sau deploy; ghi rõ kết quả
+  kiểm thử local, fixtures và môi trường đang chạy.
+
+**Việc vận hành riêng — sao lưu database:** mã script đã có; vẫn cần cấu hình
+kết nối/credential, chạy backup thực tế, phục hồi thử vào PostgreSQL local và
+cài lịch chạy. Không coi việc có script là đã có backup tự động hoạt động.
+Xem [hướng dẫn sao lưu/phục hồi](../Backend/docs/SUPABASE-BACKUP-RESTORE.md).
+
+Tài liệu đối chiếu: [logic mua hàng](USER-COMMERCE-LOGIC.md),
+[nhận tại cửa hàng](STORE-PICKUP.md), [kiến trúc backend](../Backend/ARCHITECTURE.md).

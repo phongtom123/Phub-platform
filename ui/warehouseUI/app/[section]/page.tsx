@@ -19,7 +19,7 @@ export default async function SectionPage({params}:{params:Promise<{section:stri
   if (section === "settings") return <InternalApp moduleHint="orders" pageTitle="Cài đặt" pageHref="/settings"><SettingsForm /></InternalApp>;
   if (section === "counter") return <InternalApp moduleHint="orders" pageTitle="Bán tại quầy" pageHref="/counter"><StaffCounterOrder /></InternalApp>;
   if (section === "invoice-claims") return <InternalApp moduleHint="billing" pageTitle="Liên kết hóa đơn" pageHref="/invoice-claims"><InvoiceClaimsWorkspace /></InternalApp>;
-  if (section === "history") return <InternalApp moduleHint="inventory" pageTitle="Lịch sử kho" pageHref="/history"><StockHistory /></InternalApp>;
+  if (section === "history") return <InternalApp moduleHint="inventory" pageTitle="Lịch sử kho" pageHref="/history"><StockHistory standalone /></InternalApp>;
   if (section === "surveys") return <InternalApp engagementPage="surveys" />;
   if (section === "interests") return <InternalApp engagementPage="interests" />;
   if (section === "reviews") return <InternalApp engagementPage="reviews" />;

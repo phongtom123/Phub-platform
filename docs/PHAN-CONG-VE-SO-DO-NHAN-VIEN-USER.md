@@ -21,7 +21,7 @@ Cập nhật: 10/11/2026 · Bản 2, thay danh sách gộp 55 sơ đồ trước
 | Người 1 | Nhân viên — sản phẩm, danh mục và kho | 31 | 11 | 42 | [Danh sách người 1](phan-cong-so-do/NGUOI-1.md) |
 | Người 2 | Nhân viên — khách hàng, bán hàng và khuyến mãi | 32 | 12 | 44 | [Danh sách người 2](phan-cong-so-do/NGUOI-2.md) |
 | Người 3 | Khách hàng — tài khoản, địa chỉ và mua hàng | 34 | 12 | 46 | [Danh sách người 3](phan-cong-so-do/NGUOI-3.md) |
-| Người 4 | CRM hai phía — hỗ trợ, khảo sát, đánh giá và sở thích | 27 | 12 | 39 | [Danh sách người 4](phan-cong-so-do/NGUOI-4.md) |
+| **Bạn (phần 4)** | CRM hai phía — hỗ trợ, khảo sát, đánh giá và sở thích | 27 | 12 | 39 | [Danh sách của bạn](phan-cong-so-do/NGUOI-4.md) |
 | **Tổng** | Không tính admin, ERD và các hình tổng thể bên dưới | **124** | **47** | **171** | |
 
 Cân đối theo độ khó, không ép số hình bằng nhau: Người 1 xử lý tồn và phiếu nhập; Người 2 xử lý xuất/tài chính; Người 3 có giỏ theo danh tính và transaction đặt hàng; Người 4 có khảo sát, hội thoại và đánh giá hai phía.
@@ -279,13 +279,15 @@ Lần theo controller → service → repository → migration đúng nghiệp v
 
 ## Người 4 — CRM hai phía — hỗ trợ, khảo sát, đánh giá và sở thích
 
-**Người nhận:** [Điền tên] · **Bàn giao:** 27 Workflow + 12 Sequence = 39 sơ đồ.
+**Người nhận:** Bạn (chủ dự án, phụ trách CRM và ERD) · **Bàn giao CRM:** 27 Workflow + 12 Sequence = 39 sơ đồ.
+
+Bản nháp và thứ tự làm: [thư mục sơ đồ CRM](so-do-crm/README.md). ERD không tính vào 39 sơ đồ CRM.
 
 ### Workflow
 
 | Mã | Xong | Chức năng | Điều kiện/nội dung phải thể hiện |
 | --- | --- | --- | --- |
-| N4-W01 | [ ] | Khách gửi yêu cầu hỗ trợ hoặc phản hồi sản phẩm | Đăng nhập, nội dung/chủ đề và sản phẩm/đơn nếu có; lưu ticket thuộc mình. |
+| N4-W01 | [x] | Khách gửi yêu cầu hỗ trợ hoặc phản hồi sản phẩm | Đăng nhập, nội dung/chủ đề và sản phẩm/đơn nếu có; lưu ticket thuộc mình. |
 | N4-W02 | [ ] | Khách xem lịch sử yêu cầu và phản hồi | Danh sách/chi tiết ticket, trạng thái, lịch sử hội thoại; không thấy ghi chú nội bộ. |
 | N4-W03 | [ ] | Khách gửi thêm tin nhắn | Đúng ticket của mình, nội dung hợp lệ, chống gửi trùng và làm mới hội thoại. |
 | N4-W04 | [ ] | Nhân viên tra cứu yêu cầu hỗ trợ | Tìm/lọc/trạng thái/ưu tiên, phân trang và mở chi tiết. |
@@ -317,7 +319,7 @@ Lần theo controller → service → repository → migration đúng nghiệp v
 
 | Mã | Xong | Tình huống | Workflow liên quan | Nội dung phải thể hiện |
 | --- | --- | --- | --- | --- |
-| N4-S01 | [ ] | Khách tạo yêu cầu hỗ trợ | N4-W01 | Xác thực, ownership và lưu ticket; phản hồi định dạng/thiếu thông tin. |
+| N4-S01 | [x] | Khách tạo yêu cầu hỗ trợ | N4-W01 | Xác thực, ownership và lưu ticket; phản hồi định dạng/thiếu thông tin. |
 | N4-S02 | [ ] | Trao đổi tin nhắn khách - nhân viên | N4-W02, N4-W03, N4-W06 | Lưu từng tin nhắn, chống gửi trùng và chỉ trả phần dữ liệu được phép. |
 | N4-S03 | [ ] | Nhân viên nhận xử lý, ưu tiên và đóng ticket | N4-W04, N4-W05, N4-W07 | Kiểm tra quyền/trạng thái và lưu lịch sử theo API hiện tại. |
 | N4-S04 | [ ] | Khách yêu cầu liên kết hóa đơn | N4-W08 | Lưu ticket mà không tiết lộ hóa đơn có tồn tại hay cấp quyền đơn; nối N2-S11. |
