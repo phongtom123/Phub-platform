@@ -24,8 +24,8 @@ const reasonLabels: Record<string, string> = {
 function localDate(value: Date) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }
-export function StockHistory({ sku }: { sku?: string }) {
-  const [open, setOpen] = useState(false),
+export function StockHistory({ sku, standalone = false }: { sku?: string; standalone?: boolean }) {
+  const [open, setOpen] = useState(standalone),
     [page, setPage] = useState(1),
     [version, setVersion] = useState(0);
   const [range, setRange] = useState("all"),
@@ -35,19 +35,23 @@ export function StockHistory({ sku }: { sku?: string }) {
       null,
     ),
     [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
     setError("");
+    setResult(null);
+    setLoading(true);
     void operationRead<{ data: Event[]; total: number }>(
       "history",
       { page: String(page), ...(sku ? { record_id: sku } : {}), ...(start ? { start } : {}), ...(end ? { end } : {}) },
       controller.signal,
     )
-      .then(setResult)
+      .then(value => { if (!controller.signal.aborted) setResult(value); })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);
-      });
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [open, page, version, sku, start, end]);
   function changeRange(value: string) {
@@ -65,12 +69,7 @@ export function StockHistory({ sku }: { sku?: string }) {
     setStart(localDate(begin));
     setEnd(localDate(finish));
   }
-  return (
-    <details
-      className="operation-history"
-      onToggle={(e) => setOpen(e.currentTarget.open)}
-    >
-      <summary>Lịch sử biến động tồn kho</summary>
+  const content = <>
       {error && (
         <p className="live-error" role="alert">
           {error}
@@ -91,7 +90,7 @@ export function StockHistory({ sku }: { sku?: string }) {
           <label>Đến ngày<input type="date" value={end} min={start || undefined} onChange={event => { setEnd(event.target.value); setPage(1); }} /></label>
         </>}
       </div>
-      {!result && !error && open && <p>Đang tải lịch sử…</p>}
+      {loading && <p role="status">Đang tải lịch sử…</p>}
       {result && (
         <>
           <ScrollableTable>
@@ -129,21 +128,21 @@ export function StockHistory({ sku }: { sku?: string }) {
           {result.total === 0 && (
             <p>Chưa có biến động được ghi nhận kể từ khi cài chức năng.</p>
           )}
-          <div className="live-tools">
-            <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-              Trước
-            </button>
-            <span>Trang {page}</span>
-            <button
-              disabled={page * 20 >= result.total}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Sau
-            </button>
-            <button onClick={() => setVersion((v) => v + 1)}>Làm mới</button>
-          </div>
         </>
       )}
-    </details>
-  );
+      <div className="live-tools">
+        <button type="button" disabled={loading || page === 1} onClick={() => setPage((p) => p - 1)}>
+          Trước
+        </button>
+        <span>Trang {page}</span>
+        <button type="button" disabled={loading || !result || page * 20 >= result.total} onClick={() => setPage((p) => p + 1)}>
+          Sau
+        </button>
+        <button type="button" disabled={loading} onClick={() => setVersion((v) => v + 1)}>{error ? 'Thử lại' : 'Làm mới'}</button>
+      </div>
+    </>;
+  if (standalone) return <section className="live-data" aria-label="Lịch sử kho"><h2>Lịch sử biến động tồn kho</h2>{content}</section>;
+  return <details className="operation-history" onToggle={event => setOpen(event.currentTarget.open)}>
+    <summary>Lịch sử biến động tồn kho</summary>{content}
+  </details>;
 }

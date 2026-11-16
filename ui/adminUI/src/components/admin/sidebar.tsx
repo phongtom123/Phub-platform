@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
   BarChart3,
@@ -99,6 +99,7 @@ export function AdminSidebar({
 }: Props) {
   const { portal } = useAdminAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const visibleNavigation = navigation.map(group => ({ ...group,
     items: group.items.filter(([key]) => canOpenModule(portal, key)),
   })).filter(group => group.items.length);
@@ -136,7 +137,7 @@ export function AdminSidebar({
           </button>
         </div>
         <nav>
-          {portal === "staff" && <section className="nav-section"><div className="nav-items expanded"><button onClick={() => { router.push("/counter"); onCloseMobile(); }}><CreditCard/><span>Bán tại quầy</span></button><button onClick={() => { router.push("/invoice-claims"); onCloseMobile(); }}><CreditCard/><span>Liên kết hóa đơn</span></button><button onClick={() => { router.push("/history"); onCloseMobile(); }}><Warehouse/><span>Lịch sử kho</span></button></div></section>}
+          {portal === "staff" && <section className="nav-section"><div className="nav-items expanded"><button className={pathname === '/counter' ? 'active' : undefined} onClick={() => { router.push("/counter"); onCloseMobile(); }}><CreditCard/><span>Bán tại quầy</span></button><button className={pathname === '/invoice-claims' ? 'active' : undefined} onClick={() => { router.push("/invoice-claims"); onCloseMobile(); }}><CreditCard/><span>Liên kết hóa đơn</span></button><button className={pathname === '/history' ? 'active' : undefined} aria-current={pathname === '/history' ? 'page' : undefined} onClick={() => { router.push("/history"); onCloseMobile(); }}><Warehouse/><span>Lịch sử kho</span></button></div></section>}
           {visibleNavigation.map((group) => {
             const expanded = expandedGroups.includes(group.label);
             return (
@@ -153,7 +154,7 @@ export function AdminSidebar({
                     <button
                       key={key}
                       title={collapsed ? label : undefined}
-                      className={active === key ? "active" : ""}
+                      className={active === key && !(portal === 'staff' && ['/counter', '/invoice-claims', '/history'].includes(pathname)) ? "active" : ""}
                       onClick={() => navigate(key)}
                     >
                       <Icon />
