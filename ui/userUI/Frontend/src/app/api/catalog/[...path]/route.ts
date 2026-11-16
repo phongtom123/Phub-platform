@@ -1,5 +1,19 @@
 import { fetchBackend } from "@/lib/catalog/server";
 
+// Public lists identical for every visitor may be reused briefly by the browser.
+// Prices, product details, stock and purchase states always stay no-store.
+const browserCache: Record<string, string> = {
+  categories: "public, max-age=60, stale-while-revalidate=300",
+  brands: "public, max-age=60, stale-while-revalidate=300",
+  colors: "public, max-age=60, stale-while-revalidate=300",
+  banners: "public, max-age=60, stale-while-revalidate=300",
+  facets: "public, max-age=30",
+};
+
+function cacheControl(path: string[], ok: boolean): string {
+  return ok && path.length === 1 && Object.hasOwn(browserCache, path[0]) ? browserCache[path[0]] : "no-store";
+}
+
 function error(status: number, code: string, message: string) {
   return Response.json({ error: { code, message, details: [] } }, { status });
 }
@@ -17,7 +31,7 @@ export async function GET(request: Request, context: { params: Promise<{ path: s
     if (!upstream.ok && (!body?.error || typeof body.error.message !== "string")) {
       return error(502, "INVALID_RESPONSE", "Không thể tải dữ liệu sản phẩm.");
     }
-    return Response.json(body, { status: upstream.status, headers: { "Cache-Control": "no-store" } });
+    return Response.json(body, { status: upstream.status, headers: { "Cache-Control": cacheControl(path, upstream.ok) } });
   } catch {
     return error(503, "DATA_SERVICE_UNAVAILABLE", "Không thể kết nối dịch vụ sản phẩm. Vui lòng thử lại.");
   }

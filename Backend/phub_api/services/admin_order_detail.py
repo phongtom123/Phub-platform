@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from decimal import Decimal, InvalidOperation, localcontext
 
@@ -6,6 +7,10 @@ from fastapi import HTTPException
 from phub_api.models.resources import RESOURCES, public_columns
 from phub_api.repositories.tables import clean
 
+
+# Shared and bounded so concurrent order views cannot exhaust the 20-connection
+# database pool; reads for one order run in parallel instead of one after another.
+DETAIL_READS = ThreadPoolExecutor(max_workers=8, thread_name_prefix="order-detail")
 
 ORDER_STATUSES = {"MOI", "XAC_NHAN", "DANG_CHUAN_BI", "DA_XUAT_KHO", "HOAN_THANH", "HUY"}
 STATUS_BEFORE_ACTION = {
@@ -135,16 +140,30 @@ class AdminOrderDetailService:
         order = public_row("orders", orders[0])
         if order.get("ma_donhang") != order_id:
             raise HTTPException(409, "Dữ liệu đơn hàng không hợp lệ.")
-        lines = self.children("order-lines", order_id)
-        invoices = self.children("invoices", order_id)
-        if len(invoices) > 1:
-            raise HTTPException(409, "Không xác định được hóa đơn duy nhất của đơn hàng.")
-        invoice = invoices[0] if invoices else None
-        payments = self.children("payments", order_id)
-        vouchers = self.children("voucher-uses", order_id)
-        customer = self.repository.customer(order.get("ma_kh"))
-        employee = self.repository.employee(order.get("ma_nhan_vien"))
-        history = order_history(self.repository.history(order_id, self.user.account_id))
+        reads = {
+            "lines": DETAIL_READS.submit(self.children, "order-lines", order_id),
+            "invoices": DETAIL_READS.submit(self.children, "invoices", order_id),
+            "payments": DETAIL_READS.submit(self.children, "payments", order_id),
+            "vouchers": DETAIL_READS.submit(self.children, "voucher-uses", order_id),
+            "customer": DETAIL_READS.submit(self.repository.customer, order.get("ma_kh")),
+            "employee": DETAIL_READS.submit(self.repository.employee, order.get("ma_nhan_vien")),
+            "history": DETAIL_READS.submit(self.repository.history, order_id, self.user.account_id),
+        }
+        try:
+            # Collected in the former sequential order so the first error reported is unchanged.
+            lines = reads["lines"].result()
+            invoices = reads["invoices"].result()
+            if len(invoices) > 1:
+                raise HTTPException(409, "Không xác định được hóa đơn duy nhất của đơn hàng.")
+            invoice = invoices[0] if invoices else None
+            payments = reads["payments"].result()
+            vouchers = reads["vouchers"].result()
+            customer = reads["customer"].result()
+            employee = reads["employee"].result()
+            history = order_history(reads["history"].result())
+        finally:
+            for future in reads.values():
+                future.cancel()
         return {
             "order_id": order_id, "order": order,
             "customer": {k: customer.get(k) for k in ("ma_kh", "ten_kh", "sdt")} if customer else None,

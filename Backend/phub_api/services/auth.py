@@ -20,6 +20,16 @@ registration_attempts: dict[str, tuple[float, int]] = {}
 attempt_lock = Lock()
 
 
+def linked_profile(account: dict, key: str, lookup) -> list[dict]:
+    """Use the profile embedded in the account row; query separately only when absent."""
+    if key in account:
+        embedded = account[key]
+        if isinstance(embedded, list):
+            return embedded[:1]
+        return [embedded] if isinstance(embedded, dict) else []
+    return lookup()
+
+
 def identity(account: dict, repository: AuthRepository) -> User:
     if account.get("trang_thai") != 1 or account.get("luu_tru_luc") is not None:
         raise HTTPException(401, "Tài khoản không hoạt động.")
@@ -27,7 +37,7 @@ def identity(account: dict, repository: AuthRepository) -> User:
     if bool(employee) == bool(customer):
         raise HTTPException(403, "Tài khoản chưa được gán đúng người dùng.")
     if employee:
-        rows = repository.employee(employee)
+        rows = linked_profile(account, "employee", lambda: repository.employee(employee))
         if not rows or rows[0]["trang_thai"] != 1:
             raise HTTPException(403, "Nhân viên không hoạt động.")
         profile = rows[0]
@@ -35,7 +45,7 @@ def identity(account: dict, repository: AuthRepository) -> User:
         if role not in {"ADMIN", "NHAN_VIEN"} or (role == "NHAN_VIEN" and profile["ma_kho"] is None):
             raise HTTPException(403, "Chưa được phân quyền hoặc phân kho.")
         return User(account["ma_tk"], account["ten_tai_khoan"], role, profile["ho_ten"], employee_id=employee, warehouse_id=profile["ma_kho"])
-    rows = repository.customer(customer)
+    rows = linked_profile(account, "customer", lambda: repository.customer(customer))
     if not rows:
         raise HTTPException(403, "Không tìm thấy khách hàng.")
     if rows[0].get("luu_tru_luc") is not None:

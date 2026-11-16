@@ -21,7 +21,7 @@ export function useCatalogFacets(request: CatalogRequest) {
     const cached = cache.get(key);
     if (attempt.key !== key && cached && Date.now() - cached.at < 60_000) return;
     const controller = new AbortController();
-    fetch(`/api/catalog/facets?${key}`, { signal: controller.signal, cache: "no-store" }).then(readJson).then(validate).then(data => {
+    fetch(`/api/catalog/facets?${key}`, { signal: controller.signal }).then(readJson).then(validate).then(data => {
       if (controller.signal.aborted) return;
       if (!cache.has(key) && cache.size >= 30) cache.delete(cache.keys().next().value!);
       cache.set(key, { data, at: Date.now() }); setState({ key, data, error: "" });

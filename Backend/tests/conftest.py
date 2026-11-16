@@ -22,6 +22,15 @@ def forbid_live_http(monkeypatch):
     monkeypatch.setenv("FRONTEND_ORIGINS", DEFAULT_FRONTEND_ORIGINS)
 
 
+@pytest.fixture(autouse=True)
+def fresh_catalog_cache():
+    """Each test sees its own catalog data, never a cached copy from another test."""
+    from phub_api.services import catalog_cache
+    catalog_cache.clear()
+    yield
+    catalog_cache.clear()
+
+
 @pytest.fixture
 def product_row():
     return {

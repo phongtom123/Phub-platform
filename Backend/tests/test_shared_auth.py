@@ -240,3 +240,79 @@ def test_customer_registration_names_the_duplicate_field_without_echoing_data(mo
             assert response.json() == {"detail": expected}
             assert "TAI_KHOAN" not in response.text and "already exists" not in response.text
     registration_attempts.clear()
+
+
+def embedded_account(**overrides):
+    account = {
+        "ma_tk": "TK2", "ten_tai_khoan": "warehouse", "ma_kh": None, "ma_nhan_vien": "NV2",
+        "trang_thai": 1, "mat_khau": "warehouse-password", "luu_tru_luc": None,
+        "phien_ban_mat_khau": "00000000-0000-4000-8000-000000000002",
+        "employee": {"ma_nhan_vien": "NV2", "ho_ten": "Thủ kho", "loai_nhan_vien": "NHAN_VIEN", "ma_kho": 2, "trang_thai": 1},
+        "customer": None,
+    }
+    account.update(overrides)
+    return account
+
+
+def auth_repository(handle):
+    from phub_api.repositories.auth import AuthRepository
+    transport = httpx.Client(transport=httpx.MockTransport(handle))
+    return AuthRepository(SyncPostgrestClient("https://auth.test/rest/v1", http_client=transport))
+
+
+def test_authenticated_identity_uses_one_query_with_embedded_profile():
+    from phub_api.services.auth import identity
+    paths = []
+
+    def handle(request):
+        paths.append((request.url.path, request.url.params.get("select")))
+        return httpx.Response(200, json=[embedded_account()])
+
+    repository = auth_repository(handle)
+    user = identity(repository.account("TK2")[0], repository)
+    assert (user.role, user.employee_id, user.warehouse_id, user.name) == ("NHAN_VIEN", "NV2", 2, "Thủ kho")
+    assert len(paths) == 1 and paths[0][0].endswith("/TAI_KHOAN")
+    assert "employee:NHAN_VIEN!ma_nhan_vien(" in paths[0][1] and "customer:KHACH_HANG!ma_kh(" in paths[0][1]
+
+
+@pytest.mark.parametrize(("overrides", "message"), [
+    ({"employee": None}, "Nhân viên không hoạt động."),
+    ({"employee": {"ma_nhan_vien": "NV2", "ho_ten": "X", "loai_nhan_vien": "NHAN_VIEN", "ma_kho": 2, "trang_thai": 0}}, "Nhân viên không hoạt động."),
+    ({"employee": {"ma_nhan_vien": "NV2", "ho_ten": "X", "loai_nhan_vien": "NHAN_VIEN", "ma_kho": None, "trang_thai": 1}}, "Chưa được phân quyền hoặc phân kho."),
+    ({"ma_nhan_vien": None, "ma_kh": "KH3", "employee": None, "customer": None}, "Không tìm thấy khách hàng."),
+    ({"ma_nhan_vien": None, "ma_kh": "KH3", "employee": None,
+      "customer": {"ma_kh": "KH3", "ten_kh": "C", "luu_tru_luc": "2026-11-01T00:00:00Z"}}, "Tài khoản khách hàng đã bị xóa."),
+])
+def test_embedded_profile_keeps_existing_rejections_without_extra_queries(overrides, message):
+    from fastapi import HTTPException
+    from phub_api.services.auth import identity
+    paths = []
+
+    def handle(request):
+        paths.append(request.url.path)
+        return httpx.Response(200, json=[embedded_account(**overrides)])
+
+    repository = auth_repository(handle)
+    with pytest.raises(HTTPException) as error:
+        identity(repository.account("TK2")[0], repository)
+    assert error.value.status_code == 403 and message in error.value.detail
+    assert len(paths) == 1
+
+
+def test_account_lookup_falls_back_when_relationship_embed_is_unavailable():
+    from phub_api.services.auth import identity
+    paths = []
+    plain = {key: value for key, value in embedded_account().items() if key not in {"employee", "customer"}}
+
+    def handle(request):
+        paths.append(request.url.path)
+        if request.url.path.endswith("/TAI_KHOAN"):
+            if "employee:" in (request.url.params.get("select") or ""):
+                return httpx.Response(400, json={"code": "PGRST200", "message": "Could not find a relationship", "details": None, "hint": None})
+            return httpx.Response(200, json=[plain])
+        return httpx.Response(200, json=[embedded_account()["employee"]])
+
+    repository = auth_repository(handle)
+    user = identity(repository.account("TK2")[0], repository)
+    assert user.warehouse_id == 2
+    assert [path.rsplit("/", 1)[1] for path in paths] == ["TAI_KHOAN", "TAI_KHOAN", "NHAN_VIEN"]
