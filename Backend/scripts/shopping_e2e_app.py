@@ -163,7 +163,7 @@ def database(request):
             payload = json.loads(request.content)
             if table == "customer_address_v1":
                 return httpx.Response(200, json=addresses(payload))
-            if table in {"customer_checkout_v2", "customer_checkout_multi_warehouse_v1", "customer_checkout_fulfillment_v1"}:
+            if table in {"customer_checkout_v2", "customer_checkout_multi_warehouse_v1", "customer_quote_categories_v1", "customer_checkout_fulfillment_v1"}:
                 return httpx.Response(200, json=checkout(payload))
             if table == "customer_cancel_order_v1":
                 owner, order_id = payload["p_customer_id"], payload["p_order_id"]

@@ -86,6 +86,7 @@ class WarehouseAllocation(BaseModel):
 
 class CustomerVoucher(MoneyOutput):
     code: str = Field(min_length=1, max_length=100)
+    category_id: Literal['L_LINHKIEN', 'L_DESKTOP'] | None = None
     discount_type: Literal['PHAN_TRAM', 'SO_TIEN']
     discount_value: Money
     minimum_order: Money
@@ -103,6 +104,7 @@ class CustomerVouchers(BaseModel):
 
 class CheckoutLine(MoneyOutput):
     sku: str
+    category_id: str | None = None
     warehouse_id: int = Field(description="Kho đầu tiên trong phân bổ; allocations liệt kê đầy đủ các kho cấp hàng.")
     allocations: list[WarehouseAllocation] = Field(default_factory=list)
     name: str

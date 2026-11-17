@@ -19,6 +19,7 @@ import { CustomerStatusCell, type CustomerLinkedAccount } from "@internal/featur
 import { CustomerArchiveButton } from "@internal/features/customers/customer-archive-button";
 import { customerAge, type CustomerDetail as CustomerDetailData } from "@internal/lib/customer-profile";
 import { OrderData } from "@internal/features/orders/order-data";
+import type { OrderSummary } from "@internal/features/orders/order-presentation";
 import { InvoiceDetail } from "@internal/features/billing/invoice-detail";
 import { ProductStock } from "@internal/features/products/product-stock";
 import { ProductSuppliers } from "@internal/features/products/product-suppliers";
@@ -36,7 +37,7 @@ type Column = DataColumn;
 type Resource = { name: string; title: string; keys: string[]; columns: Column[]; writable: boolean;
   draft_update_path?: string | null; draft_update_fields?: string[] | null };
 type Page = { data: Row[]; total: number; page: number; page_size: number; order_id?: string;
-  customer_accounts?: Record<string, CustomerLinkedAccount | null> };
+  customer_accounts?: Record<string, CustomerLinkedAccount | null>; order_summaries?: Record<string, OrderSummary> };
 type View = { key: string | null; edit: boolean; create: boolean; orderId: string | null };
 
 const labels: Record<string, string> = {
@@ -51,6 +52,7 @@ const labels: Record<string, string> = {
   so_luong_ton: "Số lượng tồn", ma_phieu_nhap: "Mã phiếu nhập", ma_phieu_code: "Mã phiếu", ma_phieu_chuyen: "Mã chuyển kho",
   ma_ctkm: "Mã chương trình", ten_chuong_trinh: "Tên chương trình", ngay_bat_dau: "Ngày bắt đầu", ngay_ket_thuc: "Ngày kết thúc",
   ma_voucher: "Mã voucher", ma_code: "Mã giảm giá", loai_giam: "Loại giảm", gia_tri_giam: "Giá trị giảm",
+  ma_loai_sp_ap_dung: "Phạm vi áp dụng",
   giam_toi_da: "Giảm tối đa", gia_tri_don_toi_thieu: "Giá trị đơn tối thiểu", gioi_han_tong_luot: "Tổng lượt tối đa", gioi_han_moi_khach: "Lượt mỗi khách",
   tong_tien_giam: "Tổng tiền giảm", tong_tien_sau_thue: "Tổng sau thuế", so_tien: "Số tiền",
   dia_chi_chi_tiet_md: "Địa chỉ mặc định", tinh_thanh_md: "Tỉnh / thành phố", xa_phuong_md: "Xã / phường",
@@ -72,6 +74,7 @@ const labels: Record<string, string> = {
 const label = (name: string) => labels[name] ?? name.replaceAll("_", " ");
 function displayValue(row: Row, column: Column) {
   const value = row[column.name];
+  if (column.name === "ma_loai_sp_ap_dung") return inlineChoiceLabel(column.name, value);
   if (value === null || value === undefined) return "—";
   return inlineChoiceLabel(column.name, value);
 }
@@ -233,6 +236,15 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
     // Keep warehouse customer results mounted during a debounced search so
     // the input retains focus and staff can continue typing.
     if (!warehouseCustomerSearch) { setMeta(null); setResult(null); }
+    // The list query depends only on the URL, so start it together with the metadata read
+    // instead of after it. Its result is used only once metadata confirms access.
+    const listParams = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
+    if (view.key) listParams.set("key", view.key);
+    if (view.orderId) listParams.set("order_id", view.orderId);
+    listParams.set("filters", filterQuery);
+    const listRead = view.create ? null : readDataPage(resource, listParams, { signal: controller.signal,
+      cache: resource === "invoices" && !view.key ? "reload" : "no-store" });
+    listRead?.catch(() => { /* Reported below once metadata allows the list. */ });
     (async () => {
       const resources = await api<Resource[]>("data/resources", { signal: controller.signal });
       if (controller.signal.aborted) return;
@@ -249,12 +261,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         setValues(defaults);
         return;
       }
-      const params = new URLSearchParams({ page: String(view.key ? 1 : page), page_size: "20", q: view.key ? "" : search });
-      if (view.key) params.set("key", view.key);
-      if (view.orderId) params.set("order_id", view.orderId);
-      params.set("filters", filterQuery);
-      const data = await readDataPage(resource, params, { signal: controller.signal,
-        cache: resource === "invoices" && !view.key ? "reload" : "no-store" });
+      const data = await listRead!;
       // Old deployments ignore unknown query params. Do not display unrelated
       // records as if the backend had filtered them to the selected order.
       if (view.orderId && (data.order_id !== view.orderId || data.data.some(row => row.ma_donhang !== view.orderId))) {
@@ -361,7 +368,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           value={values.ma_media_banner ?? ""} disabled={saving} onChange={id => change("ma_media_banner", id)} onDirty={setBannerDirty} /> : <label key={column.name}>{label(column.name)}{column.required && " *"}
           {column.name === "trang_thai" && column.type === "int" ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}>
             <option value="">Chọn trạng thái</option>{[1, 2, 0].map(value => <option key={value} value={value}>{inlineStatusLabels[value]}</option>)}
-          </select> : column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">Chọn…</option>{column.choices.map(choice => <option key={choice} value={choice}>{inlineChoiceLabel(column.name, choice)}</option>)}</select>
+          </select> : column.choices ? <select value={values[column.name] ?? ""} required={column.required} onChange={e => change(column.name, e.target.value)}><option value="">{column.name === "ma_loai_sp_ap_dung" ? "Tất cả sản phẩm" : "Chọn…"}</option>{column.choices.map(choice => <option key={choice} value={choice}>{inlineChoiceLabel(column.name, choice)}</option>)}</select>
           : references[column.name] && !meta.keys.includes(column.name) && !(resource === "products" && column.name === "sku") ? <ReferenceInput field={column.name} label={`Chọn ${label(column.name).toLowerCase()}`} required={column.required} value={values[column.name] ?? ""} onChange={value => change(column.name, value)} filters={column.name === "ma_loai_sp_con" && values.ma_loai_sp ? { ma_loai_sp: values.ma_loai_sp } : undefined} />
           : column.type === "text" ? <textarea rows={4} required={column.required} value={values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />
           : <input required={column.required} type={column.type === "int" ? "number" : column.type === "date" ? "date" : column.type === "datetime" ? "datetime-local" : column.name === "duong_dan_anh" ? "url" : "text"} step={column.type === "int" ? "1" : undefined} value={column.type === "datetime" && values[column.name] ? new Date(values[column.name]).toLocaleString("sv-SE").replace(" ", "T").slice(0, 16) : values[column.name] ?? ""} onChange={e => change(column.name, e.target.value)} />}
@@ -402,7 +409,7 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
         {draftPath && <p className="inline-data-help">Nhấp đúp để sửa phiếu nháp. Phiếu đã xử lý chỉ xem thông tin; trạng thái được cập nhật qua nghiệp vụ kho.</p>}
         {resource === "orders" ? <OrderData rows={result?.data ?? []} columns={meta.columns} keys={meta.keys} version={version} label={label}
           related={available.filter(item => orderChildren.includes(item.name))} onRowChanged={savedOrder} onDetailOpenChange={setOrderDetailOpen} initialOrderId={initialOrderId}
-          onDismissInitial={() => router.replace(dataHref("orders", { filters }))} />
+          onDismissInitial={() => router.replace(dataHref("orders", { filters }))} summaries={result?.order_summaries} />
         : inlineEnabled ? <InlineDataTable resource={resource} rows={result?.data ?? []} columns={listColumns} keys={meta.keys}
           quickEditFields={resource === "products" ? ["ten_sp", "thuong_hieu", "gia_ban_hien_tai", "don_vi", "bao_hanh_thang", "trang_thai"] : undefined}
           editableFields={draftPath ? meta.draft_update_fields ?? [] : undefined}

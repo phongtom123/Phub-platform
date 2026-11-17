@@ -23,6 +23,7 @@ export interface CartLine {
 }
 export interface CheckoutLine {
   sku: string;
+  category_id?: string | null;
   warehouse_id: number;
   allocations?: { warehouse_id: number; quantity: number }[];
   name: string;
@@ -48,6 +49,7 @@ export interface Quote {
 }
 export interface CustomerVoucher {
   code: string;
+  category_id?: 'L_LINHKIEN' | 'L_DESKTOP' | null;
   discount_type: 'PHAN_TRAM' | 'SO_TIEN';
   discount_value: string;
   minimum_order: string;

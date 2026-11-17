@@ -92,7 +92,7 @@ NOTES = {
     "employees": "ADMIN quản lý hồ sơ nhân viên. NHAN_VIEN chỉ tra cứu mã, họ tên và trạng thái để hiển thị/phân công trên chứng từ; không xem lương, CCCD hoặc sửa hồ sơ.",
     "products": "Ảnh lưu URL duong_dan_anh; upload file qua POST /api/admin/media/images, sau đó lưu URL trả về. Giá/bảo hành không âm; ma_loai_sp phải tồn tại. Không sửa SKU.",
     "promotions": "Ngày kết thúc sau ngày bắt đầu. nguoi_tao và ngay_tao do server gán. Mỗi chương trình có một banner tùy chọn qua ma_media_banner. Upload bằng POST /api/admin/media/images?purpose=promotion_banner rồi lưu media_id; gửi null để gỡ banner.",
-    "vouchers": "ma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
+    "vouchers": "ma_code được trim/uppercase. ma_loai_sp_ap_dung: null cho tất cả sản phẩm, L_LINHKIEN cho linh kiện, L_DESKTOP cho PC. Mức tối thiểu và giảm giá chỉ tính trên sản phẩm thuộc phạm vi, trước VAT. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
 }
 
 
@@ -139,10 +139,10 @@ def request_schema(name: str, patch: bool) -> dict:
     result = payload_model(name, patch).model_json_schema(ref_template="#/components/schemas/{model}")
     for field, prop in result["properties"].items():
         prop.setdefault("description", field)
+        column = next((c for c in public_columns(name) if c["name"] == field), None)
         choices = ENUMS.get((name, field))
         if choices:
-            prop["enum"] = choices
-        column = next((c for c in public_columns(name) if c["name"] == field), None)
+            prop["enum"] = [*choices, None] if column and not column["required"] else choices
         if field == "trang_thai" and column and column["type"] == "int":
             prop["enum"] = [0, 1, 2]
         if column and column["type"].startswith("decimal"):
@@ -176,6 +176,19 @@ def add_table_paths(spec: dict) -> None:
         if name in {"orders", "order-lines", "invoices", "payments", "voucher-uses"}:
             schemas[f"{base}Page"]["properties"]["order_id"] = {
                 "type": "string", "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
+            }
+        if name == "orders":
+            item = {"type": "object", "additionalProperties": False, "required": ["sku", "name", "quantity"], "properties": {
+                "sku": {"type": ["string", "null"]}, "name": {"type": ["string", "null"]}, "quantity": {"type": "integer", "minimum": 0}}}
+            summary = {"type": "object", "additionalProperties": False,
+                       "required": ["total", "items", "customer_id", "customer_name", "employee_id", "employee_name"], "properties": {
+                "total": {"type": ["string", "null"], "description": "Tổng thành tiền các dòng (decimal dạng chuỗi); null khi chưa có dòng."},
+                "items": {"type": "array", "items": item, "description": "Sản phẩm gộp theo SKU và tên; dòng gốc vẫn tách theo kho."},
+                "customer_id": {"type": ["string", "null"]}, "customer_name": {"type": ["string", "null"]},
+                "employee_id": {"type": ["string", "null"]}, "employee_name": {"type": ["string", "null"]}}}
+            schemas[f"{base}Page"]["properties"]["order_summaries"] = {
+                "type": "object", "additionalProperties": summary,
+                "description": "Chỉ trả cho ADMIN/NHAN_VIEN khi đọc danh sách (không có key): tóm tắt theo ma_donhang.",
             }
         if resource.writable:
             schemas[f"{base}Saved"] = {"type": "object", "additionalProperties": False, "required": ["data"],

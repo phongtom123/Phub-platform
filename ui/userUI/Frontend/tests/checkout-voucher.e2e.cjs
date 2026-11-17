@@ -5,9 +5,9 @@ const base=process.env.PHUB_USER_TEST_URL||'http://localhost:3001';
 const profile={customer_id:'VOUCHER-TEST',name:'Voucher Test',phone:'0901234567',address_line:'Test address',province:'Test city',ward:'Test ward',payment_bypass_enabled:false};
 const product={id:'P',sku:'S',name:'Voucher product',price:'2000000.00',currency:'VND',category:{id:'C',name:'Category'},subcategory:{id:'SC',name:'Sub'},brand:null,description:null,unit:'Cái',warranty_months:12,images:[],specifications:[]};
 function quote(code=null){
- const discount=code?'100000.00':'0.00',total=code?'1900000.00':'2000000.00';
+ const discount=code==='COMP20'?'400000.00':code?'100000.00':'0.00',total=code==='COMP20'?'1600000.00':code?'1900000.00':'2000000.00';
  return {currency:'VND',tax_application:'invoice',shipping_status:'not_quoted',voucher_code:code,subtotal:'2000000.00',discount_total:discount,tax_total:'0.00',total,
-  items:[{sku:'S',warehouse_id:1,name:product.name,unit:product.unit,quantity:1,unit_price:product.price,gross_total:product.price,discount,tax_rate:'10.00',tax_amount:'0.00',line_total:total}]};
+  items:[{sku:'S',warehouse_id:1,category_id:'L_LINHKIEN',name:product.name,unit:product.unit,quantity:1,unit_price:product.price,gross_total:product.price,discount,tax_rate:'10.00',tax_amount:'0.00',line_total:total}]};
 }
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.PHUB_CHROMIUM_PATH||undefined,args:['--disable-features=LocalNetworkAccessChecks']});
@@ -16,7 +16,7 @@ function quote(code=null){
   const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],codes=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>localStorage.setItem('phub-cart-v1:VOUCHER-TEST',JSON.stringify([{product_id:'P',sku:'S',quantity:1,selected:true}])));
-  let mode='invalid',hold=true;
+  let mode='invalid',hold=true,scoped=false;
   await page.route('**/api/**',async route=>{
    const request=route.request(),path=new URL(request.url()).pathname;
    if(path.endsWith('/checkout/quote')){
@@ -35,6 +35,11 @@ function quote(code=null){
    if(path.endsWith('/auth/me'))return route.fulfill({json:{account_id:'ACCOUNT',role:'KHACH_HANG',customer_id:profile.customer_id,name:profile.name,username:'test',employee_id:null,warehouse_id:null}});
    if(path.endsWith('/customer/me'))return route.fulfill({json:profile});
    if(path.endsWith('/customer/vouchers'))return route.fulfill({json:{currency:'VND',items:[
+    ...(scoped ? [
+     {code:'COMP20',category_id:'L_LINHKIEN',discount_type:'PHAN_TRAM',discount_value:'20.00',minimum_order:'1000000.00',maximum_discount:null,starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
+     {code:'COMP_MIN',category_id:'L_LINHKIEN',discount_type:'SO_TIEN',discount_value:'500000.00',minimum_order:'3000000.00',maximum_discount:null,starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
+     {code:'PC_ONLY',category_id:'L_DESKTOP',discount_type:'SO_TIEN',discount_value:'500000.00',minimum_order:'0.00',maximum_discount:null,starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
+    ] : []),
     {code:'PICK100',discount_type:'SO_TIEN',discount_value:'100000.00',minimum_order:'1000000.00',maximum_discount:null,starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
     {code:'OLD',discount_type:'SO_TIEN',discount_value:'100000.00',minimum_order:'0.00',maximum_discount:null,starts_at:'2026-10-01T00:00:00+07:00',expires_at:'2026-10-31T23:59:59+07:00',unavailable_reason:'EXPIRED'},
     {code:'BIG',discount_type:'PHAN_TRAM',discount_value:'10.00',minimum_order:'5000000.00',maximum_discount:'500000.00',starts_at:'2026-11-01T00:00:00+07:00',expires_at:'2026-11-30T23:59:59+07:00',unavailable_reason:null},
@@ -83,6 +88,17 @@ function quote(code=null){
   await page.getByText('✓ Đã áp dụng mã: PICK100',{exact:true}).waitFor();
   assert.equal(await input.inputValue(),'PICK100');
   assert.ok(await picker.getByRole('button',{name:'Chọn mã PICK100',exact:true}).isDisabled());
+  scoped=true;await page.reload({waitUntil:'domcontentloaded'});
+  await picker.getByRole('button',{name:'Chọn mã COMP20',exact:true}).waitFor();
+  await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(b=>b.textContent==='Đặt hàng'&&!b.disabled));
+  assert.equal(await picker.getByRole('article').first().getAttribute('aria-label'),'Mã COMP20');
+  assert.ok(await picker.getByRole('button',{name:'Chọn mã PC_ONLY',exact:true}).isDisabled());
+  assert.ok(await picker.getByRole('button',{name:'Chọn mã COMP_MIN',exact:true}).isDisabled());
+  await picker.getByText('Không có sản phẩm thuộc phạm vi áp dụng',{exact:true}).waitFor();
+  await picker.getByRole('article',{name:'Mã COMP_MIN',exact:true}).getByText(/trong loại sản phẩm này/).waitFor();
+  await picker.getByRole('button',{name:'Chọn mã COMP20',exact:true}).click();
+  await page.getByText('✓ Đã áp dụng mã: COMP20',{exact:true}).waitFor();
+  assert.match(await page.locator('aside').innerText(),/1\.760\.000/);
   await page.screenshot({path:require('node:path').join(require('node:os').tmpdir(),'phub-checkout-vouchers.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));

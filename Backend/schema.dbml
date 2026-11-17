@@ -368,7 +368,7 @@ Table THANH_TOAN {
 
 // Mot chuong trinh co nhieu voucher.
 // Voucher ke thua thoi gian cua chuong trinh.
-// Ap dung toan bo san pham.
+// NULL ma_loai_sp_ap_dung: tat ca; L_LINHKIEN: linh kien; L_DESKTOP: PC.
 // Moi don hang toi da 1 voucher.
 
 Table CHUONG_TRINH_KHUYEN_MAI {
@@ -394,6 +394,7 @@ Table CHUONG_TRINH_KHUYEN_MAI {
 Table VOUCHER {
   ma_voucher int [pk, increment]
   ma_ctkm int [not null]
+  ma_loai_sp_ap_dung varchar [note: 'NULL: tat ca; L_LINHKIEN: linh kien; L_DESKTOP: PC. Muc toi thieu va giam gia chi tinh tren san pham dung loai.']
 
   ma_code varchar [not null, unique, note: 'Chuan hoa viet hoa, bo khoang trang truoc khi luu/tra cuu']
 
@@ -403,7 +404,7 @@ Table VOUCHER {
 
   giam_toi_da decimal(18,2) [note: 'Tran giam cho PHAN_TRAM; NULL neu khong gioi han']
 
-  gia_tri_don_toi_thieu decimal(18,2) [not null, default: 0, note: 'Tong tien sau giam gia dong, truoc voucher va thue']
+  gia_tri_don_toi_thieu decimal(18,2) [not null, default: 0, note: 'Tong tien san pham trong pham vi ap dung, sau giam gia dong, truoc voucher va thue']
 
   gioi_han_tong_luot int [note: 'NULL neu khong gioi han']
   gioi_han_moi_khach int [not null, default: 1]
@@ -413,6 +414,7 @@ Table VOUCHER {
 
   checks {
     `loai_giam IN ('PHAN_TRAM', 'SO_TIEN')`
+    `ma_loai_sp_ap_dung IS NULL OR ma_loai_sp_ap_dung IN ('L_LINHKIEN', 'L_DESKTOP')`
     `gia_tri_giam > 0 AND (loai_giam <> 'PHAN_TRAM' OR gia_tri_giam <= 100)`
     `giam_toi_da IS NULL OR (loai_giam = 'PHAN_TRAM' AND giam_toi_da > 0)`
     `gia_tri_don_toi_thieu >= 0`
@@ -508,6 +510,7 @@ Ref: THANH_TOAN.ma_donhang > DON_HANG.ma_donhang
 
 Ref: CHUONG_TRINH_KHUYEN_MAI.nguoi_tao > NHAN_VIEN.ma_nhan_vien
 Ref: VOUCHER.ma_ctkm > CHUONG_TRINH_KHUYEN_MAI.ma_ctkm
+Ref: VOUCHER.ma_loai_sp_ap_dung > LOAI_SP.ma_loai_sp
 Ref: SU_DUNG_VOUCHER.ma_voucher > VOUCHER.ma_voucher
 Ref: DON_HANG.ma_donhang - SU_DUNG_VOUCHER.ma_donhang
 

@@ -59,13 +59,13 @@ def commerce_client(monkeypatch):
         if request.url.path.endswith("/customer_cancel_order_v1"):
             state["cancel_calls"].append(json.loads(request.content))
             return httpx.Response(200, json=state.get("cancel_result", {"order": {**state["detail"], "status": "HUY"}}))
-        if request.url.path.endswith('/customer_voucher_choices_v1'):
+        if request.url.path.endswith('/customer_voucher_choices_v2'):
             return httpx.Response(200, json=state.get('vouchers', {'items': []}))
         payload = json.loads(request.content)
         if state["result"] is not None:
             return httpx.Response(200, json=state["result"])
-        if request.url.path.endswith(("/customer_checkout_multi_warehouse_v1", "/customer_checkout_fulfillment_v1")):
-            assert request.url.path.endswith("/customer_checkout_fulfillment_v1" if payload["p_create"] else "/customer_checkout_multi_warehouse_v1")
+        if request.url.path.endswith(("/customer_quote_categories_v1", "/customer_checkout_fulfillment_v1")):
+            assert request.url.path.endswith("/customer_checkout_fulfillment_v1" if payload["p_create"] else "/customer_quote_categories_v1")
             result = {"order": state["receipt"], "replayed": state["replayed"]} if payload["p_create"] else {"quote": state["quote"]}
         else:
             assert request.url.path.endswith("/customer_read_orders_v4")
@@ -121,10 +121,12 @@ def test_profile_returns_linked_account_avatar(commerce_client):
 
 
 def test_quote_rpc_uses_server_identity_canonical_voucher_and_no_create_key(commerce_client):
-    client, _, requests, _, _ = commerce_client
+    client, state, requests, _, _ = commerce_client
+    state["quote"]["items"][0]["category_id"] = "L_LINHKIEN"
     response = client.post("/api/customer/checkout/quote", json={"items": [{"sku": "SKU-A", "quantity": 2}], "voucher_code": " save10 "})
     assert response.status_code == 200 and response.json()["total"] == "0.18"
     assert response.json()["tax_total"] == "0.00" and response.json()["shipping_status"] == "not_quoted"
+    assert response.json()["items"][0]["category_id"] == "L_LINHKIEN"
     assert len(requests) == 1
     payload = json.loads(requests[0].content)
     assert payload["p_customer_id"] == "KH-A" and payload["p_create"] is False and payload["p_key"] is None
@@ -132,10 +134,11 @@ def test_quote_rpc_uses_server_identity_canonical_voucher_and_no_create_key(comm
     assert payload["p_promotion_timezone"] == "Asia/Ho_Chi_Minh"
 
 
-def test_voucher_choices_use_verified_customer_and_never_create_order(commerce_client):
+@pytest.mark.parametrize("category", [None, "L_LINHKIEN", "L_DESKTOP"])
+def test_voucher_choices_use_verified_customer_and_never_create_order(commerce_client, category):
     client, state, requests, _, _ = commerce_client
     state['vouchers'] = {'items': [{
-        'code': 'SAVE10', 'discount_type': 'PHAN_TRAM', 'discount_value': '10.00',
+        'code': 'SAVE10', 'category_id': category, 'discount_type': 'PHAN_TRAM', 'discount_value': '10.00',
         'minimum_order': '100.00', 'maximum_discount': '500.00',
         'starts_at': '2026-11-01T00:00:00+07:00', 'expires_at': '2026-11-30T23:59:59+07:00',
         'unavailable_reason': None,
@@ -182,7 +185,7 @@ def test_pooled_quote_retains_one_product_with_all_warehouse_allocations(commerc
     assert response.status_code == 200
     assert len(response.json()["items"]) == 1
     assert response.json()["items"][0]["allocations"] == allocations
-    assert requests[0].url.path.endswith("/customer_checkout_multi_warehouse_v1")
+    assert requests[0].url.path.endswith("/customer_quote_categories_v1")
 
 
 def test_pickup_needs_only_contact_and_is_preserved_in_receipt(commerce_client):

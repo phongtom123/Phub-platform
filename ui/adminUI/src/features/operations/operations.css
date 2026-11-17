@@ -22,6 +22,21 @@
   padding: 16px 0;
   border-top: 1px solid #e2e8e0;
 }
+/* Assignment: title, then one person picker with the buttons beside it (not three loose grid columns). */
+.live-form.operation-form.operation-assign {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px 12px;
+  padding: 16px 18px;
+}
+.operation-assign.operation-assign h2 { grid-column: 1 / -1; margin: 0; font-size: 17px; }
+.operation-assign-field { display: grid; gap: 6px; min-width: 0; color: #4f5a4b; font-size: 13px; font-weight: 600; }
+.operation-assign-field small { color: #737d70; font-size: 12px; font-weight: 400; }
+.operation-assign.operation-assign .live-tools { flex-wrap: nowrap; gap: 8px; margin: 25px 0 0; }
+@media (max-width: 560px) {
+  .live-form.operation-form.operation-assign { grid-template-columns: minmax(0, 1fr); }
+  .operation-assign.operation-assign .live-tools { margin-top: 0; }
+}
 .reference-input {
   display: flex;
   flex-direction: column;

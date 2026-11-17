@@ -2,6 +2,7 @@ export type DataRow = Record<string, string | number | null>;
 export type DataColumn = { name: string; type: string; required: boolean; generated: boolean; default: string | number | null; immutable: boolean; choices: string[] | null; system?: boolean };
 export const inlineStatusLabels: Record<number, string> = { 1: "Hoạt động", 2: "Tạm ngưng", 0: "Đã ẩn" };
 const choiceLabels: Record<string, Record<string, string>> = {
+  ma_loai_sp_ap_dung: { "": "Tất cả sản phẩm", L_LINHKIEN: "Linh kiện máy tính", L_DESKTOP: "Máy tính để bàn & PC Gaming" },
   trang_thai: { NHAP: "Nháp", DA_NHAP: "Đã nhập", HUY: "Đã hủy", DANG_CHUYEN: "Đang chuyển", DA_NHAN: "Đã nhận",
     MOI: "Mới", XAC_NHAN: "Đã xác nhận", DANG_CHUAN_BI: "Đang chuẩn bị", DA_XUAT_KHO: "Đã xuất kho", HOAN_THANH: "Hoàn thành",
     CHO_XU_LY: "Chờ xử lý", THANH_CONG: "Thành công", THAT_BAI: "Thất bại", DA_AP_DUNG: "Đã áp dụng", DA_HUY: "Đã hủy",
@@ -15,9 +16,11 @@ const choiceLabels: Record<string, Record<string, string>> = {
   la_bypass: { true: "Có", false: "Không" },
 };
 export function inlineChoiceLabel(field: string, value: DataRow[string]) {
+  if (field === "ma_loai_sp_ap_dung") return choiceLabels[field][String(value ?? "")] ?? String(value);
   return value === null || value === undefined ? "—" : choiceLabels[field]?.[String(value)] ?? String(value);
 }
 export function inlineOptions(column: DataColumn): { value: string | number; label: string }[] {
+  if (column.name === "ma_loai_sp_ap_dung") return ["", ...(column.choices ?? [])].map(value => ({ value, label: inlineChoiceLabel(column.name, value) }));
   return column.name === "trang_thai" && column.type === "int"
     ? [1, 2, 0].map(value => ({ value, label: inlineStatusLabels[value] }))
     : (column.choices ?? []).map(value => ({ value, label: inlineChoiceLabel(column.name, value) }));

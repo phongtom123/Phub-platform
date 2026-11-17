@@ -8,3 +8,8 @@ export function ProductAutocomplete(props: AutocompleteProps) {
 export function SupplierAutocomplete(props: AutocompleteProps) {
   return <ReferenceAutocomplete {...props} kind="supplier" />;
 }
+
+/** Active administrators only: the order 'assign' action rejects anyone else. */
+export function EmployeeAutocomplete(props: AutocompleteProps) {
+  return <ReferenceAutocomplete {...props} kind="employee" />;
+}

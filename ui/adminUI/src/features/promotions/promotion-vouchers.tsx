@@ -76,7 +76,7 @@ export function PromotionVouchers({ promotionId, writable }: { promotionId: numb
     {loading ? <p role="status">Đang tải voucher…</p> : error ? <p className="live-error" role="alert">{error} <button type="button" onClick={() => setVersion(v => v + 1)}>Thử lại</button></p>
       : result?.data.length ? <ScrollableTable><table><thead><tr><th>Mã voucher</th><th>Mức giảm</th><th>Đơn tối thiểu</th><th>Giới hạn lượt</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
         <tbody>{result.data.map(row => <tr key={String(row.ma_voucher)}>
-          <td><Link href={dataHref("vouchers", { key: JSON.stringify([row.ma_voucher]) })}>{row.ma_code}</Link></td>
+          <td><Link href={dataHref("vouchers", { key: JSON.stringify([row.ma_voucher]) })}>{row.ma_code}</Link><span className={styles.muted}>{inlineChoiceLabel("ma_loai_sp_ap_dung", row.ma_loai_sp_ap_dung)}</span></td>
           <td>{row.loai_giam === "PHAN_TRAM" ? `${numeric.format(Number(row.gia_tri_giam))}%` : amount(row.gia_tri_giam)}
             {row.loai_giam === "PHAN_TRAM" && row.giam_toi_da != null && <span className={styles.muted}>Tối đa {amount(row.giam_toi_da)}</span>}</td>
           <td>{amount(row.gia_tri_don_toi_thieu)}</td>

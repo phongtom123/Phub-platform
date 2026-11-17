@@ -20,11 +20,11 @@ class CommerceRepository:
         return self.client.rpc("customer_address_v1", parameters).execute().data
 
     def checkout(self, parameters):
-        name = "customer_checkout_fulfillment_v1" if parameters["p_create"] else "customer_checkout_multi_warehouse_v1"
+        name = "customer_checkout_fulfillment_v1" if parameters["p_create"] else "customer_quote_categories_v1"
         return self.client.rpc(name, parameters).execute().data
 
     def vouchers(self, customer_id, timezone):
-        return self.client.rpc('customer_voucher_choices_v1', {
+        return self.client.rpc('customer_voucher_choices_v2', {
             'p_customer_id': customer_id, 'p_timezone': timezone,
         }).execute().data
 

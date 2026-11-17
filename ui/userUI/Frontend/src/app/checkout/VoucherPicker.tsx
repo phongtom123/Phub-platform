@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useShopping } from '@/components/shopping/ShoppingProvider';
 import { listVouchers } from '@/lib/shopping/client';
 import { cents, money, moneyFromCents } from '@/lib/shopping/money';
-import type { CustomerVouchers } from '@/lib/shopping/types';
+import { eligibleVoucherSubtotal, estimatedVoucherDiscount, voucherScopeLabel } from '@/lib/shopping/voucher';
+import type { CheckoutLine, CustomerVouchers } from '@/lib/shopping/types';
 import styles from './checkout.module.css';
 
 const reasons = {
@@ -15,8 +16,8 @@ const date = (value: string) => new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh',
 }).format(new Date(value));
 
-export function VoucherPicker({ subtotal, confirmedCode, disabled, onSelect }: {
-  subtotal: string; confirmedCode: string | null; disabled: boolean; onSelect: (code: string) => void;
+export function VoucherPicker({ subtotal, items: quoteItems, confirmedCode, disabled, onSelect }: {
+  subtotal: string; items?: CheckoutLine[]; confirmedCode: string | null; disabled: boolean; onSelect: (code: string) => void;
 }) {
   const { customer, authStatus } = useShopping();
   const identity = authStatus === 'authenticated' ? customer?.customer_id : undefined;
@@ -36,23 +37,16 @@ export function VoucherPicker({ subtotal, confirmedCode, disabled, onSelect }: {
   const vouchers = current?.data?.items;
   const items = useMemo(() => {
     if (!vouchers) return undefined;
-    const total = cents(subtotal);
     return vouchers.map(item => {
-      let discount = item.discount_type === 'PHAN_TRAM'
-        ? (total * cents(item.discount_value) + BigInt(5000)) / BigInt(10000)
-        : cents(item.discount_value);
-      if (item.discount_type === 'PHAN_TRAM' && item.maximum_discount !== null) {
-        const cap = cents(item.maximum_discount);
-        if (discount > cap) discount = cap;
-      }
-      if (discount > total) discount = total;
-      const priority = item.unavailable_reason ? 2 : total < cents(item.minimum_order) ? 1 : 0;
+      const total = eligibleVoucherSubtotal(item, subtotal, quoteItems);
+      const discount = estimatedVoucherDiscount(item, total ?? BigInt(0));
+      const priority = item.unavailable_reason ? 2 : total === null || total === BigInt(0) || total < cents(item.minimum_order) ? 1 : 0;
       return { item, discount, priority };
     }).sort((a, b) => a.priority - b.priority ||
       (a.discount > b.discount ? -1 : a.discount < b.discount ? 1 : 0) ||
       a.item.code.localeCompare(b.item.code, 'vi'))
       .map(({ item }) => item);
-  }, [vouchers, subtotal]);
+  }, [vouchers, subtotal, quoteItems]);
   const currency = current?.data?.currency;
   if (!identity) return null;
   return <section className={styles.voucherPicker} aria-label="Chọn mã giảm giá">
@@ -62,15 +56,19 @@ export function VoucherPicker({ subtotal, confirmedCode, disabled, onSelect }: {
     {items?.length === 0 && <p>Chưa có mã giảm giá khả dụng.</p>}
     {!!items?.length && <div className={styles.voucherList}>
       {items.map(item => {
+        const total = eligibleVoucherSubtotal(item, subtotal, quoteItems);
         const reason = item.unavailable_reason ? reasons[item.unavailable_reason]
-          : cents(subtotal) < cents(item.minimum_order) ? `Cần mua thêm ${moneyFromDifference(item.minimum_order, subtotal, currency)}` : null;
+          : total === null ? 'Đang chờ báo giá để kiểm tra loại sản phẩm'
+          : item.category_id && total === BigInt(0) ? 'Không có sản phẩm thuộc phạm vi áp dụng'
+          : total < cents(item.minimum_order) ? 'Cần mua thêm ' + moneyFromCents(cents(item.minimum_order) - total, currency) + (item.category_id ? ' trong loại sản phẩm này' : '') : null;
         const selected = confirmedCode === item.code;
         return <article key={item.code} className={styles.voucherCard} data-unavailable={!!reason} aria-label={`Mã ${item.code}`}>
           <div>
             <strong>{item.code}</strong>
+            <p>Áp dụng: {voucherScopeLabel(item.category_id)}</p>
             <p>Giảm {item.discount_type === 'PHAN_TRAM' ? `${Number(item.discount_value)}%` : money(item.discount_value, currency)}
               {item.discount_type === 'PHAN_TRAM' && item.maximum_discount !== null && ` · tối đa ${money(item.maximum_discount, currency)}`}</p>
-            <small>Đơn từ {money(item.minimum_order, currency)} · {item.unavailable_reason === 'NOT_STARTED' ? `Từ ${date(item.starts_at)}` : `HSD ${date(item.expires_at)}`}</small>
+            <small>{item.category_id ? 'Sản phẩm phù hợp từ' : 'Đơn từ'} {money(item.minimum_order, currency)} · {item.unavailable_reason === 'NOT_STARTED' ? `Từ ${date(item.starts_at)}` : `HSD ${date(item.expires_at)}`}</small>
             {reason && <span className={styles.voucherReason}>{reason}</span>}
           </div>
           <button type="button" disabled={disabled || !!reason || selected} onClick={() => onSelect(item.code)} aria-label={`Chọn mã ${item.code}`}>
@@ -80,9 +78,4 @@ export function VoucherPicker({ subtotal, confirmedCode, disabled, onSelect }: {
       })}
     </div>}
   </section>;
-}
-
-function moneyFromDifference(minimum: string, subtotal: string, currency?: string) {
-  const difference = cents(minimum) - cents(subtotal);
-  return moneyFromCents(difference, currency);
 }

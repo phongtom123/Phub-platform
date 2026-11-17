@@ -6,7 +6,7 @@ import type { DataRow } from "../../lib/inline-table-data";
 import { dataHref } from "../../lib/data-navigation";
 import { adminFetch } from "../../lib/admin-fetch";
 import { ReferenceInput } from "./reference-input";
-import { ProductAutocomplete, SupplierAutocomplete } from "./product-autocomplete";
+import { EmployeeAutocomplete, ProductAutocomplete, SupplierAutocomplete } from "./product-autocomplete";
 import { OrderPaymentFields, type CollectionDraft } from "./order-payment-fields";
 import { paymentMethods, type PaymentMethod } from "./order-payment-data";
 import { formatMoney } from "./financial-summary";
@@ -383,26 +383,15 @@ export function OperationPanel({
       current.map((l, i) => (i === index ? { ...l, ...patch } : l)),
     );
   if (resource === "transfers" || (!create && !row)) return null;
+  // Finished or cancelled orders have no actions; the header already shows their status.
+  const terminalOrder = resource === "orders" && !create && ["HOAN_THANH", "HUY"].includes(status);
+  if (terminalOrder && !error && !notice && !pending.current) return null;
   return (
     <section className="operation-panel" aria-label="Thao tác nghiệp vụ">
       <div className="live-tools">
         {resource === "orders" && !create && row ? (
           <>
-            {status === "HOAN_THANH" ? (
-              <div className="operation-terminal-note">
-                <span className="operation-status-badge completed">Đã hoàn thành</span>
-                <span className="operation-condition-hint condition-ready">
-                  Xem kết quả chi tiết và lịch sử xử lý bên dưới.
-                </span>
-              </div>
-            ) : status === "HUY" ? (
-              <div className="operation-terminal-note">
-                <span className="operation-status-badge cancelled">Đã hủy</span>
-                <span className="operation-condition-hint">
-                  Xem thông tin đối chiếu và lịch sử bên dưới.
-                </span>
-              </div>
-            ) : (
+            {terminalOrder ? null : (
               <>
                 {/* 1. Nút chính theo từng trạng thái */}
                 {status === "MOI" && (
@@ -701,7 +690,7 @@ export function OperationPanel({
         />
       )}
       {mode && mode !== "invoice" && (mode !== "assign" || canAssign) && (
-        <form onSubmit={submit} className="live-form operation-form">
+        <form onSubmit={submit} className={`live-form operation-form${mode === "assign" ? " operation-assign" : ""}`}>
           <h2>
             {mode === "create"
               ? resource === "orders"
@@ -710,7 +699,7 @@ export function OperationPanel({
               : mode === "lines"
                 ? "Sản phẩm trong phiếu nháp"
                 : mode === "assign"
-                  ? "Phân công xử lý"
+                  ? "Phân công phụ trách"
                   : mode === "adjust"
                     ? "Kết quả kiểm kê"
                     : mode === "payment"
@@ -862,16 +851,19 @@ export function OperationPanel({
               </div>
             )}
             {mode === "assign" && (
-              <label>
-                Nhân viên quản trị *
-                <ReferenceInput
-                  field="ma_nhan_vien"
+              <label className="operation-assign-field">
+                Người phụ trách mới
+                <EmployeeAutocomplete
                   value={employee}
                   required
                   label="Chọn người phụ trách"
-                  filters={{ loai_nhan_vien: "ADMIN", trang_thai: "1" }}
+                  disabled={busy || Boolean(pending.current)}
                   onChange={setEmployee}
                 />
+                <small>
+                  Hiện tại: {orderDetail?.employee?.ho_ten || (row?.ma_nhan_vien ? String(row.ma_nhan_vien) : "Chưa phân công")}
+                  {" · "}chỉ chọn được quản trị viên đang hoạt động.
+                </small>
               </label>
             )}
             {mode === "payment" && id && <OrderPaymentFields

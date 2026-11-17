@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { adminFetch } from "../../lib/admin-fetch";
 import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
 import { useAdminAuth } from "../../components/admin/auth-provider";
-import { newestOrderRows, orderListColumns, orderValue } from "./order-presentation";
-import { OrderDetail } from "./order-detail";
+import { newestOrderRows, orderListLayout, orderValue, type OrderSummary } from "./order-presentation";
+import { formatMoney } from "../operations/financial-summary";
+import { OrderBadges, OrderDetail } from "./order-detail";
 import type { AdminOrderDetailData } from "./order-detail-data";
 import { ScrollableTable } from "../tables/scrollable-table";
 import { OperationPanel } from "../operations/operation-panel";
@@ -75,7 +76,10 @@ type Props = {
   initialOrderId?: string | null;
   onDismissInitial?: () => void;
   label: (field: string) => string;
+  summaries?: Record<string, OrderSummary>;
 };
+
+const detailPath = (orderId: string) => `/api/backend/admin/orders/${encodeURIComponent(orderId)}/detail`;
 
 function validDetail(value: unknown, orderId: string): value is AdminOrderDetailData {
   const detail = value as AdminOrderDetailData;
@@ -84,11 +88,102 @@ function validDetail(value: unknown, orderId: string): value is AdminOrderDetail
     Array.isArray(detail.history) && (detail.invoice === null || typeof detail.invoice === "object"));
 }
 
+const productName = (item: OrderSummary["items"][number]) => item.name || item.sku || "Sản phẩm";
+
+/**
+ * The cell is always two short lines: the first product, then a "see all" button when there are more.
+ * The full list opens in a native popover (browser top layer), so it floats over the table instead of
+ * growing the row, is never clipped by the scrolling table, and closes on outside click or Escape.
+ */
+const SEARCH_FROM = 9; // A search box only helps once the list no longer fits at a glance.
+// Case- and accent-insensitive, so "ban phim" finds "Bàn phím".
+const searchable = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase();
+
+function OrderProducts({ items, onOpenDetail }: { items: OrderSummary["items"]; onOpenDetail: (trigger: HTMLElement) => void }) {
+  const id = useId();
+  const trigger = useRef<HTMLButtonElement | null>(null);
+  const panel = useRef<HTMLDivElement | null>(null);
+  const search = useRef<HTMLInputElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  useEffect(() => {
+    const element = panel.current;
+    if (!element) return;
+    const place = () => {
+      const anchor = trigger.current?.getBoundingClientRect();
+      if (!anchor) return;
+      const width = element.offsetWidth || 360, height = element.offsetHeight;
+      element.style.left = `${Math.max(8, Math.min(anchor.left, innerWidth - width - 8))}px`;
+      // Open below the button; flip above when there is not enough room at the bottom.
+      const below = anchor.bottom + 6;
+      element.style.top = `${height && below + height > innerHeight - 8 ? Math.max(8, anchor.top - height - 6) : below}px`;
+    };
+    const toggled = (event: Event) => {
+      const isOpen = (event as ToggleEvent).newState === "open";
+      setOpen(isOpen);
+      if (isOpen) { place(); search.current?.focus(); } else setQuery("");
+    };
+    element.addEventListener("toggle", toggled);
+    return () => element.removeEventListener("toggle", toggled);
+  }, [items.length]);
+  useEffect(() => {
+    if (!open) return;
+    // A fixed popover would drift away from its row while the page or table scrolls; close it instead.
+    const close = (event: Event) => { if (!panel.current?.contains(event.target as Node)) panel.current?.hidePopover(); };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => { window.removeEventListener("scroll", close, true); window.removeEventListener("resize", close); };
+  }, [open]);
+
+  if (!items.length) return <span className={styles.muted}>Chưa có sản phẩm</span>;
+  const [first, ...rest] = items;
+  const units = items.reduce((sum, item) => sum + item.quantity, 0);
+  const needle = searchable(query.trim());
+  const shown = needle ? items.filter(item => searchable(`${item.name ?? ""} ${item.sku ?? ""}`).includes(needle)) : items;
+  return <div className={styles.products}>
+    <div className={styles.productLine} title={productName(first)}>
+      <span className={styles.productName}>{productName(first)}</span>
+      <span className={styles.productQty}>×{first.quantity}</span>
+    </div>
+    {rest.length > 0 && <>
+      <button ref={trigger} type="button" className={styles.more} popoverTarget={id} aria-expanded={open}>
+        Xem {items.length} sản phẩm <span aria-hidden="true">{open ? "▴" : "▾"}</span>
+      </button>
+      <div ref={panel} id={id} popover="auto" className={styles.productPopover} role="dialog" aria-label={`${items.length} sản phẩm trong đơn`}>
+        <div className={styles.popoverHead}>
+          <div className={styles.popoverTitle}><strong>{items.length} loại sản phẩm</strong><span>{units} món</span></div>
+          {items.length >= SEARCH_FROM && <input ref={search} type="search" value={query} onChange={event => setQuery(event.target.value)}
+            placeholder="Tìm theo tên hoặc SKU…" aria-label="Tìm sản phẩm trong đơn" />}
+        </div>
+        {shown.length ? <ul>{shown.map((item, index) => <li key={`${item.sku}:${item.name}:${index}`} title={productName(item)}>
+          <span className={styles.popoverName}>{productName(item)}</span>
+          {item.sku && <small>{item.sku}</small>}
+          <span className={styles.popoverQty}>×{item.quantity}</span>
+        </li>)}</ul> : <p className={styles.popoverEmpty}>Không có sản phẩm khớp “{query.trim()}”.</p>}
+        <div className={styles.popoverFoot}>
+          {needle && <span>{shown.length}/{items.length} sản phẩm</span>}
+          <button type="button" onClick={() => { panel.current?.hidePopover(); if (trigger.current) onOpenDetail(trigger.current); }}>
+            Mở chi tiết đơn →
+          </button>
+        </div>
+      </div>
+    </>}
+  </div>;
+}
+
 export function OrderData({ rows, columns, keys, detail = false, version, label, related = [], detailData, onRefresh, onRowChanged, onDetailOpenChange,
-  initialOrderId = null, onDismissInitial }: Props) {
+  initialOrderId = null, onDismissInitial, summaries }: Props) {
   const { portal } = useAdminAuth();
   const visibleRows = detail ? rows : newestOrderRows(rows);
-  const { names, retry } = useOrderPeople(detail ? [] : visibleRows, version);
+  // A summary name is valid only while the row still points at the same person.
+  const summaryName = (row: DataRow, field: "ma_kh" | "ma_nhan_vien") => {
+    const summary = summaries?.[String(row.ma_donhang ?? "")];
+    if (!summary) return undefined;
+    const [id, name] = field === "ma_kh" ? [summary.customer_id, summary.customer_name] : [summary.employee_id, summary.employee_name];
+    return id === (row[field] ?? null) ? name : undefined;
+  };
+  const { names, retry } = useOrderPeople(detail ? [] : visibleRows.filter(row =>
+    summaryName(row, "ma_kh") === undefined || summaryName(row, "ma_nhan_vien") === undefined), version);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(initialOrderId);
   const [drawerDetail, setDrawerDetail] = useState<AdminOrderDetailData | null>(null);
   const [drawerError, setDrawerError] = useState("");
@@ -101,7 +196,31 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
   const activeOrderId = useRef(selectedOrderId);
   activeOrderId.current = selectedOrderId;
   const activeDetail = detail ? detailData : drawerDetail ?? undefined;
-  const visibleColumns = detail ? columns : orderListColumns(columns);
+  const layout = orderListLayout(columns, Boolean(summaries));
+  const cellKey = (entry: (typeof layout)[number]) => entry.kind === "column" ? entry.column.name : `__${entry.kind}`;
+  const header = (entry: (typeof layout)[number]) => entry.kind === "column" ? nameLabel(entry.column.name)
+    : { total: "Tổng tiền", channel: "Kênh / nhận hàng", people: "Khách hàng / nhân viên", products: "Sản phẩm" }[entry.kind];
+  const listCell = (row: DataRow, entry: (typeof layout)[number]) => {
+    if (entry.kind === "column") {
+      if (entry.column.name !== "trang_thai") return cell(row, entry.column);
+      const status = String(row.trang_thai ?? "");
+      return <span className={`${styles.statusPill} ${status === "HOAN_THANH" ? styles.statusDone : status === "HUY" ? styles.statusCancelled : styles.statusOpen}`}>
+        {orderValue(row, "trang_thai")}</span>;
+    }
+    if (entry.kind === "channel") return <div className={styles.stack}>
+      <span>{orderValue(row, "kenh_ban")}</span>
+      {row.phuong_thuc_nhan ? <small>{orderValue(row, "phuong_thuc_nhan")}</small> : null}
+    </div>;
+    if (entry.kind === "people") return <div className={styles.stack}>
+      <span className={styles.customer}>{personName(row, "ma_kh")}</span>
+      <small>NV: <span>{personName(row, "ma_nhan_vien")}</span></small>
+    </div>;
+    const summary = summaries?.[String(row.ma_donhang ?? "")];
+    if (!summary) return "—";
+    if (entry.kind === "total") return summary.total === null ? <span className={styles.muted}>Chưa có</span>
+      : <strong className={styles.money}>{formatMoney(summary.total)}</strong>;
+    return <OrderProducts items={summary.items} onOpenDetail={trigger => openDetail(String(row.ma_donhang), trigger)} />;
+  };
   const nameLabel = (field: string) => field === "ma_kh" ? "Khách hàng" : field === "ma_nhan_vien" ? "Nhân viên phụ trách" : label(field);
   const personName = (row: DataRow, field: "ma_kh" | "ma_nhan_vien") => {
     const id = row[field];
@@ -109,8 +228,9 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     const resource = field === "ma_kh" ? "customers" : "employees";
     const isDetailRow = activeDetail?.order_id === String(row.ma_donhang ?? "");
     const aggregateName = field === "ma_kh" ? activeDetail?.customer?.ten_kh : activeDetail?.employee?.ho_ten;
+    const fromSummary = summaryName(row, field);
     const name = isDetailRow ? (typeof aggregateName === "string" && aggregateName.trim() ? aggregateName : null)
-      : names[personKey({ resource, id: String(id) })];
+      : fromSummary !== undefined ? fromSummary : names[personKey({ resource, id: String(id) })];
     if (name === undefined) return <span role="status">Đang tải tên…</span>;
     if (name === null) return "Chưa có thông tin tên";
     if (resource === "employees" && portal === "staff") return name;
@@ -120,9 +240,23 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     if (column.name === "ma_kh" || column.name === "ma_nhan_vien") {
       return <>{personName(row, column.name)}{detail && <> · {orderValue(row, column.name)}</>}</>;
     }
-    return !detail && keys.includes(column.name) ? <button className={styles.detailTrigger} type="button"
-      onClick={event => openDetail(String(row.ma_donhang), event.currentTarget)}>{orderValue(row, column.name)}</button> : orderValue(row, column.name);
+    return !detail && keys.includes(column.name) ? <button className={`${styles.detailTrigger} ${styles.orderId}`} type="button"
+      title={orderValue(row, column.name)} {...warmProps(String(row.ma_donhang))} onClick={event => openDetail(String(row.ma_donhang), event.currentTarget)}>{orderValue(row, column.name)}</button> : orderValue(row, column.name);
   };
+
+  // Hovering or focusing an order's buttons starts its detail read; the click then joins that
+  // in-flight read (or reuses it if it finished within adminFetch's 1 s window) instead of waiting.
+  const warmed = useRef(new Map<string, number>());
+  const warmDetail = (orderId: string) => {
+    const now = Date.now();
+    if (selectedOrderId || now - (warmed.current.get(orderId) ?? 0) < 5_000) return;
+    warmed.current.set(orderId, now);
+    void adminFetch(detailPath(orderId), { cache: "no-cache" }).catch(() => { /* The click reports errors. */ });
+  };
+  const warmProps = (orderId: string) => ({
+    onPointerEnter: (event: PointerEvent) => { if (event.pointerType === "mouse") warmDetail(orderId); },
+    onFocus: () => warmDetail(orderId),
+  });
 
   const openDetail = (orderId: string, trigger: HTMLElement) => {
     returnFocus.current = trigger;
@@ -146,9 +280,9 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     if (!selectedOrderId) return;
     const controller = new AbortController();
     setDrawerLoading(true); setDrawerError("");
-    adminFetch(`/api/backend/admin/orders/${encodeURIComponent(selectedOrderId)}/detail`, {
-      signal: controller.signal, cache: "reload",
-    }).then(async response => {
+    // no-cache: join a hover read still in flight, or reuse one checked within the last second;
+    // otherwise read fresh. Writes clear the cache, so a refresh after an action is always fresh.
+    adminFetch(detailPath(selectedOrderId), { signal: controller.signal, cache: "no-cache" }).then(async response => {
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không tải được chi tiết đơn hàng.");
       if (!validDetail(body, selectedOrderId)) throw new Error("API chưa trả đúng chi tiết đơn hàng.");
@@ -189,17 +323,20 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     {Object.values(names).some(name => name === null) && <p className="live-note" role="status">
       Chưa tải được tên của một số hồ sơ. <button type="button" onClick={retry}>Tải lại tên</button>
     </p>}
-    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} detailData={detailData} onRefresh={onRefresh} /> : <ScrollableTable><table>
-      <thead><tr>{visibleColumns.map(column => <th key={column.name}>{nameLabel(column.name)}</th>)}<th>Thao tác</th></tr></thead>
+    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} detailData={detailData} onRefresh={onRefresh} /> : <ScrollableTable><table className={styles.orderList}>
+      <thead><tr>{layout.map(entry => <th key={cellKey(entry)} className={entry.kind === "total" ? styles.numeric : undefined}>{header(entry)}</th>)}<th>Thao tác</th></tr></thead>
       <tbody>{visibleRows.map(row => <tr key={JSON.stringify(keys.map(key => row[key]))}>
-        {visibleColumns.map(column => <td key={column.name}>{cell(row, column)}</td>)}
-        <td><button className={styles.actionButton} type="button" onClick={event => openDetail(String(row.ma_donhang), event.currentTarget)}>Chi tiết</button></td>
+        {layout.map(entry => <td key={cellKey(entry)} className={entry.kind === "total" ? styles.numeric : entry.kind === "products" ? styles.productCell : undefined}>{listCell(row, entry)}</td>)}
+        <td><button className={styles.actionButton} type="button" {...warmProps(String(row.ma_donhang))} onClick={event => openDetail(String(row.ma_donhang), event.currentTarget)}>Chi tiết</button></td>
       </tr>)}</tbody>
     </table>{!visibleRows.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
     {!detail && selectedOrderId && <div className={styles.backdrop} onMouseDown={event => event.target === event.currentTarget && closeDetail()}>
       <section className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="order-drawer-title">
         <header className={styles.drawerHeader}>
-          <div><p>Đơn hàng</p><h2 id="order-drawer-title">{selectedOrderId}</h2></div>
+          <div className={styles.drawerTitle}>
+            <div><p>Đơn hàng</p><h2 id="order-drawer-title">{selectedOrderId}</h2></div>
+            {drawerDetail && <OrderBadges row={drawerDetail.order} />}
+          </div>
           <button ref={closeButton} type="button" onClick={closeDetail} aria-label="Đóng chi tiết đơn hàng"><X aria-hidden="true" /></button>
         </header>
         <div className={styles.drawerBody}>
@@ -211,7 +348,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
               <OperationPanel resource="orders" row={drawerDetail.order} orderDetail={drawerDetail} onChanged={refreshDetail} />
             </fieldset>
             <OrderDetail row={drawerDetail.order} columns={columns} label={label} personName={personName}
-              related={related} version={version + drawerVersion} detailData={drawerDetail} onRefresh={refreshDetail} />
+              related={related} version={version + drawerVersion} detailData={drawerDetail} onRefresh={refreshDetail} hideTitle />
           </>}
         </div>
       </section>
