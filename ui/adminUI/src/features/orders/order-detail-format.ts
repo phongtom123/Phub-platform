@@ -26,6 +26,28 @@ function cents(value: unknown): bigint | null {
   }
 }
 
+const fromCents = (value: bigint) => {
+  const sign = value < BigInt(0) ? "-" : "", abs = value < BigInt(0) ? -value : value;
+  return `${sign}${abs / BigInt(100)}.${String(abs % BigInt(100)).padStart(2, "0")}`;
+};
+
+/** Exact sum of stored decimal money; null when any value is missing or malformed. */
+export function sumOrderMoney(values: unknown[]): string | null {
+  let total = BigInt(0);
+  for (const value of values) {
+    const amount = cents(value);
+    if (amount === null) return null;
+    total += amount;
+  }
+  return fromCents(total);
+}
+
+/** Exact a − b of stored decimal money (may be negative); null when either is malformed. */
+export function subtractOrderMoney(left: unknown, right: unknown): string | null {
+  const a = cents(left), b = cents(right);
+  return a === null || b === null ? null : fromCents(a - b);
+}
+
 /** Add stored decimal money without passing through Number/float. */
 export function addOrderMoney(left: unknown, right: unknown) {
   const a = cents(left), b = cents(right);

@@ -9,7 +9,17 @@ const sandbox = { exports: {}, Intl, Date, Number, BigInt, String };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/features/orders/order-detail-format.ts"), "utf8"), {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText, sandbox);
-const { addOrderMoney, orderDate } = sandbox.exports;
+const { addOrderMoney, orderDate, subtractOrderMoney, sumOrderMoney } = sandbox.exports;
+
+test("provisional totals before an invoice sum and subtract exactly", () => {
+  assert.equal(sumOrderMoney(["1790000.00", "32990000.00", "10980000.00", "700.10"]), "45760700.10");
+  assert.equal(sumOrderMoney(["0.10", "0.20"]), "0.30", "no float drift");
+  assert.equal(sumOrderMoney([]), "0.00");
+  assert.equal(sumOrderMoney(["1.00", null]), null, "a missing amount never becomes a wrong total");
+  assert.equal(subtractOrderMoney("11000.00", "1000.00"), "10000.00");
+  assert.equal(subtractOrderMoney("0.10", "0.25"), "-0.15");
+  assert.equal(subtractOrderMoney("1", "x"), null);
+});
 
 test("order line discounts add exact decimal strings without float rounding", () => {
   assert.equal(addOrderMoney("9999999999999999.99", "0.01"), "10000000000000000.00");

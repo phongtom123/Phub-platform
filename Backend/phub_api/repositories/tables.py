@@ -6,7 +6,18 @@ from phub_api.models.resources import CUSTOMER_CHILDREN, EMPLOYEE_LOOKUP_FIELDS,
 from phub_api.models.user import User
 
 
-def selected_columns(name: str, user: User, include_buyer_email: bool = True) -> str:
+# Staff order list: product lines and people names in the same read, so the table needs no
+# per-order or name lookups. Embedded through the existing foreign keys.
+ORDER_SUMMARY_EMBEDS = ("summary_lines:CT_DON_HANG(sku,ten_sp_luc_ban,so_luong,thanh_tien::text)",
+                        "summary_customer:ma_kh(ten_kh)", "summary_employee:ma_nhan_vien(ho_ten)")
+ORDER_SUMMARY_FALLBACK_CODES = {"PGRST100", "PGRST200", "PGRST201", "42703", "42883"}
+
+
+def wants_order_summary(name: str, user: User, keys) -> bool:
+    return name == "orders" and keys is None and user.role in {"ADMIN", "NHAN_VIEN"}
+
+
+def selected_columns(name: str, user: User, include_buyer_email: bool = True, order_summary: bool = False) -> str:
     if user.role == "NHAN_VIEN" and name == "employees":
         return ",".join(EMPLOYEE_LOOKUP_FIELDS)
     if user.role == "ADMIN" and name == "warehouses":
@@ -15,6 +26,8 @@ def selected_columns(name: str, user: User, include_buyer_email: bool = True) ->
              if include_buyer_email or name not in {"orders", "invoices"} or c["name"] != "email_nguoi_mua"]
     if name == "customers" and user.role == "NHAN_VIEN":
         parts.append("linked_account:TAI_KHOAN(ma_tk,trang_thai)")
+    if order_summary:
+        parts.extend(ORDER_SUMMARY_EMBEDS)
     if user.role == "KHACH_HANG" and name in CUSTOMER_CHILDREN:
         parts.append("scope:DON_HANG!inner(ma_kh)")
     if user.role == "NHAN_VIEN" and name == "receipt-lines":
@@ -24,8 +37,8 @@ def selected_columns(name: str, user: User, include_buyer_email: bool = True) ->
     return ",".join(parts)
 
 
-def scoped_query(name: str, user: User, db, search: str | None = None, include_buyer_email: bool = True):
-    query = db.table(RESOURCES[name].table).select(selected_columns(name, user, include_buyer_email), count="exact")
+def scoped_query(name: str, user: User, db, search: str | None = None, include_buyer_email: bool = True, order_summary: bool = False):
+    query = db.table(RESOURCES[name].table).select(selected_columns(name, user, include_buyer_email, order_summary), count="exact")
     if user.role == "KHACH_HANG":
         query = query.eq("scope.ma_kh" if name in CUSTOMER_CHILDREN else "ma_kh", user.customer_id)
     # Staff reads span all warehouses; account/role administration stays separate.
@@ -49,7 +62,19 @@ class TablesRepository:
         self.client = client
 
     def page(self, name, user, page, page_size, q, keys, order_id, filters=None):
-        return self._read_compatible(name, lambda include_email: self._page_query(name, user, page, page_size, q, keys, order_id, filters, include_email))
+        def read(summary):
+            return self._read_compatible(name, lambda include_email: self._page_query(
+                name, user, page, page_size, q, keys, order_id, filters, include_email, summary))
+        if not wants_order_summary(name, user, keys):
+            return read(False)
+        try:
+            return read(True)
+        except APIError as error:
+            # The summary is a convenience: if the database cannot serve the embeds,
+            # keep the order list working without them (the UI falls back to lookups).
+            if error.code not in ORDER_SUMMARY_FALLBACK_CODES:
+                raise
+            return read(False)
 
     def _read_compatible(self, name, query):
         try:
@@ -64,7 +89,7 @@ class TablesRepository:
                 row.setdefault("email_nguoi_mua", None)
             return result
 
-    def _page_query(self, name, user, page, page_size, q, keys, order_id, filters, include_email):
+    def _page_query(self, name, user, page, page_size, q, keys, order_id, filters, include_email, order_summary=False):
         search = None
         if q.strip():
             pattern = json.dumps(re.escape(q.strip()), ensure_ascii=False)
@@ -79,7 +104,7 @@ class TablesRepository:
                 supplier_id = int(q.strip())
                 if -(2**31) <= supplier_id < 2**31:
                     search = ",".join(filter(None, (search, f"ma_ncc.eq.{supplier_id}")))
-        query = scoped_query(name, user, self.client, search, include_email)
+        query = scoped_query(name, user, self.client, search, include_email, order_summary)
         if order_id is not None:
             query = query.eq("ma_donhang", order_id)
         if keys is not None:

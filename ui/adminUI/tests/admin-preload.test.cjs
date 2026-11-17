@@ -54,7 +54,7 @@ test("workers resuming together claim the final job only once", async () => {
     return false;
   }, href => routes.push(href)));
   assert.equal(pausedWorkers, 2);
-  assert.deepEqual(calls, ["/api/backend/data/resources", "/api/backend/data/products?page=1&page_size=20&q="]);
+  assert.deepEqual(calls, ["/api/backend/data/resources", "/api/backend/data/products?page=1&page_size=20&q=&filters=%7B%7D"]);
   assert.deepEqual(routes, ["/data/products"]);
 });
 

@@ -24,7 +24,7 @@ ERRORS = {
     "ORDER_NOT_FOUND": (404, "Không tìm thấy đơn hàng thuộc tài khoản của bạn."),
     "AUTH_CUSTOMER_UNAVAILABLE": (403, "Tài khoản chưa liên kết khách hàng hợp lệ."),
     "VOUCHER_NOT_AVAILABLE": (409, "Mã giảm giá không khả dụng hoặc đã hết hạn."),
-    "VOUCHER_MINIMUM_NOT_MET": (409, "Giá trị đơn chưa đạt mức tối thiểu của mã giảm giá."),
+    "VOUCHER_MINIMUM_NOT_MET": (409, "Giá trị sản phẩm thuộc phạm vi áp dụng chưa đạt mức tối thiểu của mã giảm giá."),
     "VOUCHER_LIMIT_REACHED": (409, "Mã giảm giá đã hết lượt sử dụng."),
     "CHECKOUT_CHANGED": (409, "Tổng tiền hoặc giảm giá đã thay đổi. Vui lòng lấy báo giá và xác nhận lại."),
     "ADDRESS_NOT_FOUND": (404, "Không tìm thấy địa chỉ nhận hàng thuộc tài khoản của bạn."),

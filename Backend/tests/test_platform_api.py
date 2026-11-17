@@ -106,6 +106,56 @@ def test_archived_customer_can_be_read_directly_but_not_edited(platform_client):
     assert all(request.method == "GET" for request in requests)
 
 
+def test_staff_order_list_carries_products_total_and_names_in_one_read(platform_client):
+    client, state, requests = platform_client
+    state["rows"] = [{
+        "ma_donhang": "DH1", "trang_thai": "MOI", "ma_kh": "KH1", "ma_nhan_vien": "NV1",
+        "summary_lines": [  # The same SKU split across two warehouses is shown once.
+            {"sku": "CPU1", "ten_sp_luc_ban": "CPU", "so_luong": 1, "thanh_tien": "4950000.10"},
+            {"sku": "CPU1", "ten_sp_luc_ban": "CPU", "so_luong": 2, "thanh_tien": "9900000.20"},
+            {"sku": "RAM1", "ten_sp_luc_ban": "RAM", "so_luong": 1, "thanh_tien": "0.01"},
+        ],
+        "summary_customer": {"ten_kh": "Nguyễn An"}, "summary_employee": None,
+    }, {"ma_donhang": "DH2", "trang_thai": "MOI", "ma_kh": None, "ma_nhan_vien": None,
+        "summary_lines": [], "summary_customer": None, "summary_employee": [{"ho_ten": "Trần Bình"}]}]
+    state["total"] = 2
+    body = client.get("/api/data/orders").json()
+    assert len(requests) == 1, "summary comes from the same read, no per-order lookups"
+    select = requests[0].url.params["select"]
+    assert "summary_lines:CT_DON_HANG(sku,ten_sp_luc_ban,so_luong,thanh_tien::text)" in select
+    assert "summary_customer:ma_kh(ten_kh)" in select and "summary_employee:ma_nhan_vien(ho_ten)" in select
+    assert body["order_summaries"] == {
+        "DH1": {"total": "14850000.31", "customer_id": "KH1", "customer_name": "Nguyễn An", "employee_id": "NV1", "employee_name": None,
+                "items": [{"sku": "CPU1", "name": "CPU", "quantity": 3}, {"sku": "RAM1", "name": "RAM", "quantity": 1}]},
+        "DH2": {"total": None, "items": [], "customer_id": None, "customer_name": None, "employee_id": None, "employee_name": "Trần Bình"},
+    }
+    assert all(not key.startswith("summary_") for row in body["data"] for key in row)
+
+
+def test_order_summary_is_list_only_and_not_for_customers(platform_client):
+    client, state, requests = platform_client
+    state["rows"] = [{"ma_donhang": "DH1", "trang_thai": "MOI"}]
+    body = client.get('/api/data/orders?key=["DH1"]').json()
+    assert "order_summaries" not in body and "summary_lines" not in requests[-1].url.params["select"]
+    state["actor"] = CUSTOMER
+    client.get("/api/data/order-lines")
+    assert "summary_" not in requests[-1].url.params["select"]
+
+
+def test_order_list_still_loads_when_the_database_cannot_embed_the_summary(platform_client):
+    client, state, requests = platform_client
+    def handle(request):
+        if "summary_lines" in request.url.params["select"]:
+            return httpx.Response(400, json={"code": "PGRST200", "message": "Could not find a relationship", "details": None, "hint": None})
+        return httpx.Response(200, json=[{"ma_donhang": "DH1", "trang_thai": "MOI"}], headers={"content-range": "0-0/1"})
+    state["handler"] = handle
+    response = client.get("/api/data/orders")
+    assert response.status_code == 200
+    assert response.json()["data"] == [{"ma_donhang": "DH1", "trang_thai": "MOI"}]
+    assert "order_summaries" not in response.json()
+    assert len(requests) == 2
+
+
 @pytest.mark.parametrize("query,identifier", [("12", 12), ("0012", 12), ("-5", -5), ("2147483647", 2147483647)])
 def test_supplier_search_matches_numeric_id_and_text_fields(platform_client, query, identifier):
     client, state, requests = platform_client

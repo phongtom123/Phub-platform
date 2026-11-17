@@ -172,6 +172,7 @@ export function validateQuote(value: unknown): Quote {
   const skus = new Set<string>();
   for (const raw of q.items as unknown[]) {
     const line = record(raw);
+    if (line.category_id != null && (typeof line.category_id !== 'string' || !line.category_id.trim())) invalid();
     if (
       typeof line.sku !== "string" ||
       skus.has(JSON.stringify([line.sku, line.warehouse_id])) ||
@@ -423,6 +424,7 @@ export function validateVouchers(value: unknown): CustomerVouchers {
     const item = record(value);
     if (typeof item.code !== 'string' || !item.code.trim() || item.code.length > 100 || codes.has(item.code)) invalid();
     codes.add(item.code);
+    if (item.category_id !== undefined && ![null, 'L_LINHKIEN', 'L_DESKTOP'].includes(item.category_id as null | string)) invalid();
     if (!['SO_TIEN', 'PHAN_TRAM'].includes(String(item.discount_type))) invalid();
     amount(item.discount_value); amount(item.minimum_order);
     if (item.maximum_discount !== null) amount(item.maximum_discount);

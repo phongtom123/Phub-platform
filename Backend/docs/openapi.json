@@ -2069,6 +2069,17 @@
             "title": "Allocations",
             "type": "array"
           },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
           "discount": {
             "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
             "title": "Discount",
@@ -3519,6 +3530,21 @@
       "CustomerVoucher": {
         "additionalProperties": false,
         "properties": {
+          "category_id": {
+            "anyOf": [
+              {
+                "enum": [
+                  "L_LINHKIEN",
+                  "L_DESKTOP"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
           "code": {
             "maxLength": 100,
             "minLength": 1,
@@ -3630,6 +3656,86 @@
           "order_id": {
             "description": "Mã đơn đã lọc chính xác; chỉ trả khi request có order_id.",
             "type": "string"
+          },
+          "order_summaries": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "properties": {
+                "customer_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "customer_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "employee_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "employee_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "items": {
+                  "description": "Sản phẩm gộp theo SKU và tên; dòng gốc vẫn tách theo kho.",
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "quantity": {
+                        "minimum": 0,
+                        "type": "integer"
+                      },
+                      "sku": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "sku",
+                      "name",
+                      "quantity"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "total": {
+                  "description": "Tổng thành tiền các dòng (decimal dạng chuỗi); null khi chưa có dòng.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "total",
+                "items",
+                "customer_id",
+                "customer_name",
+                "employee_id",
+                "employee_name"
+              ],
+              "type": "object"
+            },
+            "description": "Chỉ trả cho ADMIN/NHAN_VIEN khi đọc danh sách (không có key): tóm tắt theo ma_donhang.",
+            "type": "object"
           },
           "page": {
             "minimum": 1,
@@ -12617,6 +12723,7 @@
           "loai_giam": "PHAN_TRAM",
           "ma_code": "PC10",
           "ma_ctkm": 1,
+          "ma_loai_sp_ap_dung": null,
           "trang_thai": "HOAT_DONG"
         },
         "properties": {
@@ -12711,6 +12818,26 @@
             "title": "Ma Ctkm",
             "type": "integer"
           },
+          "ma_loai_sp_ap_dung": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ma_loai_sp_ap_dung",
+            "enum": [
+              "L_LINHKIEN",
+              "L_DESKTOP",
+              null
+            ],
+            "title": "Ma Loai Sp Ap Dung"
+          },
           "trang_thai": {
             "default": "HOAT_DONG",
             "description": "trang_thai",
@@ -12775,6 +12902,7 @@
           "loai_giam": "PHAN_TRAM",
           "ma_code": "PC10",
           "ma_ctkm": 1,
+          "ma_loai_sp_ap_dung": null,
           "ma_voucher": 1,
           "ngay_tao": "2026-10-05T08:00:00+07:00",
           "trang_thai": "HOAT_DONG"
@@ -12829,6 +12957,17 @@
             "description": "ma_ctkm",
             "type": "integer"
           },
+          "ma_loai_sp_ap_dung": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_loai_sp_ap_dung"
+          },
           "ma_voucher": {
             "description": "ma_voucher · database tự sinh",
             "type": "integer"
@@ -12846,6 +12985,7 @@
         "required": [
           "ma_voucher",
           "ma_ctkm",
+          "ma_loai_sp_ap_dung",
           "ma_code",
           "loai_giam",
           "gia_tri_giam",
@@ -12968,6 +13108,25 @@
             "description": "ma_ctkm",
             "title": "Ma Ctkm",
             "type": "integer"
+          },
+          "ma_loai_sp_ap_dung": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ma_loai_sp_ap_dung",
+            "enum": [
+              "L_LINHKIEN",
+              "L_DESKTOP",
+              null
+            ],
+            "title": "Ma Loai Sp Ap Dung"
           },
           "trang_thai": {
             "description": "trang_thai",
@@ -32232,7 +32391,7 @@
     },
     "/api/data/vouchers": {
       "get": {
-        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
+        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Scope được lọc ở backend theo người đăng nhập, không tin role/ma_kh/ma_kho từ UI. GET theo key vẫn trả mảng trong data; không có bản ghi trả 200 với data rỗng. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. ma_loai_sp_ap_dung: null cho tất cả sản phẩm, L_LINHKIEN cho linh kiện, L_DESKTOP cho PC. Mức tối thiểu và giảm giá chỉ tính trên sản phẩm thuộc phạm vi, trước VAT. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
         "operationId": "get_vouchers",
         "parameters": [
           {
@@ -32329,6 +32488,7 @@
                       "loai_giam": "PHAN_TRAM",
                       "ma_code": "PC10",
                       "ma_ctkm": 1,
+                      "ma_loai_sp_ap_dung": null,
                       "ma_voucher": 1,
                       "ngay_tao": "2026-10-05T08:00:00+07:00",
                       "trang_thai": "HOAT_DONG"
@@ -32438,7 +32598,7 @@
         "x-table": "VOUCHER"
       },
       "patch": {
-        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
+        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. ma_loai_sp_ap_dung: null cho tất cả sản phẩm, L_LINHKIEN cho linh kiện, L_DESKTOP cho PC. Mức tối thiểu và giảm giá chỉ tính trên sản phẩm thuộc phạm vi, trước VAT. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
         "operationId": "patch_vouchers",
         "parameters": [
           {
@@ -32503,6 +32663,7 @@
                       "loai_giam": "PHAN_TRAM",
                       "ma_code": "PC10",
                       "ma_ctkm": 1,
+                      "ma_loai_sp_ap_dung": null,
                       "ma_voucher": 1,
                       "ngay_tao": "2026-10-05T08:00:00+07:00",
                       "trang_thai": "HOAT_DONG"
@@ -32635,7 +32796,7 @@
         "x-table": "VOUCHER"
       },
       "post": {
-        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
+        "description": "Bảng `VOUCHER`. Role: **NHAN_VIEN**. Ghi database thật; không bấm Execute với dữ liệu mẫu trên database đang sử dụng. Không mở thao tác xóa. \n\nKhóa chính: `ma_voucher`. Ví dụ query `key=[1]` (URL-encode khi gửi).\n\nma_code được trim/uppercase. ma_loai_sp_ap_dung: null cho tất cả sản phẩm, L_LINHKIEN cho linh kiện, L_DESKTOP cho PC. Mức tối thiểu và giảm giá chỉ tính trên sản phẩm thuộc phạm vi, trước VAT. PHAN_TRAM có giá trị (0,100]; giam_toi_da chỉ dùng cho phần trăm. Giới hạn lượt phải dương. ngay_tao do server gán.",
         "operationId": "post_vouchers",
         "parameters": [
           {
@@ -32665,6 +32826,7 @@
                     "loai_giam": "PHAN_TRAM",
                     "ma_code": "PC10",
                     "ma_ctkm": 1,
+                    "ma_loai_sp_ap_dung": null,
                     "trang_thai": "HOAT_DONG"
                   }
                 }
@@ -32691,6 +32853,7 @@
                       "loai_giam": "PHAN_TRAM",
                       "ma_code": "PC10",
                       "ma_ctkm": 1,
+                      "ma_loai_sp_ap_dung": null,
                       "ma_voucher": 1,
                       "ngay_tao": "2026-10-05T08:00:00+07:00",
                       "trang_thai": "HOAT_DONG"

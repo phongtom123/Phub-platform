@@ -1,5 +1,12 @@
 # Logic mua hàng khách hàng và bàn giao cho AI
 
+**Cập nhật 17/11/2026 — voucher theo loại sản phẩm:** voucher có ba phạm vi:
+tất cả sản phẩm (NULL), linh kiện (`L_LINHKIEN`) và PC (`L_DESKTOP`). Mức tối
+thiểu và tiền giảm chỉ tính trên hàng thuộc phạm vi, trước VAT. Giỏ trộn loại
+không được dùng phần tiền của nhóm khác để đạt mức tối thiểu. Giữ một mã/đơn,
+phân bổ giảm theo từng dòng/kho, chốt lại trong transaction đặt hàng và bán tại
+quầy. Voucher cũ giữ phạm vi tất cả. Xem [chi tiết](VOUCHER-CATEGORIES.md).
+
 **Cập nhật 09/11/2026 — đơn gần đây/hủy đơn:** `/main/profile` hiển thị 5 đơn
 mới nhất ngay dưới thông tin/địa chỉ; mục lịch sử đầy đủ vẫn phân trang 10 đơn.
 Ô đơn gần đây không có nút hủy. `CancelOrderButton` dùng chung cho danh sách
@@ -24,8 +31,8 @@ voucher cho các sản phẩm đang chọn ngay tại `/cart`. UI dùng quote th
 backend, hiển thị phần giảm được phân bổ trên từng SKU và giữ mã trong
 `ShoppingProvider` khi chuyển sang `/checkout`. Checkout luôn quote lại trước
 khi tạo đơn; transaction vẫn là nơi chốt giá, quota voucher và phân bổ giảm giá
-vào `CT_DON_HANG.giam_gia_voucher`. Schema hiện tại chỉ hỗ trợ voucher cấp đơn,
-không có phạm vi voucher theo một SKU cụ thể.
+vào `CT_DON_HANG.giam_gia_voucher`. Mỗi đơn dùng tối đa một mã; phạm vi có thể
+theo loại sản phẩm (cập nhật 17/11/2026), chưa theo một SKU cụ thể.
 
 **Nhận tại cửa hàng 04/11/2026:** checkout hỗ trợ `TAI_CUA_HANG`, chỉ cần tên
 và số điện thoại; không cần địa chỉ. Đơn vẫn ONLINE, gom tồn mọi kho và có hóa

@@ -5,15 +5,38 @@ const statuses: Record<string, string> = {
   DA_XUAT_KHO: "Đã xuất kho", HOAN_THANH: "Hoàn thành", HUY: "Đã hủy",
 };
 const channels: Record<string, string> = { ONLINE: "Trực tuyến", TAI_QUAY: "Tại quầy" };
-const listFields = ["ma_donhang", "ma_kh", "ma_nhan_vien", "kenh_ban", "phuong_thuc_nhan", "trang_thai", "thoi_gian_dat"];
+
+/** Per-order extras from the list API (`order_summaries`), read in the same request as the rows. */
+export type OrderSummary = {
+  total: string | null;
+  items: { sku: string | null; name: string | null; quantity: number }[];
+  customer_id: string | null; customer_name: string | null;
+  employee_id: string | null; employee_name: string | null;
+};
+export type OrderListCell = { kind: "column"; column: DataColumn } | { kind: "total" | "channel" | "people" | "products" };
+
+/**
+ * Table layout, left to right: ID, date, total, status, channel + pickup, customer + staff, products.
+ * Channel/pickup and customer/staff share a cell so the products stay visible without
+ * horizontal scrolling. Total and products exist only when the API sent summaries.
+ */
+export function orderListLayout(columns: DataColumn[], withSummary: boolean): OrderListCell[] {
+  const column = (name: string): OrderListCell[] => columns.filter(item => item.name === name).map(item => ({ kind: "column", column: item }));
+  const has = (...names: string[]) => columns.some(item => names.includes(item.name));
+  return [
+    ...column("ma_donhang"), ...column("thoi_gian_dat"),
+    ...(withSummary ? [{ kind: "total" } as const] : []),
+    ...column("trang_thai"),
+    ...(has("kenh_ban", "phuong_thuc_nhan") ? [{ kind: "channel" } as const] : []),
+    ...(has("ma_kh", "ma_nhan_vien") ? [{ kind: "people" } as const] : []),
+    ...(withSummary ? [{ kind: "products" } as const] : []),
+  ];
+}
+
 const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
   timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric",
   hour: "2-digit", minute: "2-digit", hourCycle: "h23",
 });
-
-export function orderListColumns(columns: DataColumn[]) {
-  return listFields.flatMap(name => columns.filter(column => column.name === name));
-}
 
 function orderTime(value: unknown): number {
   if (typeof value !== "string" || !value) return Number.NEGATIVE_INFINITY;

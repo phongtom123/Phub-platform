@@ -49,16 +49,23 @@ const detail = {
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: orderId });
     await dialog.waitFor();
-    await dialog.getByText("Chi tiết đơn hàng", { exact: true }).waitFor();
+    await dialog.getByRole("heading", { name: "Khách hàng & giao nhận", exact: true }).waitFor();
+    // The drawer header carries the order ID with the channel and status chips; no repeated title block below.
+    const header = dialog.locator("header").first();
+    for (const chip of ["Trực tuyến", "Hoàn thành"]) await header.getByText(chip, { exact: true }).waitFor();
+    assert.equal(await dialog.getByText("Chi tiết đơn hàng", { exact: true }).count(), 0);
     await page.locator("nextjs-portal").evaluateAll(elements => elements.forEach(element => element.remove()));
     assert.equal(new URL(page.url()).searchParams.has("key"), false, "opening a row must not navigate to a detail page");
     assert.equal(await page.evaluate(() => document.body.style.overflow), "hidden");
     const visual = await dialog.evaluate(element => ({
       drawerAnimation: getComputedStyle(element).animationName,
       backdropFilter: getComputedStyle(element.parentElement).backdropFilter,
+      backdropColor: getComputedStyle(element.parentElement).backgroundColor,
     }));
     assert.notEqual(visual.drawerAnimation, "none");
-    assert.match(visual.backdropFilter, /blur/);
+    // The order list behind the drawer stays readable: no blur, no dimming.
+    assert.equal(visual.backdropFilter, "none");
+    assert.equal(visual.backdropColor, "rgba(0, 0, 0, 0)");
 
     await dialog.getByRole("button", { name: "Đóng chi tiết đơn hàng" }).click();
     await dialog.waitFor({ state: "detached" });

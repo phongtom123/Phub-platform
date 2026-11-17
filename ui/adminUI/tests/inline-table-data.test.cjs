@@ -13,6 +13,18 @@ const { inlineDraftValue, inlineOptions, inlineChoiceLabel } = sandbox.exports;
 const column = (name, options = {}) => ({ name, type: "varchar", required: false, ...options });
 const patch = (...args) => JSON.parse(JSON.stringify(inlinePatch(...args, name => name)));
 
+test("voucher scope has three readable options and clearing a category sends NULL", () => {
+  const scope=column("ma_loai_sp_ap_dung",{choices:["L_LINHKIEN","L_DESKTOP"]});
+  assert.deepEqual(JSON.parse(JSON.stringify(inlineOptions(scope))),[
+    {value:"",label:"Tất cả sản phẩm"},
+    {value:"L_LINHKIEN",label:"Linh kiện máy tính"},
+    {value:"L_DESKTOP",label:"Máy tính để bàn & PC Gaming"},
+  ]);
+  assert.equal(inlineChoiceLabel(scope.name,null),"Tất cả sản phẩm");
+  assert.deepEqual(patch([scope],[],{ma_loai_sp_ap_dung:"L_LINHKIEN"},{ma_loai_sp_ap_dung:""}),{ma_loai_sp_ap_dung:null});
+  assert.deepEqual(patch([scope],[],{ma_loai_sp_ap_dung:null},{ma_loai_sp_ap_dung:"L_DESKTOP"}),{ma_loai_sp_ap_dung:"L_DESKTOP"});
+});
+
 test("inline patches exclude keys/system/generated/immutable, trim only fields and preserve phone strings", () => {
   const columns = [column("ma_kh"), column("ten_kh", { required: true }), column("sdt"), column("created", { system: true }),
     column("generated", { generated: true }), column("immutable", { immutable: true })];

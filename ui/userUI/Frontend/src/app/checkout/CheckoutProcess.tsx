@@ -908,6 +908,7 @@ export function CheckoutProcess({}: { confirmation?: boolean } = {}) {
                 </div>
               )}
               <VoucherPicker
+                items={quote?.items}
                 subtotal={quote?.subtotal ?? decimal(shop.selectedLines.reduce((sum, line) => sum + cents(line.unit_price) * BigInt(line.quantity), BigInt(0)))}
                 confirmedCode={voucherConfirmed ? appliedVoucher : null}
                 disabled={submitting || quoteLoading}

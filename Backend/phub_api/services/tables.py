@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 import json
 import re
 
@@ -15,7 +16,7 @@ from phub_api.models.resources import (
     public_columns,
 )
 from phub_api.models.user import User
-from phub_api.repositories.tables import TablesRepository, clean
+from phub_api.repositories.tables import TablesRepository, clean, wants_order_summary
 from phub_api.schemas.resources import payload_model
 from phub_api.schemas.crm import vietnam_today
 from phub_api.schemas.warehouse_drafts import DRAFT_FIELDS
@@ -66,7 +67,7 @@ def read_payload(body, name: str, patch: bool) -> dict:
         raise HTTPException(422, "Không có trường cần cập nhật.")
     for field, value in data.items():
         choices = ENUMS.get((name, field))
-        if choices and value not in choices:
+        if choices and value is not None and value not in choices:
             raise HTTPException(422, f"{field}: chọn một trong {', '.join(choices)}.")
         if field == "trang_thai" and isinstance(value, int) and value not in {0, 1, 2}:
             raise HTTPException(422, "trang_thai chỉ nhận 0, 1 hoặc 2.")
@@ -176,6 +177,44 @@ def table_filters(name: str, raw: str | None):
         raise HTTPException(422, 'Bộ lọc không hợp lệ. Chỉ lọc theo cột và kiểu dữ liệu được công bố.') from None
 
 
+def _embedded_name(value, field):
+    # Many-to-one embeds arrive as an object; tolerate a one-item list as well.
+    if isinstance(value, list):
+        value = value[0] if len(value) == 1 else None
+    name = value.get(field) if isinstance(value, dict) else None
+    return name.strip() if isinstance(name, str) and name.strip() else None
+
+
+def order_summary(row: dict) -> dict:
+    """Pop the embedded list helpers from an order row and summarise them.
+
+    Lines stay split by warehouse in CT_DON_HANG; only the display groups the
+    same SKU and name. The total is exact decimal arithmetic over thanh_tien.
+    """
+    lines = row.pop("summary_lines", None)
+    customer = row.pop("summary_customer", None)
+    employee = row.pop("summary_employee", None)
+    items: dict[tuple, dict] = {}
+    total, exact = Decimal(0), True
+    for line in lines if isinstance(lines, list) else []:
+        if not isinstance(line, dict):
+            exact = False
+            continue
+        key = (line.get("sku"), line.get("ten_sp_luc_ban"))
+        item = items.setdefault(key, {"sku": key[0], "name": key[1], "quantity": 0})
+        quantity = line.get("so_luong")
+        if type(quantity) is int:
+            item["quantity"] += quantity
+        try:
+            total += Decimal(str(line.get("thanh_tien")))
+        except InvalidOperation:
+            exact = False
+    # The ids let the UI tell when a later edit (e.g. reassignment) made a name stale.
+    return {"total": f"{total:.2f}" if items and exact else None, "items": list(items.values()),
+            "customer_id": row.get("ma_kh"), "customer_name": _embedded_name(customer, "ten_kh"),
+            "employee_id": row.get("ma_nhan_vien"), "employee_name": _embedded_name(employee, "ho_ten")}
+
+
 class TablesService:
     def __init__(self, repository: TablesRepository, user: User):
         self.repository, self.user = repository, user
@@ -207,6 +246,9 @@ class TablesService:
                     linked = {"ma_tk": linked["ma_tk"], "trang_thai": linked["trang_thai"]}
                 accounts[row["ma_kh"]] = linked
             body["customer_accounts"] = accounts
+        # Only when the database served the embeds; otherwise the UI keeps its own lookups.
+        if wants_order_summary(name, self.user, keys) and any("summary_lines" in row for row in body["data"]):
+            body["order_summaries"] = {row["ma_donhang"]: order_summary(row) for row in body["data"]}
         if filters:
             body['filters'] = json.loads(filters)
         if order_id is not None:

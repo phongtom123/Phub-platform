@@ -39,7 +39,8 @@ export async function preloadAdminData(signal: AbortSignal, canRun: () => boolea
   names.sort((a, b) => (priority.includes(a) ? priority.indexOf(a) : priority.length) - (priority.includes(b) ? priority.indexOf(b) : priority.length));
   const jobs = names.map(name => name === "accounts"
     ? { path: "/api/backend/admin/accounts?q=&page=1&archive=ACTIVE", href: "/accounts" }
-    : { path: `/api/backend/data/${name}?page=1&page_size=20&q=`, href: `/data/${name}` });
+    // Same query as the list's first read (backend-data-view always sends filters), so the warm entry is reused.
+    : { path: `/api/backend/data/${name}?page=1&page_size=20&q=&filters=%7B%7D`, href: `/data/${name}` });
   let cursor = 0;
   async function worker() {
     while (alive() && cursor < jobs.length) {

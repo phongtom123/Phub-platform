@@ -3,8 +3,11 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import styles from "./scrollable-table.module.css";
 
-/** Keep a second, synchronized scrollbar within reach above tall tables. */
-export function ScrollableTable({ children, className = "" }: { children: ReactNode; className?: string }) {
+/**
+ * Keep a second, synchronized scrollbar within reach above tall tables.
+ * Short tables pass `topRail={false}`: their own scrollbar is already in view, and two bars look broken.
+ */
+export function ScrollableTable({ children, className = "", topRail = true }: { children: ReactNode; className?: string; topRail?: boolean }) {
   const viewport = useRef<HTMLDivElement>(null);
   const rail = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -35,7 +38,7 @@ export function ScrollableTable({ children, className = "" }: { children: ReactN
   };
 
   return <div className={styles.root}>
-    <div ref={rail} className={styles.rail} hidden={!overflowing} data-table-scrollbar
+    <div ref={rail} className={styles.rail} hidden={!topRail || !overflowing} data-table-scrollbar
       tabIndex={0} role="region" aria-label="Cuộn ngang bảng" aria-controls={id} title="Kéo để xem các cột bên phải"
       onScroll={event => sync(event.currentTarget, viewport.current)}
       onKeyDown={event => {

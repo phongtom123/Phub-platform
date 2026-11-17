@@ -1,5 +1,7 @@
-.detailTrigger, .actionButton {
+/* Doubled class beats the shared `.live-data button` box style (border, padding, white background). */
+.detailTrigger.detailTrigger, .actionButton.actionButton {
   border: 0;
+  border-radius: 0;
   padding: 0;
   background: transparent;
   color: #28751b;
@@ -12,18 +14,70 @@
 .detailTrigger:hover, .actionButton:hover { color: #14550d; }
 .detailTrigger:focus-visible, .actionButton:focus-visible { outline: 2px solid #318316; outline-offset: 3px; border-radius: 3px; }
 
+/* Order list. Long UUIDs are cut visually; the button's accessible name and title keep the full ID. */
+/* Doubled class beats `.live-data th/td` (16px padding, 16px text) so all columns fit the page. */
+.orderList.orderList th, .orderList.orderList td { padding: 12px 10px; font-size: 15px; vertical-align: middle; }
+.orderList.orderList th:first-child, .orderList.orderList td:first-child { padding-left: 16px; }
+.orderList.orderList .productCell { white-space: normal; }
+.orderId.orderId { display: block; max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stack { display: grid; gap: 1px; min-width: 0; }
+.stack small { color: #6f796b; font-size: 12px; }
+.customer { font-weight: 600; }
+.statusPill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.statusOpen { background: #fff6e3; color: #8b6215; }
+.statusDone { background: #eaf6e5; color: #28751b; }
+.statusCancelled { background: #fff0ef; color: #b53838; }
+.numeric { text-align: right; white-space: nowrap; }
+.money { font-variant-numeric: tabular-nums; font-weight: 700; }
+.muted { color: #808a7c; }
+.productCell { min-width: 200px; max-width: 260px; }
+/* Two fixed lines: first product (one line, ellipsis) and the "see all" button. */
+.products { display: grid; justify-items: start; gap: 2px; min-width: 0; font-size: 14px; line-height: 1.4; }
+.productLine { display: flex; align-items: baseline; gap: 6px; min-width: 0; max-width: 100%; }
+.productName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.productQty { flex-shrink: 0; color: #6a7466; font-variant-numeric: tabular-nums; }
+.products .more.more { padding: 1px 8px; border: 1px solid #cfe0c8; border-radius: 999px; background: #f3f9f0; color: #28751b;
+  font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.products .more.more:hover { border-color: #9fba94; background: #e8f4e2; }
+.products .more.more:focus-visible { outline: 2px solid #318316; outline-offset: 2px; }
+
+/* Floating list in the browser top layer; positioned next to its button by script. */
+.productPopover { position: fixed; inset: auto; margin: 0; width: 400px; max-width: calc(100vw - 16px); max-height: min(440px, 70vh);
+  overflow: hidden; padding: 0; border: 1px solid #d9e2d4; border-radius: 12px; background: #fff; color: #202820;
+  box-shadow: 0 14px 40px rgb(20 40 15 / 18%); }
+/* Header (title + search) and footer stay put; only the list scrolls. */
+.productPopover:popover-open { display: flex; flex-direction: column; }
+.popoverHead { display: grid; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #edf1ea; background: #f7faf5; font-size: 13px; }
+.popoverTitle { display: flex; justify-content: space-between; gap: 12px; }
+.popoverTitle span { color: #6f796b; }
+.popoverHead input { width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid #cfdcca; border-radius: 8px; background: #fff; font: inherit; font-size: 13px; }
+.popoverHead input:focus-visible { outline: 2px solid #318316; outline-offset: 1px; }
+/* One line per product: name (cut with …, full name on hover), SKU, quantity. */
+.productPopover ul { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0; padding: 2px 0; list-style: none; }
+.productPopover li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 6px 12px; }
+.productPopover li + li { border-top: 1px solid #f1f3ef; }
+.popoverName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.productPopover small { color: #7d8578; font-size: 11px; white-space: nowrap; }
+.popoverQty { min-width: 30px; padding: 1px 6px; border-radius: 6px; background: #f1f5ee; font-size: 12px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.popoverEmpty { margin: 0; padding: 16px 12px; color: #6f796b; font-size: 13px; text-align: center; }
+.popoverFoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-top: 1px solid #edf1ea; background: #fafcf9; font-size: 12px; color: #6f796b; }
+.popoverFoot button { margin-left: auto; padding: 4px 10px; border: 1px solid #cfe0c8; border-radius: 8px; background: #fff; color: #28751b; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.popoverFoot button:hover { border-color: #9fba94; background: #f3f9f0; }
+
 .backdrop {
   position: fixed;
   z-index: 120;
   inset: 0;
   display: flex;
   justify-content: flex-end;
-  background: rgb(21 28 20 / 44%);
-  backdrop-filter: blur(5px);
+  /* Keep the order list behind the drawer readable: no dimming or blur.
+     The transparent layer still closes the drawer when clicked. */
+  background: transparent;
   animation: fadeIn .2s ease-out;
 }
 .drawer {
-  width: min(1180px, calc(100vw - 52px));
+  /* Narrow enough that, on a 1920px screen, the list's ID, date, total and status stay visible. */
+  width: min(960px, calc(100vw - 52px));
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -39,11 +93,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 18px 24px;
+  padding: 12px 20px;
   border-bottom: 1px solid #dfe6dc;
   background: rgb(255 255 255 / 94%);
   backdrop-filter: blur(10px);
 }
+.drawerTitle { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; min-width: 0; }
 .drawerHeader p { margin: 0 0 2px; color: #788173; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .drawerHeader h2 { margin: 0; color: #202820; font-size: 21px; overflow-wrap: anywhere; }
 .drawerHeader button {
@@ -64,7 +119,9 @@
 .drawerHeader button svg { display: block; width: 22px; height: 22px; margin: 0; flex: 0 0 22px; }
 .drawerHeader button:hover { border-color: #9fba94; background: #f4f8f1; color: #28601d; }
 .drawerHeader button:focus-visible { outline: 3px solid rgb(49 131 22 / 30%); outline-offset: 2px; }
-.drawerBody { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; }
+.drawerBody { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 20px 20px; }
+/* The shared `.live-data .live-tools` top margin doubled the body padding above the action buttons. */
+.drawerBody :global(.operation-panel > .live-tools:first-child) { margin-top: 0; }
 .state { display: grid; place-items: center; min-height: 240px; color: #687363; text-align: center; }
 .state p { margin: 0 0 14px; color: #a33434; }
 .state button { padding: 9px 14px; border: 1px solid #b9c9b3; border-radius: 8px; background: #fff; cursor: pointer; }
