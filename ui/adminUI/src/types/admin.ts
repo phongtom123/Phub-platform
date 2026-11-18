@@ -2,6 +2,7 @@ export type ModuleKey =
   | "dashboard"
   | "reports"
   | "customer-insights"
+  | "product-insights"
   | "surveys"
   | "interests"
   | "reviews"

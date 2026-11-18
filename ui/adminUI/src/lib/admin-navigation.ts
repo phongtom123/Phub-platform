@@ -4,6 +4,7 @@ const moduleKeys: ModuleKey[] = [
   "dashboard",
   "reports",
   "customer-insights",
+  "product-insights",
   "surveys",
   "interests",
   "reviews",
@@ -45,6 +46,7 @@ const sectionToModule: Record<string, ModuleKey> = {
   support: "support",
   reports: "reports",
   "customer-insights": "customer-insights",
+  "product-insights": "product-insights",
   surveys: "surveys",
   interests: "interests",
   reviews: "reviews",
@@ -61,6 +63,7 @@ export function getModuleHref(moduleKey: ModuleKey) {
   if (moduleKey === "support") return "/support";
   if (moduleKey === "reports") return "/reports";
   if (moduleKey === "customer-insights") return "/customer-insights";
+  if (moduleKey === "product-insights") return "/product-insights";
   return moduleKey === "dashboard" ? "/" : `/?module=${moduleKey}`;
 }
 

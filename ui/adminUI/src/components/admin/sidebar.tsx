@@ -31,7 +31,7 @@ import { canOpenModule } from "../../../../shared/internal-access";
 import { useAdminAuth } from "./auth-provider";
 
 const navigation = [
-  { label: "TỔNG QUAN", items: [["dashboard", "Tổng quan", LayoutDashboard], ["customer-insights", "Tổng quan khách hàng", Users]] },
+  { label: "TỔNG QUAN", items: [["dashboard", "Tổng quan", LayoutDashboard], ["customer-insights", "Tổng quan khách hàng", Users], ["product-insights", "Sản phẩm & hóa đơn", BarChart3]] },
   {
     label: "BÁN HÀNG",
     items: [
