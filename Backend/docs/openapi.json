@@ -948,6 +948,88 @@
         "title": "BrandList",
         "type": "object"
       },
+      "BrandStat": {
+        "properties": {
+          "brand": {
+            "title": "Brand",
+            "type": "string"
+          },
+          "categories": {
+            "description": "Theo loại, chỉ sản phẩm của thương hiệu này",
+            "items": {
+              "$ref": "#/components/schemas/CategoryStat"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "product_count": {
+            "title": "Product Count",
+            "type": "integer"
+          },
+          "quantity_sold": {
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          },
+          "revenue_percentage": {
+            "title": "Revenue Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "brand",
+          "product_count",
+          "quantity_sold",
+          "revenue",
+          "revenue_percentage",
+          "categories"
+        ],
+        "title": "BrandStat",
+        "type": "object"
+      },
+      "BreakdownItem": {
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "amount_percentage": {
+            "description": "Tỷ trọng theo số tiền (amount)",
+            "title": "Amount Percentage",
+            "type": "number"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "percentage": {
+            "description": "Tỷ trọng theo số lượng (count)",
+            "title": "Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "count",
+          "amount",
+          "percentage",
+          "amount_percentage"
+        ],
+        "title": "BreakdownItem",
+        "type": "object"
+      },
       "BusinessReport": {
         "properties": {
           "basis": {
@@ -2032,6 +2114,56 @@
           "items"
         ],
         "title": "CategoryList",
+        "type": "object"
+      },
+      "CategoryStat": {
+        "properties": {
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "category_id": {
+            "title": "Category Id",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "inventory_value": {
+            "title": "Inventory Value",
+            "type": "string"
+          },
+          "product_count": {
+            "description": "Sản phẩm đang bán trong loại",
+            "title": "Product Count",
+            "type": "integer"
+          },
+          "quantity_sold": {
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "revenue": {
+            "description": "Doanh thu chưa thuế, sau giảm giá, của hóa đơn đơn chưa hủy",
+            "title": "Revenue",
+            "type": "string"
+          },
+          "revenue_percentage": {
+            "title": "Revenue Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "category_id",
+          "category_name",
+          "product_count",
+          "available_units",
+          "inventory_value",
+          "quantity_sold",
+          "revenue",
+          "revenue_percentage"
+        ],
+        "title": "CategoryStat",
         "type": "object"
       },
       "CategoryTree": {
@@ -4892,6 +5024,138 @@
           "items"
         ],
         "title": "InvoiceOverview",
+        "type": "object"
+      },
+      "InvoiceSummary": {
+        "properties": {
+          "avg_invoice_value": {
+            "title": "Avg Invoice Value",
+            "type": "string"
+          },
+          "cancelled_invoices": {
+            "title": "Cancelled Invoices",
+            "type": "integer"
+          },
+          "collected_amount": {
+            "description": "Thu thành công trừ hoàn tiền thành công của hóa đơn đơn chưa hủy",
+            "title": "Collected Amount",
+            "type": "string"
+          },
+          "discount_amount": {
+            "title": "Discount Amount",
+            "type": "string"
+          },
+          "items_sold": {
+            "description": "Tổng số lượng sản phẩm trên hóa đơn của đơn chưa hủy",
+            "title": "Items Sold",
+            "type": "integer"
+          },
+          "outstanding_amount": {
+            "description": "Phần còn phải thu của hóa đơn đơn chưa hủy",
+            "title": "Outstanding Amount",
+            "type": "string"
+          },
+          "paid_invoices": {
+            "title": "Paid Invoices",
+            "type": "integer"
+          },
+          "partial_invoices": {
+            "title": "Partial Invoices",
+            "type": "integer"
+          },
+          "pre_tax_amount": {
+            "title": "Pre Tax Amount",
+            "type": "string"
+          },
+          "tax_amount": {
+            "title": "Tax Amount",
+            "type": "string"
+          },
+          "total_amount": {
+            "description": "Tổng sau thuế của hóa đơn đơn chưa hủy",
+            "title": "Total Amount",
+            "type": "string"
+          },
+          "total_invoices": {
+            "description": "Mọi hóa đơn lập trong kỳ, kể cả của đơn đã hủy",
+            "title": "Total Invoices",
+            "type": "integer"
+          },
+          "unpaid_invoices": {
+            "title": "Unpaid Invoices",
+            "type": "integer"
+          },
+          "valid_invoices": {
+            "description": "Hóa đơn của đơn chưa hủy",
+            "title": "Valid Invoices",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_invoices",
+          "valid_invoices",
+          "cancelled_invoices",
+          "total_amount",
+          "pre_tax_amount",
+          "tax_amount",
+          "discount_amount",
+          "avg_invoice_value",
+          "collected_amount",
+          "outstanding_amount",
+          "paid_invoices",
+          "partial_invoices",
+          "unpaid_invoices",
+          "items_sold"
+        ],
+        "title": "InvoiceSummary",
+        "type": "object"
+      },
+      "InvoiceTimelinePoint": {
+        "properties": {
+          "collected": {
+            "title": "Collected",
+            "type": "string"
+          },
+          "invoice_count": {
+            "title": "Invoice Count",
+            "type": "integer"
+          },
+          "items_sold": {
+            "title": "Items Sold",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "pre_tax": {
+            "title": "Pre Tax",
+            "type": "string"
+          },
+          "tax": {
+            "title": "Tax",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "period",
+          "label",
+          "invoice_count",
+          "pre_tax",
+          "tax",
+          "total",
+          "collected",
+          "items_sold"
+        ],
+        "title": "InvoiceTimelinePoint",
         "type": "object"
       },
       "InvoiceTotals": {
@@ -8060,6 +8324,43 @@
         "title": "PricePreview",
         "type": "object"
       },
+      "PriceRangeItem": {
+        "properties": {
+          "categories": {
+            "description": "Theo loại, chỉ các sản phẩm đang bán trong khoảng giá này",
+            "items": {
+              "$ref": "#/components/schemas/CategoryStat"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "percentage": {
+            "title": "Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "count",
+          "percentage",
+          "categories"
+        ],
+        "title": "PriceRangeItem",
+        "type": "object"
+      },
       "PricingConfig": {
         "additionalProperties": false,
         "properties": {
@@ -8142,6 +8443,34 @@
         "title": "ProductAvailability",
         "type": "object"
       },
+      "ProductChannelStat": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "quantity",
+          "revenue"
+        ],
+        "title": "ProductChannelStat",
+        "type": "object"
+      },
       "ProductGallery": {
         "properties": {
           "images": {
@@ -8215,6 +8544,116 @@
           "top_products"
         ],
         "title": "ProductInsightsData",
+        "type": "object"
+      },
+      "ProductInvoiceInsightsReport": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryStat"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "invoice_sources": {
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            },
+            "title": "Invoice Sources",
+            "type": "array"
+          },
+          "invoice_status": {
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            },
+            "title": "Invoice Status",
+            "type": "array"
+          },
+          "invoice_summary": {
+            "$ref": "#/components/schemas/InvoiceSummary"
+          },
+          "low_stock_products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductSalesItem"
+            },
+            "title": "Low Stock Products",
+            "type": "array"
+          },
+          "payment_methods": {
+            "description": "Khoản thu thành công (THU) của hóa đơn trong kỳ",
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            },
+            "title": "Payment Methods",
+            "type": "array"
+          },
+          "price_ranges": {
+            "items": {
+              "$ref": "#/components/schemas/PriceRangeItem"
+            },
+            "title": "Price Ranges",
+            "type": "array"
+          },
+          "product_summary": {
+            "$ref": "#/components/schemas/ProductSummary"
+          },
+          "range": {
+            "$ref": "#/components/schemas/ReportRange"
+          },
+          "sales_channels": {
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            },
+            "title": "Sales Channels",
+            "type": "array"
+          },
+          "slow_products": {
+            "description": "Sản phẩm đang bán còn tồn khả dụng nhưng không bán được trong kỳ",
+            "items": {
+              "$ref": "#/components/schemas/ProductSalesItem"
+            },
+            "title": "Slow Products",
+            "type": "array"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/InvoiceTimelinePoint"
+            },
+            "title": "Timeline",
+            "type": "array"
+          },
+          "top_brands": {
+            "items": {
+              "$ref": "#/components/schemas/BrandStat"
+            },
+            "title": "Top Brands",
+            "type": "array"
+          },
+          "top_products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductSalesItem"
+            },
+            "title": "Top Products",
+            "type": "array"
+          }
+        },
+        "required": [
+          "range",
+          "product_summary",
+          "invoice_summary",
+          "invoice_status",
+          "payment_methods",
+          "sales_channels",
+          "invoice_sources",
+          "timeline",
+          "categories",
+          "top_products",
+          "slow_products",
+          "low_stock_products",
+          "price_ranges",
+          "top_brands"
+        ],
+        "title": "ProductInvoiceInsightsReport",
         "type": "object"
       },
       "ProductPage": {
@@ -8361,6 +8800,483 @@
           "items"
         ],
         "title": "ProductPurchaseStates",
+        "type": "object"
+      },
+      "ProductSalesItem": {
+        "properties": {
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "held_units": {
+            "title": "Held Units",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price": {
+            "title": "Price",
+            "type": "string"
+          },
+          "quantity_sold": {
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku",
+          "name",
+          "category_name",
+          "brand",
+          "price",
+          "quantity_sold",
+          "revenue",
+          "available_units",
+          "held_units"
+        ],
+        "title": "ProductSalesItem",
+        "type": "object"
+      },
+      "ProductSalesPoint": {
+        "properties": {
+          "invoice_count": {
+            "title": "Invoice Count",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "revenue": {
+            "title": "Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "period",
+          "label",
+          "quantity",
+          "revenue",
+          "invoice_count"
+        ],
+        "title": "ProductSalesPoint",
+        "type": "object"
+      },
+      "ProductSalesReport": {
+        "properties": {
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "channels": {
+            "items": {
+              "$ref": "#/components/schemas/ProductChannelStat"
+            },
+            "title": "Channels",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Giá bán hiện tại; NULL nếu SKU không còn trong danh mục",
+            "title": "Price"
+          },
+          "range": {
+            "$ref": "#/components/schemas/ReportRange"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ProductSalesSummary"
+          },
+          "timeline": {
+            "description": "Đủ mọi kỳ liên tiếp, kể cả kỳ không bán được",
+            "items": {
+              "$ref": "#/components/schemas/ProductSalesPoint"
+            },
+            "title": "Timeline",
+            "type": "array"
+          },
+          "warehouses": {
+            "items": {
+              "$ref": "#/components/schemas/ProductWarehouseStat"
+            },
+            "title": "Warehouses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sku",
+          "name",
+          "category_name",
+          "brand",
+          "price",
+          "status",
+          "range",
+          "summary",
+          "timeline",
+          "channels",
+          "warehouses"
+        ],
+        "title": "ProductSalesReport",
+        "type": "object"
+      },
+      "ProductSalesSummary": {
+        "properties": {
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "avg_unit_price": {
+            "description": "Doanh thu / số lượng bán; 0 khi chưa bán",
+            "title": "Avg Unit Price",
+            "type": "string"
+          },
+          "held_units": {
+            "title": "Held Units",
+            "type": "integer"
+          },
+          "invoice_count": {
+            "title": "Invoice Count",
+            "type": "integer"
+          },
+          "physical_units": {
+            "title": "Physical Units",
+            "type": "integer"
+          },
+          "quantity_sold": {
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "revenue": {
+            "description": "Doanh thu chưa thuế, sau giảm giá",
+            "title": "Revenue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quantity_sold",
+          "revenue",
+          "invoice_count",
+          "avg_unit_price",
+          "physical_units",
+          "held_units",
+          "available_units"
+        ],
+        "title": "ProductSalesSummary",
+        "type": "object"
+      },
+      "ProductStockList": {
+        "properties": {
+          "categories": {
+            "description": "Các loại sản phẩm để lọc",
+            "items": {
+              "$ref": "#/components/schemas/StockListCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StockListItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "low_stock_threshold": {
+            "title": "Low Stock Threshold",
+            "type": "integer"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "PAUSED",
+              "HIDDEN",
+              "ALL"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total": {
+            "description": "Số sản phẩm khớp bộ lọc (mọi trang)",
+            "title": "Total",
+            "type": "integer"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/StockListTotals",
+            "description": "Cộng dồn trên mọi sản phẩm khớp bộ lọc, không chỉ trang hiện tại"
+          },
+          "view": {
+            "enum": [
+              "products",
+              "stock",
+              "low",
+              "value",
+              "sales"
+            ],
+            "title": "View",
+            "type": "string"
+          },
+          "warehouses": {
+            "description": "Tồn theo kho đang hoạt động của các sản phẩm khớp bộ lọc",
+            "items": {
+              "$ref": "#/components/schemas/StockListWarehouse"
+            },
+            "title": "Warehouses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "view",
+          "status",
+          "category",
+          "q",
+          "start",
+          "end",
+          "page",
+          "page_size",
+          "total",
+          "low_stock_threshold",
+          "totals",
+          "warehouses",
+          "categories",
+          "items"
+        ],
+        "title": "ProductStockList",
+        "type": "object"
+      },
+      "ProductSummary": {
+        "properties": {
+          "active_products": {
+            "title": "Active Products",
+            "type": "integer"
+          },
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "held_units": {
+            "description": "Phần tồn đang giữ cho đơn MOI/XAC_NHAN/DANG_CHUAN_BI đã có hóa đơn hoặc khoản thu thành công",
+            "title": "Held Units",
+            "type": "integer"
+          },
+          "hidden_products": {
+            "title": "Hidden Products",
+            "type": "integer"
+          },
+          "inventory_value": {
+            "description": "Tồn khả dụng của sản phẩm đang bán × giá bán hiện tại; không phải giá vốn",
+            "title": "Inventory Value",
+            "type": "string"
+          },
+          "low_stock_products": {
+            "description": "Sản phẩm đang bán có tồn khả dụng từ 1 đến ngưỡng sắp hết",
+            "title": "Low Stock Products",
+            "type": "integer"
+          },
+          "low_stock_threshold": {
+            "title": "Low Stock Threshold",
+            "type": "integer"
+          },
+          "out_of_stock_products": {
+            "description": "Sản phẩm đang bán có tồn khả dụng = 0",
+            "title": "Out Of Stock Products",
+            "type": "integer"
+          },
+          "paused_products": {
+            "title": "Paused Products",
+            "type": "integer"
+          },
+          "physical_units": {
+            "description": "Tồn thực tế trong các kho đang hoạt động",
+            "title": "Physical Units",
+            "type": "integer"
+          },
+          "total_categories": {
+            "title": "Total Categories",
+            "type": "integer"
+          },
+          "total_products": {
+            "description": "Sản phẩm chưa ẩn (đang bán + tạm ngưng)",
+            "title": "Total Products",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_products",
+          "active_products",
+          "paused_products",
+          "hidden_products",
+          "total_categories",
+          "physical_units",
+          "held_units",
+          "available_units",
+          "out_of_stock_products",
+          "low_stock_products",
+          "low_stock_threshold",
+          "inventory_value"
+        ],
+        "title": "ProductSummary",
+        "type": "object"
+      },
+      "ProductWarehouseStat": {
+        "properties": {
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "held_units": {
+            "title": "Held Units",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "physical_units": {
+            "title": "Physical Units",
+            "type": "integer"
+          },
+          "quantity_sold": {
+            "description": "Số lượng xuất từ kho này trên hóa đơn của đơn chưa hủy trong kỳ",
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "warehouse_id",
+          "name",
+          "physical_units",
+          "held_units",
+          "available_units",
+          "quantity_sold"
+        ],
+        "title": "ProductWarehouseStat",
         "type": "object"
       },
       "PublicReview": {
@@ -9277,6 +10193,52 @@
           "name"
         ],
         "title": "RegisteredUser",
+        "type": "object"
+      },
+      "ReportRange": {
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ngày kết thúc lọc theo thời gian lập hóa đơn; NULL = đến nay",
+            "title": "End"
+          },
+          "period_type": {
+            "enum": [
+              "month",
+              "quarter",
+              "year"
+            ],
+            "title": "Period Type",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ngày bắt đầu lọc theo thời gian lập hóa đơn; NULL = từ đầu",
+            "title": "Start"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "period_type"
+        ],
+        "title": "ReportRange",
         "type": "object"
       },
       "ResourceColumn": {
@@ -10698,6 +11660,180 @@
           "created_at"
         ],
         "title": "StockEvent",
+        "type": "object"
+      },
+      "StockListCategory": {
+        "properties": {
+          "category_id": {
+            "title": "Category Id",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category_id",
+          "category_name"
+        ],
+        "title": "StockListCategory",
+        "type": "object"
+      },
+      "StockListItem": {
+        "properties": {
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "category_id": {
+            "title": "Category Id",
+            "type": "string"
+          },
+          "category_name": {
+            "title": "Category Name",
+            "type": "string"
+          },
+          "held_units": {
+            "title": "Held Units",
+            "type": "integer"
+          },
+          "inventory_value": {
+            "description": "Tồn khả dụng × giá bán hiện tại",
+            "title": "Inventory Value",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "physical_units": {
+            "title": "Physical Units",
+            "type": "integer"
+          },
+          "price": {
+            "title": "Price",
+            "type": "string"
+          },
+          "quantity_sold": {
+            "description": "Số lượng trên hóa đơn của đơn chưa hủy trong kỳ",
+            "title": "Quantity Sold",
+            "type": "integer"
+          },
+          "revenue": {
+            "description": "Doanh thu chưa thuế, sau giảm giá, trong kỳ",
+            "title": "Revenue",
+            "type": "string"
+          },
+          "sku": {
+            "title": "Sku",
+            "type": "string"
+          },
+          "status": {
+            "description": "1 đang bán, 2 tạm ngưng, 0 đã ẩn",
+            "title": "Status",
+            "type": "integer"
+          },
+          "value_percentage": {
+            "description": "Tỷ trọng giá trị tồn trong tập đã lọc",
+            "title": "Value Percentage",
+            "type": "number"
+          }
+        },
+        "required": [
+          "sku",
+          "name",
+          "category_id",
+          "category_name",
+          "brand",
+          "price",
+          "status",
+          "physical_units",
+          "held_units",
+          "available_units",
+          "inventory_value",
+          "value_percentage",
+          "quantity_sold",
+          "revenue"
+        ],
+        "title": "StockListItem",
+        "type": "object"
+      },
+      "StockListTotals": {
+        "properties": {
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "held_units": {
+            "title": "Held Units",
+            "type": "integer"
+          },
+          "inventory_value": {
+            "title": "Inventory Value",
+            "type": "string"
+          },
+          "physical_units": {
+            "title": "Physical Units",
+            "type": "integer"
+          },
+          "products": {
+            "title": "Products",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "products",
+          "physical_units",
+          "held_units",
+          "available_units",
+          "inventory_value"
+        ],
+        "title": "StockListTotals",
+        "type": "object"
+      },
+      "StockListWarehouse": {
+        "properties": {
+          "available_units": {
+            "title": "Available Units",
+            "type": "integer"
+          },
+          "held_units": {
+            "title": "Held Units",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "physical_units": {
+            "title": "Physical Units",
+            "type": "integer"
+          },
+          "warehouse_id": {
+            "title": "Warehouse Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "warehouse_id",
+          "name",
+          "physical_units",
+          "held_units",
+          "available_units"
+        ],
+        "title": "StockListWarehouse",
         "type": "object"
       },
       "StockStatus": {
@@ -19100,6 +20236,564 @@
           }
         ],
         "summary": "Thống kê tệp khách hàng: nhân khẩu học, mức chi tiêu trung bình, sản phẩm mua nhiều và định hướng phát triển (ADMIN)",
+        "tags": [
+          "Admin · CRM Analytics"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/crm/analytics/product-invoice-insights": {
+      "get": {
+        "operationId": "product_invoice_insights_api_crm_analytics_product_invoice_insights_get",
+        "parameters": [
+          {
+            "description": "Chu kỳ gom xu hướng hóa đơn: tháng, quý hoặc năm",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "month",
+              "description": "Chu kỳ gom xu hướng hóa đơn: tháng, quý hoặc năm",
+              "enum": [
+                "month",
+                "quarter",
+                "year"
+              ],
+              "title": "Period",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Ngày bắt đầu theo thời gian lập hóa đơn (tùy chọn)",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày bắt đầu theo thời gian lập hóa đơn (tùy chọn)",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Ngày kết thúc theo thời gian lập hóa đơn (tùy chọn)",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày kết thúc theo thời gian lập hóa đơn (tùy chọn)",
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInvoiceInsightsReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Thống kê sản phẩm, tồn kho khả dụng và hóa đơn: trạng thái thanh toán, phương thức, kênh bán, xu hướng (ADMIN)",
+        "tags": [
+          "Admin · CRM Analytics"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/crm/analytics/product-sales": {
+      "get": {
+        "operationId": "product_sales_api_crm_analytics_product_sales_get",
+        "parameters": [
+          {
+            "description": "Mã SKU của sản phẩm",
+            "in": "query",
+            "name": "sku",
+            "required": true,
+            "schema": {
+              "description": "Mã SKU của sản phẩm",
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Sku",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Chu kỳ gom: tháng, quý hoặc năm",
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "month",
+              "description": "Chu kỳ gom: tháng, quý hoặc năm",
+              "enum": [
+                "month",
+                "quarter",
+                "year"
+              ],
+              "title": "Period",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Ngày bắt đầu theo thời gian lập hóa đơn (tùy chọn)",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày bắt đầu theo thời gian lập hóa đơn (tùy chọn)",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Ngày kết thúc theo thời gian lập hóa đơn (tùy chọn)",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày kết thúc theo thời gian lập hóa đơn (tùy chọn)",
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSalesReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Không tìm thấy sản phẩm."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Không tìm thấy sản phẩm."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Diễn biến bán hàng của một sản phẩm theo kỳ, theo kênh và tồn khả dụng theo kho (ADMIN)",
+        "tags": [
+          "Admin · CRM Analytics"
+        ],
+        "x-roles": [
+          "NHAN_VIEN"
+        ]
+      }
+    },
+    "/api/crm/analytics/product-stock": {
+      "get": {
+        "operationId": "product_stock_api_crm_analytics_product_stock_get",
+        "parameters": [
+          {
+            "description": "products: theo tên; stock: tồn khả dụng giảm dần; low: hết/sắp hết; value: giá trị tồn giảm dần; sales: bán chạy trong kỳ",
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "products",
+              "description": "products: theo tên; stock: tồn khả dụng giảm dần; low: hết/sắp hết; value: giá trị tồn giảm dần; sales: bán chạy trong kỳ",
+              "enum": [
+                "products",
+                "stock",
+                "low",
+                "value",
+                "sales"
+              ],
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Trạng thái sản phẩm",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "ACTIVE",
+              "description": "Trạng thái sản phẩm",
+              "enum": [
+                "ACTIVE",
+                "PAUSED",
+                "HIDDEN",
+                "ALL"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Mã loại sản phẩm",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Mã loại sản phẩm",
+              "title": "Category"
+            }
+          },
+          {
+            "description": "Tìm theo tên hoặc SKU, không phân biệt dấu",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Tìm theo tên hoặc SKU, không phân biệt dấu",
+              "title": "Q"
+            }
+          },
+          {
+            "description": "Ngày bắt đầu tính số lượng đã bán theo thời gian lập hóa đơn",
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày bắt đầu tính số lượng đã bán theo thời gian lập hóa đơn",
+              "title": "Start"
+            }
+          },
+          {
+            "description": "Ngày kết thúc tính số lượng đã bán",
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ngày kết thúc tính số lượng đã bán",
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductStockList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Chưa đăng nhập, phiên hết hạn hoặc tài khoản không hoạt động."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Role không có quyền xem dữ liệu này."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Role không có quyền xem dữ liệu này."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": [
+                    {
+                      "loc": [
+                        "body",
+                        "ten_sp"
+                      ],
+                      "msg": "Field required",
+                      "type": "missing"
+                    }
+                  ]
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Tham số hoặc kiểu dữ liệu không hợp lệ."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            },
+            "description": "Backend chưa cấu hình hoặc dịch vụ database không khả dụng."
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Danh sách sản phẩm, tồn khả dụng, hết/sắp hết hàng và giá trị tồn, có lọc và phân trang (ADMIN)",
         "tags": [
           "Admin · CRM Analytics"
         ],

@@ -457,3 +457,16 @@ test("customer gateway exposes only authenticated commerce contracts", async () 
   ]) assert.equal((await proxy(new Request("http://localhost:3001/api/backend/x", { method }), segments)).status, 404);
   assert.equal(calls, 0);
 });
+
+test("CRM analytics gateway forwards only GET for customer and product/invoice insights", async () => {
+  const calls = [];
+  const proxy = gateway(async (url, options) => { calls.push({ url: String(url), method: options.method }); return Response.json({}); });
+  for (const name of ["customer-insights", "product-invoice-insights", "product-sales", "product-stock"]) {
+    assert.equal((await proxy(new Request(`http://localhost/x?period=month&start=2026-05-01`), ["crm", "analytics", name])).status, 200);
+    assert.equal((await proxy(new Request("http://localhost/x", { method: "POST", headers: { Origin: "http://localhost:3000" }, body: "{}" }), ["crm", "analytics", name])).status, 404);
+  }
+  assert.equal((await proxy(new Request("http://localhost/x"), ["crm", "analytics", "anything"])).status, 404);
+  assert.equal((await proxy(new Request("http://localhost/x"), ["crm", "analytics", "product-invoice-insights", "x"])).status, 404);
+  assert.deepEqual(calls.map(call => call.method), ["GET", "GET", "GET", "GET"]);
+  assert.match(calls[1].url, /\/api\/crm\/analytics\/product-invoice-insights\?period=month&start=2026-05-01$/);
+});

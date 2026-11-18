@@ -5,6 +5,7 @@ export const moduleNames: Record<ModuleKey, string> = {
   dashboard: "Tổng quan",
   reports: "Báo cáo kinh doanh",
   "customer-insights": "Tổng quan khách hàng",
+  "product-insights": "Sản phẩm & hóa đơn",
   surveys: "Khảo sát khách hàng",
   interests: "Sở thích khách hàng",
   reviews: "Đánh giá sản phẩm",

@@ -121,7 +121,7 @@ function validCrmPath(path: string[], method: string): boolean {
   if (path[0] === "crm" && path.length === 2 && path[1] === "survey-audience") return method === "POST";
   if (path[0] === "crm" && path.length === 2 && path[1] === "interests") return method === "GET";
   if (path[0] === "crm" && path.length === 2 && ["report", "review-insights"].includes(path[1])) return method === "GET";
-  if (path[0] === "crm" && path.length === 3 && path[1] === "analytics" && path[2] === "customer-insights") return method === "GET";
+  if (path[0] === "crm" && path.length === 3 && path[1] === "analytics" && ["customer-insights", "product-invoice-insights", "product-sales", "product-stock"].includes(path[2])) return method === "GET";
   if (path[0] === "crm" && path[1] === "surveys") {
     if (path.length === 2) return ["GET", "POST"].includes(method);
     if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(path[2] ?? "")) return false;
