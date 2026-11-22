@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class ReportRange(BaseModel):
     start: date | None = Field(description="Ngày bắt đầu lọc theo thời gian lập hóa đơn; NULL = từ đầu")
     end: date | None = Field(description="Ngày kết thúc lọc theo thời gian lập hóa đơn; NULL = đến nay")
-    period_type: Literal["month", "quarter", "year"]
+    period_type: Literal["day", "month", "quarter", "year"]
 
 
 class ProductSummary(BaseModel):

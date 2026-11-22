@@ -86,6 +86,7 @@ function stockList(q) {
 
 async function stockScenario(context, stockRequests, productRequests) {
   const page = await context.newPage();
+  await page.clock.setFixedTime(new Date('2026-11-22T03:00:00Z'));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(base + '/product-insights', { waitUntil: 'domcontentloaded' });
@@ -270,12 +271,15 @@ async function stockScenario(context, stockRequests, productRequests) {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
     const context = await browser.newContext({ viewport: { width: 1500, height: 1000 } });
-    const errors = [], productRequests = [], stockRequests = [];
+    const errors = [], productRequests = [], stockRequests = [], insightsRequests = [];
     await context.route('**/api/backend/**', async route => {
       assert.equal(route.request().method(), 'GET', 'All writes are forbidden');
       const url = new URL(route.request().url()), apiPath = url.pathname.replace('/api/backend/', ''), q = url.searchParams;
       if (apiPath === 'auth/me') return route.fulfill({ json: { account_id: 'AD-FIXTURE', username: 'fixture', role: 'ADMIN', name: 'Admin Fixture', employee_id: 'NV-FIXTURE', warehouse_id: null, customer_id: null } });
-      if (apiPath === 'crm/analytics/product-invoice-insights') return route.fulfill({ json: report(q.get('period'), q.get('start'), q.get('end')) });
+      if (apiPath === 'crm/analytics/product-invoice-insights') {
+        insightsRequests.push(Object.fromEntries(q));
+        return route.fulfill({ json: report(q.get('period'), q.get('start'), q.get('end')) });
+      }
       if (apiPath === 'crm/analytics/product-sales') {
         productRequests.push(Object.fromEntries(q));
         return route.fulfill({ json: productSales(q.get('sku'), q.get('period'), q.get('start'), q.get('end')) });
@@ -289,13 +293,15 @@ async function stockScenario(context, stockRequests, productRequests) {
     });
     await stockScenario(context, stockRequests, productRequests);
     const page = await context.newPage();
+    await page.clock.setFixedTime(new Date('2026-11-22T03:00:00Z'));
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base + '/product-insights', { waitUntil: 'domcontentloaded' });
     await page.getByText('Sản phẩm bán chạy', { exact: true }).waitFor();
 
     // Click the product name: the drawer opens with that product's chart, using the page's period and range.
-    await page.getByRole('button', { name: '90 ngày' }).click();
-    await page.getByRole('button', { name: 'Theo Quý' }).click();
+    const pageFilter = page.getByRole('group', { name: 'Bộ lọc toàn trang', exact: true });
+    await pageFilter.getByRole('button', { name: '90 ngày' }).click();
+    await pageFilter.getByRole('button', { name: 'Theo Quý' }).click();
     await page.getByRole('button', { name: 'VGA ASUS RTX 4070 Fixture' }).first().click();
     const dialog = page.getByRole('dialog', { name: 'VGA ASUS RTX 4070 Fixture' });
     await dialog.waitFor();
@@ -357,6 +363,102 @@ async function stockScenario(context, stockRequests, productRequests) {
     if (shots) await page.screenshot({ path: path.join(shots, 'product-drawer-mobile.png') });
     const overflow = await page.evaluate(() => document.querySelector('[role="dialog"]').scrollWidth - document.querySelector('[role="dialog"]').clientWidth);
     assert.ok(overflow <= 1, `Drawer scrolls horizontally on mobile (${overflow}px)`);
+
+    // The product's dates are independently selectable; edits wait for Apply.
+    const filteredResponse = (path, expected) => page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.pathname.endsWith(path) && Object.entries(expected).every(([key, value]) => url.searchParams.get(key) === value);
+    });
+    await second.getByLabel('Chọn thời gian').selectOption('month');
+    await second.getByLabel('Tháng', { exact: true }).fill('2024-02');
+    const monthRead = filteredResponse('product-sales', { start: '2024-02-01', end: '2024-02-29' });
+    await second.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+    await monthRead;
+    await second.getByText(/Hóa đơn lập từ 2024-02-01 đến 2024-02-29/).waitFor();
+
+    await second.getByLabel('Chọn thời gian').selectOption('custom');
+    await second.getByLabel('Từ ngày', { exact: true }).fill('2026-11-20');
+    assert.equal(await second.getByLabel('Đến ngày', { exact: true }).evaluate(input => input === document.activeElement), true);
+    await second.getByLabel('Đến ngày', { exact: true }).fill('2026-11-19');
+    const beforeInvalid = productRequests.length;
+    await second.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+    await second.getByRole('alert').filter({ hasText: 'Ngày bắt đầu' }).waitFor();
+    assert.equal(productRequests.length, beforeInvalid, 'reversed dates must not request new figures');
+    await second.getByLabel('Đến ngày', { exact: true }).fill('2026-11-22');
+    const customRead = filteredResponse('product-sales', { start: '2026-11-20', end: '2026-11-22' });
+    await second.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+    await customRead;
+    await second.getByText(/Hóa đơn lập từ 2026-11-20 đến 2026-11-22/).waitFor();
+    const dailyRead = filteredResponse('product-sales', { period: 'day', start: '2026-11-20', end: '2026-11-22' });
+    await second.getByRole('button', { name: 'Theo Ngày', exact: true }).click();
+    await dailyRead;
+    await second.getByRole('heading', { name: 'Số lượng bán theo ngày', exact: true }).waitFor();
+
+    await second.getByLabel('Chọn thời gian').selectOption('day');
+    assert.equal(await second.getByLabel('Ngày', { exact: true }).getAttribute('max'), '2026-11-22');
+    await second.getByLabel('Ngày', { exact: true }).fill('2026-11-23');
+    const beforeFuture = productRequests.length;
+    await second.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+    assert.equal(await second.getByLabel('Ngày', { exact: true }).evaluate(input => input.validity.rangeOverflow), true);
+    assert.equal(productRequests.length, beforeFuture, 'future days must not load a report');
+    await second.getByLabel('Ngày', { exact: true }).fill('2026-11-22');
+    const singleRead = filteredResponse('product-sales', { period: 'day', start: '2026-11-22', end: '2026-11-22' });
+    await second.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+    await singleRead;
+    await second.getByText(/Hóa đơn lập từ 2026-11-22 đến 2026-11-22/).waitFor();
+    // Clear only the draft inputs: no request and no implicit all-time report.
+    const readsBeforeClear = productRequests.length;
+    await second.getByRole('button', { name: 'Xóa ngày', exact: true }).click();
+    assert.equal(await second.getByLabel('Chọn thời gian').inputValue(), 'day');
+    assert.equal(await second.getByLabel('Ngày', { exact: true }).inputValue(), '');
+    assert.equal(productRequests.length, readsBeforeClear);
+    await second.getByText(/Hóa đơn lập từ 2026-11-22 đến 2026-11-22/).waitFor();
+    assert.ok(await second.evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'date controls fit mobile width');
+    if (shots) await page.screenshot({ path: path.join(shots, 'product-drawer-custom-dates-mobile.png') });
+    await page.keyboard.press('Escape');
+    await second.waitFor({ state: 'detached' });
+    assert.equal(await pageFilter.getByRole('button', { name: '90 ngày', exact: true }).getAttribute('aria-pressed'), 'true', 'product dates do not silently change the main report');
+
+    // The same controls filter the whole report, including its daily trend/export snapshot.
+    await pageFilter.getByLabel('Chọn thời gian').selectOption('month');
+    await pageFilter.getByLabel('Tháng', { exact: true }).fill('2026-11');
+    assert.equal(await pageFilter.getByLabel('Tháng', { exact: true }).getAttribute('max'), '2026-11');
+    const overviewMonth = filteredResponse('product-invoice-insights', { start: '2026-11-01', end: '2026-11-22' });
+    await pageFilter.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+    await overviewMonth;
+    const overviewDay = filteredResponse('product-invoice-insights', { period: 'day', start: '2026-11-01', end: '2026-11-22' });
+    await pageFilter.getByRole('button', { name: 'Theo Ngày', exact: true }).click();
+    await overviewDay;
+    await page.getByText('Sản phẩm bán chạy', { exact: true }).waitFor();
+
+    await pageFilter.getByRole('button', { name: 'Xóa ngày', exact: true }).click();
+    assert.equal(await pageFilter.getByLabel('Chọn thời gian').inputValue(), 'month');
+    assert.equal(await pageFilter.getByLabel('Tháng', { exact: true }).inputValue(), '');
+
+    // Chart dates are independent: only one extra read, no reload of the overview or stock lists.
+    const invoiceTrend = page.getByRole('region', { name: 'Xu hướng hóa đơn', exact: true });
+    const stockReads = stockRequests.length, beforeTrend = insightsRequests.length;
+    const mainTotal = await page.locator('[class*="metricsGrid"]').first().innerText();
+    await invoiceTrend.getByLabel('Chọn thời gian').selectOption('month');
+    await invoiceTrend.getByLabel('Tháng', { exact: true }).fill('2026-02');
+    const chartMonth = filteredResponse('product-invoice-insights', { period: 'day', start: '2026-02-01', end: '2026-02-28' });
+    await invoiceTrend.getByRole('button', { name: 'Áp dụng', exact: true }).click();
+    await chartMonth;
+    await invoiceTrend.locator('svg[role="img"]').waitFor();
+    assert.equal(insightsRequests.length, beforeTrend + 1);
+    assert.equal(stockRequests.length, stockReads);
+    assert.equal(await page.locator('[class*="metricsGrid"]').first().innerText(), mainTotal);
+    assert.equal(await pageFilter.getByLabel('Chọn thời gian').inputValue(), 'month');
+    assert.equal(await pageFilter.getByLabel('Tháng', { exact: true }).inputValue(), '');
+    const chartMonthly = filteredResponse('product-invoice-insights', { period: 'month', start: '2026-02-01', end: '2026-02-28' });
+    await invoiceTrend.getByRole('button', { name: 'Theo Tháng', exact: true }).click();
+    await chartMonthly;
+    await invoiceTrend.getByRole('heading', { name: /theo Tháng/ }).waitFor();
+    const beforeChartClear = insightsRequests.length;
+    await invoiceTrend.getByRole('button', { name: 'Xóa ngày', exact: true }).click();
+    assert.equal(await invoiceTrend.getByLabel('Tháng', { exact: true }).inputValue(), '');
+    assert.equal(insightsRequests.length, beforeChartClear);
+    assert.equal(await pageFilter.getByRole('button', { name: 'Theo Ngày', exact: true }).getAttribute('aria-pressed'), 'true');
 
     assert.deepEqual(errors, []);
     console.log('product-insights e2e: ok');

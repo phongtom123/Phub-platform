@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { BarChart3, PieChart, X } from "lucide-react";
 import { PieChartSVG, type ChartSlice } from "../customer-insights/pie-chart-svg";
 import { BarChart } from "./bar-chart";
+import { InsightsDateFilter } from "./insights-date-filter";
 import base from "../customer-insights/customer-insights.module.css";
 import styles from "./product-insights.module.css";
 import {
@@ -22,7 +23,7 @@ export type ChartKind = "bar" | "pie";
 // Validated categorical order (7 slots); gray is reserved for the folded "other periods" slice.
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
 const OTHER_COLOR = "#94a3b8";
-const PERIOD_LABELS: Record<InsightsPeriod, string> = { month: "tháng", quarter: "quý", year: "năm" };
+const PERIOD_LABELS: Record<InsightsPeriod, string> = { day: "ngày", month: "tháng", quarter: "quý", year: "năm" };
 const SERIES = "#14a800";
 
 function SalesBars({ points, metric }: { points: ProductSalesPoint[]; metric: Metric }) {
@@ -66,9 +67,11 @@ function SalesPie({ points, metric }: { points: ProductSalesPoint[]; metric: Met
   );
 }
 
-export function ProductSalesDrawer({ sku, period, range, chartKind, onChartKind, onClose }: {
+export function ProductSalesDrawer({ sku, period: initialPeriod, range: initialRange, chartKind, onChartKind, onClose }: {
   sku: string; period: InsightsPeriod; range: InsightsRange; chartKind: ChartKind; onChartKind: (kind: ChartKind) => void; onClose: () => void;
 }) {
+  const [period, setPeriod] = useState(initialPeriod);
+  const [range, setRange] = useState(initialRange);
   const [state, setState] = useState<{ key: string; report: ProductSalesReport | null; error: string | null }>({ key: "", report: null, error: null });
   const [metric, setMetric] = useState<Metric>("quantity");
   const [revision, setRevision] = useState(0);
@@ -118,6 +121,7 @@ export function ProductSalesDrawer({ sku, period, range, chartKind, onChartKind,
         </header>
 
         <div className={styles.drawerBody}>
+          <InsightsDateFilter period={period} range={range} onChange={(nextPeriod, nextRange) => { setPeriod(nextPeriod); setRange(nextRange); }} />
           {!report && !current.error && <div className={base.stateBox} role="status"><span>Đang tải biểu đồ sản phẩm…</span></div>}
           {current.error && (
             <div className={`${base.stateBox} ${base.errorBox}`} role="alert">
@@ -202,8 +206,8 @@ export function ProductSalesDrawer({ sku, period, range, chartKind, onChartKind,
                 <div className={base.card}>
                   <h3 className={styles.drawerCardTitle}>Theo kho</h3>
                   {report.warehouses.length === 0 ? <p className={styles.empty}>Chưa có tồn kho trong kho đang hoạt động.</p> : (
-                    <div style={{ overflowX: "auto" }}>
-                      <table className={base.timelineTable}>
+                      <table className={`${base.timelineTable} ${styles.warehouseTable}`}>
+                        <colgroup><col style={{ width: "40%" }} /><col style={{ width: "20%" }} /><col style={{ width: "20%" }} /><col style={{ width: "20%" }} /></colgroup>
                         <thead><tr><th>Kho</th><th className={styles.num}>Đã bán</th><th className={styles.num}>Đang giữ</th><th className={styles.num}>Khả dụng</th></tr></thead>
                         <tbody>
                           {report.warehouses.map(w => (
@@ -212,7 +216,6 @@ export function ProductSalesDrawer({ sku, period, range, chartKind, onChartKind,
                           ))}
                         </tbody>
                       </table>
-                    </div>
                   )}
                 </div>
               </div>
