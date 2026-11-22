@@ -3,17 +3,18 @@ import type { DataColumn } from "./inline-table-data";
 const hiddenColumns: Record<string, string[]> = {
   customers: ["ngay_tao", "cap_nhat_luc", "luu_tru_luc", "tinh_thanh_md", "xa_phuong_md"],
   products: ["mo_ta", "duong_dan_anh"],
-  invoices: ["tong_tien_giam"],
+  invoices: [
+    "tong_tien_giam", "tong_tien_truoc_thue", "tong_tien_thue",
+    "ma_so_thue", "dia_chi_nguoi_mua", "nguon_lap", "ma_tk_lap",
+    "han_thanh_toan", "huy_qua_han_luc",
+  ],
   receipts: ["ghi_chu"], transfers: ["ghi_chu"],
   promotions: ["ngay_tao", "ma_media_banner"], vouchers: ["ngay_tao"],
 };
 
 const leadingColumns: Record<string, string[]> = {
   invoices: [
-    "ma_hoadon", "ma_donhang",
-    "ten_nguoi_mua", "ma_so_thue", "dia_chi_nguoi_mua",
-    "tong_tien_truoc_thue", "tong_tien_thue", "tong_tien_sau_thue",
-    "nguon_lap", "nguoi_lap", "ma_tk_lap",
+    "ma_hoadon", "ma_donhang", "nguoi_lap", "ten_nguoi_mua", "tong_tien_sau_thue",
   ],
   payments: [
     "ma_thanh_toan", "ma_donhang", "ma_giao_dich",
@@ -23,7 +24,7 @@ const leadingColumns: Record<string, string[]> = {
 };
 
 const trailingColumns: Record<string, string[]> = {
-  invoices: ["thoi_gian_lap", "han_thanh_toan", "huy_qua_han_luc"],
+  invoices: ["thoi_gian_lap"],
 };
 
 function orderColumns(resource: string, columns: DataColumn[]): DataColumn[] {

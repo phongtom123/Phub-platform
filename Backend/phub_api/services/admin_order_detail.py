@@ -32,7 +32,7 @@ def money(value):
         raise HTTPException(409, "Số tiền của đơn không hợp lệ. Hãy đối chiếu dữ liệu thanh toán.") from None
 
 
-def financial_summary(invoice, payments):
+def financial_summary(invoice, payments, order_status=None):
     with localcontext() as context:
         context.prec = 50
         collected = refunded = Decimal("0.00")
@@ -52,7 +52,8 @@ def financial_summary(invoice, payments):
         if paid < 0:
             raise HTTPException(409, "Tiền đã hoàn vượt số đã thu. Hãy đối chiếu lịch sử thanh toán.")
         total = money(invoice.get("tong_tien_sau_thue")) if invoice else None
-        status = "CHUA_CO_HOA_DON" if total is None else (
+        cancelled = order_status == "HUY"
+        status = "DA_HUY" if cancelled else "CHUA_CO_HOA_DON" if total is None else (
             "THU_THUA" if paid > total else "DA_THU_DU" if paid == total else "CHUA_THU" if paid == 0 else "THU_MOT_PHAN")
         return {
             "invoice_id": invoice["ma_hoadon"] if invoice else None,
@@ -60,7 +61,9 @@ def financial_summary(invoice, payments):
             "total": format(total, ".2f") if total is not None else None,
             "collected": format(collected, ".2f"), "refunded": format(refunded, ".2f"),
             "paid": format(paid, ".2f"),
-            "remaining": format(max(Decimal(0), total - paid), ".2f") if total is not None else None,
+            # A cancelled order retains its invoice and cash history, but is no
+            # longer collectible. A positive paid balance is money to reconcile/refund.
+            "remaining": format(Decimal(0) if cancelled else max(Decimal(0), total - paid), ".2f") if total is not None else None,
         }
 
 
@@ -170,5 +173,5 @@ class AdminOrderDetailService:
             "employee": {k: employee.get(k) for k in ("ma_nhan_vien", "ho_ten")} if employee else None,
             "lines": lines, "invoice": invoice, "payments": payments, "voucher_uses": vouchers,
             "history": history,
-            "financial": financial_summary(invoice, payments),
+            "financial": financial_summary(invoice, payments, order.get("trang_thai")),
         }

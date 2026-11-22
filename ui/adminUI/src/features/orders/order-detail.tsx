@@ -81,7 +81,7 @@ export function OrderDetail({ row, columns, related, label, personName, version,
 
     <div className={styles.layout}>
       <div className={styles.mainColumn}>
-        <OrderFinancialSummary orderId={String(row.ma_donhang)} version={version} financial={detailData?.financial} onRefresh={onRefresh} />
+        <OrderFinancialSummary orderId={String(row.ma_donhang)} orderStatus={String(row.trang_thai ?? "")} version={version} financial={detailData?.financial} onRefresh={onRefresh} />
         {detailData && <OrderInvoiceSection detail={detailData} />}
         {detailData && <OrderPayments detail={detailData} />}
       </div>

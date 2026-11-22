@@ -122,6 +122,26 @@ def test_balance_states_and_large_amounts(detail_client, total, collected, statu
     assert response.json()["financial"]["remaining"] == remaining
 
 
+@pytest.mark.parametrize("refunded,net", [("0.00", "5390000.00"), ("1000000.00", "4390000.00"), ("5390000.00", "0.00")])
+def test_cancelled_order_preserves_cash_history_but_has_no_receivable(detail_client, refunded, net):
+    client, state, _ = detail_client
+    state["tables"]["DON_HANG"][0]["trang_thai"] = "HUY"
+    state["tables"]["HOA_DON"][0]["tong_tien_sau_thue"] = "5390000.00"
+    payments = [
+        {"ma_thanh_toan": 1, "ma_donhang": ORDER, "so_tien": "5390000.00", "loai_giao_dich": "THU", "trang_thai": "THANH_CONG"},
+        {"ma_thanh_toan": 2, "ma_donhang": ORDER, "so_tien": refunded, "loai_giao_dich": "HOAN_TIEN", "trang_thai": "THANH_CONG"},
+    ]
+    state["tables"]["THANH_TOAN"] = payments
+    response = client.get(URL)
+    assert response.status_code == 200, response.text
+    financial = response.json()["financial"]
+    assert financial["payment_status"] == "DA_HUY"
+    assert financial["remaining"] == "0.00"
+    assert financial["collected"] == "5390000.00" and financial["refunded"] == refunded
+    assert financial["paid"] == net
+    assert state["tables"]["THANH_TOAN"] == payments
+
+
 def test_no_invoice_and_guest_order(detail_client):
     client, state, _ = detail_client
     state["tables"]["HOA_DON"] = []

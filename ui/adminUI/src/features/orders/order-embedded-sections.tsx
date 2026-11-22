@@ -82,8 +82,8 @@ function LineTotals({ lines }: { lines: DataRow[] }) {
 }
 
 /** Invoice header, product lines and totals in one card, so the whole invoice reads without scrolling. */
-function InvoiceBlock({ orderId, orderStatus, invoice, lines, vouchers }: {
-  orderId: string; orderStatus: string; invoice: DataRow | null; lines: DataRow[]; vouchers: DataRow[];
+function InvoiceBlock({ orderId, invoice, lines, vouchers }: {
+  orderId: string; invoice: DataRow | null; lines: DataRow[]; vouchers: DataRow[];
 }) {
   if (!invoice) return <section className={`${styles.card} order-invoice-block`} aria-labelledby="order-invoice-title">
     <div className={styles.sectionHeading}><div><h2 id="order-invoice-title"><ReceiptText size={18} aria-hidden="true" />Hóa đơn</h2>
@@ -113,7 +113,6 @@ function InvoiceBlock({ orderId, orderStatus, invoice, lines, vouchers }: {
         <Link href={invoiceHref}>Mở trang tra cứu</Link>
       </div>
     </div>
-    {orderStatus === "HUY" && <p className={styles.cancelledInvoice}>ĐƠN HÀNG ĐÃ HỦY — Hóa đơn giữ để đối chiếu, không dùng thu tiền.</p>}
     <dl className={styles.invoiceMeta}>
       <div><dt>Người mua</dt><dd>{text(invoice.ten_nguoi_mua)}</dd></div>
       <div><dt>Địa chỉ</dt><dd>{text(invoice.dia_chi_nguoi_mua)}</dd></div>
@@ -162,7 +161,7 @@ function ProcessingHistory({ history }: { history: AdminOrderDetailData["history
 }
 
 export function OrderInvoiceSection({ detail }: { detail: AdminOrderDetailData }) {
-  return <InvoiceBlock orderId={detail.order_id} orderStatus={String(detail.order.trang_thai ?? "")} invoice={detail.invoice} lines={detail.lines}
+  return <InvoiceBlock orderId={detail.order_id} invoice={detail.invoice} lines={detail.lines}
     vouchers={Array.isArray(detail.voucher_uses) ? detail.voucher_uses : []} />;
 }
 

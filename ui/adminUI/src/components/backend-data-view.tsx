@@ -424,7 +424,12 @@ function GenericBackendDataView({ resource, embedded = false }: { resource: stri
           rowActions={resource === "customers" ? (row, blocked) => <CustomerArchiveButton customerId={String(row.ma_kh)} archived={Boolean(row.luu_tru_luc)}
             disabled={blocked} onSaved={savedCustomerArchive} onSavingChange={customerMutationSaving} /> : undefined}
           label={label} href={href} onSaved={savedInline} onEditingChange={setInlineEditing} />
-        : <ScrollableTable><table><thead><tr>{listColumns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{listColumns.map(column => <td key={column.name}>{meta.keys.includes(column.name) ? <Link href={href(row)}>{displayValue(row, column)}</Link> : displayValue(row, column)}</td>)}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
+        : <ScrollableTable topRail={resource !== "invoices"}><table><thead><tr>{listColumns.map(column => <th key={column.name}>{label(column.name)}</th>)}<th>Thao tác</th></tr></thead><tbody>{result?.data.map(row => <tr key={JSON.stringify(meta.keys.map(key => row[key]))}>{listColumns.map(column => {
+          const value = displayValue(row, column);
+          const content = meta.keys.includes(column.name) ? <Link href={href(row)}>{value}</Link> : value;
+          const compact = resource === "invoices" && ["ma_hoadon", "ma_donhang", "nguoi_lap"].includes(column.name);
+          return <td key={column.name}>{compact ? <span className="live-compact-id" title={String(row[column.name] ?? "—")}>{content}</span> : content}</td>;
+        })}<td><Link href={href(row)}>Chi tiết</Link>{meta.writable && <> · <Link href={href(row, true)}>Sửa</Link></>}</td></tr>)}</tbody></table>{!result?.data.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
         <div className="live-tools"><span>{result?.total ?? 0} kết quả · Trang {page}</span><button disabled={inlineEditing || page <= 1} onClick={() => setPage(p => p - 1)}>Trước</button><button disabled={inlineEditing || page * 20 >= (result?.total ?? 0)} onClick={() => setPage(p => p + 1)}>Sau</button></div>
       </>}
     </>}
