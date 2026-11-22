@@ -87,7 +87,6 @@
 .voucherList li span { flex: 1; min-width: 0; }
 .voucherList li strong { font-variant-numeric: tabular-nums; }
 .voucherList .voucherCancelled { border-color: #e3e6e1; background: #f6f7f5; color: #7d8578; text-decoration: line-through; }
-.cancelledInvoice { margin: 0 0 12px; padding: 9px 12px; border: 1px solid #eccdca; border-radius: 8px; background: #fff1ef; color: #a73535; font-weight: 700; }
 
 .paymentList { display: grid; margin: 0; padding: 0; list-style: none; }
 .paymentList li { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; padding: 7px 0; border-bottom: 1px solid #f0f2ee; }

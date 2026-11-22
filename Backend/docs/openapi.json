@@ -7105,7 +7105,8 @@
               "CHUA_THU",
               "THU_MOT_PHAN",
               "DA_THU_DU",
-              "THU_THUA"
+              "THU_THUA",
+              "DA_HUY"
             ],
             "title": "Payment Status",
             "type": "string"

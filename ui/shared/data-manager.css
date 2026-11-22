@@ -17,6 +17,7 @@
 .live-data table { width: 100%; border-collapse: collapse; }
 .live-data th, .live-data td { white-space: nowrap; padding: 14px 16px; border-bottom: 1px solid #e8ebe6; text-align: left; font-size: 16px; max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
 .live-data th { background: #f6f8f4; font-size: 14px; text-transform: none; }
+.live-data .live-compact-id { display: block; max-width: 20ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .live-data .live-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 20px; padding: 24px; background: white; border: 1px solid #e0e5dc; border-radius: 10px; }
 .live-data label { display: flex; flex-direction: column; gap: 8px; font-size: 16px; min-width: 0; }
 .live-data label small { color: #657061; }

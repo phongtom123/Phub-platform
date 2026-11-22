@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class OrderFinancialSummary(BaseModel):
     invoice_id: str | None
     invoice_status: Literal["DA_LAP", "CHUA_LAP"]
-    payment_status: Literal["CHUA_CO_HOA_DON", "CHUA_THU", "THU_MOT_PHAN", "DA_THU_DU", "THU_THUA"]
+    payment_status: Literal["CHUA_CO_HOA_DON", "CHUA_THU", "THU_MOT_PHAN", "DA_THU_DU", "THU_THUA", "DA_HUY"]
     total: str | None
     collected: str
     refunded: str

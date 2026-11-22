@@ -83,9 +83,7 @@ const rows = {
     };
 
     assert.deepEqual(await headers("invoices"), [
-      "Mã hóa đơn", "Mã đơn hàng", "Tên người mua", "Mã số thuế", "Địa chỉ người mua",
-      "Tổng trước thuế", "Tiền thuế", "Tổng sau thuế", "Nguồn lập", "Người lập",
-      "Tài khoản kích hoạt hóa đơn", "Thời gian lập", "Hạn thanh toán (đơn online)", "Hệ thống hủy quá hạn lúc", "Thao tác",
+      "Mã hóa đơn", "Mã đơn hàng", "Người lập", "Tên người mua", "Tổng sau thuế", "Thời gian lập", "Thao tác",
     ]);
     await page.getByRole("link", { name: "HD-1", exact: true }).click();
     const deadlineField = page.locator(".live-field").filter({ hasText: "Hạn thanh toán (đơn online)" });
@@ -96,7 +94,7 @@ const rows = {
       "Mã thanh toán", "Mã đơn hàng", "Mã giao dịch", "Loại giao dịch", "Phương thức",
       "Số tiền", "Trạng thái", "Ghi nhận trực tiếp", "Tài khoản yêu cầu ghi nhận", "Thời gian", "Thao tác",
     ]);
-    console.log("PASS: billing tables keep identifiers and related fields first, deadlines last.");
+    console.log("PASS: invoice list keeps six lookup columns, deadlines remain in details, payment columns are unchanged.");
   } finally {
     await browser.close();
   }

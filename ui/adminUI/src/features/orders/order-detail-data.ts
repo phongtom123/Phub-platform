@@ -20,7 +20,7 @@ export type AdminOrderDetailData = {
   }>;
   financial: {
     invoice_id: string | null; invoice_status: "DA_LAP" | "CHUA_LAP";
-    payment_status: "CHUA_CO_HOA_DON" | "CHUA_THU" | "THU_MOT_PHAN" | "DA_THU_DU" | "THU_THUA";
+    payment_status: "CHUA_CO_HOA_DON" | "CHUA_THU" | "THU_MOT_PHAN" | "DA_THU_DU" | "THU_THUA" | "DA_HUY";
     total: string | null; collected: string; refunded: string; paid: string; remaining: string | null;
   };
 };
