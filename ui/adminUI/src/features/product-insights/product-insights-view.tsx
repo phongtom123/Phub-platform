@@ -23,7 +23,6 @@ import { PieChartSVG, type ChartSlice } from "../customer-insights/pie-chart-svg
 import base from "../customer-insights/customer-insights.module.css";
 import styles from "./product-insights.module.css";
 import {
-  PRESET_LABELS,
   fetchAllProducts,
   fetchStockList,
   formatNumber,
@@ -36,10 +35,10 @@ import {
   type ProductStockList,
   type StockView,
   type ProductSalesItem,
-  type RangePreset,
 } from "./product-insights-data";
 import { useProductInsights } from "./use-product-insights";
 import { ProductSalesDrawer, type ChartKind } from "./product-sales-drawer";
+import { InsightsDateFilter } from "./insights-date-filter";
 import { StockBadge } from "./stock-badge";
 import { BarChart } from "./bar-chart";
 import { StockListDrawer } from "./stock-list-drawer";
@@ -48,7 +47,7 @@ import { vietnamDay } from "../dashboard/dashboard-data";
 
 const STATUS_COLORS: Record<string, string> = { PAID: "#14a800", PARTIAL: "#f59e0b", UNPAID: "#ef4444", CANCELLED: "#94a3b8" };
 const PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316", "#64748b"];
-const PERIOD_LABELS: Record<InsightsPeriod, string> = { month: "Tháng", quarter: "Quý", year: "Năm" };
+const PERIOD_LABELS: Record<InsightsPeriod, string> = { day: "Ngày", month: "Tháng", quarter: "Quý", year: "Năm" };
 type TrendMetric = "total" | "collected" | "invoices" | "items";
 const TREND_METRICS: Record<TrendMetric, { tab: string; title: string; unit: "count" | "money"; value: (row: InvoiceTimelinePoint) => number }> = {
   total: { tab: "Tổng sau thuế", title: "Tổng giá trị hóa đơn (sau thuế)", unit: "money", value: row => Number(row.total) },
@@ -170,12 +169,12 @@ function useBestSellerSearch(text: string, range: InsightsRange) {
 
 export function ProductInsightsView() {
   const [period, setPeriod] = useState<InsightsPeriod>("month");
-  const [preset, setPreset] = useState<RangePreset>("all");
   const [range, setRange] = useState<InsightsRange>(() => presetRange("all"));
   const [, startTransition] = useTransition();
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [chartKind, setChartKind] = useState<ChartKind>("bar");
   const [trendMetric, setTrendMetric] = useState<TrendMetric>("total");
+  const [trendScope, setTrendScope] = useState<{ period: InsightsPeriod; range: InsightsRange } | null>(null);
   const [stockView, setStockView] = useState<Exclude<StockView, "sales"> | null>(null);
   const closeStockList = useCallback(() => setStockView(null), []);
   const [topSearch, setTopSearch] = useState("");
@@ -187,14 +186,14 @@ export function ProductInsightsView() {
 
   /** Excel export: the library loads only on click; products are the full list for the report's own range. */
   async function exportExcel() {
-    if (!report) return;
+    if (!report || !trendReport || trendLoading || trendError) return;
     setExporting(true);
     setExportError("");
     try {
       const scope = { start: report.range.start, end: report.range.end };
       const [module, products] = await Promise.all([import("exceljs"), fetchAllProducts(scope)]);
       const Excel = ((module as unknown as { default?: typeof module }).default ?? module) as typeof import("exceljs");
-      const book = buildProductInsightsWorkbook(Excel, report, products, new Date());
+      const book = buildProductInsightsWorkbook(Excel, report, products, new Date(), trendReport);
       const blob = new Blob([await book.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -216,9 +215,19 @@ export function ProductInsightsView() {
   const search = useBestSellerSearch(topSearch, range);
   const closeProduct = useCallback(() => setSelectedSku(null), []);
   const { report, loading, error, refresh } = useProductInsights(period, range);
+  const trendPeriod = trendScope?.period ?? period;
+  const trendRange = trendScope?.range ?? range;
+  const separateTrend = trendPeriod !== period || trendRange.start !== range.start || trendRange.end !== range.end;
+  // Reuse the main snapshot until a different chart scope is requested.
+  const customTrend = useProductInsights(trendPeriod, trendRange, separateTrend);
+  const trendReport = separateTrend ? customTrend.report : report;
+  const trendLoading = separateTrend ? customTrend.loading : loading;
+  const trendError = separateTrend ? customTrend.error : error;
+  const refreshReports = () => { refresh(); customTrend.refresh(); };
 
-  const choosePreset = (next: RangePreset) => startTransition(() => { setPreset(next); setRange(presetRange(next)); });
-  const choosePeriod = (next: InsightsPeriod) => startTransition(() => setPeriod(next));
+  const chooseDates = (nextPeriod: InsightsPeriod, nextRange: InsightsRange) => startTransition(() => {
+    setPeriod(nextPeriod); setRange(nextRange);
+  });
 
   const p = report?.product_summary;
   const i = report?.invoice_summary;
@@ -232,14 +241,14 @@ export function ProductInsightsView() {
           <p>Theo dõi danh mục, tồn kho khả dụng, sản phẩm bán chạy/bán chậm và tình trạng thu tiền của hóa đơn</p>
         </div>
         <div className={base.headingActions}>
-          <button type="button" className={base.btn} onClick={refresh} disabled={loading}>
+          <button type="button" className={base.btn} onClick={refreshReports} disabled={loading || trendLoading}>
             <RefreshCw size={16} /> Làm mới
           </button>
           <button
             type="button"
             className={`${base.btn} ${base.btnPrimary}`}
             onClick={() => report && !loading && !error && void exportExcel()}
-            disabled={!report || loading || Boolean(error) || exporting}
+            disabled={!report || loading || Boolean(error) || !trendReport || trendLoading || Boolean(trendError) || exporting}
           >
             <Download size={16} /> {exporting ? "Đang xuất…" : "Xuất Excel"}
           </button>
@@ -247,28 +256,8 @@ export function ProductInsightsView() {
       </div>
       {exportError && <p className={`${base.stateBox} ${base.errorBox}`} role="alert" style={{ marginTop: 0 }}>{exportError}</p>}
 
-      <div className={base.periodCard}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <div className={base.periodTabs} aria-label="Khoảng thời gian lập hóa đơn">
-            {(Object.keys(PRESET_LABELS) as RangePreset[]).map(key => (
-              <button key={key} type="button" aria-pressed={preset === key}
-                className={`${base.periodTab} ${preset === key ? base.periodTabActive : ""}`} onClick={() => choosePreset(key)}>
-                {PRESET_LABELS[key]}
-              </button>
-            ))}
-          </div>
-          <div className={base.periodTabs} aria-label="Gom xu hướng theo">
-            {(Object.keys(PERIOD_LABELS) as InsightsPeriod[]).map(key => (
-              <button key={key} type="button" aria-pressed={period === key}
-                className={`${base.periodTab} ${period === key ? base.periodTabActive : ""}`} onClick={() => choosePeriod(key)}>
-                Theo {PERIOD_LABELS[key]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <span className={base.periodNote}>
-          {range.start ? `Hóa đơn lập từ ${range.start} đến ${range.end}` : "Hóa đơn lập trong toàn bộ thời gian"} · Tồn kho là số hiện tại
-        </span>
+      <div className={base.periodCard} role="group" aria-label="Bộ lọc toàn trang">
+        <InsightsDateFilter period={period} range={range} onChange={chooseDates} />
       </div>
 
       {loading ? (
@@ -300,10 +289,10 @@ export function ProductInsightsView() {
               centerLabel={formatNumber(i.valid_invoices)} centerSub="hóa đơn" valueUnit="HĐ" emptyText="Chưa có hóa đơn" />
           </div>
 
-          <div className={base.card} style={{ marginBottom: 24 }}>
+          <section className={base.card} style={{ marginBottom: 24 }} aria-label="Xu hướng hóa đơn">
             <div className={styles.chartHead}>
               <div>
-                <h3 className={styles.trendTitle}><TrendingUp size={18} color="#14a800" /> {TREND_METRICS[trendMetric].title} theo {PERIOD_LABELS[period]}</h3>
+                <h3 className={styles.trendTitle}><TrendingUp size={18} color="#14a800" /> {TREND_METRICS[trendMetric].title} theo {PERIOD_LABELS[trendPeriod]}</h3>
                 <p className={styles.muted} style={{ margin: "4px 0 0" }}>Hóa đơn thuộc đơn chưa hủy</p>
               </div>
               <div className={base.periodTabs} aria-label="Chỉ số xu hướng hóa đơn">
@@ -315,14 +304,20 @@ export function ProductInsightsView() {
                 ))}
               </div>
             </div>
-            {report.timeline.length === 0 ? (
+            <div className={styles.trendFilters}>
+              <InsightsDateFilter period={trendPeriod} range={trendRange} onChange={(nextPeriod, nextRange) => setTrendScope({ period: nextPeriod, range: nextRange })} />
+            </div>
+            {trendLoading ? <p className={styles.empty} role="status">Đang tải biểu đồ hóa đơn…</p>
+              : trendError ? <div className={`${base.stateBox} ${base.errorBox}`} role="alert"><span>{trendError}</span>
+                <button type="button" className={base.btn} onClick={separateTrend ? customTrend.refresh : refresh}>Thử lại biểu đồ</button></div>
+              : !trendReport || trendReport.timeline.length === 0 ? (
               <p className={styles.empty}>Chưa có hóa đơn trong khoảng thời gian đã chọn.</p>
             ) : (
               <>
                 <BarChart
                   unit={TREND_METRICS[trendMetric].unit}
-                  ariaLabel={`${TREND_METRICS[trendMetric].title} theo ${PERIOD_LABELS[period]}, từ ${report.timeline[0].label} đến ${report.timeline.at(-1)!.label}`}
-                  points={report.timeline.map(row => ({
+                  ariaLabel={`${TREND_METRICS[trendMetric].title} theo ${PERIOD_LABELS[trendPeriod]}, từ ${trendReport.timeline[0].label} đến ${trendReport.timeline.at(-1)!.label}`}
+                  points={trendReport.timeline.map(row => ({
                     period: row.period, label: row.label, value: TREND_METRICS[trendMetric].value(row),
                     details: [["Tổng sau thuế", formatVND(row.total)], ["Đã thu", `${formatVND(row.collected)} (${collectRate(row.collected, row.total)})`],
                       ["Hóa đơn", formatNumber(row.invoice_count)], ["SL sản phẩm", formatNumber(row.items_sold)]],
@@ -344,7 +339,7 @@ export function ProductInsightsView() {
                         </tr>
                       </thead>
                       <tbody>
-                        {report.timeline.map(row => (
+                        {trendReport.timeline.map(row => (
                           <tr key={row.period}>
                             <td><strong>{row.label}</strong></td>
                             <td className={styles.num}>{formatNumber(row.invoice_count)}</td>
@@ -361,7 +356,7 @@ export function ProductInsightsView() {
                 </details>
               </>
             )}
-          </div>
+          </section>
 
           <h2 className={styles.sectionTitle}>Sản phẩm & tồn kho</h2>
           <div className={base.metricsGrid}>
@@ -502,7 +497,7 @@ export function ProductInsightsView() {
         </>
       ) : null}
       {stockView && <StockListDrawer view={stockView} range={range} suspended={selectedSku !== null} onSelectProduct={setSelectedSku} onClose={closeStockList} />}
-      {selectedSku && <ProductSalesDrawer sku={selectedSku} period={period} range={range} chartKind={chartKind} onChartKind={setChartKind} onClose={closeProduct} />}
+      {selectedSku && <ProductSalesDrawer key={selectedSku} sku={selectedSku} period={period} range={range} chartKind={chartKind} onChartKind={setChartKind} onClose={closeProduct} />}
     </div>
   );
 }

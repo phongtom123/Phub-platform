@@ -52,6 +52,28 @@ test("presetRange uses Vietnam calendar days and inclusive length", () => {
   assert.deepEqual({ ...presetRange("365d", now) }, { start: "2025-11-19", end: "2026-11-18" });
 });
 
+test("custom dates support one day, calendar months and inclusive ranges", () => {
+  const { selectedDateRange, shortPeriod } = load();
+  const now = new Date("2026-11-22T03:00:00Z");
+  const range = (mode, start, end) => ({ ...selectedDateRange(mode, start, end, now) });
+  assert.deepEqual(range("all", "", ""), { start: null, end: null });
+  assert.deepEqual(range("day", "2026-11-22", ""), { start: "2026-11-22", end: "2026-11-22" });
+  assert.deepEqual(range("month", "2024-02", ""), { start: "2024-02-01", end: "2024-02-29" });
+  assert.deepEqual(range("month", "2026-02", ""), { start: "2026-02-01", end: "2026-02-28" });
+  assert.deepEqual(range("month", "2025-12", ""), { start: "2025-12-01", end: "2025-12-31" });
+  assert.deepEqual(range("month", "2026-11", ""), { start: "2026-11-01", end: "2026-11-22" });
+  assert.deepEqual(range("custom", "2026-11-01", "2026-11-22"), { start: "2026-11-01", end: "2026-11-22" });
+  assert.throws(() => selectedDateRange("custom", "2026-11-22", "2026-11-01"), /Ngày bắt đầu/);
+  for (const invalid of ["", "2026-02-29", "2026-13-01", "0000-01-01"]) assert.throws(() => selectedDateRange("day", invalid, ""), /hợp lệ/);
+  assert.throws(() => selectedDateRange("month", "2026-13", ""), /hợp lệ/);
+  assert.equal(shortPeriod("2026-11-22"), "22/11");
+  assert.throws(() => range("day", "2026-11-23", ""), /tương lai/);
+  assert.throws(() => range("custom", "2026-11-01", "2026-11-23"), /tương lai/);
+  assert.throws(() => range("month", "2026-12", ""), /tương lai/);
+  assert.deepEqual({ ...selectedDateRange("day", "2026-11-22", "", new Date("2026-11-21T18:00:00Z")) },
+    { start: "2026-11-22", end: "2026-11-22" }, "Vietnam has already reached the next day");
+});
+
 test("fetch sends period and range, accepts a matching report", async () => {
   let url = "";
   const { fetchProductInsights } = load(async requested => { url = String(requested); return Response.json(report({ start: "2026-05-01", end: "2026-05-31", period_type: "quarter" })); });
@@ -145,6 +167,17 @@ test("Excel export: one sheet per topic, full numbers (no 2.01E+11), real percen
   assert.deepEqual([list.getCell("E131").value, list.getCell("M2").value, list.getCell("M3").value], ["Đã ẩn", "Hết hàng", "Sắp hết"]);
   assert.equal(list.getCell("F2").numFmt, '#,##0 "đ"');
   assert.equal(productInsightsFileName(data, "2026-11-18"), "phub-san-pham-hoa-don-toan-bo-2026-11-18.xlsx");
+
+  const scoped = buildProductInsightsWorkbook(Excel, data, products, new Date("2026-11-18T06:16:51Z"), {
+    range: { start: "2026-11-18", end: "2026-11-18", period_type: "day" },
+    timeline: [{ ...data.timeline[0], period: "2026-11-18", label: "Ngày 18/11/2026" }],
+  });
+  const scopesInExport = new Map();
+  scoped.getWorksheet("Tổng quan").eachRow(row => scopesInExport.set(row.getCell(1).value, row.getCell(2).value));
+  assert.equal(scopesInExport.get("Kỳ lập hóa đơn"), "Toàn thời gian", "overview retains the global dates");
+  assert.equal(scopesInExport.get("Kỳ biểu đồ hóa đơn"), "2026-11-18 → 2026-11-18");
+  assert.equal(scopesInExport.get("Gom xu hướng"), "Theo ngày");
+  assert.deepEqual(scoped.getWorksheet("Hóa đơn theo kỳ").getRow(2).values.slice(1, 3), ["Ngày 18/11/2026", "2026-11-18"]);
 });
 
 function productSales(sku = "VGA", range = { start: null, end: null, period_type: "month" }) {

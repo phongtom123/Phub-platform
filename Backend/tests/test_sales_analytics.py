@@ -9,7 +9,7 @@ from phub_api.dependencies.crm_analytics import get_sales_analytics_service
 from phub_api.main import app
 from phub_api.models.user import User
 from phub_api.services.catalog_availability import available_quantities, stock_breakdown
-from phub_api.services.sales_analytics import SalesAnalyticsService
+from phub_api.services.sales_analytics import SalesAnalyticsService, continuous_periods
 
 ADMIN = User("AD1", "admin", "ADMIN", "Admin", employee_id="NV1")
 STAFF = User("NV2", "staff", "NHAN_VIEN", "Nhân viên kho", employee_id="NV2", warehouse_id=1)
@@ -156,6 +156,23 @@ def test_invalid_date_range(make_client):
     assert "Ngày bắt đầu phải trước ngày kết thúc" in response.json()["detail"]
 
 
+@pytest.mark.parametrize("endpoint", [ENDPOINT, "/api/crm/analytics/product-sales?sku=VGA", "/api/crm/analytics/product-stock"])
+@pytest.mark.parametrize("query", ["start=2026-07-11", "end=2026-07-11", "start=2026-07-11&end=2026-07-11"])
+def test_future_report_dates_are_rejected_before_data_reads(make_client, endpoint, query):
+    client, repo = make_client()
+    response = client.get(endpoint + ("&" if "?" in endpoint else "?") + query)
+    assert response.status_code == 422
+    assert "tương lai" in response.json()["detail"]
+    assert repo.calls == []
+
+
+@pytest.mark.parametrize("endpoint", [ENDPOINT, "/api/crm/analytics/product-sales?sku=VGA", "/api/crm/analytics/product-stock"])
+def test_today_is_a_valid_report_date(make_client, endpoint):
+    client, _ = make_client()
+    response = client.get(endpoint + ("&" if "?" in endpoint else "?") + "start=2026-07-10&end=2026-07-10")
+    assert response.status_code == 200, response.text
+
+
 def test_passes_date_range_to_reads(make_client):
     client, repo = make_client()
     response = client.get(f"{ENDPOINT}?start=2026-05-01&end=2026-06-30&period=quarter")
@@ -278,6 +295,36 @@ def test_stock_breakdown_matches_checkout_availability():
 PRODUCT_ENDPOINT = "/api/crm/analytics/product-sales"
 
 
+def test_daily_sales_group_in_vietnam_time_and_keep_empty_days(make_client):
+    repo = FakeRepository()
+    repo._invoices = repo._invoices[:1]  # May 31 18:00Z belongs to June 1 in Vietnam.
+    client, repo = make_client(repo=repo)
+    query = "period=day&start=2026-05-31&end=2026-06-02"
+    response = client.get(f"{PRODUCT_ENDPOINT}?sku=VGA&{query}")
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["range"] == {"start": "2026-05-31", "end": "2026-06-02", "period_type": "day"}
+    assert [(p["period"], p["quantity"], p["invoice_count"]) for p in data["timeline"]] == [
+        ("2026-05-31", 0, 0), ("2026-06-01", 1, 1), ("2026-06-02", 0, 0)]
+    assert data["timeline"][1]["label"] == "Ngày 01/06/2026"
+    assert data["timeline"][1]["revenue"] == data["summary"]["revenue"] == "25000000.00"
+    assert data["summary"]["available_units"] == 4  # Current stock does not depend on sales dates.
+    assert ("product_sales", "VGA", "2026-05-31", "2026-06-02") in repo.calls
+    overview = client.get(f"{ENDPOINT}?{query}")
+    assert overview.status_code == 200, overview.text
+    assert [(p["period"], p["invoice_count"]) for p in overview.json()["timeline"]] == [
+        ("2026-05-31", 0), ("2026-06-01", 1), ("2026-06-02", 0)]
+
+
+@pytest.mark.parametrize("first,last,expected", [
+    (date(2024, 2, 28), date(2024, 3, 1), ["2024-02-28", "2024-02-29", "2024-03-01"]),
+    (date(2026, 12, 31), date(2027, 1, 1), ["2026-12-31", "2027-01-01"]),
+    (date(9999, 12, 31), date(9999, 12, 31), ["9999-12-31"]),
+])
+def test_daily_periods_cover_leap_day_year_boundary_and_single_day(first, last, expected):
+    assert [key for key, _ in continuous_periods(first, last, "day")] == expected
+
+
 def test_product_sales_requires_admin_and_valid_input(make_client):
     client, _ = make_client(user=STAFF)
     assert client.get(f"{PRODUCT_ENDPOINT}?sku=VGA").status_code == 403
@@ -299,10 +346,10 @@ def test_product_sales_fills_every_period_and_matches_stock_rule(make_client):
     repo._lines.append({"ma_donhang": "DH5", "sku": "VGA", "ma_kho_xuat": 9, "ten_sp_luc_ban": "VGA RTX 4070", "so_luong": 2,
                         "don_gia": "25000000.00", "giam_gia": "2000000.00", "giam_gia_voucher": "0.00"})
     client, repo = make_client(repo=repo)
-    response = client.get(f"{PRODUCT_ENDPOINT}?sku=VGA&start=2026-02-01&end=2026-07-15&period=month")
+    response = client.get(f"{PRODUCT_ENDPOINT}?sku=VGA&start=2026-02-01&end=2026-07-10&period=month")
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"
-    assert ("product_sales", "VGA", "2026-02-01", "2026-07-15") in repo.calls
+    assert ("product_sales", "VGA", "2026-02-01", "2026-07-10") in repo.calls
     assert ("reservations", ("MOI", "XAC_NHAN", "DANG_CHUAN_BI"), "VGA") in repo.calls
     data = response.json()
     assert (data["name"], data["category_name"], data["brand"], data["price"], data["status"]) == ("VGA RTX 4070", "Card màn hình", "ASUS", "25000000.00", 1)
@@ -324,7 +371,8 @@ def test_product_sales_fills_every_period_and_matches_stock_rule(make_client):
     assert "không hoạt động" in warehouses[9]["name"]
 
 
-def test_product_sales_quarters_and_cancelled_orders(make_client):
+def test_product_sales_quarters_and_cancelled_orders(make_client, monkeypatch):
+    monkeypatch.setattr("phub_api.services.sales_analytics.vietnam_today", lambda: date(2026, 12, 31))
     client, _ = make_client()
     data = client.get(f"{PRODUCT_ENDPOINT}?sku=CPU&start=2026-01-01&end=2026-12-31&period=quarter").json()
     # The cancelled DH4 line for CPU is not counted; DH2 is.

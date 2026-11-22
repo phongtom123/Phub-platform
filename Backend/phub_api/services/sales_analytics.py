@@ -5,7 +5,7 @@ proof of payment: payment status comes from successful THU minus successful HOAN
 Stock uses the same holding rule as checkout (services/catalog_availability.py)."""
 from concurrent.futures import ThreadPoolExecutor
 import unicodedata
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from fastapi import HTTPException
@@ -63,6 +63,8 @@ def local_datetime(raw) -> datetime | None:
 
 
 def period_bucket(value: datetime, period: str) -> tuple[str, str]:
+    if period == "day":
+        return value.date().isoformat(), f"Ngày {value:%d/%m/%Y}"
     if period == "quarter":
         quarter = (value.month - 1) // 3 + 1
         return f"{value.year}-Q{quarter}", f"Quý {quarter}/{value.year}"
@@ -72,6 +74,8 @@ def period_bucket(value: datetime, period: str) -> tuple[str, str]:
 
 
 def period_start(value: date, period: str) -> date:
+    if period == "day":
+        return value
     if period == "year":
         return date(value.year, 1, 1)
     if period == "quarter":
@@ -80,6 +84,8 @@ def period_start(value: date, period: str) -> date:
 
 
 def next_period(value: date, period: str) -> date:
+    if period == "day":
+        return value + timedelta(days=1)
     step = 12 if period == "year" else 3 if period == "quarter" else 1
     month = value.month - 1 + step
     return date(value.year + month // 12, month % 12 + 1, 1)
@@ -89,7 +95,9 @@ def continuous_periods(first: date, last: date, period: str):
     """Every bucket from first to last inclusive, so a chart never hides empty periods."""
     current, last = period_start(first, period), period_start(last, period)
     while current <= last:
-        yield period_bucket(datetime(current.year, current.month, 1), period)
+        yield period_bucket(datetime(current.year, current.month, current.day), period)
+        if current == last:
+            break
         current = next_period(current, period)
 
 
@@ -118,6 +126,14 @@ def breakdown(groups: dict, labels: dict, order=None):
     } for key in keys]
 
 
+def validate_report_dates(start: date | None, end: date | None):
+    if start and end and start > end:
+        raise HTTPException(422, "Ngày bắt đầu phải trước ngày kết thúc.")
+    today = vietnam_today()
+    if (start and start > today) or (end and end > today):
+        raise HTTPException(422, "Không được chọn ngày trong tương lai (theo giờ Việt Nam).")
+
+
 class SalesAnalyticsService:
     def __init__(self, repository: SalesAnalyticsRepository, actor: User):
         self.repository = repository
@@ -126,8 +142,7 @@ class SalesAnalyticsService:
     def product_invoice_insights(self, period: str = "month", start: date | None = None, end: date | None = None):
         if self.actor.role != "ADMIN":
             raise HTTPException(403, "Chỉ quản trị viên mới có quyền xem thống kê sản phẩm và hóa đơn.")
-        if start and end and start > end:
-            raise HTTPException(422, "Ngày bắt đầu phải trước ngày kết thúc.")
+        validate_report_dates(start, end)
 
         reads = {
             "products": ANALYTICS_READS.submit(self.repository.products),
@@ -385,8 +400,7 @@ class SalesAnalyticsService:
     def product_sales(self, sku: str, period: str = "month", start: date | None = None, end: date | None = None):
         if self.actor.role != "ADMIN":
             raise HTTPException(403, "Chỉ quản trị viên mới có quyền xem thống kê sản phẩm và hóa đơn.")
-        if start and end and start > end:
-            raise HTTPException(422, "Ngày bắt đầu phải trước ngày kết thúc.")
+        validate_report_dates(start, end)
         reads = {
             "product": ANALYTICS_READS.submit(self.repository.product, sku),
             "sales": ANALYTICS_READS.submit(self.repository.product_sales, sku, start.isoformat() if start else None,
@@ -484,8 +498,7 @@ class SalesAnalyticsService:
         """Full, filterable product lists behind the four product/stock summary tiles."""
         if self.actor.role != "ADMIN":
             raise HTTPException(403, "Chỉ quản trị viên mới có quyền xem thống kê sản phẩm và hóa đơn.")
-        if start and end and start > end:
-            raise HTTPException(422, "Ngày bắt đầu phải trước ngày kết thúc.")
+        validate_report_dates(start, end)
         reads = {
             "products": ANALYTICS_READS.submit(self.repository.products),
             "categories": ANALYTICS_READS.submit(self.repository.categories),

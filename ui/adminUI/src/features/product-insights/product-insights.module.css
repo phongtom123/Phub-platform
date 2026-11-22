@@ -7,6 +7,17 @@
   color: #6a7963;
 }
 
+.dateFilter { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; min-width: 0; max-width: 100%; }
+.dateFilterTabs { display: contents; }
+.dateFilterTabs > div { flex-wrap: wrap; max-width: 100%; box-sizing: border-box; }
+.dateFilterTabs button { padding: 6px 8px; font-size: 12px; white-space: normal; max-width: 100%; }
+.dateFilterForm { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: flex-end; gap: 8px; max-width: 100%; min-width: 0; }
+.dateFilterForm label { display: flex; flex: 0 0 150px; flex-direction: column; gap: 5px; color: #5d6c55; font-size: 12px; min-width: 0; max-width: 100%; }
+.dateFilterForm label.dateFilterMode { flex: 0 0 170px; }
+.dateFilterActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 100%; }
+.dateFilterForm input, .dateFilterForm select { width: 100%; min-width: 0; box-sizing: border-box; height: 38px; padding: 0 10px; border: 1px solid #d9e1d5; border-radius: 8px; background: #fff; color: #253320; font: inherit; font-size: 13px; }
+.dateFilterError { flex-basis: 100%; margin: 0; color: #b42318; font-size: 13px; }
+
 .pieGrid4 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -185,6 +196,11 @@
   gap: 16px;
 }
 
+.drawerTwoCol > div { min-width: 0; }
+.warehouseTable { width: 100%; table-layout: fixed; }
+.warehouseTable th, .warehouseTable td { padding: 10px 6px; white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
+.warehouseTable th:not(:first-child), .warehouseTable td:not(:first-child) { text-align: right; }
+
 .drawerCardTitle,
 .chartHead h3 {
   margin: 0 0 12px;
@@ -225,6 +241,8 @@
   font-size: 16px;
   color: #253320;
 }
+
+.trendFilters { margin: 16px 0; }
 
 .chartWrap {
   position: relative;

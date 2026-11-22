@@ -10213,6 +10213,7 @@
           },
           "period_type": {
             "enum": [
+              "day",
               "month",
               "quarter",
               "year"
@@ -20250,14 +20251,15 @@
         "operationId": "product_invoice_insights_api_crm_analytics_product_invoice_insights_get",
         "parameters": [
           {
-            "description": "Chu kỳ gom xu hướng hóa đơn: tháng, quý hoặc năm",
+            "description": "Chu kỳ gom xu hướng hóa đơn: ngày, tháng, quý hoặc năm",
             "in": "query",
             "name": "period",
             "required": false,
             "schema": {
               "default": "month",
-              "description": "Chu kỳ gom xu hướng hóa đơn: tháng, quý hoặc năm",
+              "description": "Chu kỳ gom xu hướng hóa đơn: ngày, tháng, quý hoặc năm",
               "enum": [
+                "day",
                 "month",
                 "quarter",
                 "year"
@@ -20413,14 +20415,15 @@
             }
           },
           {
-            "description": "Chu kỳ gom: tháng, quý hoặc năm",
+            "description": "Chu kỳ gom: ngày, tháng, quý hoặc năm",
             "in": "query",
             "name": "period",
             "required": false,
             "schema": {
               "default": "month",
-              "description": "Chu kỳ gom: tháng, quý hoặc năm",
+              "description": "Chu kỳ gom: ngày, tháng, quý hoặc năm",
               "enum": [
+                "day",
                 "month",
                 "quarter",
                 "year"

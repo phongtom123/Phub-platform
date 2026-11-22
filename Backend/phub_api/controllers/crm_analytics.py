@@ -34,7 +34,7 @@ def customer_insights(
 def product_invoice_insights(
     service: SalesService,
     response: Response,
-    period: Literal["month", "quarter", "year"] = Query("month", description="Chu kỳ gom xu hướng hóa đơn: tháng, quý hoặc năm"),
+    period: Literal["day", "month", "quarter", "year"] = Query("month", description="Chu kỳ gom xu hướng hóa đơn: ngày, tháng, quý hoặc năm"),
     start: date | None = Query(None, description="Ngày bắt đầu theo thời gian lập hóa đơn (tùy chọn)"),
     end: date | None = Query(None, description="Ngày kết thúc theo thời gian lập hóa đơn (tùy chọn)"),
 ):
@@ -49,7 +49,7 @@ def product_sales(
     service: SalesService,
     response: Response,
     sku: str = Query(..., min_length=1, max_length=100, description="Mã SKU của sản phẩm"),
-    period: Literal["month", "quarter", "year"] = Query("month", description="Chu kỳ gom: tháng, quý hoặc năm"),
+    period: Literal["day", "month", "quarter", "year"] = Query("month", description="Chu kỳ gom: ngày, tháng, quý hoặc năm"),
     start: date | None = Query(None, description="Ngày bắt đầu theo thời gian lập hóa đơn (tùy chọn)"),
     end: date | None = Query(None, description="Ngày kết thúc theo thời gian lập hóa đơn (tùy chọn)"),
 ):

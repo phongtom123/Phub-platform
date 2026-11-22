@@ -1,9 +1,31 @@
 import { adminFetch } from "@internal/lib/admin-fetch";
 import { vietnamDay } from "../dashboard/dashboard-data";
 
-export type InsightsPeriod = "month" | "quarter" | "year";
+export type InsightsPeriod = "day" | "month" | "quarter" | "year";
 export type RangePreset = "all" | "30d" | "90d" | "365d";
 export type InsightsRange = { start: string | null; end: string | null };
+export type DateSelection = "all" | "day" | "month" | "custom";
+
+/** Inclusive calendar range, independent of the browser's timezone. */
+export function selectedDateRange(mode: DateSelection, start: string, end: string, now = new Date()): InsightsRange {
+  if (mode === "all") return { start: null, end: null };
+  const today = vietnamDay(now)!;
+  const validDay = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && value.slice(0, 4) !== "0000" &&
+    Number.isFinite(Date.parse(value + "T00:00:00Z")) && new Date(value + "T00:00:00Z").toISOString().slice(0, 10) === value;
+  if (mode === "month") {
+    if (!/^\d{4}-\d{2}$/.test(start) || !validDay(start + "-01")) throw new Error("Vui lòng chọn tháng hợp lệ.");
+    if (start > today.slice(0, 7)) throw new Error("Không được chọn tháng trong tương lai.");
+    const last = new Date(start + "-01T00:00:00Z");
+    last.setUTCMonth(last.getUTCMonth() + 1, 0);
+    const monthEnd = last.toISOString().slice(0, 10);
+    return { start: start + "-01", end: monthEnd > today ? today : monthEnd };
+  }
+  const last = mode === "day" ? start : end;
+  if (!validDay(start) || !validDay(last)) throw new Error("Vui lòng chọn đầy đủ ngày hợp lệ.");
+  if (start > last) throw new Error("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+  if (start > today || last > today) throw new Error("Không được chọn ngày trong tương lai.");
+  return { start, end: last };
+}
 
 export type ProductSummary = {
   total_products: number;
@@ -177,6 +199,8 @@ export async function fetchProductSales(sku: string, period: InsightsPeriod, ran
 
 /** Short axis label: "2026-09" → "T9/26", "2026-Q3" → "Q3/26", "2026" → "2026". */
 export function shortPeriod(period: string): string {
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(period);
+  if (day) return `${day[3]}/${day[2]}`;
   const month = /^(\d{4})-(\d{2})$/.exec(period);
   if (month) return `T${Number(month[2])}/${month[1].slice(2)}`;
   const quarter = /^(\d{4})-Q([1-4])$/.exec(period);

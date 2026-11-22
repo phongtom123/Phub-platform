@@ -9,7 +9,7 @@ const MONEY = '#,##0 "đ"';
 const INTEGER = "#,##0";
 const PERCENT = "0.0%";
 const HEADER_FILL = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: "FFEEF7EA" } };
-const PERIOD_NAMES = { month: "Theo tháng", quarter: "Theo quý", year: "Theo năm" } as const;
+const PERIOD_NAMES = { day: "Theo ngày", month: "Theo tháng", quarter: "Theo quý", year: "Theo năm" } as const;
 const PRODUCT_STATUS: Record<number, string> = { 1: "Đang bán", 2: "Tạm ngưng", 0: "Đã ẩn" };
 
 type Column = { header: string; width: number; format?: string };
@@ -47,7 +47,8 @@ export function productInsightsFileName(report: ProductInvoiceReport, today: str
  * Builds the export workbook. `products` is the complete product list (every status), not only the top rows on screen.
  * ExcelJS is passed in so the page can load it lazily and tests can use the Node build.
  */
-export function buildProductInsightsWorkbook(Excel: ExcelJS, report: ProductInvoiceReport, products: StockListItem[], exportedAt: Date): Workbook {
+export function buildProductInsightsWorkbook(Excel: ExcelJS, report: ProductInvoiceReport, products: StockListItem[], exportedAt: Date,
+  trend: Pick<ProductInvoiceReport, "range" | "timeline"> = report): Workbook {
   const book = new Excel.Workbook();
   book.creator = "PHUB";
   book.created = exportedAt;
@@ -60,7 +61,8 @@ export function buildProductInsightsWorkbook(Excel: ExcelJS, report: ProductInvo
   overview.addRow(["THỐNG KÊ SẢN PHẨM & HÓA ĐƠN"]).font = { bold: true, size: 14 };
   overview.addRow(["Thời gian xuất", exportedAt.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })]);
   overview.addRow(["Kỳ lập hóa đơn", rangeLabel]);
-  overview.addRow(["Gom xu hướng", PERIOD_NAMES[report.range.period_type]]);
+  overview.addRow(["Kỳ biểu đồ hóa đơn", trend.range.start ? `${trend.range.start} → ${trend.range.end}` : "Toàn thời gian"]);
+  overview.addRow(["Gom xu hướng", PERIOD_NAMES[trend.range.period_type]]);
   overview.addRow(["Ghi nhận", "Doanh số tính trên hóa đơn của đơn chưa hủy; doanh thu sản phẩm là giá trị chưa thuế sau giảm giá. Có hóa đơn không đồng nghĩa đã thanh toán."]);
   const section = (title: string, rows: [string, number, string, string?][]) => {
     overview.addRow([]);
@@ -108,7 +110,7 @@ export function buildProductInsightsWorkbook(Excel: ExcelJS, report: ProductInvo
     { header: "SL sản phẩm", width: 12, format: INTEGER }, { header: "Trước thuế", width: 20, format: MONEY }, { header: "Thuế", width: 18, format: MONEY },
     { header: "Tổng sau thuế", width: 20, format: MONEY }, { header: "Đã thu", width: 20, format: MONEY }, { header: "Còn phải thu", width: 20, format: MONEY },
     { header: "Tỷ lệ thu", width: 11, format: PERCENT },
-  ], report.timeline.map(row => {
+  ], trend.timeline.map(row => {
     const total = money(row.total), collected = money(row.collected);
     return [row.label, row.period, row.invoice_count, row.items_sold, money(row.pre_tax), money(row.tax), total, collected,
       Math.max(0, total - collected), total > 0 ? collected / total : null];
