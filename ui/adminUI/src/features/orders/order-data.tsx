@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { adminFetch } from "../../lib/admin-fetch";
+import { adminFetch, invalidateAdminCache, sameAdminData } from "../../lib/admin-fetch";
+import { useAdminPolling } from "../../lib/use-admin-polling";
 import { dataHref } from "../../lib/data-navigation";
 import type { DataColumn, DataRow } from "../../lib/inline-table-data";
 import { useAdminAuth } from "../../components/admin/auth-provider";
@@ -189,6 +190,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
   const [drawerError, setDrawerError] = useState("");
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerVersion, setDrawerVersion] = useState(0);
+  const [drawerEditing, setDrawerEditing] = useState(false);
   const closeButton = useRef<HTMLButtonElement | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const rowChanged = useRef(onRowChanged);
@@ -244,14 +246,14 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
       title={orderValue(row, column.name)} {...warmProps(String(row.ma_donhang))} onClick={event => openDetail(String(row.ma_donhang), event.currentTarget)}>{orderValue(row, column.name)}</button> : orderValue(row, column.name);
   };
 
-  // Hovering or focusing an order's buttons starts its detail read; the click then joins that
-  // in-flight read (or reuses it if it finished within adminFetch's 1 s window) instead of waiting.
+  // Warm an unseen order or reuse its snapshot. Opening the drawer independently
+  // revalidates in the background, so an old hover must not delay the next click.
   const warmed = useRef(new Map<string, number>());
   const warmDetail = (orderId: string) => {
     const now = Date.now();
     if (selectedOrderId || now - (warmed.current.get(orderId) ?? 0) < 5_000) return;
     warmed.current.set(orderId, now);
-    void adminFetch(detailPath(orderId), { cache: "no-cache" }).catch(() => { /* The click reports errors. */ });
+    void adminFetch(detailPath(orderId), { cache: "no-store" }).catch(() => { /* The click reports errors. */ });
   };
   const warmProps = (orderId: string) => ({
     onPointerEnter: (event: PointerEvent) => { if (event.pointerType === "mouse") warmDetail(orderId); },
@@ -260,12 +262,13 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
 
   const openDetail = (orderId: string, trigger: HTMLElement) => {
     returnFocus.current = trigger;
-    setDrawerDetail(null); setDrawerError("");
+    setDrawerDetail(null); setDrawerError(""); setDrawerEditing(false);
+    setDrawerVersion(value => value + 1);
     setSelectedOrderId(orderId);
   };
   const closeDetail = useCallback(() => {
     if (selectedOrderId && selectedOrderId === initialOrderId) onDismissInitial?.();
-    setSelectedOrderId(null); setDrawerDetail(null); setDrawerError("");
+    setSelectedOrderId(null); setDrawerDetail(null); setDrawerError(""); setDrawerEditing(false);
     requestAnimationFrame(() => returnFocus.current?.focus());
   }, [selectedOrderId, initialOrderId, onDismissInitial]);
 
@@ -280,9 +283,10 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     if (!selectedOrderId) return;
     const controller = new AbortController();
     setDrawerLoading(true); setDrawerError("");
-    // no-cache: join a hover read still in flight, or reuse one checked within the last second;
-    // otherwise read fresh. Writes clear the cache, so a refresh after an action is always fresh.
-    adminFetch(detailPath(selectedOrderId), { signal: controller.signal, cache: "no-cache" }).then(async response => {
+    // adminFetch keeps a private in-memory snapshot even with HTTP no-store.
+    // Show it immediately, then let polling check freshness without blanking the drawer.
+    // Writes invalidate snapshots, so refreshing after an action still reads the server.
+    adminFetch(detailPath(selectedOrderId), { signal: controller.signal, cache: "no-store" }).then(async response => {
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không tải được chi tiết đơn hàng.");
       if (!validDetail(body, selectedOrderId)) throw new Error("API chưa trả đúng chi tiết đơn hàng.");
@@ -295,6 +299,18 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     }).finally(() => { if (!controller.signal.aborted) setDrawerLoading(false); });
     return () => controller.abort();
   }, [selectedOrderId, drawerVersion]);
+  const drawerPollError = useAdminPolling(JSON.stringify([selectedOrderId, drawerVersion]),
+    !detail && Boolean(selectedOrderId && drawerDetail) && !drawerLoading && !drawerError && !drawerEditing,
+    async (signal, canApply) => {
+      const response = await adminFetch(detailPath(selectedOrderId!), { signal, cache: "no-cache" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Không cập nhật được chi tiết đơn hàng.");
+      if (!validDetail(body, selectedOrderId!)) throw new Error("API chưa trả đúng chi tiết đơn hàng.");
+      if (canApply()) {
+        setDrawerDetail(current => sameAdminData(current, body) ? current : body);
+        rowChanged.current?.(body.order);
+      }
+    });
   useEffect(() => {
     if (!selectedOrderId) return;
     const previousOverflow = document.body.style.overflow;
@@ -315,6 +331,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
         ? { ...current, order: { ...current.order, ...saved } } : current);
     }
     if (activeOrderId.current !== selectedOrderId) return;
+    invalidateAdminCache([detailPath(selectedOrderId!)]);
     setDrawerLoading(true);
     setDrawerVersion(value => value + 1);
   };
@@ -343,9 +360,10 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
           {drawerLoading && !drawerDetail && <div className={styles.state} role="status">Đang tải chi tiết đơn hàng…</div>}
           {drawerLoading && drawerDetail && <p role="status">Đang cập nhật chi tiết đơn hàng…</p>}
           {drawerError && <div className={styles.state} role="alert"><p>{drawerError}</p><button type="button" onClick={() => setDrawerVersion(value => value + 1)}>Thử lại</button></div>}
+          {drawerPollError && <p className="live-error" role="alert">Chưa cập nhật được dữ liệu mới; đang hiển thị lần tải trước. {drawerPollError}</p>}
           {drawerDetail && <>
             <fieldset disabled={drawerLoading || Boolean(drawerError)} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-              <OperationPanel resource="orders" row={drawerDetail.order} orderDetail={drawerDetail} onChanged={refreshDetail} />
+              <OperationPanel resource="orders" row={drawerDetail.order} orderDetail={drawerDetail} onChanged={refreshDetail} onEditingChange={setDrawerEditing} />
             </fieldset>
             <OrderDetail row={drawerDetail.order} columns={columns} label={label} personName={personName}
               related={related} version={version + drawerVersion} detailData={drawerDetail} onRefresh={refreshDetail} hideTitle />

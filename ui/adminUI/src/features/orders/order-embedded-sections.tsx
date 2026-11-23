@@ -110,7 +110,7 @@ function InvoiceBlock({ orderId, invoice, lines, vouchers }: {
         <p>Lập lúc {orderDate(invoice.thoi_gian_lap)} · {creator} · {source}</p></div>
       <div className={`${styles.sectionActions} order-invoice-actions`}>
         <button type="button" onClick={print}><Printer size={16} aria-hidden="true" />In / lưu PDF</button>
-        <Link href={invoiceHref}>Mở trang tra cứu</Link>
+        <Link href={invoiceHref}>Mở chi tiết</Link>
       </div>
     </div>
     <dl className={styles.invoiceMeta}>
