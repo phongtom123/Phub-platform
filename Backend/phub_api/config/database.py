@@ -12,7 +12,7 @@ from phub_api.config.database_transport import DatabaseTransport
 def get_http_client() -> httpx.Client:
     return httpx.Client(
         transport=DatabaseTransport(),
-        timeout=httpx.Timeout(connect=2.0, read=4.0, write=10.0, pool=1.0),
+        timeout=httpx.Timeout(connect=5.0, read=4.0, write=10.0, pool=1.0),
         follow_redirects=False,
     )
 

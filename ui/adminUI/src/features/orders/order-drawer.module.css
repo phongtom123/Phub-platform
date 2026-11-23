@@ -64,76 +64,56 @@
 .popoverFoot button { margin-left: auto; padding: 4px 10px; border: 1px solid #cfe0c8; border-radius: 8px; background: #fff; color: #28751b; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
 .popoverFoot button:hover { border-color: #9fba94; background: #f3f9f0; }
 
-.backdrop {
-  position: fixed;
-  z-index: 120;
-  inset: 0;
-  display: flex;
-  justify-content: flex-end;
-  /* Keep the order list behind the drawer readable: no dimming or blur.
-     The transparent layer still closes the drawer when clicked. */
-  background: transparent;
-  animation: fadeIn .2s ease-out;
-}
-.drawer {
-  /* Narrow enough that, on a 1920px screen, the list's ID, date, total and status stay visible. */
-  width: min(960px, calc(100vw - 52px));
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #f7f9f5;
-  box-shadow: -20px 0 60px rgb(0 0 0 / 24%);
-  animation: slideIn .28s cubic-bezier(.22, .8, .3, 1);
-}
-.drawerHeader {
+/* Order table on the left, main detail content on the right. */
+.workspace {
   position: sticky;
-  z-index: 2;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #dfe6dc;
-  background: rgb(255 255 255 / 94%);
-  backdrop-filter: blur(10px);
+  top: 88px;
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) 14px minmax(400px, var(--order-pane-width, 70%));
+  grid-template-rows: minmax(0, 1fr) 14px;
+  align-items: stretch;
+  height: var(--order-workspace-height, max(440px, calc(100dvh - 280px)));
+  min-width: 0;
+  max-width: 100%;
 }
+.detailPane, .listPane { min-width: 0; min-height: 0; }
+.detailPane { container: order-pane / inline-size; }
+.listPane { overflow: hidden; overscroll-behavior: contain; border: 1px solid #dfe6dc; border-radius: 12px; background: #fff; }
+.listPane :global(.live-table) { margin: 0; border: 0; border-radius: 0; }
+/* Keep the column table; scrolling stays inside the narrow left pane. */
+.listPane .orderList { display: table; min-width: 720px; width: 100%; }
+.listPane .orderList thead { background: #f5f8f3; }
+.listPane .orderList tbody tr { cursor: pointer; }
+.listPane .orderList .selectedRow > td { background: #edf7e8; }
+.listPane .orderList .selectedRow > td:first-child { box-shadow: inset 3px 0 #318316; }
+.splitter { display: grid; place-items: center; cursor: col-resize; touch-action: none; border-radius: 8px; outline-offset: -2px; }
+.splitter span { width: 4px; height: 56px; border-radius: 4px; background: #c9d6c3; transition: background .15s; }
+.splitter:hover, .splitter:focus-visible { background: #e7f0e1; outline: 2px solid #7fa76a; }
+.splitter:hover span, .splitter:focus-visible span, .resizing .splitter span { background: #318316; }
+.resizing { cursor: col-resize; user-select: none; }
+.resizing * { cursor: col-resize !important; }
+.heightSplitter { grid-column: 1 / -1; display: grid; place-items: center; cursor: row-resize; touch-action: none; border-radius: 8px; outline-offset: -2px; }
+.heightSplitter span { width: 64px; height: 4px; border-radius: 4px; background: #bacbb2; }
+.heightSplitter:hover, .heightSplitter:focus-visible { background: #e7f0e1; outline: 2px solid #7fa76a; }
+.heightSplitter:hover span, .heightSplitter:focus-visible span, .heightResizing .heightSplitter span { background: #318316; }
+.heightResizing { cursor: row-resize; user-select: none; }
+.heightResizing * { cursor: row-resize !important; }
+.drawer { display: flex; flex-direction: column; height: 100%; min-height: 0; background: #f7f9f5; border: 1px solid #dfe6dc; border-radius: 12px; overflow: hidden; }
+.drawerHeader { flex-shrink: 0; padding: 14px 18px; border-bottom: 1px solid #dfe6dc; background: #fff; }
 .drawerTitle { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; min-width: 0; }
-.drawerHeader p { margin: 0 0 2px; color: #788173; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-.drawerHeader h2 { margin: 0; color: #202820; font-size: 21px; overflow-wrap: anywhere; }
-.drawerHeader button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border: 1px solid #dce3d8;
-  border-radius: 10px;
-  background: #fff;
-  color: #465142;
-  cursor: pointer;
-  line-height: 0;
-}
-.drawerHeader button svg { display: block; width: 22px; height: 22px; margin: 0; flex: 0 0 22px; }
-.drawerHeader button:hover { border-color: #9fba94; background: #f4f8f1; color: #28601d; }
-.drawerHeader button:focus-visible { outline: 3px solid rgb(49 131 22 / 30%); outline-offset: 2px; }
-.drawerBody { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 20px 20px; }
-/* The shared `.live-data .live-tools` top margin doubled the body padding above the action buttons. */
+.drawerHeader p { margin: 0 0 3px; color: #788173; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.drawerHeader h2 { margin: 0; color: #202820; font-size: clamp(18px, 1.2vw, 22px); overflow-wrap: anywhere; }
+.drawerBody { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 16px; }
 .drawerBody :global(.operation-panel > .live-tools:first-child) { margin-top: 0; }
-.state { display: grid; place-items: center; min-height: 240px; color: #687363; text-align: center; }
+.state { display: grid; place-items: center; min-height: 240px; padding: 20px; color: #687363; text-align: center; }
 .state p { margin: 0 0 14px; color: #a33434; }
 .state button { padding: 9px 14px; border: 1px solid #b9c9b3; border-radius: 8px; background: #fff; cursor: pointer; }
 
-@keyframes slideIn { from { transform: translateX(100%); } }
-@keyframes fadeIn { from { opacity: 0; } }
-
-@media (max-width: 760px) {
-  .drawer { width: 100%; }
-  .drawerHeader { padding: 15px 16px; }
-  .drawerBody { padding: 18px 14px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .backdrop, .drawer { animation: none; }
+@media (max-width: 1100px) {
+  .workspace { position: static; height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; gap: 16px; }
+  .detailPane { grid-row: 1; height: min(680px, 70dvh); min-height: 320px; }
+  .listPane { grid-row: 2; height: 65dvh; }
+  .splitter, .heightSplitter { display: none; }
+  .drawerHeader { padding: 12px 14px; }
+  .drawerBody { padding: 12px; }
 }

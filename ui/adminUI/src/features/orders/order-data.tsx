@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
 import { adminFetch, invalidateAdminCache, sameAdminData } from "../../lib/admin-fetch";
 import { useAdminPolling } from "../../lib/use-admin-polling";
 import { dataHref } from "../../lib/data-navigation";
@@ -14,6 +13,7 @@ import { OrderBadges, OrderDetail } from "./order-detail";
 import type { AdminOrderDetailData } from "./order-detail-data";
 import { ScrollableTable } from "../tables/scrollable-table";
 import { OperationPanel } from "../operations/operation-panel";
+import { OrderSplitPane } from "./order-split-pane";
 import styles from "./order-drawer.module.css";
 
 type Person = { resource: "customers" | "employees"; id: string };
@@ -185,20 +185,23 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
   };
   const { names, retry } = useOrderPeople(detail ? [] : visibleRows.filter(row =>
     summaryName(row, "ma_kh") === undefined || summaryName(row, "ma_nhan_vien") === undefined), version);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(initialOrderId);
+  const firstOrderId = visibleRows.length ? String(visibleRows[0].ma_donhang) : null;
+  const rowIds = JSON.stringify(visibleRows.map(row => String(row.ma_donhang)));
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(initialOrderId ?? firstOrderId);
   const [drawerDetail, setDrawerDetail] = useState<AdminOrderDetailData | null>(null);
   const [drawerError, setDrawerError] = useState("");
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerVersion, setDrawerVersion] = useState(0);
   const [drawerEditing, setDrawerEditing] = useState(false);
-  const closeButton = useRef<HTMLButtonElement | null>(null);
-  const returnFocus = useRef<HTMLElement | null>(null);
+  const paneTitle = useId();
+  const detailBody = useRef<HTMLDivElement | null>(null);
   const rowChanged = useRef(onRowChanged);
   rowChanged.current = onRowChanged;
   const activeOrderId = useRef(selectedOrderId);
   activeOrderId.current = selectedOrderId;
   const activeDetail = detail ? detailData : drawerDetail ?? undefined;
-  const layout = orderListLayout(columns, Boolean(summaries));
+  const layout = orderListLayout(columns, Boolean(summaries)).filter(entry =>
+    entry.kind !== "people" && entry.kind !== "channel" && entry.kind !== "products");
   const cellKey = (entry: (typeof layout)[number]) => entry.kind === "column" ? entry.column.name : `__${entry.kind}`;
   const header = (entry: (typeof layout)[number]) => entry.kind === "column" ? nameLabel(entry.column.name)
     : { total: "Tổng tiền", channel: "Kênh / nhận hàng", people: "Khách hàng / nhân viên", products: "Sản phẩm" }[entry.kind];
@@ -251,7 +254,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
   const warmed = useRef(new Map<string, number>());
   const warmDetail = (orderId: string) => {
     const now = Date.now();
-    if (selectedOrderId || now - (warmed.current.get(orderId) ?? 0) < 5_000) return;
+    if (selectedOrderId === orderId || now - (warmed.current.get(orderId) ?? 0) < 5_000) return;
     warmed.current.set(orderId, now);
     void adminFetch(detailPath(orderId), { cache: "no-store" }).catch(() => { /* The click reports errors. */ });
   };
@@ -260,27 +263,33 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     onFocus: () => warmDetail(orderId),
   });
 
-  const openDetail = (orderId: string, trigger: HTMLElement) => {
-    returnFocus.current = trigger;
+  const openDetail = (orderId: string, _trigger: HTMLElement) => {
+    if (orderId === selectedOrderId) return;
     setDrawerDetail(null); setDrawerError(""); setDrawerEditing(false);
     setDrawerVersion(value => value + 1);
     setSelectedOrderId(orderId);
+    if (initialOrderId && orderId !== initialOrderId) onDismissInitial?.();
   };
-  const closeDetail = useCallback(() => {
-    if (selectedOrderId && selectedOrderId === initialOrderId) onDismissInitial?.();
-    setSelectedOrderId(null); setDrawerDetail(null); setDrawerError(""); setDrawerEditing(false);
-    requestAnimationFrame(() => returnFocus.current?.focus());
-  }, [selectedOrderId, initialOrderId, onDismissInitial]);
 
   useEffect(() => {
     if (initialOrderId) setSelectedOrderId(initialOrderId);
   }, [initialOrderId]);
   useEffect(() => {
-    onDetailOpenChange?.(Boolean(selectedOrderId));
-    return () => onDetailOpenChange?.(false);
-  }, [selectedOrderId, onDetailOpenChange]);
+    if (detail || drawerEditing || drawerLoading) return;
+    const ids: string[] = JSON.parse(rowIds);
+    // Keep a deep-linked order even when it is outside the current list page.
+    if (selectedOrderId === initialOrderId && initialOrderId) return;
+    if (selectedOrderId && ids.includes(selectedOrderId)) return;
+    setSelectedOrderId(firstOrderId); setDrawerDetail(null); setDrawerError("");
+  }, [detail, rowIds, firstOrderId, initialOrderId, selectedOrderId, drawerEditing, drawerLoading]);
   useEffect(() => {
-    if (!selectedOrderId) return;
+    // The panel is persistent: pause the surrounding list only during edits or
+    // foreground reads, rather than freezing it for the whole page visit.
+    onDetailOpenChange?.(drawerEditing || drawerLoading);
+    return () => onDetailOpenChange?.(false);
+  }, [drawerEditing, drawerLoading, onDetailOpenChange]);
+  useEffect(() => {
+    if (!selectedOrderId || detail) return;
     const controller = new AbortController();
     setDrawerLoading(true); setDrawerError("");
     // adminFetch keeps a private in-memory snapshot even with HTTP no-store.
@@ -298,7 +307,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
       if (!controller.signal.aborted) setDrawerError(reason.message || "Không tải được chi tiết đơn hàng.");
     }).finally(() => { if (!controller.signal.aborted) setDrawerLoading(false); });
     return () => controller.abort();
-  }, [selectedOrderId, drawerVersion]);
+  }, [selectedOrderId, drawerVersion, detail]);
   const drawerPollError = useAdminPolling(JSON.stringify([selectedOrderId, drawerVersion]),
     !detail && Boolean(selectedOrderId && drawerDetail) && !drawerLoading && !drawerError && !drawerEditing,
     async (signal, canApply) => {
@@ -311,15 +320,7 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
         rowChanged.current?.(body.order);
       }
     });
-  useEffect(() => {
-    if (!selectedOrderId) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeButton.current?.focus();
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") closeDetail(); };
-    document.addEventListener("keydown", escape);
-    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", escape); };
-  }, [selectedOrderId, closeDetail]);
+  useEffect(() => { detailBody.current?.scrollTo({ top: 0 }); }, [selectedOrderId]);
 
   const refreshDetail = (saved?: DataRow) => {
     // Use the committed row immediately, even if the drawer closes before its
@@ -340,36 +341,37 @@ export function OrderData({ rows, columns, keys, detail = false, version, label,
     {Object.values(names).some(name => name === null) && <p className="live-note" role="status">
       Chưa tải được tên của một số hồ sơ. <button type="button" onClick={retry}>Tải lại tên</button>
     </p>}
-    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} detailData={detailData} onRefresh={onRefresh} /> : <ScrollableTable><table className={styles.orderList}>
-      <thead><tr>{layout.map(entry => <th key={cellKey(entry)} className={entry.kind === "total" ? styles.numeric : undefined}>{header(entry)}</th>)}<th>Thao tác</th></tr></thead>
-      <tbody>{visibleRows.map(row => <tr key={JSON.stringify(keys.map(key => row[key]))}>
-        {layout.map(entry => <td key={cellKey(entry)} className={entry.kind === "total" ? styles.numeric : entry.kind === "products" ? styles.productCell : undefined}>{listCell(row, entry)}</td>)}
-        <td><button className={styles.actionButton} type="button" {...warmProps(String(row.ma_donhang))} onClick={event => openDetail(String(row.ma_donhang), event.currentTarget)}>Chi tiết</button></td>
+    {detail ? <OrderDetail row={rows[0]} columns={columns} label={label} personName={personName} related={related} version={version} detailData={detailData} onRefresh={onRefresh} /> : <OrderSplitPane list={<ScrollableTable contained><table className={styles.orderList}>
+      <thead><tr>{layout.map(entry => <th key={cellKey(entry)} className={entry.kind === "total" ? styles.numeric : undefined}>{header(entry)}</th>)}</tr></thead>
+      <tbody>{visibleRows.map(row => <tr key={JSON.stringify(keys.map(key => row[key]))} className={String(row.ma_donhang) === selectedOrderId ? styles.selectedRow : undefined}
+        aria-selected={String(row.ma_donhang) === selectedOrderId}
+        onClick={event => {
+          if (!(event.target as HTMLElement).closest("a, button, input, select, textarea, [popover]")) openDetail(String(row.ma_donhang), event.currentTarget);
+        }}>
+        {layout.map(entry => <td key={cellKey(entry)} data-order-cell={entry.kind === "column" ? entry.column.name : entry.kind} className={entry.kind === "total" ? styles.numeric : entry.kind === "products" ? styles.productCell : undefined}>{listCell(row, entry)}</td>)}
       </tr>)}</tbody>
-    </table>{!visibleRows.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>}
-    {!detail && selectedOrderId && <div className={styles.backdrop} onMouseDown={event => event.target === event.currentTarget && closeDetail()}>
-      <section className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="order-drawer-title">
+    </table>{!visibleRows.length && <p className="live-note">Chưa có dữ liệu phù hợp.</p>}</ScrollableTable>} detail={
+      <section className={styles.drawer} aria-labelledby={paneTitle} data-order-detail-panel>
         <header className={styles.drawerHeader}>
           <div className={styles.drawerTitle}>
-            <div><p>Đơn hàng</p><h2 id="order-drawer-title">{selectedOrderId}</h2></div>
-            {drawerDetail && <OrderBadges row={drawerDetail.order} />}
+            <div><p>Chi tiết đơn hàng</p><h2 id={paneTitle}>{selectedOrderId ?? "Chưa có đơn hàng"}</h2></div>
+            {drawerDetail?.order_id === selectedOrderId && <OrderBadges row={drawerDetail.order} />}
           </div>
-          <button ref={closeButton} type="button" onClick={closeDetail} aria-label="Đóng chi tiết đơn hàng"><X aria-hidden="true" /></button>
         </header>
-        <div className={styles.drawerBody}>
-          {drawerLoading && !drawerDetail && <div className={styles.state} role="status">Đang tải chi tiết đơn hàng…</div>}
+        <div ref={detailBody} className={styles.drawerBody}>
+          {!selectedOrderId && <div className={styles.state}>Chưa có đơn hàng phù hợp. Thử thay đổi bộ lọc hoặc tìm kiếm.</div>}
+          {selectedOrderId && !drawerDetail && !drawerError && <div className={styles.state} role="status">Đang tải chi tiết đơn hàng…</div>}
           {drawerLoading && drawerDetail && <p role="status">Đang cập nhật chi tiết đơn hàng…</p>}
           {drawerError && <div className={styles.state} role="alert"><p>{drawerError}</p><button type="button" onClick={() => setDrawerVersion(value => value + 1)}>Thử lại</button></div>}
           {drawerPollError && <p className="live-error" role="alert">Chưa cập nhật được dữ liệu mới; đang hiển thị lần tải trước. {drawerPollError}</p>}
-          {drawerDetail && <>
+          {drawerDetail?.order_id === selectedOrderId && <>
             <fieldset disabled={drawerLoading || Boolean(drawerError)} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-              <OperationPanel resource="orders" row={drawerDetail.order} orderDetail={drawerDetail} onChanged={refreshDetail} onEditingChange={setDrawerEditing} />
+              <OperationPanel key={selectedOrderId} resource="orders" row={drawerDetail.order} orderDetail={drawerDetail} onChanged={refreshDetail} onEditingChange={setDrawerEditing} />
             </fieldset>
             <OrderDetail row={drawerDetail.order} columns={columns} label={label} personName={personName}
               related={related} version={version + drawerVersion} detailData={drawerDetail} onRefresh={refreshDetail} hideTitle />
           </>}
         </div>
-      </section>
-    </div>}
+      </section>} />}
   </>;
 }

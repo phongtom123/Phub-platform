@@ -17,7 +17,9 @@ class DatabaseTransport(httpx.BaseTransport):
     def __init__(self, transport=None, *, attempts=3, budget=8.0):
         self.transport = transport if transport is not None else httpx.HTTPTransport(
             http2=False, retries=0,
-            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10, keepalive_expiry=5),
+            # Keep sockets across the UI's 10-second polling interval instead
+            # of requiring a fresh TCP/TLS connection for every polling round.
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10, keepalive_expiry=30),
         )
         self.attempts = attempts
         self.budget = budget
