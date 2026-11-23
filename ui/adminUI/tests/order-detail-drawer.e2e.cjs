@@ -28,6 +28,9 @@ const detail = {
   try {
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     const errors = [];
+    let currentDetail = detail;
+    let holdDetail = null;
+    let detailReads = 0;
     page.on("pageerror", error => errors.push(error.message));
     await page.route("**/*", async route => {
       const request = route.request(), url = new URL(request.url());
@@ -36,7 +39,11 @@ const detail = {
       const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
       if (url.pathname.endsWith("/auth/me")) return respond({ account_id: "NV-1", username: "staff", name: "Nhân viên", role: "NHAN_VIEN", warehouse_id: 1 });
       if (url.pathname.endsWith("/data/resources")) return respond(resources);
-      if (url.pathname === `/api/backend/admin/orders/${orderId}/detail`) return respond(detail);
+      if (url.pathname === `/api/backend/admin/orders/${orderId}/detail`) {
+        detailReads++;
+        if (holdDetail) await holdDetail;
+        return respond(currentDetail);
+      }
       if (url.pathname.endsWith("/data/orders")) return respond({ data: [order], total: 1, page: 1, page_size: 20, filters: {} });
       if (url.pathname.endsWith("/data/customers")) return respond({ data: [{ ma_kh: "KH-1", ten_kh: "Nguyễn Khách Hàng" }], total: 1, page: 1, page_size: 20 });
       if (url.pathname.endsWith("/data/employees")) return respond({ data: [{ ma_nhan_vien: "NV-1", ho_ten: "Trần Nhân Viên" }], total: 1, page: 1, page_size: 20 });
@@ -72,8 +79,32 @@ const detail = {
     assert.equal(await page.evaluate(() => document.body.style.overflow), "");
     assert.equal(await trigger.evaluate(element => element === document.activeElement), true);
 
+    // A snapshot older than the 1 s request dedupe window still renders while
+    // the server's freshness check is blocked. This must not become a cold load.
+    await page.waitForTimeout(1_100);
+    let releaseDetail;
+    holdDetail = new Promise(resolve => { releaseDetail = resolve; });
+    const revalidation = page.waitForRequest(request => new URL(request.url()).pathname === `/api/backend/admin/orders/${orderId}/detail`);
     await page.getByRole("button", { name: "Chi tiết", exact: true }).click();
     await dialog.waitFor();
+    await dialog.getByRole("heading", { name: "Khách hàng & giao nhận", exact: true }).waitFor({ timeout: 2_000 });
+    await revalidation;
+    currentDetail = { ...detail, order: { ...order, ghi_chu: "Cập nhật từ thiết bị khác" } };
+    holdDetail = null;
+    releaseDetail();
+    await dialog.getByText("Cập nhật từ thiết bị khác", { exact: true }).waitFor();
+
+    // The open drawer keeps checking every 10 s, even though the list behind
+    // it is paused. Updating the result must not blank the existing drawer.
+    const readsBeforePoll = detailReads;
+    currentDetail = { ...detail, order: { ...order, ghi_chu: "Cập nhật qua polling" } };
+    await dialog.getByText("Cập nhật qua polling", { exact: true }).waitFor({ timeout: 15_000 });
+    assert.ok(detailReads > readsBeforePoll);
+
+    // An explicit refresh must bypass a snapshot that was just checked.
+    currentDetail = { ...detail, order: { ...order, ghi_chu: "Cập nhật theo yêu cầu" } };
+    await dialog.getByRole("button", { name: "Cập nhật thanh toán", exact: true }).click();
+    await dialog.getByText("Cập nhật theo yêu cầu", { exact: true }).waitFor();
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
 
@@ -90,7 +121,7 @@ const detail = {
     await legacyDialog.getByRole("button", { name: "Đóng chi tiết đơn hàng" }).click();
     await page.waitForURL(url => !url.searchParams.has("key"));
     assert.deepEqual(errors, []);
-    console.log("PASS: order detail opens as an animated right drawer and closes by X, Escape, or backdrop.");
+    console.log("PASS: order drawer reuses warm data, revalidates in the background, polls every 10 s and supports explicit refresh and dismissal.");
   } finally {
     await browser.close();
   }
