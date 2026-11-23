@@ -12,7 +12,7 @@ const resources = [
 ];
 
 (async () => {
-  const browser = await chromium.launch({ channel: "chrome", headless: true });
+  const browser = await chromium.launch({ executablePath: process.env.PHUB_CHROMIUM_EXECUTABLE, headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     const errors = [], writes = [], reads = { list: 0, metadata: 0, people: 0, detail: 0 };
@@ -36,11 +36,11 @@ const resources = [
         reads.people++;
         return reply({ data: [{ ma_kh: "KH1", ten_kh: "Khách thử", ma_nhan_vien: "NV1", ho_ten: "Nhân viên thử" }], total: 1 });
       }
-      if (url.pathname === `/api/backend/admin/orders/${orderId}/detail`) {
+      if (url.pathname === `/api/backend/admin/orders/${orderId}/detail` || url.pathname === `/api/backend/admin/orders/${other.ma_donhang}/detail`) {
         reads.detail++;
         if (releaseDetail) await new Promise(resolve => { releaseDetail = resolve; });
         if (failDetail) return reply({ detail: "Không tải được chi tiết mới (fixture)." }, 503);
-        return reply({ order_id: orderId, order, customer: { ma_kh: "KH1", ten_kh: "Khách thử" }, employee: { ma_nhan_vien: "NV1", ho_ten: "Nhân viên thử" },
+        return reply({ order_id: url.pathname.includes(other.ma_donhang) ? other.ma_donhang : orderId, order: url.pathname.includes(other.ma_donhang) ? other : order, customer: { ma_kh: "KH1", ten_kh: "Khách thử" }, employee: { ma_nhan_vien: "NV1", ho_ten: "Nhân viên thử" },
           lines: [], invoice: null, payments: [], voucher_uses: [], history: [],
           financial: { invoice_id: null, invoice_status: "CHUA_LAP", payment_status: "CHUA_CO_HOA_DON", total: null, collected: "0.00", refunded: "0.00", paid: "0.00", remaining: null } });
       }
@@ -57,16 +57,16 @@ const resources = [
     });
 
     await page.goto(base + "/?module=orders");
-    const table = page.locator(".live-data table").first();
+    const table = page.getByRole("region", { name: "Danh sách đơn hàng", exact: true }).locator("table");
     const row = table.locator("tbody tr").filter({ has: page.getByRole("button", { name: orderId, exact: true }) });
-    await row.getByText("Mới", { exact: true }).waitFor();
-    await table.getByText("Nhân viên thử", { exact: true }).first().waitFor();
+    await row.waitFor();
+    assert.equal(await table.getByRole("columnheader", { name: "Khách hàng / nhân viên", exact: true }).count(), 0);
     await page.evaluate(() => {
-      window.fixtureTable = document.querySelector(".live-data table");
+      window.fixtureTable = document.querySelector('[aria-label="Danh sách đơn hàng"] table');
       window.fixtureOther = window.fixtureTable.querySelectorAll("tbody tr")[1];
     });
-    await row.getByRole("button", { name: "Chi tiết", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: orderId });
+    await row.getByRole("button", { name: orderId, exact: true }).click();
+    const dialog = page.getByRole("region", { name: orderId, exact: true });
     await dialog.getByRole("button", { name: "Xác nhận đơn", exact: true }).waitFor();
     const baseline = { ...reads };
     const unchanged = async () => {
@@ -76,53 +76,52 @@ const resources = [
       assert.ok(await page.evaluate(() => window.fixtureTable.isConnected && window.fixtureOther.isConnected), "table and unrelated row stay mounted");
     };
     await dialog.getByRole("button", { name: "Xác nhận đơn", exact: true }).click();
-    await row.getByText("Đã xác nhận", { exact: true }).waitFor();
+    await dialog.getByText("Đã xác nhận", { exact: true }).waitFor();
     await dialog.getByRole("button", { name: "Chuẩn bị hàng", exact: true }).waitFor({ state: "visible" });
-    await page.waitForFunction(() => !document.querySelector('[role="dialog"] fieldset').disabled);
+    await page.waitForFunction(() => !document.querySelector('[data-order-detail-panel] fieldset').disabled);
     await unchanged();
 
     // A successful write must update the outside row even if detail revalidation fails.
     failDetail = true;
     await dialog.getByRole("button", { name: "Chuẩn bị hàng", exact: true }).click();
-    await row.getByText("Đang chuẩn bị", { exact: true }).waitFor();
+    await dialog.getByText("Đang chuẩn bị", { exact: true }).waitFor();
     await dialog.getByRole("alert").getByText("Không tải được chi tiết mới (fixture).", { exact: true }).waitFor();
     await unchanged();
     failDetail = false;
     await dialog.getByRole("button", { name: "Thử lại", exact: true }).click();
-    await page.waitForFunction(() => !document.querySelector('[role="dialog"] fieldset').disabled);
+    await page.waitForFunction(() => !document.querySelector('[data-order-detail-panel] fieldset').disabled);
 
     failWrite = true;
     await dialog.getByRole("button", { name: "Xác nhận xuất kho", exact: true }).click();
     await dialog.getByText("Thao tác chưa thành công (fixture).", { exact: false }).waitFor();
-    assert.equal(await row.getByText("Đang chuẩn bị", { exact: true }).count(), 1, "failed write must not change the row");
+    assert.equal(await dialog.getByText("Đang chuẩn bị", { exact: true }).count(), 1, "failed write must not change the row");
     await unchanged();
     failWrite = false;
     releaseDetail = true;
     await dialog.getByRole("button", { name: "Thử lại cùng yêu cầu", exact: true }).click();
-    await row.getByText("Đã xuất kho", { exact: true }).waitFor();
+    await dialog.getByText("Đã xuất kho", { exact: true }).waitFor();
     assert.equal(writes.at(-1).key, writes.at(-2).key, "retry preserves idempotency");
-    await dialog.getByRole("button", { name: "Đóng chi tiết đơn hàng", exact: true }).click();
+    await table.getByRole("button", { name: other.ma_donhang, exact: true }).click();
     await dialog.waitFor({ state: "detached" });
     if (typeof releaseDetail === "function") releaseDetail();
     releaseDetail = null;
-    await row.getByText("Đã xuất kho", { exact: true }).waitFor();
+    await row.waitFor();
     await unchanged();
 
     // A status filter removes only the changed order and corrects the count.
     order.trang_thai = "MOI";
     await page.goto(base + "/?module=orders&filters=" + encodeURIComponent(JSON.stringify({ trang_thai: "MOI" })));
-    await row.getByText("Mới", { exact: true }).waitFor();
-    await row.getByRole("button", { name: "Chi tiết", exact: true }).click();
+    await row.waitFor();
+    await row.getByRole("button", { name: orderId, exact: true }).click();
     await dialog.getByRole("button", { name: "Xác nhận đơn", exact: true }).waitFor();
     const listReads = reads.list;
     await dialog.getByRole("button", { name: "Xác nhận đơn", exact: true }).click();
     await row.waitFor({ state: "detached" });
-    await dialog.getByRole("button", { name: "Đóng chi tiết đơn hàng", exact: true }).click();
     await dialog.waitFor({ state: "detached" });
     assert.equal(await table.locator("tbody tr").count(), 1);
     await page.getByText("1 kết quả · Trang 1", { exact: true }).waitFor();
     assert.equal(reads.list, listReads);
     assert.deepEqual(errors, []);
-    console.log("PASS: status updates patch one order without list/metadata/people reload or table remount; detail errors, failed writes, idempotent retry, early close and filtered counts stay correct.");
+    console.log("PASS: status updates patch one order without list/metadata/people reload or table remount; detail errors, failed writes, idempotent retry, selection changes and filtered counts stay correct.");
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

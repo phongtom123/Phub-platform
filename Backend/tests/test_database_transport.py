@@ -216,7 +216,7 @@ def test_supabase_factory_uses_shared_pool_and_shuts_down(monkeypatch):
         assert db.options.httpx_client is client
         assert db.postgrest.session is client
         assert isinstance(client._transport, DatabaseTransport)
-        assert client.timeout.connect == 2 and client.timeout.read == 4
+        assert client.timeout.connect == 5 and client.timeout.read == 4
     finally:
         module.close_supabase()
     assert client.is_closed

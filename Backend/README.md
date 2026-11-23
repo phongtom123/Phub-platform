@@ -43,7 +43,8 @@ Swagger có schema riêng cho từng module, role và mã lỗi. Xem [hướng d
 ## Xử lý kết nối lỗi tạm thời (503)
 
 Backend dùng HTTP client/pool chung cho Supabase, HTTP/1.1, tối đa 20 kết nối
-và 10 kết nối giữ lại. Timeout mỗi thao tác: connect 2 giây, read 4 giây,
+và 10 kết nối giữ lại, hết hạn sau 30 giây rảnh để tái dùng qua chu kỳ polling
+10 giây của giao diện. Timeout mỗi thao tác: connect 5 giây, read 4 giây,
 write 10 giây, chờ pool 1 giây. Đây không phải giới hạn thời gian toàn endpoint.
 HTTP/1.1 là lựa chọn thận trọng, chưa chứng minh HTTP/2 gây lỗi trên Render.
 

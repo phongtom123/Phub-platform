@@ -66,22 +66,16 @@
 .orderTable td { font-size: 13px; }
 .orderTable tbody tr:last-child td { border-bottom: 0; }
 .orderTable small { display: block; margin-top: 2px; color: #7d8578; font-size: 11px; }
+.orderTable tfoot th, .orderTable tfoot td { padding: 12px 8px; border-top: 1px solid #cfdcc8; border-bottom: 0; background: #edf5e9; color: #285c24; font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .invoiceCard { background: linear-gradient(180deg, #fbfef9, #fff 120px); }
 /* Buyer and address on one line, label beside value. */
 .invoiceMeta { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; padding: 8px 12px; border: 1px solid #e5eae2; border-radius: 8px; background: #fff; }
 .invoiceMeta > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.invoiceMeta dt, .invoiceTotals dt { color: #747f70; font-size: 12px; }
+.invoiceMeta dt { color: #747f70; font-size: 12px; }
 .invoiceMeta dt { flex-shrink: 0; font-size: 13px; }
-.invoiceMeta dd, .invoiceTotals dd { margin: 2px 0 0; font-weight: 700; overflow-wrap: anywhere; }
+.invoiceMeta dd { margin: 2px 0 0; font-weight: 700; overflow-wrap: anywhere; }
 .invoiceMeta dd { margin: 0; font-size: 14px; }
-.invoiceTotals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 12px 0 0; overflow: hidden; border: 1px solid #dfe6dc; border-radius: 10px; background: #dfe6dc; }
-.invoiceTotals > div { min-width: 0; padding: 9px 12px; background: #fff; }
-.invoiceTotals > div:last-child { background: #eaf5e7; color: #285c24; }
-.invoiceTotals dd { font-size: 16px; font-variant-numeric: tabular-nums; }
-/* Provisional totals (no invoice yet): dashed frame so they never read as an issued invoice. */
-.invoiceTotals.provisional { border-style: dashed; background: #e6ebe3; }
-.invoiceTotals.provisional > div:last-child { background: #f6f8f4; color: #3c4a37; }
 .voucherList { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
 .voucherList li { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid #f0dcb0; border-radius: 8px; background: #fff8e8; color: #7a5612; font-size: 13px; }
 .voucherList li span { flex: 1; min-width: 0; }
@@ -130,6 +124,10 @@
 @media (max-width: 960px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
 }
+@container order-pane (max-width: 800px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .related { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 560px) {
   .card { padding: 14px; }
   .detail .header { gap: 16px; padding-bottom: 16px; }
@@ -137,7 +135,6 @@
   .related { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .sectionActions { width: 100%; }
   .sectionActions button, .sectionActions a { flex: 1; }
-  .invoiceTotals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* Print only the invoice card (header, product lines, totals); hide everything around it. */

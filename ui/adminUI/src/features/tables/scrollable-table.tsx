@@ -7,7 +7,9 @@ import styles from "./scrollable-table.module.css";
  * Keep a second, synchronized scrollbar within reach above tall tables.
  * Short tables pass `topRail={false}`: their own scrollbar is already in view, and two bars look broken.
  */
-export function ScrollableTable({ children, className = "", topRail = true }: { children: ReactNode; className?: string; topRail?: boolean }) {
+export function ScrollableTable({ children, className = "", topRail = true, contained = false }: {
+  children: ReactNode; className?: string; topRail?: boolean; contained?: boolean;
+}) {
   const viewport = useRef<HTMLDivElement>(null);
   const rail = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -37,8 +39,9 @@ export function ScrollableTable({ children, className = "", topRail = true }: { 
     if (target && Math.abs(target.scrollLeft - source.scrollLeft) > .5) target.scrollLeft = source.scrollLeft;
   };
 
-  return <div className={styles.root}>
+  return <div className={`${styles.root}${contained ? ` ${styles.contained}` : ""}`}>
     <div ref={rail} className={styles.rail} hidden={!topRail || !overflowing} data-table-scrollbar
+      style={contained && width.viewport ? { width: width.viewport } : undefined}
       tabIndex={0} role="region" aria-label="Cuộn ngang bảng" aria-controls={id} title="Kéo để xem các cột bên phải"
       onScroll={event => sync(event.currentTarget, viewport.current)}
       onKeyDown={event => {

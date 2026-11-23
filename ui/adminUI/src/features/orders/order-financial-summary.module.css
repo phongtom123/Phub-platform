@@ -14,5 +14,6 @@
 .values dd { margin: 0; font-size: 18px; font-weight: 700; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .error { color: #a32d24; line-height: 1.5; }
 .cancelledNote { margin: 10px 0 0; color: #657061; font-size: 13px; line-height: 1.6; }
+@container order-pane (max-width: 640px) { .values { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .values { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .summary { padding: 14px; } .values { grid-template-columns: minmax(0, 1fr); } }

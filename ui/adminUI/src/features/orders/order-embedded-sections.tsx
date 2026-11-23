@@ -7,7 +7,7 @@ import { inlineChoiceLabel, type DataRow } from "../../lib/inline-table-data";
 import { formatMoney } from "../operations/financial-summary";
 import { ScrollableTable } from "../tables/scrollable-table";
 import type { AdminOrderDetailData } from "./order-detail-data";
-import { addOrderMoney, orderDate, subtractOrderMoney, sumOrderMoney } from "./order-detail-format";
+import { addOrderMoney, orderDate, sumOrderMoney } from "./order-detail-format";
 import styles from "./order-detail.module.css";
 
 const actionLabels: Record<string, string> = {
@@ -33,6 +33,7 @@ function money(value: unknown) {
 }
 
 function OrderLines({ lines }: { lines: DataRow[] }) {
+  const total = sumOrderMoney(lines.map(line => line.thanh_tien));
   return <>
     <div className={styles.subHeading}>
       <h3 id="order-lines-title"><Package size={16} aria-hidden="true" />Sản phẩm trong đơn</h3>
@@ -49,6 +50,7 @@ function OrderLines({ lines }: { lines: DataRow[] }) {
           <td>{money(line.tien_thue)}<small>{text(line.thue_suat)}%</small></td><td><strong>{money(line.thanh_tien)}</strong></td>
         </tr>;
       })}</tbody>
+      <tfoot><tr><th scope="row" colSpan={6}>Tổng tiền</th><td><strong>{total === null ? "—" : formatMoney(total)}</strong></td></tr></tfoot>
     </table></ScrollableTable> : <p className={styles.empty}>Đơn hàng chưa có dòng sản phẩm.</p>}
   </>;
 }
@@ -66,21 +68,6 @@ function VoucherNote({ uses }: { uses: DataRow[] }) {
   })}</ul>;
 }
 
-/** Before an invoice exists, the order's own lines still give an exact provisional total. */
-function LineTotals({ lines }: { lines: DataRow[] }) {
-  if (!lines.length) return null;
-  const discount = sumOrderMoney(lines.flatMap(line => [line.giam_gia ?? "0", line.giam_gia_voucher ?? "0"]));
-  const tax = sumOrderMoney(lines.map(line => line.tien_thue ?? "0"));
-  const total = sumOrderMoney(lines.map(line => line.thanh_tien));
-  const beforeTax = total === null || tax === null ? null : subtractOrderMoney(total, tax);
-  return <dl className={`${styles.invoiceTotals} ${styles.provisional}`}>
-    <div><dt>Giảm giá</dt><dd>{discount === null ? "—" : formatMoney(discount)}</dd></div>
-    <div><dt>Trước thuế</dt><dd>{beforeTax === null ? "—" : formatMoney(beforeTax)}</dd></div>
-    <div><dt>Tiền thuế</dt><dd>{tax === null ? "—" : formatMoney(tax)}</dd></div>
-    <div><dt>Tạm tính</dt><dd>{total === null ? "—" : formatMoney(total)}</dd></div>
-  </dl>;
-}
-
 /** Invoice header, product lines and totals in one card, so the whole invoice reads without scrolling. */
 function InvoiceBlock({ orderId, invoice, lines, vouchers }: {
   orderId: string; invoice: DataRow | null; lines: DataRow[]; vouchers: DataRow[];
@@ -89,7 +76,6 @@ function InvoiceBlock({ orderId, invoice, lines, vouchers }: {
     <div className={styles.sectionHeading}><div><h2 id="order-invoice-title"><ReceiptText size={18} aria-hidden="true" />Hóa đơn</h2>
       <p>Chưa lập hóa đơn. Số tiền dưới đây là tạm tính từ các dòng sản phẩm; dùng “Lập hóa đơn” ở đầu trang khi đơn đủ điều kiện.</p></div></div>
     <OrderLines lines={lines} />
-    <LineTotals lines={lines} />
     <VoucherNote uses={vouchers} />
   </section>;
 
@@ -118,12 +104,6 @@ function InvoiceBlock({ orderId, invoice, lines, vouchers }: {
       <div><dt>Địa chỉ</dt><dd>{text(invoice.dia_chi_nguoi_mua)}</dd></div>
     </dl>
     <OrderLines lines={lines} />
-    <dl className={styles.invoiceTotals}>
-      <div><dt>Giảm giá</dt><dd>{money(invoice.tong_tien_giam)}</dd></div>
-      <div><dt>Trước thuế</dt><dd>{money(invoice.tong_tien_truoc_thue)}</dd></div>
-      <div><dt>Tiền thuế</dt><dd>{money(invoice.tong_tien_thue)}</dd></div>
-      <div><dt>Tổng sau thuế</dt><dd>{money(invoice.tong_tien_sau_thue)}</dd></div>
-    </dl>
     <VoucherNote uses={vouchers} />
   </section>;
 }
