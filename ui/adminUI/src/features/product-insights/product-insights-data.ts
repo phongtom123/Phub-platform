@@ -93,6 +93,36 @@ export function presetRange(preset: RangePreset, now = new Date()): InsightsRang
   return { start, end };
 }
 
+/** Calendar year range clamped to today (Vietnam time) so the backend never rejects future dates. */
+export function yearRange(year: number, now = new Date()): InsightsRange {
+  const today = vietnamDay(now)!;
+  const start = `${year}-01-01`;
+  const yearEnd = `${year}-12-31`;
+  if (start > today) return { start: today, end: today };
+  return { start, end: yearEnd > today ? today : yearEnd };
+}
+
+/** Calendar quarter range clamped to today (Vietnam time); null when the quarter has not started yet. */
+export function quarterRange(year: number, quarter: 1 | 2 | 3 | 4, now = new Date()): InsightsRange | null {
+  const today = vietnamDay(now)!;
+  const firstMonth = (quarter - 1) * 3 + 1;
+  const start = `${year}-${String(firstMonth).padStart(2, "0")}-01`;
+  if (start > today) return null;
+  const last = new Date(Date.UTC(year, firstMonth + 2, 0)).toISOString().slice(0, 10);
+  return { start, end: last > today ? today : last };
+}
+
+export type QuarterSlot<T> = { quarter: 1 | 2 | 3 | 4; key: string; label: string; data: T | null };
+
+/** Maps timeline points into 4 fixed quarter slots (Q1–Q4) for the given year. */
+export function fourQuarterSlots<T extends { period: string }>(points: T[], year: number): QuarterSlot<T>[] {
+  const byKey = new Map(points.map(point => [point.period, point]));
+  return ([1, 2, 3, 4] as const).map(quarter => {
+    const key = `${year}-Q${quarter}`;
+    return { quarter, key, label: `Quý ${quarter}/${year}`, data: byKey.get(key) ?? null };
+  });
+}
+
 export function formatVND(value: string | number): string {
   const num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "0 đ";

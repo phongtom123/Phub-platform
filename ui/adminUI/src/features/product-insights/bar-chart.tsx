@@ -56,7 +56,7 @@ export function BarChart({ points, unit, ariaLabel }: { points: BarPoint[]; unit
 
   return (
     <div className={styles.chartWrap} ref={wrap}>
-      <svg className={styles.chartSvg} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel} onMouseLeave={() => setActive(null)}>
+      <svg className={styles.chartSvg} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
         {ticks.map(value => (
           <g key={value}>
             <line x1={left} x2={width - right} y1={y(value)} y2={y(value)} stroke="#e5e9e2" strokeDasharray={value === 0 ? undefined : "4 5"} />
@@ -82,8 +82,17 @@ export function BarChart({ points, unit, ariaLabel }: { points: BarPoint[]; unit
                 <text x={left + slot * index + slot / 2} y={height - 14} textAnchor="middle" className={styles.chartTick}>{shortPeriod(p.period)}</text>
               )}
               <rect x={left + slot * index} y={upper} width={slot} height={bottom - upper} fill="transparent" tabIndex={0}
+                style={{ cursor: "pointer" }}
                 aria-label={`${p.label}: ${p.details.map(([name, value]) => `${name} ${value}`).join(", ")}`}
-                onMouseEnter={() => setActive(index)} onFocus={() => setActive(index)} onBlur={() => setActive(null)} />
+                onClick={() => setActive(prev => (prev === index ? null : index))}
+                onKeyDown={event => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setActive(prev => (prev === index ? null : index));
+                  } else if (event.key === "Escape") {
+                    setActive(null);
+                  }
+                }} />
             </g>
           );
         })}

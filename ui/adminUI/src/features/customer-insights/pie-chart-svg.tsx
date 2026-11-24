@@ -37,7 +37,12 @@ export function PieChartSVG({
   onSliceClick,
   interactiveHint,
 }: PieChartSVGProps) {
-  const [hoveredLabel, setHoveredLabel] = useState<string | null>(null);
+  const [activeLabel, setActiveLabel] = useState<string | null>(null);
+
+  const handleToggle = (label: string) => {
+    setActiveLabel((prev) => (prev === label ? null : label));
+    if (onSliceClick) onSliceClick(label);
+  };
 
   const total = slices.reduce((acc, s) => acc + (s.value || 0), 0);
   const cx = 100;
@@ -87,7 +92,8 @@ export function PieChartSVG({
     };
   });
 
-  const activeSlice = hoveredLabel !== null ? slices.find((s) => s.label === hoveredLabel) || null : null;
+  const effectiveActive = selectedLabel && selectedLabel !== "Tất cả" ? selectedLabel : activeLabel;
+  const activeSlice = effectiveActive !== null ? slices.find((s) => s.label === effectiveActive) || null : null;
   const displayCenterLabel = activeSlice
     ? activeSlice.value.toLocaleString("vi-VN")
     : centerLabel !== undefined
@@ -127,15 +133,13 @@ export function PieChartSVG({
               />
             ) : (
               paths.map((p) => {
-                const isHovered = hoveredLabel === p.slice.label;
+                const isActive = effectiveActive === p.slice.label;
                 const isSelected = selectedLabel === p.slice.label;
-                const hasSelection = Boolean(selectedLabel && selectedLabel !== "Tất cả");
+                const hasSelection = Boolean(effectiveActive);
 
                 let opacity = 1;
                 if (hasSelection) {
-                  opacity = isSelected ? 1 : 0.35;
-                } else if (hoveredLabel !== null) {
-                  opacity = isHovered ? 1 : 0.55;
+                  opacity = isActive ? 1 : 0.35;
                 }
 
                 if (p.isSingle) {
@@ -151,11 +155,9 @@ export function PieChartSVG({
                       opacity={opacity}
                       style={{
                         transition: "opacity 0.2s, stroke-width 0.2s",
-                        cursor: onSliceClick ? "pointer" : "default",
+                        cursor: "pointer",
                       }}
-                      onMouseEnter={() => setHoveredLabel(p.slice.label)}
-                      onMouseLeave={() => setHoveredLabel(null)}
-                      onClick={() => onSliceClick && onSliceClick(p.slice.label)}
+                      onClick={() => handleToggle(p.slice.label)}
                     >
                       <title>{`${p.slice.label}: ${p.slice.value.toLocaleString("vi-VN")} (100%)`}</title>
                     </circle>
@@ -167,16 +169,14 @@ export function PieChartSVG({
                     key={p.idx}
                     d={p.d}
                     fill={p.slice.color}
-                    stroke={isSelected ? "#14a800" : "#ffffff"}
-                    strokeWidth={isSelected ? 3 : 1.5}
+                    stroke={isSelected || isActive ? "#14a800" : "#ffffff"}
+                    strokeWidth={isSelected || isActive ? 3 : 1.5}
                     opacity={opacity}
                     style={{
                       transition: "opacity 0.2s, transform 0.2s, stroke 0.2s",
-                      cursor: onSliceClick ? "pointer" : "default",
+                      cursor: "pointer",
                     }}
-                    onMouseEnter={() => setHoveredLabel(p.slice.label)}
-                    onMouseLeave={() => setHoveredLabel(null)}
-                    onClick={() => onSliceClick && onSliceClick(p.slice.label)}
+                    onClick={() => handleToggle(p.slice.label)}
                   >
                     <title>{`${p.slice.label}: ${p.slice.value.toLocaleString("vi-VN")} (${p.slice.percentage ?? ((p.slice.value / total) * 100).toFixed(1)}%)`}</title>
                   </path>
@@ -213,7 +213,7 @@ export function PieChartSVG({
             <div className={styles.pieEmptyHint}>{emptyText}</div>
           ) : (
             slices.map((s) => {
-              const isHovered = hoveredLabel === s.label;
+              const isActive = effectiveActive === s.label;
               const isSelected = selectedLabel === s.label;
               const pct =
                 s.percentage !== undefined
@@ -225,15 +225,11 @@ export function PieChartSVG({
               return (
                 <div
                   key={s.label}
-                  className={`${styles.pieLegendRow} ${
-                    onSliceClick ? styles.pieLegendRowClickable : ""
-                  } ${isHovered ? styles.pieLegendRowActive : ""} ${
-                    isSelected ? styles.pieLegendRowSelected : ""
-                  }`}
-                  onMouseEnter={() => setHoveredLabel(s.label)}
-                  onMouseLeave={() => setHoveredLabel(null)}
-                  onClick={() => onSliceClick && onSliceClick(s.label)}
-                  title={onSliceClick ? `Nhấp để lọc tương tác theo ${s.label}` : s.label}
+                  className={`${styles.pieLegendRow} ${styles.pieLegendRowClickable} ${
+                    isActive ? styles.pieLegendRowActive : ""
+                  } ${isSelected ? styles.pieLegendRowSelected : ""}`}
+                  onClick={() => handleToggle(s.label)}
+                  title={`Nhấp để xem thông tin ${s.label}`}
                 >
                   <div className={styles.pieLegendLeft}>
                     <span
